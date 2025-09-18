@@ -3,6 +3,7 @@
   import { invalidate } from '$app/navigation'
   import { onMount } from 'svelte'
 	import CustomAlert from "$lib/components/custom/customAlert.svelte";
+  import SideBar from "$lib/components/custom/sideBar.svelte";
   let { data, children } = $props()
   let { session, supabase } = $derived(data)
   
@@ -23,4 +24,5 @@
 </svelte:head>
 
 <CustomAlert />
+<SideBar />
 {@render children?.()}

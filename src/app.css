@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -165,43 +166,3 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-
-    
-  body {
-    @apply bg-background text-foreground;
-    /* Add subtle texture that mimics coffee shop ambiance */
-    background-image: 
-      radial-gradient(circle at 25% 25%, oklch(0.99 0.008 85 / 0.5) 0%, transparent 50%),
-      radial-gradient(circle at 75% 75%, oklch(0.98 0.01 75 / 0.3) 0%, transparent 50%);
-  }
-  
-  /* Custom coffee shop specific utilities */
-  .coffee-gradient {
-    background: linear-gradient(135deg, 
-      oklch(0.65 0.12 75) 0%, 
-      oklch(0.55 0.08 65) 100%);
-  }
-  
-  .wood-texture {
-    background: linear-gradient(90deg,
-      oklch(0.7 0.08 75) 0%,
-      oklch(0.65 0.1 70) 50%,
-      oklch(0.7 0.08 75) 100%);
-  }
-  
-  /* Enhanced button styles for coffee shop */
-  .btn-coffee {
-    @apply bg-primary text-primary-foreground hover:bg-primary/90;
-    @apply shadow-lg hover:shadow-xl transition-all duration-200;
-    @apply border border-primary/20;
-  }
-  
-  .btn-coffee:hover {
-    transform: translateY(-1px);
-  }
- 
-}
