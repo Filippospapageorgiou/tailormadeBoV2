@@ -14,4 +14,7 @@ npm install zod
 
 #Library for icons
 npm install @lucide/svelte
+
+#animation 
+npm install clsx tailwind-merge
 ```
