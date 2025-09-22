@@ -4,11 +4,20 @@ import { redirect } from '@sveltejs/kit'
 export const load: LayoutServerLoad = async ({ locals: { safeGetSession }, cookies, url }) => {
   const { session } = await safeGetSession()
 
-  // Αν δεν είναι στο /auth και δεν έχει session, κάνε redirect
-  if (!session && !url.pathname.startsWith('/auth')) {
-    throw redirect(303, '/auth/login')
-  }
+	if (url.pathname === '/') {
+		if (session) {
+			throw redirect(303, '/app');
+		}
+		throw redirect(303, '/auth/login');
+	}
 
+	if (!session && url.pathname.startsWith('/app')) {
+		throw redirect(303, '/auth/login');
+	}
+
+	if (session && url.pathname.startsWith('/auth')) {
+		throw redirect(303, '/app');
+	}
   return {
     session,
     cookies: cookies.getAll(),

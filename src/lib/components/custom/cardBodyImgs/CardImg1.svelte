@@ -7,7 +7,7 @@
     src="/drink.jpg"
     placeholder="blur"
     alt="don corleone"
-    class="w-full object-cover object-center m-0"
+    class="w-full object-cover object-center m-0 transition-all duration-300 ease-out group-hover:scale-110"
   />
   <div
     class="absolute inset-0 from-stone-900/90 via-stone-900/60 to-stone-900/5 bg-gradient-to-t backdrop-blur-[2px] transition-all duration-300"

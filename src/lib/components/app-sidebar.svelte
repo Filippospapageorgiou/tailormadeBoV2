@@ -7,7 +7,7 @@
 	import MapIcon from "@lucide/svelte/icons/map";
 	import SendIcon from "@lucide/svelte/icons/send";
 	import Settings2Icon from "@lucide/svelte/icons/settings-2";
-	import SquareTerminalIcon from "@lucide/svelte/icons/square-terminal";
+	import { NotebookPen, Coffee } from "lucide-svelte";
 
 	const data = {
 		user: {
@@ -17,48 +17,20 @@
 		},
 		navMain: [
 			{
-				title: "Playground",
-				url: "#",
-				icon: SquareTerminalIcon,
+				title: "Recipes",
+				url: "/app/recipes",
+				icon: Coffee,
 				isActive: true,
-				items: [
-					{
-						title: "History",
-						url: "#",
-					},
-					{
-						title: "Starred",
-						url: "#",
-					},
-					{
-						title: "Settings",
-						url: "#",
-					},
-				],
 			},
 			{
-				title: "Models",
-				url: "#",
-				icon: BotIcon,
-				items: [
-					{
-						title: "Genesis",
-						url: "#",
-					},
-					{
-						title: "Explorer",
-						url: "#",
-					},
-					{
-						title: "Quantum",
-						url: "#",
-					},
-				],
-			},
-			{
-				title: "Documentation",
-				url: "#",
+				title: "Manifesto",
+				url: "/app/manifesto",
 				icon: BookOpenIcon,
+			},
+			{
+				title: "Blog",
+				url: "/",
+				icon: NotebookPen,
 				items: [
 					{
 						title: "Introduction",
@@ -152,14 +124,14 @@
 			<Sidebar.MenuItem>
 				<Sidebar.MenuButton size="lg">
 					{#snippet child({ props })}
-						<a href="##" {...props}>
+						<a href="/" {...props}>
 							<div
 								class="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg"
 							>
 								<CommandIcon class="size-4" />
 							</div>
 							<div class="grid flex-1 text-left text-sm leading-tight">
-								<span class="truncate font-medium">Acme Inc</span>
+								<span class="truncate font-medium">Tailor Made</span>
 								<span class="truncate text-xs">Enterprise</span>
 							</div>
 						</a>

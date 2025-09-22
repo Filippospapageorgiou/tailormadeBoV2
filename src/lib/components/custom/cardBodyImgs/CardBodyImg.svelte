@@ -1,5 +1,4 @@
-<script>
-  import Button from "$lib/components/ui/button/button.svelte";
+<script lang="ts">
   import { cn } from "$lib/utils";
   
   let className = "";
@@ -11,7 +10,7 @@
   };
 </script>
 
-<div class={cn("px-3 sm:px-4 lg:px-6 text-gray-100 py-3 sm:py-4 lg:py-6 text-left", className)}>
+<div class={cn("px-3 [text-shadow:0_2px_4px_rgb(0_0_0_/_0.5)] sm:px-4 lg:px-6 text-gray-200 py-3 sm:py-4 lg:py-6 text-left", className)}>
   <h3 class="text-lg sm:text-xl lg:text-2xl font-bold tracking-tighter mb-3 sm:mb-4">
     {card.title}
   </h3>
@@ -20,14 +19,5 @@
     <p class="text-sm sm:text-base lg:text-lg leading-relaxed sm:leading-6 lg:leading-7 flex-1 max-w-none sm:max-w-md lg:max-w-lg">
       {card.desc}
     </p>
-    
-    <div class="flex-shrink-0">
-      <Button 
-        variant="secondary" 
-        class="w-full sm:w-auto px-6 py-2 text-sm sm:text-base font-medium"
-      >
-        Δες όλες →
-      </Button>
-    </div>
   </div>
 </div>
