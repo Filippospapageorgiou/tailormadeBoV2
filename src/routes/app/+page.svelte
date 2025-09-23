@@ -3,53 +3,52 @@
 	import { getLocalTimeZone, today, type DateValue } from '@internationalized/date';
 	import { Calendar } from '$lib/components/ui/calendar/index.js';
 	import type { Blog } from '$lib/models/database.types';
+	import Hero from '$lib/components/custom/hero/hero.svelte';
 	
 
 	let { data } = $props();
 	let blog = $derived(data.blog as Blog);
 	
+	$effect(() => {
+		console.log(blog);
+	})
+
+	function getFirstImage(images: any) {
+		if (images && Array.isArray(images) && images.length > 0) {
+			const firstImage = images[0];
+			if (typeof firstImage === 'string') return firstImage;
+			if (typeof firstImage === 'object' && firstImage.url) return firstImage.url;
+		}
+	}
+
+	
+	function truncateText(text: string | null | undefined, maxLength: number = 120) {
+		if (!text || typeof text !== 'string') return '';
+		return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+	}
+
+	// Helper function to format date
+	function formatDate(dateString: string | null | undefined) {
+		if (!dateString) return '';
+		try {
+			return new Date(dateString).toLocaleDateString('el-GR', {
+				year: 'numeric',
+				month: 'long',
+				day: 'numeric'
+			});
+		} catch (error) {
+			return '';
+		}
+	}
+
+
 
 	let value: DateValue[] | undefined = $state([today(getLocalTimeZone())]);
 </script>
 
 <div class="flex flex-1 flex-col gap-4 p-4 pt-0">
 	<div class="grid auto-rows-min gap-4 md:grid-cols-3">
-		<div class="relative col-span-full overflow-hidden rounded-2xl">
-			<div
-				class="relative z-20 flex flex-col items-center justify-center p-4 py-16 text-black sm:p-6 sm:py-20 lg:py-28"
-			>
-				<div class="mx-auto max-w-4xl text-center">
-					<h1
-						class="font-display mb-4 text-3xl font-light tracking-wider text-balance sm:mb-6 sm:text-4xl lg:mb-8 lg:text-5xl"
-					>
-						TAILOR MADE COFFEE ROASTERS
-					</h1>
-					<p
-						class="font-display mb-8 text-xl font-light tracking-wide sm:mb-10 sm:text-2xl lg:mb-12"
-					>
-						SEE THE WORLD THROUGH COFFEE
-					</p>
-
-					<div class="mx-auto max-w-3xl">
-						<p class="text-sm leading-relaxed font-light text-pretty sm:text-base md:text-lg">
-							Καλώς ήρθατε στο back office του Tailor Made. Η πλατφόρma αυτή είναι για αποκλειστική
-							χρήση από τους υπαλλήλους και τους υπεύθυνους των καταστημάτων. Παρακαλούμε, να είστε
-							προσεκτικοί και να μην μοιράζεστε με τρίτους τις πληροφορίες και οποιαδήποτε ευαίσθητα
-							δεδομένα που αφορούν το κατάστημά σας.
-						</p>
-					</div>
-				</div>
-			</div>
-
-			<div
-				class="absolute bottom-4 left-1/2 z-20 w-full -translate-x-1/2 transform px-4 text-center text-black sm:bottom-6 lg:bottom-8"
-			>
-				<p class="text-xs font-light tracking-wide sm:text-sm lg:text-base">ⓒ TAILORMADE</p>
-				<p class="text-xs font-light tracking-wide sm:text-sm lg:text-base">
-					CRAFTING EXCEPTIONAL COFFEE EXPERIENCES
-				</p>
-			</div>
-		</div>
+		<Hero />
 
 		<div class="aspect-video rounded-2xl bg-muted/50">
 			<CardImg1>
@@ -90,10 +89,69 @@
 			</div>
 		</div>
 
-		<div class="aspect-video rounded-2xl bg-muted/50">
-			<div>
+		<a 
+				href="/app/blog/{blog.id}" 
+				class="group relative aspect-video overflow-hidden rounded-2xl"
+			>
+				<div class="absolute inset-0">
+					<img 
+						src={getFirstImage(blog.images)}
+						alt={blog.title || 'Blog post'}
+						class="h-full w-full object-cover transition-all duration-500 group-hover:scale-110"
+					/>
+					<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20"></div>
+				</div>
 
-			</div>
-		</div>
+				<div class="relative z-10 flex h-full flex-col justify-end p-4 text-white">
+					{#if blog.profile && blog.profile.username}
+						<div class="absolute top-4 right-4 flex items-center gap-2 rounded-full bg-white/20 backdrop-blur-sm px-3 py-1">
+								<img 
+									src={blog.profile.image_url} 
+									alt={blog.profile.username}
+									class="h-5 w-5 rounded-full object-cover"
+								/>
+							<span class="text-xs font-medium text-white">{blog.profile.username}</span>
+						</div>
+					{/if}
+
+					<!-- Date -->
+					<div class="mb-2">
+						<span class="text-xs font-light text-gray-300 tracking-wide">
+							{formatDate(blog.created_at)}
+						</span>
+					</div>
+
+					<!-- Title -->
+					<h3 class="mb-2 text-lg font-bold leading-tight tracking-tight text-white sm:text-xl lg:text-2xl line-clamp-2">
+						{blog.title}
+					</h3>
+
+					<!-- Description -->
+					{#if blog.content}
+						<p class="text-sm leading-relaxed text-gray-200 opacity-90 line-clamp-2 sm:text-base">
+							{truncateText(blog.content)}
+						</p>
+					{/if}
+
+					<!-- Tags -->
+					{#if blog.tags && blog.tags.length > 0}
+						<div class="mt-3 flex flex-wrap gap-1">
+							{#each blog.tags.slice(0, 3) as tag}
+								<span class="rounded-full bg-white/20 backdrop-blur-sm px-2 py-1 text-xs text-white">
+									#{tag}
+								</span>
+							{/each}
+						</div>
+					{/if}
+
+					<div class="absolute bottom-4 right-4 opacity-0 transition-all duration-300 group-hover:opacity-100">
+						<div class="rounded-full bg-white/20 backdrop-blur-sm p-2">
+							<svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+							</svg>
+						</div>
+					</div>
+				</div>
+			</a>
 	</div>
 </div>

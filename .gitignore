@@ -7,7 +7,7 @@ node_modules
 .wrangler
 /.svelte-kit
 /build
-schema.sql
+/src/lib/db
 
 # OS
 .DS_Store

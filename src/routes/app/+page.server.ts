@@ -6,7 +6,7 @@ export const load:PageServerLoad = async({ locals: { supabase }}) => {
         .from('blogs')
         .select(`
             *,
-            author:profiles!blogs_author_id_fkey (
+            profile:profiles!blogs_author_id_fkey (
                 username,
                 image_url
             )`)
@@ -22,7 +22,6 @@ export const load:PageServerLoad = async({ locals: { supabase }}) => {
             error: BlogError.message
         };
     }
-    console.log(blog);
     return {
         blog: blog || null
     }
