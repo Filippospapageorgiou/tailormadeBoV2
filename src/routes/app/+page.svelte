@@ -1,33 +1,13 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { CardBodyImg, CardImg1 } from '$lib/components/custom/cardBodyImgs/index.js';
 	import { getLocalTimeZone, today, type DateValue } from '@internationalized/date';
 	import { Calendar } from '$lib/components/ui/calendar/index.js';
+	import type { Blog } from '$lib/models/database.types';
 	
 
 	let { data } = $props();
-
-	// State for the image carousel
-	const images: string[] = $state([
-		'/TAILOR MADE PRESENTATION 2024_page-0002.jpg',
-		'/TAILOR MADE PRESENTATION 2024_page-0003.jpg',
-		'/TAILOR MADE PRESENTATION 2024_page-0004.jpg',
-		'/TAILOR MADE PRESENTATION 2024_page-0005.jpg',
-		'/TAILOR MADE PRESENTATION 2024_page-0006.jpg',
-		'/TAILOR MADE PRESENTATION 2024_page-0007.jpg',
-		'/TAILOR MADE PRESENTATION 2024_page-0008.jpg',
-		'/TAILOR MADE PRESENTATION 2024_page-0009.jpg',
-		'/TAILOR MADE PRESENTATION 2024_page-0010.jpg'
-	]);
-	let currentImageIndex: number = $state(0);
-
-	onMount(() => {
-		const interval = setInterval(() => {
-			currentImageIndex = (currentImageIndex + 1) % images.length;
-		}, 5000);
-
-		return () => clearInterval(interval);
-	});
+	let blog = $derived(data.blog as Blog);
+	
 
 	let value: DateValue[] | undefined = $state([today(getLocalTimeZone())]);
 </script>
@@ -110,6 +90,10 @@
 			</div>
 		</div>
 
-		<div class="aspect-video rounded-2xl bg-muted/50"></div>
+		<div class="aspect-video rounded-2xl bg-muted/50">
+			<div>
+
+			</div>
+		</div>
 	</div>
 </div>
