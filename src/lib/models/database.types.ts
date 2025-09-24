@@ -14,3 +14,37 @@ export interface Blog {
         image_url:string;
     }
 }
+
+export interface Beverage {
+    id:number;
+    name:string;
+    description:string;
+    execution: string | null;
+    image_url: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
+
+
+export interface Ingredient {
+  id: number;
+  name: string;
+  category?: string;
+  description?: string;
+  measurement_unit?: string;
+  recipe_ingredients: { count: number }[]; 
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RecipeIngredient {
+  id: number;
+  beverage_id: number;
+  ingredient_id: number;
+  quantity: number;
+  notes?: string;
+  ingredients: Pick<Ingredient, 'name' | 'measurement_unit'>;
+  created_at: string;
+  updated_at: string;
+}

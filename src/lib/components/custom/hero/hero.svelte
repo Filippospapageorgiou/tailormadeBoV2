@@ -1,5 +1,5 @@
 <script lang="ts">
-	
+	import BlurIn from "../blurIn/BlurIn.svelte";
 </script>
 
 <div
@@ -13,12 +13,10 @@
 		class="relative z-20 flex flex-col items-center justify-center p-4 py-16 text-black transition-transform duration-200 ease-out sm:p-6 sm:py-20 lg:py-28"
 	>
 		<div class="mx-auto max-w-4xl text-center">
-			<h1
-				class="font-display mb-4 text-3xl font-light tracking-wider text-balance sm:mb-6 sm:text-4xl lg:mb-8 lg:text-5xl"
-			>
-				TAILORMADE COFFEE ROASTERS
-			</h1>
-
+			<BlurIn
+				word="TAILORMADE COFFEE ROASTERS"
+				class="scroll-m-20 text-4xl text-primary font-extrabold tracking-tight lg:text-5xl"
+			/>
 			<div
 				class="font-display mt-5 mb-8 text-xl font-light tracking-wide sm:mb-10 sm:text-2xl lg:mb-12 overflow-hidden"
 			>
@@ -60,43 +58,5 @@
 			linear-gradient(90deg, rgba(139, 69, 19, 0.03) 1px, transparent 1px);
 		background-size: 50px 50px;
 		animation: grid-move 20s linear infinite;
-	}
-
-	/* Keyframes */
-	@keyframes float {
-		0%,
-		100% {
-			transform: translateY(0px) rotate(0deg);
-		}
-		25% {
-			transform: translateY(-10px) rotate(90deg);
-		}
-		50% {
-			transform: translateY(-5px) rotate(180deg);
-		}
-		75% {
-			transform: translateY(-15px) rotate(270deg);
-		}
-	}
-
-	@keyframes grid-move {
-		0% {
-			transform: translate(0, 0);
-		}
-		100% {
-			transform: translate(50px, 50px);
-		}
-	}
-
-	@keyframes pulse-glow {
-		0%,
-		100% {
-			transform: scale(1);
-			filter: drop-shadow(0 0 10px rgba(139, 69, 19, 0.3));
-		}
-		50% {
-			transform: scale(1.1);
-			filter: drop-shadow(0 0 20px rgba(139, 69, 19, 0.5));
-		}
 	}
 </style>

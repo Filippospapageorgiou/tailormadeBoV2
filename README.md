@@ -20,4 +20,6 @@ npm install clsx tailwind-merge
 
 #icon svelte
 npm install lucide-svelte
+
+npm i svelte-motion
 ```
