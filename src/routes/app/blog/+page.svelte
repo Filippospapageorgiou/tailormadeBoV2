@@ -4,6 +4,10 @@
 	import { getPosts } from './data.remote';
 	import { Skeleton } from '$lib/components/ui/skeleton'; // <-- 1. Import Skeleton
 
+	let { data } = $props();
+	let { user } = $derived(data)
+
+
 	let query = getPosts();
 
 	let allBlogs = $derived(query.current?.blogs ?? []);

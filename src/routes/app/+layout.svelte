@@ -6,12 +6,7 @@
   import { Separator } from "$lib/components/ui/separator/index.js";
   import * as Sidebar from "$lib/components/ui/sidebar/index.js";
   
-  let { data, children } = $props()
-  let { session, supabase } = $derived(data)
-  
-  let favicon = '/logo.png'
-
-
+  let { children } = $props()
   
   let breadcrumbs = $derived(() => {
     const pathSegments = page.url.pathname.split('/').filter(Boolean);
@@ -26,7 +21,6 @@
 </script>
 
 
-<CustomAlert />
 <Sidebar.Provider>
   <AppSidebar />
   <Sidebar.Inset>
