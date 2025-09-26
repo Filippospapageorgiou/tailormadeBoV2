@@ -5,9 +5,15 @@ import { createAdminClient, createServerClient } from '$lib/supabase/server';
 import type { Provider } from '@supabase/supabase-js';
 import { redirect } from '@sveltejs/kit';
 import type { Blog } from '$lib/models/database.types';
+import { getRequestEvent } from '$app/server';
+import { requireAuthenticatedUser } from '$lib/supabase/shared';
 
 export const getPosts = query(async ( ) => {
   console.log('Server: getPosts remote function executed.');
+
+  const user = await requireAuthenticatedUser();
+  console.log(`Fetching posts for user: ${user.id}`);
+
   const supabase = createServerClient();
   const { data:blogs , error } = await supabase
     .from('blogs')
