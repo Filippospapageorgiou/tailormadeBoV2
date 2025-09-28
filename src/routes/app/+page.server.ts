@@ -22,6 +22,9 @@ export const load:PageServerLoad = async({ locals: { supabase }}) => {
             error: BlogError.message
         };
     }
+
+    
+
     return {
         blog: blog || null
     }

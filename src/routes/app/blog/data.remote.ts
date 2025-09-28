@@ -7,13 +7,16 @@ import { redirect } from '@sveltejs/kit';
 import type { Blog } from '$lib/models/database.types';
 import { getRequestEvent } from '$app/server';
 import { requireAuthenticatedUser } from '$lib/supabase/shared';
+import { z } from "zod/v4";
+
+const blogIdSchema = z.coerce
+.number({ error: 'Blog Id must be a number.'})
+.int({ error: 'Blog ID must be an integer.' })
+.positive({ error: 'Blog ID must be a positive number.' });
+
 
 export const getPosts = query(async ( ) => {
-  console.log('Server: getPosts remote function executed.');
-
-  const user = await requireAuthenticatedUser();
-  console.log(`Fetching posts for user: ${user.id}`);
-
+ 
   const supabase = createServerClient();
   const { data:blogs , error } = await supabase
     .from('blogs')
@@ -35,4 +38,38 @@ export const getPosts = query(async ( ) => {
     return {
         blogs
     };
+});
+
+export const readBlog = query(blogIdSchema, async (blogId) => {
+  const user = await requireAuthenticatedUser();
+  const supabase = createServerClient();
+
+  
+  const { data, error } = await supabase
+    .from('blog_reads')
+    .upsert(
+      {
+        user_id: user.id,
+        blog_id: blogId,
+        read_at: new Date().toISOString()
+      },
+      {
+        onConflict: 'user_id,blog_id', // Specify the unique constraint columns
+        ignoreDuplicates: false // Update the read_at timestamp even if record exists
+      }
+    )
+    .select();
+
+  if (error) {
+    console.error('An error occurred while trying to read blog: ', error);
+    return {
+      status: 'error',
+      message: 'An error occurred while trying to record blog read'
+    };
+  }
+
+  return {
+    status: 'success',
+    message: 'Blog read recorded successfully'
+  };
 });

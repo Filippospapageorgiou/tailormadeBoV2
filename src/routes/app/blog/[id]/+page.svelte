@@ -4,9 +4,15 @@
 	import { goto } from '$app/navigation';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Carousel from '$lib/components/ui/carousel/index.js';
+	import { readBlog } from "../data.remote"
+	import { onMount } from 'svelte';
 
 	let { data }: { data: PageData } = $props();
 	const { blog } = $derived(data) as { blog: Blog };
+
+	onMount(() => {
+		readBlog(blog.id);
+	})
 
 	function formatDate(dateString: string | null | undefined) {
 		if (!dateString) return '';
