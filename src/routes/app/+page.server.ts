@@ -18,14 +18,13 @@ export const load:PageServerLoad = async({ locals: { supabase }}) => {
     if(BlogError){
         console.error('Error fetching blog:', BlogError);
         return {
+            profileUser:null,
             blog:null,
             error: BlogError.message
         };
     }
 
-    
-
     return {
-        blog: blog || null
+        blog: blog || null,
     }
 }

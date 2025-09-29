@@ -79,7 +79,7 @@
 									</div>
 									<Button
 										type="submit"
-										class="btn-coffee h-10 w-full font-medium"
+										class="btn-coffee h-10 w-full font-medium cursor-pointer"
 										disabled={loading}
 									>
 										{#if loading}

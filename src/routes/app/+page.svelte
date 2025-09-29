@@ -8,10 +8,6 @@
 
 	let { data } = $props();
 	let blog = $derived(data.blog as Blog);
-	
-	$effect(() => {
-		console.log(blog);
-	})
 
 	function getFirstImage(images: any) {
 		if (images && Array.isArray(images) && images.length > 0) {

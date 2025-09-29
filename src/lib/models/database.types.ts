@@ -48,3 +48,14 @@ export interface RecipeIngredient {
   created_at: string;
   updated_at: string;
 }
+
+export interface Profile {
+  id:string;
+  username:string;
+  email:string;
+  role:string;
+  created_at:string;
+  updated_at:string;
+  image_url:string;
+  org_id:number; 
+}

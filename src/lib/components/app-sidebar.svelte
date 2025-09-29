@@ -8,6 +8,8 @@
 	import SendIcon from "@lucide/svelte/icons/send";
 	import Settings2Icon from "@lucide/svelte/icons/settings-2";
 	import { NotebookPen, Coffee } from "lucide-svelte";
+	
+
 
 	const data = {
 		user: {
@@ -96,6 +98,14 @@
 	import * as Sidebar from "$lib/components/ui/sidebar/index.js";
 	import CommandIcon from "@lucide/svelte/icons/command";
 	import type { ComponentProps } from "svelte";
+	import { getUserContext } from "$lib/stores/profile.svelte";
+
+	let profile = getUserContext();
+	let profileInfo = {
+		name: profile?.username,
+    	email: profile?.email,
+    	avatar: profile?.image_url,
+	}
 
 	let { ref = $bindable(null), ...restProps }: ComponentProps<typeof Sidebar.Root> = $props();
 </script>
@@ -128,6 +138,6 @@
 		<NavSecondary items={data.navSecondary} class="mt-auto" />
 	</Sidebar.Content>
 	<Sidebar.Footer>
-		<NavUser user={data.user} />
+		<NavUser user={profileInfo} />
 	</Sidebar.Footer>
 </Sidebar.Root>

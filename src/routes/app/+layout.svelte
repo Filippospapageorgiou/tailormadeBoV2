@@ -5,8 +5,18 @@
   import * as Breadcrumb from "$lib/components/ui/breadcrumb/index.js";
   import { Separator } from "$lib/components/ui/separator/index.js";
   import * as Sidebar from "$lib/components/ui/sidebar/index.js";
+  import { setUserContext, getUserContext } from '$lib/stores/profile.svelte.js';
   
-  let { children } = $props()
+  let { data,children } = $props()
+  
+  let profile = $derived(data.profile || null);  
+
+  // svelte-ignore state_referenced_locally
+  setUserContext(profile);
+
+  $effect(() => {
+    profile = data.profile || null;
+  });
   
   let breadcrumbs = $derived(() => {
     const pathSegments = page.url.pathname.split('/').filter(Boolean);
@@ -22,7 +32,7 @@
 
 
 <Sidebar.Provider>
-  <AppSidebar />
+  <AppSidebar/>
   <Sidebar.Inset>
     <header class="flex h-16 shrink-0 items-center gap-2">
       <div class="flex items-center gap-2 px-4">

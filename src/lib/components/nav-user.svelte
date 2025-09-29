@@ -1,23 +1,51 @@
 <script lang="ts">
-	import BadgeCheckIcon from "@lucide/svelte/icons/badge-check";
-	import BellIcon from "@lucide/svelte/icons/bell";
-	import ChevronsUpDownIcon from "@lucide/svelte/icons/chevrons-up-down";
-	import CreditCardIcon from "@lucide/svelte/icons/credit-card";
-	import LogOutIcon from "@lucide/svelte/icons/log-out";
-	import SparklesIcon from "@lucide/svelte/icons/sparkles";
+	import BadgeCheckIcon from '@lucide/svelte/icons/badge-check';
+	import BellIcon from '@lucide/svelte/icons/bell';
+	import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';
+	import CreditCardIcon from '@lucide/svelte/icons/credit-card';
+	import LogOutIcon from '@lucide/svelte/icons/log-out';
+	import SparklesIcon from '@lucide/svelte/icons/sparkles';
+	import { Loader } from 'lucide-svelte';
 
-	import * as Avatar from "$lib/components/ui/avatar/index.js";
-	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
-	import * as Sidebar from "$lib/components/ui/sidebar/index.js";
-	import { useSidebar } from "$lib/components/ui/sidebar/index.js";
+	import * as Avatar from '$lib/components/ui/avatar/index.js';
+	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
+	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
+	import { useSidebar } from '$lib/components/ui/sidebar/index.js';
+
+	let isLoggingOut = $state(false);
+
+	async function handleLogout() {
+		if (isLoggingOut) {
+			return true;
+		}
+
+		isLoggingOut = true;
+		try {
+			const response = await fetch('/auth/api/logout', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				}
+			});
+
+			if (!response.ok) {
+				throw new Error('Error logging out');
+			}
+
+			window.location.reload();
+		} catch (error) {
+			console.error('Logout failed:', error);
+			isLoggingOut = false;
+		}
+	}
 
 	let {
-		user,
+		user
 	}: {
 		user: {
-			name: string;
-			email: string;
-			avatar: string;
+			name: string | undefined;
+			email: string | undefined;
+			avatar: string | undefined;
 		};
 	} = $props();
 
@@ -48,7 +76,7 @@
 			</DropdownMenu.Trigger>
 			<DropdownMenu.Content
 				class="w-(--bits-dropdown-menu-anchor-width) min-w-56 rounded-lg"
-				side={sidebar.isMobile ? "bottom" : "right"}
+				side={sidebar.isMobile ? 'bottom' : 'right'}
 				align="end"
 				sideOffset={4}
 			>
@@ -71,25 +99,25 @@
 						Upgrade to Pro
 					</DropdownMenu.Item>
 				</DropdownMenu.Group>
-				<DropdownMenu.Separator />
-				<DropdownMenu.Group>
 					<DropdownMenu.Item>
 						<BadgeCheckIcon />
 						Account
 					</DropdownMenu.Item>
-					<DropdownMenu.Item>
-						<CreditCardIcon />
-						Billing
-					</DropdownMenu.Item>
-					<DropdownMenu.Item>
-						<BellIcon />
-						Notifications
-					</DropdownMenu.Item>
-				</DropdownMenu.Group>
 				<DropdownMenu.Separator />
 				<DropdownMenu.Item>
 					<LogOutIcon />
-					Log out
+					<button
+						onclick={handleLogout}
+						disabled={isLoggingOut}
+						class="flex w-full items-center gap-2 text-start"
+					>
+						{#if isLoggingOut}
+							<Loader size={18} strokeWidth={1.5} class="shrink-0 animate-spin" />
+						{/if}
+						<span>
+							{isLoggingOut ? 'Logging out...' : 'Log out'}
+						</span>
+					</button>
 				</DropdownMenu.Item>
 			</DropdownMenu.Content>
 		</DropdownMenu.Root>

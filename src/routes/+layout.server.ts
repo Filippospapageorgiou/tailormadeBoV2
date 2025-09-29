@@ -1,7 +1,7 @@
 import type { LayoutServerLoad } from './$types'
 import { redirect } from '@sveltejs/kit'
 
-export const load: LayoutServerLoad = async ({ locals: { safeGetSession }, cookies, url }) => {
+export const load: LayoutServerLoad = async ({ locals: { safeGetSession, supabase }, cookies, url }) => {
   const { session } = await safeGetSession()
 
 	if (url.pathname === '/') {
