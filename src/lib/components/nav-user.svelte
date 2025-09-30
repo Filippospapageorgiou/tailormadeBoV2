@@ -6,6 +6,7 @@
 	import LogOutIcon from '@lucide/svelte/icons/log-out';
 	import SparklesIcon from '@lucide/svelte/icons/sparkles';
 	import { Loader } from 'lucide-svelte';
+	import { goto } from '$app/navigation';
 
 	import * as Avatar from '$lib/components/ui/avatar/index.js';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
@@ -43,6 +44,7 @@
 		user
 	}: {
 		user: {
+			id: string | undefined;
 			name: string | undefined;
 			email: string | undefined;
 			avatar: string | undefined;
@@ -101,7 +103,7 @@
 				</DropdownMenu.Group>
 					<DropdownMenu.Item>
 						<BadgeCheckIcon />
-						Account
+						<button class="text-start cursor-pointer w-full" onclick={() => {goto(`/app/profile/${user.id}`)}}>Account</button>
 					</DropdownMenu.Item>
 				<DropdownMenu.Separator />
 				<DropdownMenu.Item>
@@ -109,7 +111,7 @@
 					<button
 						onclick={handleLogout}
 						disabled={isLoggingOut}
-						class="flex w-full items-center gap-2 text-start"
+						class="flex w-full items-center gap-2 text-start cursor-pointer"
 					>
 						{#if isLoggingOut}
 							<Loader size={18} strokeWidth={1.5} class="shrink-0 animate-spin" />

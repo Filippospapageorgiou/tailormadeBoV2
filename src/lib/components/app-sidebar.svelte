@@ -102,6 +102,7 @@
 
 	let profile = getUserContext();
 	let profileInfo = {
+		id: profile?.id,
 		name: profile?.username,
     	email: profile?.email,
     	avatar: profile?.image_url,
