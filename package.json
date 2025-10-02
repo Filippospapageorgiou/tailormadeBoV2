@@ -50,6 +50,7 @@
 		"vitest-browser-svelte": "^0.1.0"
 	},
 	"dependencies": {
+		"@midudev/tailwind-animations": "^0.2.0",
 		"@supabase/ssr": "^0.7.0",
 		"@supabase/supabase-js": "^2.57.4",
 		"lucide-svelte": "^0.544.0",

@@ -61,13 +61,15 @@ export interface Profile {
 }
 
 export interface Organization {
-  id:number;
-  store_name:string | null;
-  location:string;
-  phone: string | null;
-  status: boolean;
-  country:string;
-  created_at:string;
-  updated_at:string;
-  manager_id:string;
+    id: number;
+    store_name: string | null;
+    email: string | null;
+    phone: string | null;
+    status: boolean | null;
+    country: string | null;
+    created_at: string;
+    updated_at: string | null;
+    location: string | null;
+    manager_id: string ;
+    manager: Profile | null;
 }

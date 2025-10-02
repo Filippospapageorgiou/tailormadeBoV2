@@ -1,157 +1,354 @@
 <script lang="ts">
-  import { enhance } from '$app/forms';
-  import { Pencil, Save, X, Building, Phone, MapPin, Globe, CheckCircle, XCircle } from 'lucide-svelte';
-  import * as Card from '$lib/components/ui/card/index.js';
-  import * as Avatar from '$lib/components/ui/avatar/index.js';
-  import { Input } from '$lib/components/ui/input/index.js';
-  import { Button } from '$lib/components/ui/button/index.js';
-  import { Label } from '$lib/components/ui/label/index.js';
-  import { Separator } from '$lib/components/ui/separator/index.js';
-  import { Badge } from '$lib/components/ui/badge/index.js';
+	import {
+		Pencil,
+		Save,
+		X,
+		Building,
+		Phone,
+		MapPin,
+		Globe,
+		CheckCircle,
+		XCircle,
+		Mail,
+		Calendar,
+		User,
+		MailIcon,
+		Loader
+	} from 'lucide-svelte';
+	import * as Avatar from '$lib/components/ui/avatar/index.js';
+	import { Input } from '$lib/components/ui/input/index.js';
+	import { Button } from '$lib/components/ui/button/index.js';
+	import { Badge } from '$lib/components/ui/badge/index.js';
+	import { updateUsername, updateAvatar } from './data.remote';
+	import { toast } from '$lib/stores/toast.svelte.js';
 
-  let { data, form } = $props();
+	let { data } = $props();
 
-  let profile = $derived(data.profile);
-  let organization = $derived(data.organization);
+	let isUpdating = $state(false);
+  let isUpdatingAvatar = $state(false);
 
-  let editingUsername = $state(false);
+	let profile = $derived(data.profile);
+	let organization = $derived(data.organization);
 
-  let username = $state('');
-  let avatar_url = $state('');
+	let username = $state('');
+	let backgorundImage = $state('');
 
+	$effect(() => {
+		username = profile.username;
+		backgorundImage = profile.image_url;
+	});
+
+	let editing = $state(false);
+
+  let files:FileList | undefined = $state();
   $effect(() => {
-        username = profile.username;
-        avatar_url = profile.image_url;
-  })
+        if(files && files[0]){
+            const reader = new FileReader();
+            reader.addEventListener('load', ()=>{
+                backgorundImage = reader.result?.toString() || '';
+            })
+            reader.readAsDataURL(files[0])
+        }else{
+            backgorundImage = '';
+        }
+    })
 
-  let avatarFile = $state<File | null>(null);
+	function formatDate(dateString: string) {
+		return new Date(dateString).toLocaleDateString('el-GR', {
+			year: 'numeric',
+			month: 'long',
+			day: 'numeric'
+		});
+	}
 
-  function handleAvatarClick() {
-    const fileInput = document.getElementById('avatar-upload');
-    fileInput?.click();
-  }
+	function handleUpdateSuccess(text: string) {
+		toast.show = true;
+		toast.status = true;
+		toast.title = 'Success';
+		toast.text = text;
+		isUpdating = false;
+		editing = false;
+	}
 
-  function handleFileChange(e: Event) {
-    const target = e.target as HTMLInputElement;
-    if (target.files && target.files.length > 0) {
-      avatarFile = target.files[0];
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        avatar_url = e.target?.result as string;
-      };
-      reader.readAsDataURL(avatarFile);
-      
-      // Automatically submit the form when a file is selected
-      const submitButton = document.getElementById('avatar-submit');
-      submitButton?.click();
-    }
-  }
+	function handleUpdateError(text: string) {
+		toast.show = true;
+		toast.status = false;
+		toast.title = 'Error';
+		toast.text = text;
+		isUpdating = false;
+		editing = false;
+	}
 </script>
 
-<div class="p-4 md:p-8 space-y-8">
-  <Card.Root class="overflow-hidden">
-    <Card.Header class="py-4">
-        <div class="flex items-end">
-        <div class="relative group">
-          <Avatar.Root class="w-32 h-32 border-4 border-background">
-            <Avatar.Image src={avatar_url} alt={username} />
-            <Avatar.Fallback>{username?.charAt(0)}</Avatar.Fallback>
-          </Avatar.Root>
-          <Button
-            variant="outline"
-            size="icon"
-            class="absolute bottom-2 right-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-            onclick={handleAvatarClick}
-          >
-            <Pencil class="w-4 h-4" />
-          </Button>
-          <form method="POST" use:enhance action="?/updateAvatar" class="hidden">
-            <Input type="file" id="avatar-upload" name="avatar" onchange={handleFileChange} accept="image/*" />
-            <Button type="submit" id="avatar-submit">Submit</Button>
-          </form>
-        </div>
-        <div class="ml-4">
-          {#if editingUsername}
-            <form method="POST" use:enhance action="?/updateUsername" class="flex items-center gap-2">
-              <Input name="username" bind:value={username} class="text-2xl font-bold" />
-              <Button type="submit" size="icon" variant="ghost"><Save class="w-5 h-5" /></Button>
-              <Button type="button" size="icon" variant="ghost" onclick={() => editingUsername = false}><X class="w-5 h-5" /></Button>
-            </form>
-          {:else}
-            <div class="flex items-center gap-2">
-              <h1 class="text-2xl font-bold">{profile.username}</h1>
-              <Button type="button" size="icon" variant="ghost" onclick={() => editingUsername = true}><Pencil class="w-5 h-5" /></Button>
-            </div>
-          {/if}
-          <p class="text-muted-foreground">{profile.email}</p>
-        </div>
-        <div class="ml-auto">
-          <Badge>{profile.role}</Badge>
-        </div>
-      </div>
-    </Card.Header>
-    <Card.Content class="p-6 pt-0">
-      
-    </Card.Content>
-  </Card.Root>
+<div class="">
+	<main class="container mx-auto px-4 pt-8 pb-20 md:px-6">
+		<div class="mx-auto max-w-5xl">
+			<!-- Header Section -->
+			<div class="mb-8">
+				<h1 class="font-mono text-4xl tracking-wider text-neutral-800">PROFILE</h1>
+				<p class="mt-1 text-sm text-[#8B6B4A]">Manage your account and organization details</p>
+			</div>
 
-  <Card.Root>
-    <Card.Header>
-      <Card.Title class="flex items-center gap-2">
-        <Building class="w-6 h-6" />
-        Organization Details
-      </Card.Title>
-    </Card.Header>
-    <Card.Content class="space-y-4">
-      <div class="flex items-center gap-4">
-        <Building class="w-5 h-5 text-muted-foreground" />
-        <div class="flex-1 flex justify-between items-center">
-          <span class="font-medium">Store Name</span>
-          <span class="text-muted-foreground">{organization.store_name || 'N/A'}</span>
-        </div>
-      </div>
-      <Separator />
-      <div class="flex items-center gap-4">
-        <Phone class="w-5 h-5 text-muted-foreground" />
-        <div class="flex-1 flex justify-between items-center">
-          <span class="font-medium">Phone</span>
-          <span class="text-muted-foreground">{organization.phone || 'N/A'}</span>
-        </div>
-      </div>
-      <Separator />
-      <div class="flex items-center gap-4">
-        <Globe class="w-5 h-5 text-muted-foreground" />
-        <div class="flex-1 flex justify-between items-center">
-          <span class="font-medium">Country</span>
-          <span class="text-muted-foreground">{organization.country || 'N/A'}</span>
-        </div>
-      </div>
-      <Separator />
-      <div class="flex items-center gap-4">
-        <MapPin class="w-5 h-5 text-muted-foreground" />
-        <div class="flex-1 flex justify-between items-center">
-          <span class="font-medium">Location</span>
-          <span class="text-muted-foreground">{organization.location || 'N/A'}</span>
-        </div>
-      </div>
-      <Separator />
-      <div class="flex items-center gap-4">
-        {#if organization.status}
-            <CheckCircle class="w-5 h-5 text-green-500" />
-        {:else}
-            <XCircle class="w-5 h-5 text-red-500" />
-        {/if}
-        <div class="flex-1 flex justify-between items-center">
-          <span class="font-medium">Status</span>
-          <span class:text-green-500={organization.status} class:text-red-500={!organization.status}>
-            {organization.status ? 'Active' : 'Inactive'}
-          </span>
-        </div>
-      </div>
-    </Card.Content>
-  </Card.Root>
+			<!-- Main Profile Card -->
+			<div class="mb-6 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+				<!-- Profile Content -->
+				<div class="px-8 py-8">
+					<!-- Avatar & Basic Info -->
+					<div class="mb-6 flex flex-col md:flex-row md:items-start md:justify-between">
+						<div class="flex flex-col gap-6 md:flex-row">
+							<div class="group relative">
+                <form class="flex flex-col gap-2"  {...updateAvatar.enhance(async ({form, data, submit}) =>{
+
+                  
+                })}>
+                <Avatar.Root class="h-32 w-32 border-4 border-background">
+									<Avatar.Image src={backgorundImage} alt={username} />
+									<Avatar.Fallback>{username?.charAt(0)}</Avatar.Fallback>
+                </Avatar.Root>
+                {#if editing}
+                  <Input bind:files type="file" accept="image/png:image/jpeg" name="avatar" class="cursor-pointer text-sm w-32" />
+                {/if}
+                </form>
+							</div>
+
+							<!-- Name & Email -->
+							<div>
+								{#if editing}
+									<form
+										{...updateUsername.enhance(async ({ form, data, submit }) => {
+											isUpdating = true;
+											await submit();
+											isUpdating = false;
+
+											if (updateUsername.issues?.username) {
+												handleUpdateError(updateUsername.issues.username[0].message);
+												return;
+											}
+											form.reset();
+											handleUpdateSuccess('Username updated successfully');
+										})}
+										class="flex flex-row gap-2 py-2"
+									>
+										<Input
+											id="username"
+											name={updateUsername.field('username')}
+											bind:value={username}
+											placeholder={profile.username}
+											disabled={isUpdating}
+											aria-invalid={!!updateUsername.issues?.username}
+										/>
+										<Button
+											variant="outline"
+											class="cursor-pointer"
+											type="submit"
+											disabled={isUpdating}
+										>
+											{#if isUpdating}
+												<Loader class="mr-2 h-4 w-4 animate-spin-clockwise" />
+												Saving...
+											{:else}
+												<Save class="mr-2 h-4 w-4" />
+												Save
+											{/if}
+										</Button>
+									</form>
+								{:else}
+									<h2 class="mb-2 text-3xl font-bold text-neutral-800">{profile.username}</h2>
+								{/if}
+								<p class="mb-3 flex items-center gap-2 text-neutral-600">
+									<Mail class="h-4 w-4" />
+									{profile.email}
+								</p>
+								<Badge class="bg-[#8B6B4A] px-3 py-1 text-sm hover:bg-[#8B6B4A]">
+									{profile.role}
+								</Badge>
+							</div>
+						</div>
+
+						<!-- Edit Username Button -->
+						<div class="mt-4 md:mt-0">
+							<Button
+								variant="outline"
+								size="sm"
+								onclick={() => (editing = !editing)}
+								class="cursor-pointer gap-2"
+							>
+								<Pencil class="h-4 w-4" />
+								Edit Profile
+							</Button>
+						</div>
+					</div>
+
+					<!-- Account Details Grid -->
+					<div class="mt-8 grid grid-cols-1 gap-6 border-t border-neutral-200 pt-6 md:grid-cols-2">
+						<div class="flex items-start gap-3">
+							<div class="rounded-lg bg-neutral-100 p-2">
+								<User class="h-5 w-5 text-[#8B6B4A]" />
+							</div>
+							<div>
+								<p class="mb-1 text-sm text-neutral-500">User ID</p>
+								<p class="font-mono text-sm font-medium text-neutral-800">
+									{profile.id.slice(0, 8)}...
+								</p>
+							</div>
+						</div>
+
+						<div class="flex items-start gap-3">
+							<div class="rounded-lg bg-neutral-100 p-2">
+								<Calendar class="h-5 w-5 text-[#8B6B4A]" />
+							</div>
+							<div>
+								<p class="mb-1 text-sm text-neutral-500">Member Since</p>
+								<p class="font-medium text-neutral-800">{formatDate(profile.created_at)}</p>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Organization & Manager Cards -->
+			<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+				<!-- Organization Card -->
+				<div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+					<div class="border-b border-neutral-200 px-6 py-5">
+						<div class="flex items-center justify-between">
+							<div class="flex items-center gap-3">
+								<div class="rounded-lg bg-[#8B6B4A]/10 p-2">
+									<Building class="h-5 w-5 text-[#8B6B4A]" />
+								</div>
+								<h3 class="text-lg font-bold text-neutral-800">Organization</h3>
+							</div>
+							{#if organization.status}
+								<Badge class="bg-green-100 text-green-700 hover:bg-green-100">
+									<CheckCircle class="mr-1 h-3 w-3" />
+									Active
+								</Badge>
+							{:else}
+								<Badge class="bg-red-100 text-red-700 hover:bg-red-100">
+									<XCircle class="mr-1 h-3 w-3" />
+									Inactive
+								</Badge>
+							{/if}
+						</div>
+					</div>
+
+					<div class="px-6 py-5">
+						<div class="space-y-4">
+							<!-- Store Name -->
+							<div class="flex items-start gap-3">
+								<div class="rounded-lg bg-neutral-100 p-2">
+									<Building class="h-4 w-4 text-[#8B6B4A]" />
+								</div>
+								<div class="flex-1">
+									<p class="mb-0.5 text-sm text-neutral-500">Store Name</p>
+									<p class="font-medium text-neutral-800">
+										{organization.store_name || 'Not specified'}
+									</p>
+								</div>
+							</div>
+
+							<!-- Phone -->
+							<div class="flex items-start gap-3">
+								<div class="rounded-lg bg-neutral-100 p-2">
+									<Phone class="h-4 w-4 text-[#8B6B4A]" />
+								</div>
+								<div class="flex-1">
+									<p class="mb-0.5 text-sm text-neutral-500">Phone</p>
+									<p class="font-medium text-neutral-800">
+										{organization.phone || 'Not specified'}
+									</p>
+								</div>
+							</div>
+
+							<!-- Location -->
+							<div class="flex items-start gap-3">
+								<div class="rounded-lg bg-neutral-100 p-2">
+									<MapPin class="h-4 w-4 text-[#8B6B4A]" />
+								</div>
+								<div class="flex-1">
+									<p class="mb-0.5 text-sm text-neutral-500">Location</p>
+									<p class="font-medium text-neutral-800">
+										{organization.location || 'Not specified'}
+									</p>
+								</div>
+							</div>
+
+							<!-- Country -->
+							<div class="flex items-start gap-3">
+								<div class="rounded-lg bg-neutral-100 p-2">
+									<Globe class="h-4 w-4 text-[#8B6B4A]" />
+								</div>
+								<div class="flex-1">
+									<p class="mb-0.5 text-sm text-neutral-500">Country</p>
+									<p class="font-medium text-neutral-800">
+										{organization.country || 'Not specified'}
+									</p>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Store Manager Card -->
+				<div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+					<div class="border-b border-neutral-200 px-6 py-5">
+						<div class="flex items-center gap-3">
+							<div class="rounded-lg bg-[#8B6B4A]/10 p-2">
+								<User class="h-5 w-5 text-[#8B6B4A]" />
+							</div>
+							<h3 class="text-lg font-bold text-neutral-800">Store Manager</h3>
+						</div>
+					</div>
+
+					<div class="px-6 py-5">
+						<div class="space-y-4">
+							<p class="mb-4 text-sm text-neutral-600">Need help? Contact your store manager</p>
+
+							{#if organization.manager}
+								<!-- Manager Username -->
+								<div class="flex items-start gap-3">
+									<div class="rounded-lg bg-neutral-100 p-2">
+										<User class="h-4 w-4 text-[#8B6B4A]" />
+									</div>
+									<div class="flex-1">
+										<p class="mb-0.5 text-sm text-neutral-500">Manager Name</p>
+										<p class="font-medium text-neutral-800">
+											{organization.manager.username}
+										</p>
+									</div>
+								</div>
+
+								<!-- Manager Email -->
+								<div class="flex items-start gap-3">
+									<div class="rounded-lg bg-neutral-100 p-2">
+										<MailIcon class="h-4 w-4 text-[#8B6B4A]" />
+									</div>
+									<div class="flex-1">
+										<p class="mb-0.5 text-sm text-neutral-500">Manager Email</p>
+										<p class="font-medium text-neutral-800">
+											{organization.manager.email}
+										</p>
+									</div>
+								</div>
+
+								<!-- Contact Button -->
+								<div class="pt-2">
+									<Button class="w-full gap-2 bg-[#8B6B4A] text-white hover:bg-[#6B5239]">
+										<Mail class="h-4 w-4" />
+										Contact Manager
+									</Button>
+								</div>
+							{:else}
+								<p class="text-sm text-neutral-500">No manager assigned to this organization</p>
+							{/if}
+
+							<p class="pt-2 text-center text-xs text-neutral-500">
+								Your manager can help with schedules, time-off requests, and other workplace matters
+							</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</main>
 </div>
-
-
-
-

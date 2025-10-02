@@ -18,10 +18,15 @@ export const load: PageServerLoad = async ({ params, locals: { supabase } }) => 
     throw error(404, 'User not found');
   }
 
-  const { data: organization, error:organizationError } = await supabase
+  const { data: organization, error: organizationError } = await supabase
     .from('core_organizations')
-    .select('*')
-    .eq('id',profile.org_id)
+    .select(`
+        *,
+        manager:profiles!core_organizations_manager_id_fkey (
+            *
+        )
+    `)
+    .eq('id', profile.org_id)
     .single<Organization>();
   
   if(organizationError) {
