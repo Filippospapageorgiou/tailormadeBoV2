@@ -2,7 +2,7 @@
 	import BlogCard from '$lib/components/custom/Blog/blogCard.svelte';
 	import * as Pagination from '$lib/components/ui/pagination';
 	import { getPosts } from './data.remote';
-	import { Skeleton } from '$lib/components/ui/skeleton'; // <-- 1. Import Skeleton
+	import { Skeleton } from '$lib/components/ui/skeleton';
 
 	let { data } = $props();
 	let { user } = $derived(data)

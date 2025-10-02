@@ -12,6 +12,7 @@
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 	import { useSidebar } from '$lib/components/ui/sidebar/index.js';
+	import { getProfileContext } from '$lib/stores/profile.svelte';
 
 	let isLoggingOut = $state(false);
 
@@ -40,16 +41,7 @@
 		}
 	}
 
-	let {
-		user
-	}: {
-		user: {
-			id: string | undefined;
-			name: string | undefined;
-			email: string | undefined;
-			avatar: string | undefined;
-		};
-	} = $props();
+	let profile = getProfileContext();
 
 	const sidebar = useSidebar();
 </script>
@@ -65,12 +57,12 @@
 						class="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
 					>
 						<Avatar.Root class="size-8 rounded-lg">
-							<Avatar.Image src={user.avatar} alt={user.name} />
+							<Avatar.Image src={profile.imageUrl} alt={profile.username} />
 							<Avatar.Fallback class="rounded-lg">CN</Avatar.Fallback>
 						</Avatar.Root>
 						<div class="grid flex-1 text-left text-sm leading-tight">
-							<span class="truncate font-medium">{user.name}</span>
-							<span class="truncate text-xs">{user.email}</span>
+							<span class="truncate font-medium">{profile.username}</span>
+							<span class="truncate text-xs">{profile.email}</span>
 						</div>
 						<ChevronsUpDownIcon class="ml-auto size-4" />
 					</Sidebar.MenuButton>
@@ -85,12 +77,12 @@
 				<DropdownMenu.Label class="p-0 font-normal">
 					<div class="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
 						<Avatar.Root class="size-8 rounded-lg">
-							<Avatar.Image src={user.avatar} alt={user.name} />
+							<Avatar.Image src={profile.imageUrl} alt={profile.username} />
 							<Avatar.Fallback class="rounded-lg">CN</Avatar.Fallback>
 						</Avatar.Root>
 						<div class="grid flex-1 text-left text-sm leading-tight">
-							<span class="truncate font-medium">{user.name}</span>
-							<span class="truncate text-xs">{user.email}</span>
+							<span class="truncate font-medium">{profile.username}</span>
+							<span class="truncate text-xs">{profile.email}</span>
 						</div>
 					</div>
 				</DropdownMenu.Label>
@@ -103,7 +95,7 @@
 				</DropdownMenu.Group>
 					<DropdownMenu.Item>
 						<BadgeCheckIcon />
-						<button class="text-start cursor-pointer w-full" onclick={() => {goto(`/app/profile/${user.id}`)}}>Account</button>
+						<button class="text-start cursor-pointer w-full" onclick={() => {goto(`/app/profile/${profile.id}`)}}>Account</button>
 					</DropdownMenu.Item>
 				<DropdownMenu.Separator />
 				<DropdownMenu.Item>

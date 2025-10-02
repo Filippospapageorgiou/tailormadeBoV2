@@ -20,9 +20,12 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { updateUsername, updateAvatar } from './data.remote';
-	import { toast } from '$lib/stores/toast.svelte.js';
+	import { getProfileContext } from '$lib/stores/profile.svelte.js';
+  import { toast } from '$lib/stores/toast.svelte';
 
 	let { data } = $props();
+
+	const profileStore = getProfileContext();
 
 	let isUpdating = $state(false);
   let isUpdatingAvatar = $state(false);
@@ -35,21 +38,22 @@
 
 	$effect(() => {
 		username = profile.username;
-		backgorundImage = profile.image_url;
 	});
 
 	let editing = $state(false);
 
   let files:FileList | undefined = $state();
   $effect(() => {
-        if(files && files[0]){
+        if(editing){
+          if(files && files[0]){
             const reader = new FileReader();
             reader.addEventListener('load', ()=>{
                 backgorundImage = reader.result?.toString() || '';
             })
             reader.readAsDataURL(files[0])
+          }
         }else{
-            backgorundImage = '';
+          backgorundImage = profile.image_url;
         }
     })
 
@@ -68,6 +72,7 @@
 		toast.text = text;
 		isUpdating = false;
 		editing = false;
+		profileStore.updateUsername(username);
 	}
 
 	function handleUpdateError(text: string) {
@@ -77,6 +82,26 @@
 		toast.text = text;
 		isUpdating = false;
 		editing = false;
+	}
+
+	function handleAvatarUpdateSuccess(text: string, newImageUrl: string) {
+		toast.show = true;
+		toast.status = true;
+		toast.title = 'Success';
+		toast.text = text;
+		isUpdatingAvatar = false;
+		backgorundImage = newImageUrl;
+    editing = false;
+		profileStore.updateAvatar(newImageUrl);
+	}
+
+	function handleAvatarUpdateError(text: string) {
+		toast.show = true;
+		toast.status = false;
+		toast.title = 'Error';
+		toast.text = text;
+		isUpdatingAvatar = false;
+    editing = false;
 	}
 </script>
 
@@ -97,18 +122,57 @@
 					<div class="mb-6 flex flex-col md:flex-row md:items-start md:justify-between">
 						<div class="flex flex-col gap-6 md:flex-row">
 							<div class="group relative">
-                <form class="flex flex-col gap-2"  {...updateAvatar.enhance(async ({form, data, submit}) =>{
+								<form class="flex flex-col gap-2" enctype="multipart/form-data" {...updateAvatar.enhance(async ({ form, data,submit }) => {
+										isUpdatingAvatar = true;
+										await submit();
 
-                  
-                })}>
-                <Avatar.Root class="h-32 w-32 border-4 border-background">
-									<Avatar.Image src={backgorundImage} alt={username} />
-									<Avatar.Fallback>{username?.charAt(0)}</Avatar.Fallback>
-                </Avatar.Root>
-                {#if editing}
-                  <Input bind:files type="file" accept="image/png:image/jpeg" name="avatar" class="cursor-pointer text-sm w-32" />
-                {/if}
-                </form>
+										if (updateAvatar.issues?.avatar) {
+											handleAvatarUpdateError(updateAvatar.issues.avatar[0].message);
+											return;
+										}
+
+										if (updateAvatar.result?.success && updateAvatar.result.imageUrl) {
+											handleAvatarUpdateSuccess(
+												'Avatar updated successfully',
+												updateAvatar.result.imageUrl
+											);
+										} else {
+											handleAvatarUpdateError(
+												updateAvatar.result?.message || 'An unknown error occurred'
+											);
+										}
+                    isUpdatingAvatar = false;
+										form.reset();
+									})}
+								>
+									<Avatar.Root class="h-32 w-32 border-4 border-background">
+										<Avatar.Image src={backgorundImage} alt={username} />
+										<Avatar.Fallback>{username?.charAt(0)}</Avatar.Fallback>
+									</Avatar.Root>
+									{#if editing}
+										<Input
+											bind:files
+											type="file"
+											accept="image/png,image/jpeg"
+											name="avatar"
+											class="cursor-pointer text-sm w-31"
+										/>
+										<Button
+											variant="outline"
+											class="cursor-pointer"
+											type="submit"
+											disabled={isUpdatingAvatar}
+										>
+											{#if isUpdatingAvatar}
+												<Loader class="mr-2 h-4 w-4 animate-spin-clockwise" />
+												Saving...
+											{:else}
+												<Save class="mr-2 h-4 w-4" />
+												Save Avatar
+											{/if}
+										</Button>
+									{/if}
+								</form>
 							</div>
 
 							<!-- Name & Email -->
@@ -170,7 +234,7 @@
 							<Button
 								variant="outline"
 								size="sm"
-								onclick={() => (editing = !editing)}
+								onclick={(()=> {editing = !editing})}
 								class="cursor-pointer gap-2"
 							>
 								<Pencil class="h-4 w-4" />

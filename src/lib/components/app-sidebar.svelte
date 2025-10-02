@@ -7,7 +7,7 @@
 	import MapIcon from "@lucide/svelte/icons/map";
 	import SendIcon from "@lucide/svelte/icons/send";
 	import Settings2Icon from "@lucide/svelte/icons/settings-2";
-	import { NotebookPen, Coffee } from "lucide-svelte";
+	import { NotebookPen, Coffee, EuroIcon } from "lucide-svelte";
 	
 
 
@@ -35,25 +35,31 @@
 				icon: NotebookPen,
 			},
 			{
-				title: "Settings",
-				url: "#",
+				title: "Register",
+				url:"/app/register",
+				icon: EuroIcon,
+			},
+			{
+				title: "Admin Settings",
+				requiresAdmin: true,
+				url: "/app",
 				icon: Settings2Icon,
 				items: [
 					{
-						title: "General",
-						url: "#",
+						title: "Recipes",
+						url: "/app/settings/recipes_settings",
 					},
 					{
-						title: "Team",
-						url: "#",
+						title: "Ingridients",
+						url: "/app/settings/ingridients_settings",
 					},
 					{
-						title: "Billing",
-						url: "#",
+						title: "Blog",
+						url: "/app/settings/blog_settings",
 					},
 					{
-						title: "Limits",
-						url: "#",
+						title: "Manage users",
+						url: "/app/settings/manage_users",
 					},
 				],
 			},
@@ -98,15 +104,6 @@
 	import * as Sidebar from "$lib/components/ui/sidebar/index.js";
 	import CommandIcon from "@lucide/svelte/icons/command";
 	import type { ComponentProps } from "svelte";
-	import { getUserContext } from "$lib/stores/profile.svelte";
-
-	let profile = getUserContext();
-	let profileInfo = {
-		id: profile?.id,
-		name: profile?.username,
-    	email: profile?.email,
-    	avatar: profile?.image_url,
-	}
 
 	let { ref = $bindable(null), ...restProps }: ComponentProps<typeof Sidebar.Root> = $props();
 </script>
@@ -139,6 +136,6 @@
 		<NavSecondary items={data.navSecondary} class="mt-auto" />
 	</Sidebar.Content>
 	<Sidebar.Footer>
-		<NavUser user={profileInfo} />
+		<NavUser />
 	</Sidebar.Footer>
 </Sidebar.Root>

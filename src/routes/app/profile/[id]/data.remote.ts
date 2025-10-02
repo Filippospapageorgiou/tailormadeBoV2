@@ -3,7 +3,7 @@ import { error } from '@sveltejs/kit';
 import { createAdminClient, createServerClient } from '$lib/supabase/server';
 import type { Provider } from '@supabase/supabase-js';
 import { requireAuthenticatedUser } from '$lib/supabase/shared';
-import { file, z } from "zod/v4";
+import { z } from "zod/v4";
 
 const usernameSchema = z.object({username :z
     .string({ error: 'Username is required.' })

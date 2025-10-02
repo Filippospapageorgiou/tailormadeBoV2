@@ -5,17 +5,17 @@
   import * as Breadcrumb from "$lib/components/ui/breadcrumb/index.js";
   import { Separator } from "$lib/components/ui/separator/index.js";
   import * as Sidebar from "$lib/components/ui/sidebar/index.js";
-  import { setUserContext, getUserContext } from '$lib/stores/profile.svelte.js';
+  import { setProfileContext } from '$lib/stores/profile.svelte.js';
   
   let { data,children } = $props()
   
   let profile = $derived(data.profile || null);  
 
   // svelte-ignore state_referenced_locally
-  setUserContext(profile);
+  setProfileContext(profile);
 
   $effect(() => {
-    profile = data.profile || null;
+    profile = data.prfile || null;
   });
   
   let breadcrumbs = $derived(() => {
