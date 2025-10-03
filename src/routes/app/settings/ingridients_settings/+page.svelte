@@ -17,14 +17,17 @@
 		{ value: 'κιλά (kg)', label: 'κιλά (kg)' },
 		{ value: 'μιλιλίτρα (ml)', label: 'μιλιλίτρα (ml)' },
 		{ value: 'λίτρα (l)', label: 'λίτρα (l)' },
-		{ value: 'κουταλιά της σούπας (tbsp)', label: 'κουταλιά της σούπas (tbsp)' },
+		{ value: 'κουταλιά της σούπας (tbsp)', label: 'κουταλιά της σούπas (tbsp)' }
 	]);
 
 	let query = getIngridients();
 
+	let refreshAction = $state(false);
 	async function refresh() {
+		refreshAction = true;
 		await query.refresh();
 		clearAllFilters();
+		refreshAction = false;
 	}
 
 	let allIngridients = $derived(query.current?.ingredients ?? []);
@@ -51,7 +54,7 @@
 	});
 
 	let value = $state('');
-	
+
 	const triggerContent = $derived(categories.find((c) => c === value) ?? 'select a category');
 
 	let editingIngredient = $state<Ingredient | null>(null);
@@ -98,10 +101,10 @@
 
 	async function handleEdit() {
 		if (!editingIngredient) return;
-		let id = editingIngredient.id
+		let id = editingIngredient.id;
 		editingIngredient = null;
 		showProgress('Updating ingredient...');
-		
+
 		try {
 			const result = await editIngredient({
 				id: id,
@@ -132,42 +135,42 @@
 	}
 
 	async function handleAdd() {
-			addingIngredient = false;
-			showProgress('Adding ingredient...');
+		addingIngredient = false;
+		showProgress('Adding ingredient...');
 
-			try {
-				const result = await addIngredient(addFormData);
+		try {
+			const result = await addIngredient(addFormData);
 
-				if (result.success) {
-					await query.refresh();
-					toast.show = true;
-					toast.status = true;
-					toast.title = 'Success';
-					toast.text = result.message;
-					addFormData = { name: '', category: '', measurement_unit: '', description: '' };
-				} else {
-					toast.show = true;
-					toast.status = false;
-					toast.title = 'Error';
-					toast.text = result.message || 'Failed to add ingredient.';
-				}
-			} catch (error: any) {
+			if (result.success) {
+				await query.refresh();
+				toast.show = true;
+				toast.status = true;
+				toast.title = 'Success';
+				toast.text = result.message;
+				addFormData = { name: '', category: '', measurement_unit: '', description: '' };
+			} else {
 				toast.show = true;
 				toast.status = false;
 				toast.title = 'Error';
-				toast.text = error.message || 'An unexpected error occurred.';
-			} finally {
-				hideProgress();
+				toast.text = result.message || 'Failed to add ingredient.';
 			}
+		} catch (error: any) {
+			toast.show = true;
+			toast.status = false;
+			toast.title = 'Error';
+			toast.text = error.message || 'An unexpected error occurred.';
+		} finally {
+			hideProgress();
 		}
+	}
 
 	let returnMessage = $state('');
 	async function handleDelete(id: number) {
 		if (!id) return;
-		
+
 		showProgress('Deleting ingredient...');
 		deletingIngredient = null;
-		
+
 		try {
 			const result = await deleteIngredient({ ingridientId: id.toString() });
 			returnMessage = result.message;
@@ -250,7 +253,10 @@
 					<Tooltip.Provider>
 						<Tooltip.Root>
 							<Tooltip.Trigger
-								><Button variant="default" size="sm" class="h-6 cursor-pointer px-2 text-xs"
+								><Button
+									variant="default"
+									size="sm"
+									class="h-6 cursor-pointer px-2 text-xs"
 									onclick={() => (addingIngredient = true)}
 								>
 									<Plus class="mr-1 h-3 w-3" />
@@ -268,9 +274,10 @@
 									variant="secondary"
 									size="sm"
 									onclick={refresh}
+									disabled={refreshAction}
 									class="h-6 cursor-pointer px-2 text-xs"
 								>
-									<RefreshCcw class="mr-1 h-3 w-3" />
+									<RefreshCcw class={`mr-2 h-4 w-4 ${refreshAction ? 'animate-spin-clockwise' : ''}`} />
 								</Button>
 							</Tooltip.Trigger>
 							<Tooltip.Content>
@@ -469,9 +476,7 @@
 	<Dialog.Content class="sm:max-w-[500px]">
 		<Dialog.Header>
 			<Dialog.Title>Add New Ingredient</Dialog.Title>
-			<Dialog.Description>
-				Fill in the details for the new ingredient.
-			</Dialog.Description>
+			<Dialog.Description>Fill in the details for the new ingredient.</Dialog.Description>
 		</Dialog.Header>
 		<div class="grid gap-4 py-4">
 			<div class="grid grid-cols-4 items-center gap-4">
@@ -557,7 +562,6 @@
 		</Dialog.Header>
 
 		<Dialog.Footer class="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
-		
 			<Button
 				variant="outline"
 				class="cursor-pointer border-gray-300 text-gray-700 hover:bg-gray-100"
