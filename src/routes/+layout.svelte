@@ -20,7 +20,7 @@
 </script>
 
 <svelte:head>
-	<link rel="logo" href={favicon} />
+  <link rel="icon" href={favicon} />
 </svelte:head>
 
 <CustomAlert />

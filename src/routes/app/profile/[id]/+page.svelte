@@ -101,7 +101,7 @@
 		toast.title = 'Error';
 		toast.text = text;
 		isUpdatingAvatar = false;
-    editing = false;
+    	editing = false;
 	}
 </script>
 
