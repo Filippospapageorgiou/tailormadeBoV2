@@ -89,9 +89,8 @@
 		toast.status = true;
 		toast.title = 'Success';
 		toast.text = text;
-		isUpdatingAvatar = false;
 		backgorundImage = newImageUrl;
-    editing = false;
+    	editing = false;
 		profileStore.updateAvatar(newImageUrl);
 	}
 
@@ -141,7 +140,7 @@
 												updateAvatar.result?.message || 'An unknown error occurred'
 											);
 										}
-                    isUpdatingAvatar = false;
+										isUpdatingAvatar = false;
 										form.reset();
 									})}
 								>
