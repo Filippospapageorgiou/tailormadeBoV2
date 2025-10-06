@@ -5,6 +5,8 @@
 	import * as Accordion from '$lib/components/ui/accordion';
 	import IngredientsList from './IngredientsList.svelte';
     import EditBeverageDialog from './EditBeverageDialog.svelte';
+	import AddBeverageDialog from './AddBeverageDialog.svelte';
+	import DeleteBeverageDialog from './DeleteBeverageDialog.svelte';
 
 	let {
 		beverage,
@@ -117,3 +119,4 @@
 </div>
 
 <EditBeverageDialog bind:open={editingBeverage} {beverage} {onUpdate} />
+<DeleteBeverageDialog bind:open={deletingBeverage} {beverage} {onUpdate} />

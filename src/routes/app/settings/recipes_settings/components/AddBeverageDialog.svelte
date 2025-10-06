@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Beverage } from '$lib/models/database.types';
-	import { editBeverage } from '../data.remote';
+	import { addBeverage } from '../data.remote';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import { Label } from '$lib/components/ui/label';
 	import { Input } from '$lib/components/ui/input';
@@ -10,44 +10,27 @@
 	import { toast } from '$lib/stores/toast.svelte';
 	import { Upload, X, CloudIcon } from 'lucide-svelte';
 	import * as Empty from '$lib/components/ui/empty/index.js';
+    import * as Avatar from '$lib/components/ui/avatar/index.js';
 
 	let {
 		open = $bindable(),
-		beverage,
-		onUpdate
+		onSuccess
 	}: {
 		open: boolean;
-		beverage: Beverage;
-		onUpdate: () => Promise<void>;
+		onSuccess: () => Promise<void>;
 	} = $props();
 
-	let editFormData = $state({
+	let addFormData = $state({
 		name: '',
 		description: '',
 		image_url: '',
 		execution: ''
 	});
 
-	// File handling
+
 	let files: FileList | undefined = $state();
 	let previewUrl = $state('');
-	let imageCleared = $state(false);
-
-	// Initialize form data when dialog opens
-	$effect(() => {
-		if (open) {
-			editFormData = {
-				name: beverage.name,
-				description: beverage.description || '',
-				image_url: beverage.image_url || '',
-				execution: beverage.execution || ''
-			};
-			// Reset file input and preview
-			files = undefined;
-			previewUrl = '';
-			imageCleared = false;
-		}
-	});
+	let fileInput = $state<any>();
 
 	$effect(() => {
 		if (files && files[0]) {
@@ -61,11 +44,16 @@
 		}
 	});
 
-	// Determine which image to show
-	let displayImage = $derived(previewUrl || editFormData.image_url);
+    function refreshFiles() {
+		files = undefined;
+		previewUrl = '';
+		if (fileInput) {
+			fileInput.value = ''; 
+		}
+	}
 
 	async function handleEditSuccess(text: string) {
-		await onUpdate();
+		await onSuccess();
 		toast.show = true;
 		toast.status = true;
 		toast.title = 'Success';
@@ -78,45 +66,59 @@
 		toast.title = 'Error';
 		toast.text = text;
 	}
+
+    function refreshInputFields(){
+        files = undefined;
+        previewUrl = '';
+        addFormData = {
+		    name: '',
+		    description: '',
+		    image_url: '',
+		    execution: ''
+	    };
+    }
 </script>
 
 <Dialog.Root bind:open>
 	<Dialog.Content class="max-h-[90vh] overflow-y-auto sm:max-w-[600px]">
 		<Dialog.Header>
-			<Dialog.Title>Edit Beverage</Dialog.Title>
-			<Dialog.Description>
-				Make changes to the beverage details. Click save when you're done.
-			</Dialog.Description>
+			<Dialog.Title>Add Beverage</Dialog.Title>
+			<Dialog.Description>Fill out all the nesecary fields to add a beverage</Dialog.Description>
 		</Dialog.Header>
 		<form
 			class="space-y-4 py-4"
 			enctype="multipart/form-data"
-			{...editBeverage.enhance(async ({ form, data, submit }) => {
+			{...addBeverage.enhance(async ({ form, data, submit }) => {
 				open = false;
-				showProgress('Updating beverage...');
+				showProgress('Adding beverage....');
 				await submit();
 
-				if (editBeverage.result?.success) {
-					handleEditSuccess(editBeverage.result?.message || 'Successfully updated beverage');
+				if (addBeverage.result?.success) {
+					handleEditSuccess(addBeverage.result?.message || 'Successfully updated beverage');
 				} else {
-					handleEditError(editBeverage.result?.message || 'An unexpected error occurred.');
+					handleEditError(addBeverage.result?.message || 'An unexpected error occurred.');
 				}
-
+                refreshInputFields();
 				hideProgress();
 				form.reset();
 			})}
 		>
-			<!-- Hidden ID field -->
-			<input type="hidden" name={editBeverage.field('id')} value={beverage.id} />
-			<input type="hidden" name={editBeverage.field('image_cleared')} value={imageCleared} />
+			<Input
+				id="file-upload"
+				type="file"
+				name={addBeverage.field('image_url')}
+				accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
+				bind:files
+                bind:this={fileInput}
+				class="hidden"
+			/>
 
-			<!-- Name -->
 			<div class="space-y-2">
 				<Label for="edit-name">Name *</Label>
 				<Input
 					id="edit-name"
-					name={editBeverage.field('name')}
-					bind:value={editFormData.name}
+					name={addBeverage.field('name')}
+					bind:value={addFormData.name}
 					placeholder="e.g., Espresso"
 				/>
 			</div>
@@ -126,48 +128,46 @@
 				<Label for="edit-description">Description</Label>
 				<Textarea
 					id="edit-description"
-					name={editBeverage.field('description')}
-					bind:value={editFormData.description}
+					name={addBeverage.field('description')}
+					bind:value={addFormData.description}
 					placeholder="Brief description of the beverage..."
 					rows={3}
 					class="resize-none"
 				/>
 			</div>
 
-			<!-- Image Upload Section -->
 			<div class="space-y-2">
-				<Label>Beverage Image</Label>
-				<Input
-					id="file-upload"
-					type="file"
-					name={editBeverage.field('image_url')}
-					accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
-					bind:files
-					class="hidden"
-				/>
-				{#if displayImage}
-					<div class="relative h-56 w-full overflow-hidden rounded-lg border border-gray-200">
+				{#if !previewUrl}
+					<Label>Beverage Image</Label>
+					<Empty.Root class="border border-dashed">
+						<Empty.Header>
+							<Empty.Media variant="icon">
+								<CloudIcon />
+							</Empty.Media>
+							<Empty.Title>Beverage image empty</Empty.Title>
+							<Empty.Description>Upload image for your new beverage</Empty.Description>
+						</Empty.Header>
+						<Empty.Content>
+							<Input
+								type="file"
+								accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
+								bind:files
+                                bind:this={fileInput}
+							/>
+						</Empty.Content>
+					</Empty.Root>
+				{:else}
+					<div class="relative w-full overflow-hidden rounded-lg border border-gray-200">
 						<img
-							src={displayImage}
-							alt={editFormData.name || 'Beverage preview'}
-							class="h-full w-full object-cover"
+							src={previewUrl}
+							alt={'Beverage preview'}
+							class="h-64 w-full object-fit-contain"
 						/>
 						<div class="absolute top-2 right-2 flex gap-2">
-							<label
-								for="file-upload"
-								class="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md bg-secondary text-sm font-medium text-secondary-foreground shadow-md transition-colors hover:bg-secondary/80 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-							>
-								<Upload class="h-4 w-4" />
-								<span class="sr-only">Change Image</span>
-							</label>
+							<Button variant="secondary" onclick={refreshFiles}>
+                                <X class="h-4 w-4" />
+                            </Button>
 						</div>
-						{#if previewUrl}
-							<div
-								class="absolute bottom-2 left-2 rounded bg-black/60 px-2 py-1 text-xs text-white"
-							>
-								New image selected
-							</div>
-						{/if}
 					</div>
 				{/if}
 			</div>
@@ -177,8 +177,8 @@
 				<Label for="edit-execution">Execution Instructions *</Label>
 				<Textarea
 					id="edit-execution"
-					name={editBeverage.field('execution')}
-					bind:value={editFormData.execution}
+					name={addBeverage.field('execution')}
+					bind:value={addFormData.execution}
 					placeholder="Step-by-step instructions... Use '- ' for bullet points"
 					rows={8}
 					class="resize-none font-mono text-sm"
@@ -190,11 +190,9 @@
 				<ul class="mt-1 list-disc space-y-1 pl-4">
 					<li>* Required fields</li>
 					<li>Use "- " at the start of lines in execution for bullet points</li>
-					<li>Upload a new image to replace the existing one</li>
 				</ul>
 			</div>
-
-			<Dialog.Footer>
+            <Dialog.Footer>
 				<Button variant="outline" type="button" onclick={() => (open = false)}>Cancel</Button>
 				<Button type="submit" class="cursor-pointer">Save changes</Button>
 			</Dialog.Footer>

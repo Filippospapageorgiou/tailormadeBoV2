@@ -21,7 +21,7 @@
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { updateUsername, updateAvatar } from './data.remote';
 	import { getProfileContext } from '$lib/stores/profile.svelte.js';
-  import { toast } from '$lib/stores/toast.svelte';
+  	import { toast } from '$lib/stores/toast.svelte';
 
 	let { data } = $props();
 

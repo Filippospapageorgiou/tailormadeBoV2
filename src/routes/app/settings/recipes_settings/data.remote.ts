@@ -80,36 +80,83 @@ export const getBeverageIngredients = query(beverageIdSchema, async ({ beverageI
 // ============= COMMANDS =============
 
 const addBeverageSchema = z.object({
-    name: z.string().min(1, { message: 'Name is required' }),
+    name: z.string().min(1, { error: 'Name is required' }),
     description: z.string().optional(),
-    execution: z.string().optional(),
-    image_url: z.string().optional().or(z.literal(''))
+    execution: z.string().min(1, { error: 'Execution is required' }),
+    image_url: z.instanceof(File, { error: 'Please upload a file.' })
+        .refine(file => file.size > 0, 'File cannot be empty.')
+        .refine(file => file.size < 5 * 1024 * 1024, 'File size must be less than 5MB.')
+        .refine(
+            file => ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'].includes(file.type),
+            'Only image files (JPEG, PNG, WebP, GIF) are allowed.'
+        )
+        .optional(),
 });
 
-export const addBeverage = command(addBeverageSchema, async (beverageData) => {
+
+export const addBeverage = form(addBeverageSchema, async (beverageData) => {
     const supabase = createServerClient();
+    try {
+        let imageUrl: string = defaultImageUrl; // fallback default
 
-    const { error } = await supabase
-        .from('beverages')
-        .insert({
-            name: beverageData.name,
-            description: beverageData.description,
-            execution: beverageData.execution,
-            image_url: beverageData.image_url
-        });
+        // If user uploaded an image, upload to Supabase storage
+        if (beverageData.image_url && beverageData.image_url instanceof File) {
+            const fileExt = beverageData.image_url.name.split('.').pop();
+            const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+            const filePath = `new/${fileName}`;
 
-    if (error) {
-        console.error('Error adding beverage:', error);
+            const { data: uploadData, error: uploadError } = await supabase.storage
+                .from('beverages')
+                .upload(filePath, beverageData.image_url, {
+                    cacheControl: '3600',
+                    upsert: false
+                });
+
+            if (uploadError) {
+                console.error('Error uploading image:', uploadError);
+                return {
+                    success: false,
+                    message: 'Failed to upload image.'
+                };
+            }
+
+            // Get public URL
+            const { data: urlData } = supabase.storage
+                .from('beverages')
+                .getPublicUrl(uploadData.path);
+
+            imageUrl = urlData.publicUrl;
+        }
+
+        // Insert beverage into DB
+        const { error: insertError } = await supabase
+            .from('beverages')
+            .insert({
+                name: beverageData.name,
+                description: beverageData.description,
+                execution: beverageData.execution,
+                image_url: imageUrl // always has a value now
+            });
+
+        if (insertError) {
+            console.error('Error inserting beverage:', insertError);
+            return {
+                success: false,
+                message: 'Failed to add beverage.'
+            };
+        }
+
+        return {
+            success: true,
+            message: 'Beverage added successfully'
+        };
+    } catch (err) {
+        console.error('Unexpected error during add beverage:', err);
         return {
             success: false,
-            message: 'An error occurred trying to add the beverage'
+            message: 'An unexpected error occurred while adding beverage.'
         };
     }
-
-    return {
-        success: true,
-        message: 'Beverage added successfully'
-    };
 });
 
 const editBeverageSchema = z.object({
@@ -123,41 +170,102 @@ const editBeverageSchema = z.object({
         ),
     name: z.string().min(1, { error: 'Name is required' }),
     description: z.string().optional(),
-    execution: z.string().min(1, {error : 'Execution is required'}),
+    execution: z.string().min(1, { error: 'Execution is required' }),
     image_url: z.instanceof(File, { error: 'Please upload a file.' })
-    .refine(file => file.size > 0, 'File cannot be empty.')
-    .refine(file => file.size < 5 * 1024 * 1024, 'File size must be less than 5MB.')
-    .refine(
-      file => ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'].includes(file.type), 
-      'Only image files (JPEG, PNG, WebP, GIF) are allowed.'
-    ),
+        .refine(file => file.size > 0, 'File cannot be empty.')
+        .refine(file => file.size < 5 * 1024 * 1024, 'File size must be less than 5MB.')
+        .refine(
+            file => ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'].includes(file.type),
+            'Only image files (JPEG, PNG, WebP, GIF) are allowed.'
+        )
+        .optional(),
 });
 
 export const editBeverage = form(editBeverageSchema, async (beverageData) => {
     const supabase = createServerClient();
+    try {
+        let imageUrl = undefined;
 
-    const { error } = await supabase
-        .from('beverages')
-        .update({
+        if (beverageData.image_url && beverageData.image_url instanceof File) {
+            const { data: currentBeverage } = await supabase
+                .from('beverages')
+                .select('image_url')
+                .eq('id', beverageData.id)
+                .single();
+
+            if (currentBeverage?.image_url && 
+                currentBeverage.image_url.includes('beverages') && 
+                !currentBeverage.image_url.includes('default_url')) {
+                const oldPath = currentBeverage.image_url.split('/beverages/')[1];
+                if (oldPath) {
+                    await supabase.storage
+                        .from('beverages')
+                        .remove([oldPath]);
+                }
+            }
+
+            const fileExt = beverageData.image_url.name.split('.').pop();
+            const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+            const filePath = `${beverageData.id}/${fileName}`;
+
+            const { data: uploadData, error: uploadError } = await supabase.storage
+                .from('beverages')
+                .upload(filePath, beverageData.image_url, {
+                    cacheControl: '3600',
+                    upsert: false
+                });
+
+            if (uploadError) {
+                console.error('Error uploading image:', uploadError);
+                return {
+                    success: false,
+                    message: 'Failed to upload image.'
+                };
+            }
+
+            // Get public URL
+            const { data: urlData } = supabase.storage
+                .from('beverages')
+                .getPublicUrl(uploadData.path);
+
+            imageUrl = urlData.publicUrl;
+        }
+
+        // Update beverage (only update image_url if new image was uploaded)
+        const updateData: any = {
             name: beverageData.name,
             description: beverageData.description,
-            execution: beverageData.execution,
-            image_url: beverageData.image_url
-        })
-        .eq('id', beverageData.id);
+            execution: beverageData.execution
+        };
 
-    if (error) {
-        console.error('Error updating beverage:', error);
+        if (imageUrl) {
+            updateData.image_url = imageUrl;
+        }
+
+        const { error } = await supabase
+            .from('beverages')
+            .update(updateData)
+            .eq('id', beverageData.id);
+
+        if (error) {
+            console.error('Error updating beverage:', error);
+            return {
+                success: false,
+                message: 'An error occurred trying to update the beverage'
+            };
+        }
+
+        return {
+            success: true,
+            message: 'Beverage updated successfully'
+        };
+    } catch (err) {
+        console.error('Unexpected error during beverage update:', err);
         return {
             success: false,
-            message: 'An error occurred trying to update the beverage'
+            message: 'An unexpected error occurred while updating beverage.'
         };
     }
-
-    return {
-        success: true,
-        message: 'Beverage updated successfully'
-    };
 });
 
 const deleteBeverageSchema = z.object({
@@ -171,7 +279,7 @@ const deleteBeverageSchema = z.object({
         )
 });
 
-export const deleteBeverage = command(deleteBeverageSchema, async ({ beverageId }) => {
+export const deleteBeverage = query(deleteBeverageSchema, async ({ beverageId }) => {
     const supabase = createServerClient();
 
     const { error } = await supabase

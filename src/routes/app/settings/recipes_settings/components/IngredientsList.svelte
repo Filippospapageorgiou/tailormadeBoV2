@@ -12,7 +12,6 @@
 	import { showProgress, hideProgress } from '$lib/stores/progress.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { addIngredientToBeverage } from '../data.remote';
-    import EditBeverageDialog from './EditBeverageDialog.svelte';
 
 	let { beverageId }: { beverageId: number } = $props();
 

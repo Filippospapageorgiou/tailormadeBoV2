@@ -6,6 +6,7 @@
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import { X, RefreshCcw, Plus } from 'lucide-svelte';
 	import * as Tooltip from '$lib/components/ui/tooltip';
+	import AddBeverageDialog from './components/AddBeverageDialog.svelte';
 
 	let query = getBeverages();
 
@@ -196,3 +197,4 @@
 	</main>
 </div>
 
+<AddBeverageDialog bind:open={addingBeverage} onSuccess={refresh} />
