@@ -28,7 +28,7 @@
 	const profileStore = getProfileContext();
 
 	let isUpdating = $state(false);
-  let isUpdatingAvatar = $state(false);
+  	let isUpdatingAvatar = $state(false);
 
 	let profile = $derived(data.profile);
 	let organization = $derived(data.organization);
