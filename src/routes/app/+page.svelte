@@ -4,7 +4,10 @@
 	import { Calendar } from '$lib/components/ui/calendar/index.js';
 	import type { Blog } from '$lib/models/database.types';
 	import Hero from '$lib/components/custom/hero/hero.svelte';
-	
+	import * as Empty from "$lib/components/ui/empty/index.js";
+  	import { Button } from "$lib/components/ui/button/index.js";
+  	import RefreshCcwIcon from "@lucide/svelte/icons/refresh-ccw";
+	import { Search } from 'lucide-svelte';
 
 	let { data } = $props();
 	let blog = $derived(data.blog as Blog);
@@ -17,7 +20,6 @@
 		}
 	}
 
-	
 	function truncateText(text: string | null | undefined, maxLength: number = 120) {
 		if (!text || typeof text !== 'string') return '';
 		return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
@@ -36,8 +38,6 @@
 			return '';
 		}
 	}
-
-
 
 	let value: DateValue[] | undefined = $state([today(getLocalTimeZone())]);
 </script>
@@ -60,7 +60,7 @@
 			<Calendar
 				type="multiple"
 				bind:value
-				class="absolute right-0 top-4 origin-top rounded-md transition-all duration-300 ease-out [mask-image:linear-gradient(to_top,transparent_40%,#000_100%)] group-hover:scale-105"
+				class="absolute top-4 right-0 origin-top rounded-md [mask-image:linear-gradient(to_top,transparent_40%,#000_100%)] transition-all duration-300 ease-out group-hover:scale-105"
 			/>
 
 			<div
@@ -84,47 +84,50 @@
 				</div>
 			</div>
 		</div>
-
-		<a 
-				href="/app/blog/{blog.id}" 
-				class="group relative aspect-video overflow-hidden rounded-2xl"
-			>
+		{#if blog}
+			<a href="/app/blog/{blog.id}" class="group relative aspect-video overflow-hidden rounded-2xl">
 				<div class="absolute inset-0">
-					<img 
+					<img
 						src={getFirstImage(blog.images)}
 						alt={blog.title || 'Blog post'}
 						class="h-full w-full object-cover transition-all duration-500 group-hover:scale-110"
 					/>
-					<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20"></div>
+					<div
+						class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20"
+					></div>
 				</div>
 
 				<div class="relative z-10 flex h-full flex-col justify-end p-4 text-white">
 					{#if blog.profile && blog.profile.username}
-						<div class="absolute top-4 right-4 flex items-center gap-2 rounded-full bg-white/20 backdrop-blur-sm px-3 py-1">
-								<img 
-									src={blog.profile.image_url} 
-									alt={blog.profile.username}
-									class="h-5 w-5 rounded-full object-cover"
-								/>
+						<div
+							class="absolute top-4 right-4 flex items-center gap-2 rounded-full bg-white/20 px-3 py-1 backdrop-blur-sm"
+						>
+							<img
+								src={blog.profile.image_url}
+								alt={blog.profile.username}
+								class="h-5 w-5 rounded-full object-cover"
+							/>
 							<span class="text-xs font-medium text-white">{blog.profile.username}</span>
 						</div>
 					{/if}
 
 					<!-- Date -->
 					<div class="mb-2">
-						<span class="text-xs font-light text-gray-300 tracking-wide">
+						<span class="text-xs font-light tracking-wide text-gray-300">
 							{formatDate(blog.created_at)}
 						</span>
 					</div>
 
 					<!-- Title -->
-					<h3 class="mb-2 text-lg font-bold leading-tight tracking-tight text-white sm:text-xl lg:text-2xl line-clamp-2">
+					<h3
+						class="mb-2 line-clamp-2 text-lg leading-tight font-bold tracking-tight text-white sm:text-xl lg:text-2xl"
+					>
 						{blog.title}
 					</h3>
 
 					<!-- Description -->
 					{#if blog.content}
-						<p class="text-sm leading-relaxed text-gray-200 opacity-90 line-clamp-2 sm:text-base">
+						<p class="line-clamp-2 text-sm leading-relaxed text-gray-200 opacity-90 sm:text-base">
 							{truncateText(blog.content)}
 						</p>
 					{/if}
@@ -133,21 +136,43 @@
 					{#if blog.tags && blog.tags.length > 0}
 						<div class="mt-3 flex flex-wrap gap-1">
 							{#each blog.tags.slice(0, 3) as tag}
-								<span class="rounded-full bg-white/20 backdrop-blur-sm px-2 py-1 text-xs text-white">
+								<span
+									class="rounded-full bg-white/20 px-2 py-1 text-xs text-white backdrop-blur-sm"
+								>
 									#{tag}
 								</span>
 							{/each}
 						</div>
 					{/if}
 
-					<div class="absolute bottom-4 right-4 opacity-0 transition-all duration-300 group-hover:opacity-100">
-						<div class="rounded-full bg-white/20 backdrop-blur-sm p-2">
+					<div
+						class="absolute right-4 bottom-4 opacity-0 transition-all duration-300 group-hover:opacity-100"
+					>
+						<div class="rounded-full bg-white/20 p-2 backdrop-blur-sm">
 							<svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+								<path
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									stroke-width="2"
+									d="M9 5l7 7-7 7"
+								></path>
 							</svg>
 						</div>
 					</div>
 				</div>
 			</a>
+		{:else}
+			<Empty.Root class="h-full bg-gradient-to-b from-muted/50 from-30% to-background">
+				<Empty.Header>
+					<Empty.Media variant="icon">
+						<Search />
+					</Empty.Media>
+					<Empty.Title>No Blog available</Empty.Title>
+					<Empty.Description>
+						No blog available for readind wait for news...
+					</Empty.Description>
+				</Empty.Header>
+			</Empty.Root>
+		{/if}
 	</div>
 </div>

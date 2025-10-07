@@ -14,7 +14,7 @@ export const getIngridients = query(async () => {
         recipe_ingredients!left(count)
     `
 		)
-		.order('category')
+		.order('category', {ascending : false})
 		.overrideTypes<Ingredient[]>();
 
 	const total: number = Ingredient?.length || 0;

@@ -90,7 +90,7 @@
 				<DropdownMenu.Group>
 					<DropdownMenu.Item>
 						<SparklesIcon />
-						Upgrade to Pro
+						Play memory game
 					</DropdownMenu.Item>
 				</DropdownMenu.Group>
 					<DropdownMenu.Item>

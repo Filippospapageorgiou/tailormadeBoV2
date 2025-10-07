@@ -7,7 +7,7 @@
 	import MapIcon from "@lucide/svelte/icons/map";
 	import SendIcon from "@lucide/svelte/icons/send";
 	import Settings2Icon from "@lucide/svelte/icons/settings-2";
-	import { NotebookPen, Coffee, EuroIcon } from "lucide-svelte";
+	import { NotebookPen, Coffee, EuroIcon, CalendarRange  } from "lucide-svelte";
 	
 
 
@@ -38,6 +38,11 @@
 				title: "Register",
 				url:"/app/register",
 				icon: EuroIcon,
+			},
+			{
+				title: "Scedule",
+				url:"/app/register",
+				icon: CalendarRange
 			},
 			{
 				title: "Admin Settings",
