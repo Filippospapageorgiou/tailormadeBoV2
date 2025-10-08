@@ -22,6 +22,7 @@
 
 	async function handleDelete() {
 		deleting = true;
+		open = false;
 		showProgress('Deleting blog post...');
 
 		try {

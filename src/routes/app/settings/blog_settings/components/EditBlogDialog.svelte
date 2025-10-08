@@ -9,7 +9,7 @@
 	import { Switch } from '$lib/components/ui/switch';
 	import { showProgress, hideProgress } from '$lib/stores/progress.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
-	import { X, CloudIcon } from 'lucide-svelte';
+	import { X, CloudIcon, ImagePlus } from 'lucide-svelte';
 	import * as Empty from '$lib/components/ui/empty/index.js';
 
 	let {
@@ -30,7 +30,28 @@
 		published: blog.published
 	});
 
-	// Reset form when blog changes
+	// Track existing images (URLs to keep)
+	let existingImages = $state<string[]>([...blog.images]);
+	
+	// Track new files to upload
+	let newFiles: FileList | undefined = $state();
+	let fileInput: HTMLInputElement;
+
+	// Derive preview URLs for new files
+	let newPreviewUrls = $derived(
+		newFiles ? Array.from(newFiles).map((file) => ({
+			file,
+			url: URL.createObjectURL(file)
+		})) : []
+	);
+
+	// Combine existing images + new file previews for display
+	let allPreviews = $derived([
+		...existingImages.map(url => ({ type: 'existing' as const, url })),
+		...newPreviewUrls.map(({ file, url }) => ({ type: 'new' as const, url, file }))
+	]);
+
+	// Sync formData when blog prop changes
 	$effect(() => {
 		formData = {
 			title: blog.title,
@@ -39,30 +60,36 @@
 			tags: Array.isArray(blog.tags) ? blog.tags.join(', ') : '',
 			published: blog.published
 		};
-	});
-
-	let files: FileList | undefined = $state();
-	let previewUrl = $state('');
-	let fileInput = $state<any>();
-
-	$effect(() => {
-		if (files && files[0]) {
-			const reader = new FileReader();
-			reader.addEventListener('load', () => {
-				previewUrl = reader.result?.toString() || '';
-			});
-			reader.readAsDataURL(files[0]);
-		} else {
-			previewUrl = '';
-		}
-	});
-
-	function refreshFiles() {
-		files = undefined;
-		previewUrl = '';
+		existingImages = [...blog.images];
+		newFiles = undefined;
 		if (fileInput) {
 			fileInput.value = '';
 		}
+	});
+
+	function removeImage(index: number) {
+		const existingCount = existingImages.length;
+		
+		if (index < existingCount) {
+			// Remove from existing images array
+			existingImages = existingImages.filter((_, i) => i !== index);
+		} else {
+			// Remove from new files
+			const newFileIndex = index - existingCount;
+			if (!newFiles) return;
+
+			const dt = new DataTransfer();
+			Array.from(newFiles).forEach((file, i) => {
+				if (i !== newFileIndex) dt.items.add(file);
+			});
+
+			fileInput.files = dt.files;
+			newFiles = dt.files.length > 0 ? dt.files : undefined;
+		}
+	}
+
+	function triggerFileInput() {
+		fileInput?.click();
 	}
 
 	async function handleSuccess(text: string) {
@@ -78,13 +105,6 @@
 		toast.status = false;
 		toast.title = 'Error';
 		toast.text = text;
-	}
-
-	function getCurrentImage() {
-		if (blog.images && Array.isArray(blog.images) && blog.images.length > 0) {
-			return blog.images[0];
-		}
-		return '';
 	}
 </script>
 
@@ -107,12 +127,19 @@
 				} else {
 					handleError(editBlog.result?.message || 'An unexpected error occurred.');
 				}
-				refreshFiles();
 				hideProgress();
+				form.reset();
 			})}
 		>
 			<!-- Hidden ID field -->
 			<input type="hidden" name={editBlog.field('id')} value={blog.id.toString()} />
+
+			<!-- Hidden field for existing images -->
+			<input 
+				type="hidden" 
+				name={editBlog.field('existingImages')} 
+				value={JSON.stringify(existingImages)} 
+			/>
 
 			<!-- Title -->
 			<div class="space-y-2">
@@ -153,7 +180,6 @@
 				/>
 			</div>
 
-
 			<!-- Tags -->
 			<div class="space-y-2">
 				<Label for="edit-tags">Tags</Label>
@@ -165,66 +191,86 @@
 				/>
 			</div>
 
-			<!-- Image Upload -->
+			<!-- Images Section -->
 			<div class="space-y-2">
-				<Label>Featured Image</Label>
-				{#if !previewUrl && getCurrentImage()}
-					<!-- Show current image -->
-					<div class="relative w-full overflow-hidden rounded-lg border border-gray-200">
-						<img src={getCurrentImage()} alt={blog.title} class="h-64 w-full object-cover" />
-						<div class="absolute right-2 top-2 flex gap-2">
-							<Button
-								variant="secondary"
-								size="sm"
-								onclick={() => {
-									if (fileInput) fileInput.click();
-								}}
-							>
-								Change Image
-							</Button>
-						</div>
-					</div>
-					<Input
-						type="file"
-						name={editBlog.field('images')}
-						accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
-						bind:files
-						bind:this={fileInput}
-						class="hidden"
-					/>
-				{:else if previewUrl}
-					<!-- Show new preview -->
-					<div class="relative w-full overflow-hidden rounded-lg border border-gray-200">
-						<img src={previewUrl} alt="New blog" class="h-64 w-full object-cover" />
-						<div class="absolute right-2 top-2 flex gap-2">
-							<Button variant="secondary" onclick={refreshFiles}>
-								<X class="h-4 w-4" />
-							</Button>
-						</div>
-					</div>
-				{:else}
-					<!-- No image state -->
+				<Label>Featured Images (up to 4)</Label>
+
+				<!-- File input - always in DOM but visually hidden when previews exist -->
+				<input
+					bind:this={fileInput}
+					id="edit-dropzone-file"
+					type="file"
+					accept="image/*"
+					name="newImages[]"
+					multiple
+					bind:files={newFiles}
+					class={allPreviews.length > 0 ? 'hidden' : ''}
+				/>
+
+				<!-- Empty state - show when no images -->
+				{#if allPreviews.length === 0}
 					<Empty.Root class="border border-dashed">
 						<Empty.Header>
 							<Empty.Media variant="icon">
 								<CloudIcon />
 							</Empty.Media>
-							<Empty.Title>No image</Empty.Title>
-							<Empty.Description>Upload a featured image for your blog post</Empty.Description>
+							<Empty.Title>No images selected</Empty.Title>
+							<Empty.Description>Upload up to 4 images for your blog post</Empty.Description>
 						</Empty.Header>
 						<Empty.Content>
-							<Input
-								type="file"
-								name={editBlog.field('images')}
-								accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
-								bind:files
-								bind:this={fileInput}
-							/>
+							<Button
+								type="button"
+								variant="outline"
+								onclick={triggerFileInput}
+								class="cursor-pointer"
+							>
+								<ImagePlus class="mr-2 h-4 w-4" />
+								Select Images
+							</Button>
 						</Empty.Content>
 					</Empty.Root>
 				{/if}
-			</div>
 
+				<!-- Preview grid - show when images exist -->
+				{#if allPreviews.length > 0}
+					<div class="space-y-3">
+						<div class="grid grid-cols-2 gap-3">
+							{#each allPreviews as preview, index}
+								<div class="group relative aspect-video overflow-hidden rounded-lg border">
+									<img 
+										src={preview.url} 
+										alt="Preview {index + 1}" 
+										class="h-full w-full object-cover" 
+									/>
+									<Button
+										variant="secondary"
+										type="button"
+										onclick={() => removeImage(index)}
+										class="absolute right-2 top-2 rounded-full p-1 opacity-0 group-hover:opacity-100 cursor-pointer"
+										aria-label="Remove image"
+									>
+										<X class="h-4 w-4" />
+									</Button>
+								</div>
+							{/each}
+						</div>
+
+						<!-- Add more button if less than 4 images -->
+						{#if allPreviews.length < 4}
+							<Button
+								type="button"
+								variant="outline"
+								onclick={triggerFileInput}
+								class="w-full cursor-pointer"
+							>
+								<ImagePlus class="mr-2 h-4 w-4" />
+								Add More Images ({allPreviews.length}/4)
+							</Button>
+						{/if}
+					</div>
+				{/if}
+			</div>
+			
 			<!-- Published Toggle -->
 			<div class="flex items-center space-x-2">
 				<Switch
@@ -244,7 +290,11 @@
 				<p class="font-medium">Tips:</p>
 				<ul class="mt-1 list-disc space-y-1 pl-4">
 					<li>* Required fields</li>
-					<li>Leave image unchanged if you don't upload a new one</li>
+					<li>Existing images are preserved unless removed</li>
+					<li>Remove any image by clicking the X button on hover</li>
+					<li>Add new images (up to 4 total)</li>
+					<li>Only new images will be uploaded to save bandwidth</li>
+					<li>Each image must be less than 5MB</li>
 					<li>Tags should be comma-separated</li>
 				</ul>
 			</div>

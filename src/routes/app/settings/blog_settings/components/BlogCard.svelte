@@ -27,7 +27,7 @@
 	import EditBlogDialog from './EditBlogDialog.svelte';
 	import DeleteBlogDialog from './DeleteBlogDialog.svelte';
 
-    let {
+	let {
 		blog,
 		onUpdate
 	}: {
@@ -68,7 +68,7 @@
 			});
 
 			if (result.success) {
-                await onUpdate();
+				await onUpdate();
 				toast.show = true;
 				toast.status = true;
 				toast.title = 'Success';
@@ -168,13 +168,21 @@
 		<!-- Action Buttons -->
 		<div class="flex flex-shrink-0 flex-col gap-1 md:flex-row">
 			<div class="flex items-center space-x-2">
-				<Label for="toggle-status-{blog.id}" class="hidden sm:inline">Toggle Publish status</Label>
-				<Switch
-					id="toggle-status-{blog.id}"
-					class="cursor-pointer"
-					checked={blog.published}
-					onCheckedChange={() => handleTogglePublish(blog.id, blog.published)}
-				/>
+				<Tooltip.Provider>
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							<Switch
+								id="toggle-status-{blog.id}"
+								class="cursor-pointer"
+								checked={blog.published}
+								onCheckedChange={() => handleTogglePublish(blog.id, blog.published)}
+							/>
+						</Tooltip.Trigger>
+						<Tooltip.Content>
+							<p>Toggle publish status</p>
+						</Tooltip.Content>
+					</Tooltip.Root>
+				</Tooltip.Provider>
 			</div>
 
 			<Tooltip.Provider>

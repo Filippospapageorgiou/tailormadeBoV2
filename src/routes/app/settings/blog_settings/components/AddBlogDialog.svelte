@@ -8,8 +8,9 @@
 	import { Switch } from '$lib/components/ui/switch';
 	import { showProgress, hideProgress } from '$lib/stores/progress.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
-	import { X, CloudIcon } from 'lucide-svelte';
+	import { X, CloudIcon, ImagePlus } from 'lucide-svelte';
 	import * as Empty from '$lib/components/ui/empty/index.js';
+	import { file } from 'zod';
 
 	let {
 		open = $bindable(),
@@ -29,27 +30,31 @@
 	});
 
 	let files: FileList | undefined = $state();
-	let previewUrl = $state('');
-	let fileInput = $state<any>();
+	let fileInput: HTMLInputElement;
 
-	$effect(() => {
-		if (files && files[0]) {
-			const reader = new FileReader();
-			reader.addEventListener('load', () => {
-				previewUrl = reader.result?.toString() || '';
-			});
-			reader.readAsDataURL(files[0]);
-		} else {
-			previewUrl = '';
-		}
-	});
+	
+	let previewFiles = $derived(files ? Array.from(files) : []);
+	let previewUrls = $derived(
+		previewFiles.map((file) => ({
+			file,
+			url: URL.createObjectURL(file)
+		}))
+	);
 
-	function refreshFiles() {
-		files = undefined;
-		previewUrl = '';
-		if (fileInput) {
-			fileInput.value = '';
-		}
+	function removeFile(index: number) {
+		if (!files) return;
+
+		const dt = new DataTransfer();
+		Array.from(files).forEach((file, i) => {
+			if (i !== index) dt.items.add(file);
+		});
+
+		fileInput.files = dt.files;
+		files = dt.files.length > 0 ? dt.files : undefined;
+	}
+
+	function triggerFileInput() {
+		fileInput?.click();
 	}
 
 	async function handleSuccess(text: string) {
@@ -67,9 +72,7 @@
 		toast.text = text;
 	}
 
-	function refreshInputFields() {
-		files = undefined;
-		previewUrl = '';
+	function resetForm() {
 		formData = {
 			title: '',
 			description: '',
@@ -78,6 +81,10 @@
 			tags: '',
 			published: false
 		};
+		files = undefined;
+		if (fileInput) {
+			fileInput.value = '';
+		}
 	}
 </script>
 
@@ -100,19 +107,11 @@
 				} else {
 					handleError(addBlog.result?.message || 'An unexpected error occurred.');
 				}
-				refreshInputFields();
+				resetForm();
 				hideProgress();
 				form.reset();
 			})}
 		>
-			<Input
-				type="file"
-				name={addBlog.field('images')}
-				accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
-				class="hidden"
-				bind:files
-				bind:this={fileInput}
-			/>
 			<!-- Title -->
 			<div class="space-y-2">
 				<Label for="title">Title *</Label>
@@ -151,6 +150,7 @@
 					required
 				/>
 			</div>
+
 			<!-- Tags -->
 			<div class="space-y-2">
 				<Label for="tags">Tags</Label>
@@ -162,38 +162,86 @@
 				/>
 			</div>
 
-			<!-- Image Upload -->
 			<div class="space-y-2">
-				{#if !previewUrl}
-					<Label>Featured Image</Label>
+				<Label>Featured Images (up to 4)</Label>
+
+				<!-- File input - always in DOM but visually hidden when previews exist -->
+				<input
+					bind:this={fileInput}
+					id="dropzone-file"
+					type="file"
+					accept="image/*"
+					name="images[]"
+					multiple
+					bind:files
+					class={previewUrls.length > 0 ? 'hidden' : ''}
+				/>
+
+				<!-- Empty state - show when no files -->
+				{#if previewUrls.length === 0}
 					<Empty.Root class="border border-dashed">
 						<Empty.Header>
 							<Empty.Media variant="icon">
 								<CloudIcon />
 							</Empty.Media>
-							<Empty.Title>No image selected</Empty.Title>
-							<Empty.Description>Upload a featured image for your blog post</Empty.Description>
+							<Empty.Title>No images selected</Empty.Title>
+							<Empty.Description>Upload up to 4 images for your blog post</Empty.Description>
 						</Empty.Header>
 						<Empty.Content>
-							<Input
-								type="file"
-								accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
-								bind:files
-								bind:this={fileInput}
-							/>
+							<Button
+								type="button"
+								variant="outline"
+								onclick={triggerFileInput}
+								class="cursor-pointer"
+							>
+								<ImagePlus class="mr-2 h-4 w-4" />
+								Select Images
+							</Button>
 						</Empty.Content>
 					</Empty.Root>
-				{:else}
-					<div class="relative w-full overflow-hidden rounded-lg border border-gray-200">
-						<img src={previewUrl} alt="Blog preview" class="h-64 w-full object-cover" />
-						<div class="absolute top-2 right-2 flex gap-2">
-							<Button variant="secondary" onclick={refreshFiles}>
-								<X class="h-4 w-4" />
-							</Button>
+				{/if}
+
+				<!-- Preview grid - show when files are selected -->
+				{#if previewUrls.length > 0}
+					<div class="space-y-3">
+						<div class="grid grid-cols-2 gap-3">
+							{#each previewUrls as { file, url }, index}
+								<div class="group relative aspect-video overflow-hidden rounded-lg border">
+									<img src={url} alt={file.name} class="h-full w-full object-cover" />
+									<Button
+										variant="secondary"
+										type="button"
+										onclick={() => removeFile(index)}
+										class="absolute right-2 top-2 rounded-full p-1 opacity-0 group-hover:opacity-100 cursor-pointer"
+										aria-label="Remove image"
+									>
+										<X class="h-4 w-4" />
+									</Button>
+									<div
+										class="absolute bottom-0 left-0 right-0 bg-black/50 px-2 py-1 text-xs text-white truncate"
+									>
+										{file.name}
+									</div>
+								</div>
+							{/each}
 						</div>
+
+						<!-- Add more button if less than 4 images -->
+						{#if previewUrls.length < 4}
+							<Button
+								type="button"
+								variant="outline"
+								onclick={triggerFileInput}
+								class="w-full cursor-pointer"
+							>
+								<ImagePlus class="mr-2 h-4 w-4" />
+								Add More Images ({previewUrls.length}/4)
+							</Button>
+						{/if}
 					</div>
 				{/if}
 			</div>
+		
 
 			<!-- Published Toggle -->
 			<div class="flex items-center space-x-2">
@@ -210,6 +258,8 @@
 				<p class="font-medium">Tips:</p>
 				<ul class="mt-1 list-disc space-y-1 pl-4">
 					<li>* Required fields</li>
+					<li>Upload up to 4 images (JPEG, PNG, WebP, GIF)</li>
+					<li>Each image must be less than 5MB</li>
 					<li>Tags should be comma-separated</li>
 					<li>Content supports HTML formatting</li>
 					<li>Use the switch to publish immediately or save as draft</li>

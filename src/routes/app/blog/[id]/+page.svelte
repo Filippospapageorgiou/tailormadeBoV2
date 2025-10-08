@@ -51,21 +51,21 @@
 				</div>
 
 				{#if blog.images}
-          <Carousel.Root class="w-full max-w-xl mx-auto my-4">
-            <Carousel.Content>
-              {#each blog.images as image, i}
-                <Carousel.Item>
-                  <div class="p-1">
-                        <img
-                          src={image}
-                          alt={'Blog image'}
-                          class="h-full w-full object-cover rounded-2xl"
-                        />
-                  </div>
-                </Carousel.Item>
-              {/each}
-            </Carousel.Content>
-            <Carousel.Previous />
+          		<Carousel.Root class="w-full max-w-xl mx-auto my-4">
+            		<Carousel.Content>
+              			{#each blog.images as image, i}
+                			<Carousel.Item>
+                  				<div class="p-1">
+                       				<img
+                          			src={image}
+                          			alt={'Blog image'}
+                          			class="h-74 w-full object-cover rounded-2xl"
+                       			/>
+                  				</div>
+                			</Carousel.Item>
+              			{/each}
+            		</Carousel.Content>
+            	<Carousel.Previous />
             <Carousel.Next />
           </Carousel.Root>
         {/if}
