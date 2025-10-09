@@ -12,7 +12,6 @@ export const load: PageServerLoad = async ({ params, locals: { supabase } }) => 
     .eq('id', id)
     .single<Profile>();
   
-
   if (profileError) {
     console.error('Error fetching user profile: ', profileError);
     throw error(404, 'User not found');

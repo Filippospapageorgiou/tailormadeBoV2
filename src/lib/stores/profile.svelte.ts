@@ -10,6 +10,8 @@ export class ProfileStore {
 	imageUrl = $state('');
 	role = $state('');
 	orgId = $state();
+	role_id = $state();
+	role_name = $state('');
 
 	constructor(profile: Profile | null) {
 		if (profile) {
@@ -19,6 +21,8 @@ export class ProfileStore {
 			this.imageUrl = profile.image_url;
 			this.role = profile.role;
 			this.orgId = profile.org_id;
+			this.role_id = profile.role_id;
+			this.role_name = profile.role_name;
 		}
 	}
 
@@ -29,6 +33,8 @@ export class ProfileStore {
 		this.imageUrl = profile.image_url;
 		this.role = profile.role;
 		this.orgId = profile.org_id;
+		this.role_id = profile.role_id;
+		this.role_name = profile.role_name;
 	}
 
 	updateUsername(newUsername: string) {

@@ -9,6 +9,7 @@
 		Globe,
 		CheckCircle,
 		XCircle,
+		IdCard ,
 		Mail,
 		Calendar,
 		User,
@@ -22,6 +23,7 @@
 	import { updateUsername, updateAvatar } from './data.remote';
 	import { getProfileContext } from '$lib/stores/profile.svelte.js';
   	import { toast } from '$lib/stores/toast.svelte';
+	import type { Profile } from '$lib/models/database.types';
 
 	let { data } = $props();
 
@@ -243,7 +245,7 @@
 					</div>
 
 					<!-- Account Details Grid -->
-					<div class="mt-8 grid grid-cols-1 gap-6 border-t border-neutral-200 pt-6 md:grid-cols-2">
+					<div class="mt-8 grid grid-cols-1 gap-6 border-t border-neutral-200 pt-6 md:grid-cols-3">
 						<div class="flex items-start gap-3">
 							<div class="rounded-lg bg-neutral-100 p-2">
 								<User class="h-5 w-5 text-[#8B6B4A]" />
@@ -252,6 +254,18 @@
 								<p class="mb-1 text-sm text-neutral-500">User ID</p>
 								<p class="font-mono text-sm font-medium text-neutral-800">
 									{profile.id.slice(0, 8)}...
+								</p>
+							</div>
+						</div>
+
+						<div class="flex items-start gap-3">
+							<div class="rounded-lg bg-neutral-100 p-2">
+								<IdCard class="h-5 w-5 text-[#8B6B4A]" />
+							</div>
+							<div>
+								<p class="mb-1 text-sm text-neutral-500">Role</p>
+								<p class="font-mono text-sm font-medium text-neutral-800">
+									{profileStore.role_name}
 								</p>
 							</div>
 						</div>

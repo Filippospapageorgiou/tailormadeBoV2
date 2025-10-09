@@ -58,6 +58,15 @@ export interface Profile {
   updated_at:string;
   image_url:string;
   org_id:number; 
+  role_id:number;
+  role_name:string;
+}
+
+export interface RoleTypes {
+  id:number;
+  created_at:string;
+  updated_at:string;
+  role_name:string;
 }
 
 export interface Organization {

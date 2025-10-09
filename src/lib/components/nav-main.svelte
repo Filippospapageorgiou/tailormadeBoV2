@@ -18,13 +18,26 @@
 			items?: {
 				title: string;
 				url: string;
+				requiresSuperAdmin?:boolean
 			}[];
 		}[];
 	} = $props();
 
 	function canAccessItem(item: typeof items[0]): boolean {
-		if (!item.requiresAdmin) return true;
-		return user?.role?.toLowerCase() === 'admin';
+		if (!item.requiresAdmin) {
+			return true;
+		}else{
+			if(user.role_id === 1 || user.role_id === 2 || user.role_id == 4)
+				return true;
+		}
+		return false;
+	}
+
+	function canAccessSubItem(item: { title: string; url: string; requiresSuperAdmin?: boolean }): boolean {
+		if (!item.requiresSuperAdmin) {
+			return true;
+		}
+		return user.role_id === 1 || user.role_id === 2;
 	}
 </script>
 
@@ -59,11 +72,13 @@
 								<Collapsible.Content>
 									<Sidebar.MenuSub>
 										{#each mainItem.items as subItem (subItem.title)}
-											<Sidebar.MenuSubItem>
-												<Sidebar.MenuSubButton href={subItem.url}>
-													<span>{subItem.title}</span>
-												</Sidebar.MenuSubButton>
-											</Sidebar.MenuSubItem>
+											{#if canAccessSubItem(subItem)}
+												<Sidebar.MenuSubItem>
+													<Sidebar.MenuSubButton href={subItem.url}>
+														<span>{subItem.title}</span>
+													</Sidebar.MenuSubButton>
+												</Sidebar.MenuSubItem>
+											{/if}
 										{/each}
 									</Sidebar.MenuSub>
 								</Collapsible.Content>

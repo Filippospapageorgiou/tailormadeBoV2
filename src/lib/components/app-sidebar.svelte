@@ -65,6 +65,7 @@
 					{
 						title: "Manage users",
 						url: "/app/settings/manage_users",
+						requiresSuperAdmin: true
 					},
 				],
 			},
@@ -109,8 +110,15 @@
 	import * as Sidebar from "$lib/components/ui/sidebar/index.js";
 	import CommandIcon from "@lucide/svelte/icons/command";
 	import type { ComponentProps } from "svelte";
+	import { getProfileContext } from "$lib/stores/profile.svelte";
 
 	let { ref = $bindable(null), ...restProps }: ComponentProps<typeof Sidebar.Root> = $props();
+
+	let user = getProfileContext();
+	
+
+
+
 </script>
 
 <Sidebar.Root bind:ref variant="inset" {...restProps}>
@@ -137,7 +145,9 @@
 	</Sidebar.Header>
 	<Sidebar.Content>
 		<NavMain items={data.navMain} />
-		<NavProjects projects={data.projects} />
+		{#if user.role_id === 1}
+			<NavProjects projects={data.projects} />
+		{/if}
 		<NavSecondary items={data.navSecondary} class="mt-auto" />
 	</Sidebar.Content>
 	<Sidebar.Footer>
