@@ -13,6 +13,7 @@
 	import * as Table from '$lib/components/ui/table/index.js';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { Input } from '$lib/components/ui/input/index.js';
+    import { roles } from './data';
 
 	type DataTableProps<TData, TValue> = {
 		columns: ColumnDef<TData, TValue>[];
@@ -81,7 +82,16 @@
       }}
       class="max-w-sm"
     />
-  </div>
+</div>
+{#snippet roleCell({ value }: { value: string })}
+	{@const role = roles.find((role) => role.value === value)}
+	{#if role}
+		<div class="flex items-center">
+			<span>{role.label}</span>
+		</div>
+	{/if}
+{/snippet}
+
 <div class="rounded-md border">
 	<Table.Root>
 		<Table.Header>
