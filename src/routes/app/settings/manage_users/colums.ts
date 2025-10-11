@@ -56,7 +56,7 @@ export const columns: ColumnDef<Profile>[] = [
   accessorKey: "role_name",
   header: "Role",
   cell: ({ row }) => {
-        const badgeSnippet = createRawSnippet<[{ roleName: string }]>(
+    const badgeSnippet = createRawSnippet<[{ roleName: string }]>(
       (getRoleName) => {
         const { roleName } = getRoleName();
         
@@ -64,12 +64,16 @@ export const columns: ColumnDef<Profile>[] = [
           render: () => `<span class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary text-primary-foreground hover:bg-primary/80">${roleName}</span>`,
         };
       }
-        );
-        return renderSnippet(badgeSnippet, {
-            roleName: row.original.role_name,
-        });
-    },
-    },
+    );
+    return renderSnippet(badgeSnippet, {
+      roleName: row.original.role_name,
+    });
+  },
+  // ADD THIS filterFn
+  filterFn: (row, id, value) => {
+    return value.includes(row.getValue(id));
+  },
+},
   {
     accessorKey: "created_at",
     header: "Created",
@@ -97,12 +101,11 @@ export const columns: ColumnDef<Profile>[] = [
     header: "Actions",
     cell: ({ row }) => {
       // Pass any data you need to the component
-      return renderComponent(DataTableActions, { 
-        id: row.original.id,  // Full ID is always available here
+      return renderComponent(DataTableActions, {
+        id: row.original.id,
         username: row.original.username,
-        // You can pass more props if needed:
-        // username: row.original.username,
-        // email: row.original.email,
+        role_id: row.original.role_id,
+        role_name: row.original.role_name,
       });
     },
   },

@@ -1,5 +1,5 @@
 import { query, command, form } from "$app/server";
-import { createServerClient,  } from "$lib/supabase/server";
+import { createServerClient, createAdminClient  } from "$lib/supabase/server";
 import { requireAuthenticatedUser } from '$lib/supabase/shared';
 import type { Profile } from "$lib/models/database.types";
 import { z } from 'zod/v4'
@@ -35,7 +35,7 @@ export const getAllUserFromOrg = query(async () => {
     const flattenedUsers: Profile[] = users?.map(user => ({...user,
         role_name: user.role_types?.role_name || ''
     })) || [];
-    
+
 
     if(userError){
         console.error('Error fetching user from organization: ',userError)
@@ -49,8 +49,8 @@ export const getAllUserFromOrg = query(async () => {
     const { data:roleTypes, error:roleTypesError } = await supabase
         .from('role_types')
         .select('*');
-    
-    
+
+
     if(roleTypesError){
         console.error('Error fetching role types: ',roleTypesError)
         return {
@@ -65,5 +65,75 @@ export const getAllUserFromOrg = query(async () => {
         flattenedUsers,
         roleTypes
     };
-    
+
 })
+
+// ======================== COMMANDS ==============
+
+const updateUserRoleSchema = z.object({
+    userId: z.string({ error : 'Invalid user ID format' }),
+    roleId: z.number().int().positive({ error: 'Role ID must be a positive integer' })
+});
+
+export const updateUserRole = command(updateUserRoleSchema, async ({ userId, roleId }) => {
+    const supabase = createServerClient();
+    try {
+        const {error } = await supabase
+            .from('profiles')
+            .update({ role_id: roleId })
+            .eq('id', userId);
+
+        if (error) {
+            console.error('Error updating user role:', error);
+            return {
+                success: false,
+                message: 'Failed to update user role'
+            };
+        }
+
+        return {
+            success: true,
+            message: 'User role updated successfully'
+        };
+    } catch (err) {
+        console.error('Unexpected error during role update:', err);
+        return {
+            success: false,
+            message: 'An unexpected error occurred while updating user role'
+        };
+    }
+});
+
+const deleteUserSchema = z.object({
+    userId: z.string({ error: 'Invalid user ID format' })
+});
+
+export const deleteUser = command(deleteUserSchema, async ({ userId }) => {
+    const adminClient = createAdminClient();
+
+    try {
+        // Delete user from Supabase Auth
+        const { error: authError } = await adminClient.auth.admin.deleteUser(userId);
+
+        if (authError) {
+            console.error('Error deleting user from auth:', authError);
+            return {
+                success: false,
+                message: 'Failed to delete user from authentication system'
+            };
+        }
+
+        // The profile will be deleted automatically via CASCADE from the database trigger
+
+        return {
+            success: true,
+            message: 'User deleted successfully'
+        };
+    } catch (err) {
+        console.error('Unexpected error during user deletion:', err);
+        return {
+            success: false,
+            message: 'An unexpected error occurred while deleting user'
+        };
+    }
+});

@@ -83,21 +83,7 @@
 			},
 		],
 		projects: [
-			{
-				name: "Design Engineering",
-				url: "#",
-				icon: FrameIcon,
-			},
-			{
-				name: "Sales & Marketing",
-				url: "#",
-				icon: ChartPieIcon,
-			},
-			{
-				name: "Travel",
-				url: "#",
-				icon: MapIcon,
-			},
+			
 		],
 	};
 </script>
