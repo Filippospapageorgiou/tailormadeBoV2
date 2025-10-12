@@ -23,7 +23,6 @@
 		role_name: string;
 	} = $props();
 
-	
 	let query = getAllUserFromOrg();
 	let roleTypes = $derived(query.current?.roleTypes ?? []);
 	// Edit dialog state
@@ -128,7 +127,7 @@
 	<DropdownMenu.Content align="end" class="w-44">
 		<DropdownMenu.Item
 			onclick={handleEditClick}
-			class="flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-muted cursor-pointer rounded-md transition-colors"
+			class="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted"
 		>
 			<Pencil class="h-4 w-4 text-muted-foreground" />
 			<span>Edit Role</span>
@@ -136,7 +135,7 @@
 		<DropdownMenu.Separator class="my-1 h-px bg-border" />
 		<DropdownMenu.Item
 			onclick={handleDeleteClick}
-			class="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer rounded-md transition-colors"
+			class="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors"
 		>
 			<Trash class="h-4 w-4 text-red-600" />
 			<span class="text-red-600">Delete User</span>
@@ -172,11 +171,11 @@
 							<Select.Group>
 								<Select.Label>Roles</Select.Label>
 								{#each roleTypes as roleType (roleType.id)}
-                  {#if roleType.id !== 1}
-									  <Select.Item value={String(roleType.id)} label={roleType.role_name}>
-										  {roleType.role_name}
-									  </Select.Item>
-                  {/if}
+									{#if roleType.id !== 1}
+										<Select.Item value={String(roleType.id)} label={roleType.role_name}>
+											{roleType.role_name}
+										</Select.Item>
+									{/if}
 								{/each}
 							</Select.Group>
 						</Select.Content>
@@ -203,8 +202,8 @@
 				<span class="font-medium text-gray-900">"{username}"</span>?
 				<br />
 				<br />
-				This action <span class="font-semibold text-red-500">cannot</span> be undone. The user will
-				be permanently removed from the authentication system and the database.
+				This action <span class="font-semibold text-red-500">cannot</span> be undone. The user will be
+				permanently removed from the authentication system and the database.
 			</Dialog.Description>
 		</Dialog.Header>
 

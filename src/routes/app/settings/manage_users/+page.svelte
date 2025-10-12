@@ -11,10 +11,20 @@
     import DataTable from "./data-table.svelte";
     import { columns } from './colums';
     import { getAllUserFromOrg } from './data.remote';
+	import * as Dialog from '$lib/components/ui/dialog/index.js';
+	import Label from '$lib/components/ui/label/label.svelte';
+
 
     let query = getAllUserFromOrg();
     let profiles = $derived(query.current?.flattenedUsers);
     let roleTypes = $derived(query.current?.roleTypes);
+
+	let inviteUserDialog:boolean = $state(false);
+	let inviteEmail:string = $state('');
+
+	function handleIviteUser(){
+		inviteUserDialog = true;
+	}
 	
 </script>
 
@@ -44,9 +54,7 @@
 					
 				</div>
 
-				<!-- Search Input & Actions -->
 				<div class="relative flex items-center gap-2">
-					<!-- Invite User Button -->
 					<Tooltip.Provider>
 						<Tooltip.Root>
 							<Tooltip.Trigger>
@@ -54,10 +62,7 @@
 									variant="default"
 									size="sm"
 									class="h-8 cursor-pointer gap-2 px-3"
-									onclick={() => {
-										// Will open invite dialog later
-										console.log('Invite user');
-									}}
+									onclick={handleIviteUser}
 								>
 									<UserPlus class="h-4 w-4" />
 									<span class="hidden sm:inline">Invite User</span>
@@ -80,3 +85,33 @@
 		<DataTable data={query.current?.flattenedUsers ?? []} {columns} />
 	</main>
 </div>
+
+
+<Dialog.Root bind:open={inviteUserDialog}>
+	<Dialog.Content class="sm:max-w-[425px]">
+		<Dialog.Header>
+			<Dialog.Title>Invite employee</Dialog.Title>
+			<Dialog.Description>
+				invite user type email down below
+			</Dialog.Description>
+		</Dialog.Header>
+		<div class="grid gap-1 py-4">
+			<div class="grid grid-cols-4 items-center gap-1">
+				<Label class="text-right">Email</Label>
+				<div class="col-span-3">
+					<Input
+						type="email"
+						bind:value={inviteEmail}
+						placeholder="example@gmail.com"
+					/>
+				</div>
+			</div>
+		</div>
+		<Dialog.Footer>
+			<Button variant="outline" onclick={() => (inviteUserDialog = false)} class="cursor-pointer">
+				Cancel
+			</Button>
+			<Button class="cursor-pointer">Save changes</Button>
+		</Dialog.Footer>
+	</Dialog.Content>
+</Dialog.Root>
