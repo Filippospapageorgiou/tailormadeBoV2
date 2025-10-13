@@ -13,17 +13,56 @@
     import { getAllUserFromOrg } from './data.remote';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import Label from '$lib/components/ui/label/label.svelte';
+	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
+	import { inviteUser } from './data.remote';
+	import { toast } from '$lib/stores/toast.svelte';
 
 
     let query = getAllUserFromOrg();
     let profiles = $derived(query.current?.flattenedUsers);
-    let roleTypes = $derived(query.current?.roleTypes);
+	let invite = $state(false);
 
 	let inviteUserDialog:boolean = $state(false);
 	let inviteEmail:string = $state('');
 
 	function handleIviteUser(){
 		inviteUserDialog = true;
+	}
+
+	async function handleInviteUser(){
+		invite = true;
+		try{
+			const origin = typeof window !== 'undefined' ? window.location.origin : '';
+			const redirectUrl = `${origin}/auth/set-password`;
+			const result = await inviteUser({
+				email: inviteEmail,
+				redirectUrl: redirectUrl
+			});
+
+			if(result?.success){
+				toast.show = true;
+				toast.status = true;
+				toast.title = 'Success';
+				toast.text = result?.message;
+				inviteEmail = '';
+			}else {
+				toast.show = true;
+				toast.status = false;
+				toast.title = 'Error';
+				toast.text = result?.message || 'Failed to send invitation';
+			}
+
+		}catch (error) {
+			console.error('Error inviting user:', error);
+			toast.show = true;
+			toast.status = false;
+			toast.title = 'Error';
+			toast.text = 'An error occured trying to invite user'
+		} finally {
+			inviteUserDialog = false;
+			invite = false;
+		}
+
 	}
 	
 </script>
@@ -103,15 +142,36 @@
 						type="email"
 						bind:value={inviteEmail}
 						placeholder="example@gmail.com"
+						disabled={invite}
 					/>
 				</div>
 			</div>
 		</div>
 		<Dialog.Footer>
-			<Button variant="outline" onclick={() => (inviteUserDialog = false)} class="cursor-pointer">
+			<Button 
+				variant="outline" 
+				onclick={() => {
+					inviteUserDialog = false;
+					inviteEmail = '';
+				}} 
+				class="cursor-pointer"
+				disabled={invite}
+			>
 				Cancel
 			</Button>
-			<Button class="cursor-pointer">Save changes</Button>
+			<Button 
+				disabled={invite || !inviteEmail} 
+				onclick={handleInviteUser} 
+				class="cursor-pointer gap-2"
+			>
+				{#if invite} 
+					<Spinner />
+					Sending...
+				{:else}
+					<Mail class="h-4 w-4" />
+					Invite User
+				{/if}
+			</Button>
 		</Dialog.Footer>
 	</Dialog.Content>
 </Dialog.Root>

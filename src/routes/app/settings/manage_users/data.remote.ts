@@ -104,6 +104,65 @@ export const updateUserRole = command(updateUserRoleSchema, async ({ userId, rol
     }
 });
 
+const inviteUserEmailschema = z.object({
+    email: z.string({error:'invalid email cannog '}).trim().email(),
+    redirectUrl: z.string({ error : 'Invalid redirect url' }).url()
+})
+
+export const inviteUser = query(inviteUserEmailschema, async({ email, redirectUrl }) => {
+    const supabase = createServerClient();
+    const adminClient = createAdminClient();
+    const user = await requireAuthenticatedUser();
+
+    try {
+        // Get the inviter's org_id
+        const { data: inviterProfile, error: profileError } = await supabase
+            .from('profiles')
+            .select('org_id')
+            .eq('id', user.id)
+            .single();
+
+        if (profileError || !inviterProfile) {
+            console.error('Error fetching inviter profile: ', profileError);
+            return {
+                success: false,
+                message: 'Failed to get organization information'
+            };
+        }
+
+        const { data, error } = await adminClient.auth.admin.inviteUserByEmail(
+            email,
+            {
+                redirectTo: redirectUrl,
+                data: {
+                    invited_at: new Date().toISOString(),
+                    org_id: inviterProfile.org_id
+                }
+            }
+        );
+
+        if(error){
+            console.error('Error inviting user: ', error);
+            return {
+                success: false,
+                message: error.message || 'Failed to invite user'
+            };
+        }
+
+        return {
+            success: true,
+            message: 'User invited successfully'
+        };
+
+    } catch(error) {
+        console.error('Error inviting user: ', error);
+        return {
+            success: false,
+            message: 'An error occurred trying to invite user'
+        };
+    }
+})
+
 const deleteUserSchema = z.object({
     userId: z.string({ error: 'Invalid user ID format' })
 });
