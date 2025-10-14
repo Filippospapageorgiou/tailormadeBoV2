@@ -8,7 +8,6 @@
 	import { Eye, EyeOff, Lock, ShieldCheck } from 'lucide-svelte';
 	import { setPassword } from './data.remote';
 	import { Spinner } from '$lib/components/ui/spinner';
-	import { onMount } from 'svelte';
 
 	let { data } = $props();
 
@@ -18,7 +17,6 @@
 	let showPassword: boolean = $state(false);
 	let showConfirmPassword: boolean = $state(false);
 	let errors = $state<{ password?: string; confirmPassword?: string }>({});
-	let processingAuth: boolean = $state(false);
 
 	// Password strength indicator
 	let passwordStrength = $derived.by(() => {
@@ -42,25 +40,26 @@
 		toast.title = 'Error';
 		toast.text = text;
 	}
-
-	// Handle the hash fragment from Supabase invite link
-	onMount(() => {
-		const hashParams = new URLSearchParams(window.location.hash.substring(1));
-		const accessToken = hashParams.get('access_token');
-		const type = hashParams.get('type');
-
-		if (accessToken && type === 'invite') {
-			processingAuth = true;
-			window.history.replaceState({}, document.title, window.location.pathname);
-			setTimeout(() => {
-				window.location.reload();
-			}, 100);
-		} else if (data.needsAuth) {
-			handleError('Please use the invitation link sent to your email.');
-		}
-	});
 </script>
 
+{#if data.needsAuth}
+	<div class="min-h-svh bg-muted/30 flex items-center justify-center p-4">
+		<Card.Root class="max-w-md">
+			<Card.Header class="text-center">
+				<div class="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-destructive/10">
+					<ShieldCheck class="size-6 text-destructive" />
+				</div>
+				<Card.Title>Invalid Access</Card.Title>
+				<Card.Description>
+					Please use the invitation link sent to your email to access this page.
+				</Card.Description>
+			</Card.Header>
+			<Card.Content>
+				<Button href="/auth/login" class="w-full">Go to Login</Button>
+			</Card.Content>
+		</Card.Root>
+	</div>
+{:else}
 <div class="min-h-svh bg-muted/30 flex items-center justify-center p-4 text-bro">
 	<div class="w-full max-w-md">
 		<!-- Logo -->
@@ -219,3 +218,4 @@
 		</div>
 	</div>
 </div>
+{/if}

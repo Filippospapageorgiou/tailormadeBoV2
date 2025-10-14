@@ -106,16 +106,14 @@ export const updateUserRole = command(updateUserRoleSchema, async ({ userId, rol
 
 const inviteUserEmailschema = z.object({
     email: z.string({error:'invalid email cannog '}).trim().email(),
-    redirectUrl: z.string({ error : 'Invalid redirect url' }).url()
 })
 
-export const inviteUser = query(inviteUserEmailschema, async({ email, redirectUrl }) => {
+export const inviteUser = query(inviteUserEmailschema, async({ email }) => {
     const supabase = createServerClient();
     const adminClient = createAdminClient();
     const user = await requireAuthenticatedUser();
 
     try {
-        // Get the inviter's org_id
         const { data: inviterProfile, error: profileError } = await supabase
             .from('profiles')
             .select('org_id')
@@ -133,7 +131,6 @@ export const inviteUser = query(inviteUserEmailschema, async({ email, redirectUr
         const { data, error } = await adminClient.auth.admin.inviteUserByEmail(
             email,
             {
-                redirectTo: redirectUrl,
                 data: {
                     invited_at: new Date().toISOString(),
                     org_id: inviterProfile.org_id

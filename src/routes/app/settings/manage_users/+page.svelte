@@ -32,11 +32,8 @@
 	async function handleInviteUser(){
 		invite = true;
 		try{
-			const origin = typeof window !== 'undefined' ? window.location.origin : '';
-			const redirectUrl = `${origin}/auth/set-password`;
 			const result = await inviteUser({
 				email: inviteEmail,
-				redirectUrl: redirectUrl
 			});
 
 			if(result?.success){
