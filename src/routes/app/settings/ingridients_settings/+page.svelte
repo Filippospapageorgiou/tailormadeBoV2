@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getIngridients, deleteIngredient, editIngredient, addIngredient } from './data.remote';
+	import { getIngridients, deleteIngredient, editIngredient, addIngredient, authenticatedAccess } from './data.remote';
 	import Skeleton from '$lib/components/ui/skeleton/skeleton.svelte';
 	import Input from '$lib/components/ui/input/input.svelte';
 	import * as Select from '$lib/components/ui/select';
@@ -20,6 +20,7 @@
 		{ value: 'κουταλιά της σούπας (tbsp)', label: 'κουταλιά της σούπas (tbsp)' }
 	]);
 
+	authenticatedAccess();
 	let query = getIngridients();
 
 	let refreshAction = $state(false);

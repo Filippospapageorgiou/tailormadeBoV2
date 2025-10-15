@@ -10,14 +10,14 @@
 	import { Badge } from "$lib/components/ui/badge/index.js";
     import DataTable from "./data-table.svelte";
     import { columns } from './colums';
-    import { getAllUserFromOrg } from './data.remote';
+    import { authenticatedAccess, getAllUserFromOrg } from './data.remote';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import Label from '$lib/components/ui/label/label.svelte';
 	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
 	import { inviteUser } from './data.remote';
 	import { toast } from '$lib/stores/toast.svelte';
 
-
+	authenticatedAccess();
     let query = getAllUserFromOrg();
     let profiles = $derived(query.current?.flattenedUsers);
 	let invite = $state(false);

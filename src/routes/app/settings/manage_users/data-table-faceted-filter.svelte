@@ -84,7 +84,7 @@
 										: "opacity-50 [&_svg]:invisible"
 								)}
 							>
-								<CheckIcon class="size-4" />
+								<CheckIcon class="size-4 text-white" />
 							</div>
 
 							<span>{option.label}</span>

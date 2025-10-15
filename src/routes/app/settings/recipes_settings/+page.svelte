@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getBeverages } from './data.remote';
+	import { authenticatedAccess, getBeverages } from './data.remote';
 	import BeverageCard from './components/BeverageCard.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
@@ -8,6 +8,7 @@
 	import * as Tooltip from '$lib/components/ui/tooltip';
 	import AddBeverageDialog from './components/AddBeverageDialog.svelte';
 
+	authenticatedAccess();
 	let query = getBeverages();
 
 	let allBeverages = $derived(query.current?.beverages ?? []);

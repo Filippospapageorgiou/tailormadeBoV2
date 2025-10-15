@@ -9,7 +9,7 @@ export const roles = [
 	},
 	{
 		value: "head_barista",
-		label: "head barista",
+		label: "Head barista",
 	},
 	{
 		value: "employee",

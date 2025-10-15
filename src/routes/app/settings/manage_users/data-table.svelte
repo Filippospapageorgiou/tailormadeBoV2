@@ -22,8 +22,6 @@
 	import ChevronsLeftIcon from "@lucide/svelte/icons/chevrons-left";     // ADD THIS
 	import ChevronsRightIcon from "@lucide/svelte/icons/chevrons-right";
     import * as Select from '$lib/components/ui/select';  // ADD THIS IMPORT
-	import { setContext } from 'svelte';
-	import type { RoleTypes } from '$lib/models/database.types';
 
 	type DataTableProps<TData, TValue> = {
 		columns: ColumnDef<TData, TValue>[];
