@@ -89,7 +89,7 @@
 					loading = true;
 					await submit();
 
-					if(!setPassword.result?.success){
+					if(setPassword.result?.success === false){
 						handleError(setPassword.result?.message || 'An unexpected error occurred.');
 					}
 					loading = false;

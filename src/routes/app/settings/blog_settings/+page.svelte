@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getAllBlogs } from './data.remote';
+	import { getAllBlogs, authenticatedAccess } from './data.remote';
 	import type { Blog } from '$lib/models/database.types';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
@@ -18,6 +18,7 @@
 	import BlogCard from './components/BlogCard.svelte';
 	import AddBlogDialog from './components/AddBlogDialog.svelte';
 
+	let auth = authenticatedAccess();
 	let query = getAllBlogs();
 	let allBlogs = $derived(query.current?.blogs ?? []);
 	let totalBlogs = $derived(query.current?.total ?? 0);

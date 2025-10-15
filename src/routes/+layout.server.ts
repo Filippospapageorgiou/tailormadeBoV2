@@ -15,9 +15,10 @@ export const load: LayoutServerLoad = async ({ locals: { safeGetSession, supabas
 		throw redirect(303, '/auth/login');
 	}
 
-	if (session && url.pathname.startsWith('/auth')) {
+	if (session && url.pathname.startsWith('/auth') && url.pathname !== '/auth/set-password') {
 		throw redirect(303, '/app');
 	}
+
   return {
     session,
     cookies: cookies.getAll(),
