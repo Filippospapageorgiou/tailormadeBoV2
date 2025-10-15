@@ -26,7 +26,7 @@ export const authenticatedAccess = query(async () => {
     if(data && data.length > 0)  profile = data[0];
     else error(404,'Not found user info');
 
-    if(profile.role_id !== 1 && profile.role_id !== 2){
+    if(profile.role_id !== 1 && profile.role_id !== 2 && profile.role_id !== 4){
       throw redirect(308,'/app')
     }
     return { profile };

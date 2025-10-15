@@ -17,8 +17,9 @@
   import RefreshCcwIcon from "@lucide/svelte/icons/refresh-ccw";
 	import BlogCard from './components/BlogCard.svelte';
 	import AddBlogDialog from './components/AddBlogDialog.svelte';
+	import AuthBlock from '$lib/components/custom/AuthBlock/authBlock.svelte';
 
-	authenticatedAccess();
+	let auth = authenticatedAccess();
 	let query = getAllBlogs();
 	let allBlogs = $derived(query.current?.blogs ?? []);
 	let totalBlogs = $derived(query.current?.total ?? 0);
@@ -99,6 +100,9 @@
 
 </script>
 
+{#if auth.loading}
+	<AuthBlock />
+{:else}
 <div class="min-h-screen">
 	<main class="container mx-auto px-4 pt-4 pb-10 md:px-6">
 		<!-- Header Section -->
@@ -303,6 +307,7 @@
 		{/if}
 	</main>
 </div>
+{/if}
 
 <!-- Add Blog Dialog -->
 <AddBlogDialog bind:open={creatingBlog} onSuccess={refresh} />

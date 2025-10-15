@@ -7,8 +7,9 @@
 	import { X, RefreshCcw, Plus } from 'lucide-svelte';
 	import * as Tooltip from '$lib/components/ui/tooltip';
 	import AddBeverageDialog from './components/AddBeverageDialog.svelte';
+	import AuthBlock from '$lib/components/custom/AuthBlock/authBlock.svelte';
 
-	authenticatedAccess();
+	let auth = authenticatedAccess();
 	let query = getBeverages();
 
 	let allBeverages = $derived(query.current?.beverages ?? []);
@@ -44,6 +45,9 @@
 	}
 </script>
 
+{#if auth.loading}
+	<AuthBlock />
+{:else}
 <div class="min-h-screen">
 	<main class="container mx-auto px-4 pt-4 pb-10 md:px-6">
 		<!-- Header Section -->
@@ -197,5 +201,6 @@
 		{/if}
 	</main>
 </div>
+{/if}
 
 <AddBeverageDialog bind:open={addingBeverage} onSuccess={refresh} />

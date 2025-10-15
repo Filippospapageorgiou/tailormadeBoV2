@@ -16,8 +16,9 @@
 	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
 	import { inviteUser } from './data.remote';
 	import { toast } from '$lib/stores/toast.svelte';
+	import AuthBlock from '$lib/components/custom/AuthBlock/authBlock.svelte';
 
-	authenticatedAccess();
+	let auth = authenticatedAccess();
     let query = getAllUserFromOrg();
     let profiles = $derived(query.current?.flattenedUsers);
 	let invite = $state(false);
@@ -64,6 +65,9 @@
 	
 </script>
 
+{#if auth.loading}
+	<AuthBlock />
+{:else}
 <div class="min-h-screen">
 	<main class="container mx-auto px-4 pt-4 pb-10 md:px-6">
 		<!-- Header Section -->
@@ -172,3 +176,4 @@
 		</Dialog.Footer>
 	</Dialog.Content>
 </Dialog.Root>
+{/if}

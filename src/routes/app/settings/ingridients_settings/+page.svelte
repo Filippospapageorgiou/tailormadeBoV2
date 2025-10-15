@@ -11,16 +11,17 @@
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
 	import { showProgress, hideProgress } from '$lib/stores/progress.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
+	import AuthBlock from '$lib/components/custom/AuthBlock/authBlock.svelte';
 
-	const unitItems = $state([
+	const unitItems = [
 		{ value: 'γραμμάρια (g)', label: 'γραμμάρια (g)' },
 		{ value: 'κιλά (kg)', label: 'κιλά (kg)' },
 		{ value: 'μιλιλίτρα (ml)', label: 'μιλιλίτρα (ml)' },
 		{ value: 'λίτρα (l)', label: 'λίτρα (l)' },
 		{ value: 'κουταλιά της σούπας (tbsp)', label: 'κουταλιά της σούπas (tbsp)' }
-	]);
+	];
 
-	authenticatedAccess();
+	let auth = authenticatedAccess();
 	let query = getIngridients();
 
 	let refreshAction = $state(false);
@@ -176,9 +177,16 @@
 			const result = await deleteIngredient({ ingridientId: id.toString() });
 			returnMessage = result.message;
 			if (result.success) {
+				toast.show = true;
+				toast.status = true;
+				toast.title = 'Success';
+				toast.text = returnMessage;
 				await query.refresh();
 			} else {
-				console.error('Failed to delete:', result.message);
+				toast.show = true;
+				toast.status = false;
+				toast.title = 'Error';
+				toast.text = returnMessage;
 			}
 		} catch (error) {
 			console.error('Error deleting ingredient:', error);
@@ -188,14 +196,13 @@
 			toast.text = returnMessage;
 		} finally {
 			hideProgress();
-			toast.show = true;
-			toast.status = true;
-			toast.title = 'Success';
-			toast.text = returnMessage;
 		}
 	}
 </script>
 
+{#if auth.loading}
+	<AuthBlock />
+{:else}
 <div class="min-h-screen">
 	<main class="container mx-auto px-4 pt-4 pb-10 md:px-6">
 		<!-- Header Section -->
@@ -402,6 +409,7 @@
 		{/if}
 	</main>
 </div>
+{/if}
 
 <!-- Edit Dialog -->
 <Dialog.Root
