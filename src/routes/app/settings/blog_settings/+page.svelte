@@ -18,7 +18,7 @@
 	import BlogCard from './components/BlogCard.svelte';
 	import AddBlogDialog from './components/AddBlogDialog.svelte';
 
-	let auth = authenticatedAccess();
+	authenticatedAccess();
 	let query = getAllBlogs();
 	let allBlogs = $derived(query.current?.blogs ?? []);
 	let totalBlogs = $derived(query.current?.total ?? 0);

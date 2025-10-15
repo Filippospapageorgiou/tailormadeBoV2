@@ -7,7 +7,7 @@ import { redirect } from '@sveltejs/kit';
 import type { Ingredient } from '$lib/models/database.types';
 import { z } from 'zod/v4';
 
-export const authenticatedAccess = prerender(async () => {
+export const authenticatedAccess = query(async () => {
 	const supabase = createServerClient();
 	const user = await requireAuthenticatedUser();
 
