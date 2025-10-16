@@ -40,13 +40,12 @@
 				icon: EuroIcon,
 			},
 			{
-				title: "Scedule",
-				url:"/app/register",
+				title: "Schedule",
+				url:"/app/schedule",
 				icon: CalendarRange
 			},
 			{
 				title: "Admin Settings",
-				requiresAdmin: true,
 				url: "/app",
 				icon: Settings2Icon,
 				items: [
@@ -65,8 +64,11 @@
 					{
 						title: "Manage users",
 						url: "/app/settings/manage_users",
-						requiresSuperAdmin: true
 					},
+					{
+						title: "Schedule settings",
+						url: "/app/settings/schedule_settings",					
+					}
 				],
 			},
 		],

@@ -16,12 +16,12 @@
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { roles } from './data';
-	import DataTableFacetedFilter from './data-table-faceted-filter.svelte';  // ADD THIS
-    import ChevronRightIcon from "@lucide/svelte/icons/chevron-right";     // ADD THIS
-	import ChevronLeftIcon from "@lucide/svelte/icons/chevron-left";       // ADD THIS
-	import ChevronsLeftIcon from "@lucide/svelte/icons/chevrons-left";     // ADD THIS
+	import DataTableFacetedFilter from './data-table-faceted-filter.svelte';
+    import ChevronRightIcon from "@lucide/svelte/icons/chevron-right"; 
+	import ChevronLeftIcon from "@lucide/svelte/icons/chevron-left";       
+	import ChevronsLeftIcon from "@lucide/svelte/icons/chevrons-left";     
 	import ChevronsRightIcon from "@lucide/svelte/icons/chevrons-right";
-    import * as Select from '$lib/components/ui/select';  // ADD THIS IMPORT
+    import * as Select from '$lib/components/ui/select';  
 
 	type DataTableProps<TData, TValue> = {
 		columns: ColumnDef<TData, TValue>[];

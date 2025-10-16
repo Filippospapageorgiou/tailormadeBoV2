@@ -15,7 +15,7 @@
   setProfileContext(profile);
 
   $effect(() => {
-    profile = data.prfile || null;
+    profile = data.profile || null;
   });
   
   let breadcrumbs = $derived(() => {

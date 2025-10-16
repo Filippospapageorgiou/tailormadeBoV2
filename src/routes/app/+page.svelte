@@ -42,10 +42,10 @@
 	let value: DateValue[] | undefined = $state([today(getLocalTimeZone())]);
 </script>
 
-<div class="flex flex-1 flex-col gap-4 p-4 pt-0">
-	<div class="grid auto-rows-min gap-4 md:grid-cols-3">
+<div class="flex flex-1 flex-col gap-4 p-4 pt-2">
+	<div class="grid auto-rows-min gap-4 md:grid-cols-3 pt-0 md:pt-9">
 		<Hero />
-
+		
 		<div class="aspect-video rounded-2xl bg-muted/50">
 			<CardImg1>
 				<CardBodyImg

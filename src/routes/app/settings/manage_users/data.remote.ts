@@ -224,3 +224,38 @@ export const deleteUser = command(deleteUserSchema, async ({ userId }) => {
         };
     }
 });
+
+const updateBadgeColorSchema = z.object({
+    userId: z.string({ error: 'Invalid user ID format' }),
+    badgeColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, { error: 'Invalid color format. Must be a hex color (e.g., #3b82f6)' })
+});
+
+export const updateBadgeColor = command(updateBadgeColorSchema, async ({ userId, badgeColor }) => {
+    const supabase = createServerClient();
+
+    try {
+        const { error } = await supabase
+            .from('profiles')
+            .update({ badge_color: badgeColor })
+            .eq('id', userId);
+
+        if (error) {
+            console.error('Error updating badge color:', error);
+            return {
+                success: false,
+                message: 'Failed to update badge color'
+            };
+        }
+
+        return {
+            success: true,
+            message: 'Badge color updated successfully'
+        };
+    } catch (err) {
+        console.error('Unexpected error during badge color update:', err);
+        return {
+            success: false,
+            message: 'An unexpected error occurred while updating badge color'
+        };
+    }
+});

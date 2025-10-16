@@ -60,6 +60,7 @@ export interface Profile {
   org_id:number; 
   role_id:number;
   role_name:string;
+  badge_color:string
 }
 
 export interface RoleTypes {

@@ -23,7 +23,6 @@
 	import { updateUsername, updateAvatar } from './data.remote';
 	import { getProfileContext } from '$lib/stores/profile.svelte.js';
   	import { toast } from '$lib/stores/toast.svelte';
-	import type { Profile } from '$lib/models/database.types';
 
 	let { data } = $props();
 
@@ -224,9 +223,6 @@
 									<Mail class="h-4 w-4" />
 									{profile.email}
 								</p>
-								<Badge class="bg-[#8B6B4A] px-3 py-1 text-sm hover:bg-[#8B6B4A]">
-									{profile.role}
-								</Badge>
 							</div>
 						</div>
 

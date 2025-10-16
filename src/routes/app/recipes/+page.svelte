@@ -29,13 +29,13 @@
 
 <div class="min-h-screen bg-white">
     <main class="container mx-auto px-4 md:px-6 pt-8 pb-20">
-        <div class="mb-12 flex items-end justify-between md:gap-8">
+        <div class="mb-12 flex flex-col md:flex-row items-start md:items-end justify-between gap-4 md:gap-8">
             <div class="flex flex-col gap-1">
                 <h1 class="text-4xl font-mono tracking-wider text-neutral-800">BEVERAGES</h1>
                 <p class="text-sm text-[#8B6B4A]">Available Products: {beverages.length}</p>
             </div>
-            <div class="flex flex-col items-end">
-                <Input bind:value={searchQuery} class="md:w-72 py-1 w-35" placeholder='Filter beverages...' />
+            <div class="w-full md:w-auto flex flex-col items-end">
+                <Input bind:value={searchQuery} class="w-full md:w-72 py-1" placeholder='Filter beverages...' />
             </div>
         </div>
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">

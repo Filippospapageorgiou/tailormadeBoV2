@@ -5,22 +5,25 @@
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import * as Select from '$lib/components/ui/select/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
-	import { Pencil, Trash } from 'lucide-svelte';
-	import { deleteUser, getAllUserFromOrg, updateUserRole } from './data.remote';
+	import { Pencil, Trash, Palette } from 'lucide-svelte';
+	import { deleteUser, getAllUserFromOrg, updateUserRole, updateBadgeColor } from './data.remote';
 	import { showProgress, hideProgress } from '$lib/stores/progress.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import type { RoleTypes } from '$lib/models/database.types';
+	import BadgeColorPicker from '$lib/components/custom/badge-color-picker.svelte';
 
 	let {
 		id,
 		username,
 		role_id,
-		role_name
+		role_name,
+		badge_color
 	}: {
 		id: string;
 		username: string;
 		role_id: number;
 		role_name: string;
+		badge_color: string;
 	} = $props();
 
 	let query = getAllUserFromOrg();
@@ -32,6 +35,10 @@
 	// Delete dialog state
 	let deleteDialogOpen = $state(false);
 
+	// Badge color dialog state
+	let badgeColorDialogOpen = $state(false);
+	let selectedBadgeColor = $state(badge_color || '#3b82f6');
+
 	function handleEditClick() {
 		selectedRoleId = String(role_id);
 		editDialogOpen = true;
@@ -39,6 +46,11 @@
 
 	function handleDeleteClick() {
 		deleteDialogOpen = true;
+	}
+
+	function handleBadgeColorClick() {
+		selectedBadgeColor = badge_color || '#3b82f6';
+		badgeColorDialogOpen = true;
 	}
 
 	async function handleEditSubmit() {
@@ -102,6 +114,38 @@
 		}
 	}
 
+	async function handleBadgeColorSubmit() {
+		badgeColorDialogOpen = false;
+		showProgress('Updating badge color...');
+
+		try {
+			const result = await updateBadgeColor({
+				userId: id,
+				badgeColor: selectedBadgeColor
+			});
+
+			if (result.success) {
+				await query.refresh();
+				toast.show = true;
+				toast.status = true;
+				toast.title = 'Success';
+				toast.text = result.message;
+			} else {
+				toast.show = true;
+				toast.status = false;
+				toast.title = 'Error';
+				toast.text = result.message || 'Failed to update badge color.';
+			}
+		} catch (error: any) {
+			toast.show = true;
+			toast.status = false;
+			toast.title = 'Error';
+			toast.text = error.message || 'An unexpected error occurred.';
+		} finally {
+			hideProgress();
+		}
+	}
+
 	// Compute selected role name for display
 	let selectedRoleName = $derived(() => {
 		const role = roleTypes.find((r: RoleTypes) => r.id === parseInt(selectedRoleId, 10));
@@ -124,13 +168,20 @@
 		{/snippet}
 	</DropdownMenu.Trigger>
 
-	<DropdownMenu.Content align="end" class="w-44">
+	<DropdownMenu.Content align="end" class="w-48">
 		<DropdownMenu.Item
 			onclick={handleEditClick}
 			class="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted"
 		>
 			<Pencil class="h-4 w-4 text-muted-foreground" />
 			<span>Edit Role</span>
+		</DropdownMenu.Item>
+		<DropdownMenu.Item
+			onclick={handleBadgeColorClick}
+			class="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted"
+		>
+			<Palette class="h-4 w-4 text-muted-foreground" />
+			<span>Change Badge Color</span>
 		</DropdownMenu.Item>
 		<DropdownMenu.Separator class="my-1 h-px bg-border" />
 		<DropdownMenu.Item
@@ -222,6 +273,28 @@
 			>
 				Delete User
 			</Button>
+		</Dialog.Footer>
+	</Dialog.Content>
+</Dialog.Root>
+
+<!-- Badge Color Dialog -->
+<Dialog.Root bind:open={badgeColorDialogOpen}>
+	<Dialog.Content class="sm:max-w-[500px]">
+		<Dialog.Header>
+			<Dialog.Title>Change Badge Color</Dialog.Title>
+			<Dialog.Description>
+				Update the badge color for <span class="font-semibold">{username}</span>. This will change
+				how their badge appears throughout the application.
+			</Dialog.Description>
+		</Dialog.Header>
+		<div class="py-6">
+			<BadgeColorPicker bind:value={selectedBadgeColor} />
+		</div>
+		<Dialog.Footer>
+			<Button variant="outline" onclick={() => (badgeColorDialogOpen = false)} class="cursor-pointer">
+				Cancel
+			</Button>
+			<Button onclick={handleBadgeColorSubmit} class="cursor-pointer">Save changes</Button>
 		</Dialog.Footer>
 	</Dialog.Content>
 </Dialog.Root>

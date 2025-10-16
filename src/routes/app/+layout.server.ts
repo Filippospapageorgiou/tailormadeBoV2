@@ -19,13 +19,12 @@ export const load: LayoutServerLoad = async () => {
         console.error('Error fetching user profile: ', profileError);
         return { prfile:null }
     }
-    const { data: roleType, error: roleNameError } = await supabase
+    const { data: roleType, } = await supabase
         .from('role_types')
         .select('*')
         .eq('id', profile.role_id)
         .single<RoleTypes>();
     
-
     profile.role_name = roleType?.role_name || '';
 	return {
 		profile
