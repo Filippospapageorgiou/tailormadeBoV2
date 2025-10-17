@@ -1,327 +1,565 @@
 <script lang="ts">
-    import { Button } from "$lib/components/ui/button";
-    import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "$lib/components/ui/card";
-    import { Badge } from "$lib/components/ui/badge";
-    import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "$lib/components/ui/dialog";
-    import { Label } from "$lib/components/ui/label";
-    import { Input } from "$lib/components/ui/input";
-    import { Trash2, Plus, Calendar, Pencil } from "lucide-svelte";
-    import { getSchedules, createSchedule, deleteSchedule } from "./data.remote";
-    import { goto } from "$app/navigation";
-    import { SCHEDULE_STATUS } from "$lib/models/schedule.types";
-    import type { WeeklySchedule } from "$lib/models/schedule.types";
-    import { SvelteDate } from "svelte/reactivity";
-    import { showFailToast, showSuccessToast } from "$lib/stores/toast.svelte";
-    import { Spinner } from "$lib/components/ui/spinner";
+	import { Button } from '$lib/components/ui/button';
+	import { Card, CardContent } from '$lib/components/ui/card';
+	import {
+		Dialog,
+		DialogContent,
+		DialogDescription,
+		DialogFooter,
+		DialogHeader,
+		DialogTitle
+	} from '$lib/components/ui/dialog';
+	import { Label } from '$lib/components/ui/label';
+	import { Input } from '$lib/components/ui/input';
+	import { Calendar } from 'lucide-svelte';
+	import * as Empty from '$lib/components/ui/empty/index.js';
+	import * as Pagination from '$lib/components/ui/pagination';
+	import ChevronLeftIcon from 'lucide-svelte/icons/chevron-left';
+	import ChevronRightIcon from 'lucide-svelte/icons/chevron-right';
+	import {
+        authenticatedAccess,
+		getSchedulesWithMetricsPaginated,
+		createSchedule,
+		deleteSchedule,
+		updateScheduleStatus
+	} from './data.remote';
+	import { goto } from '$app/navigation';
+	import type { WeeklySchedule, ScheduleStatus } from '$lib/models/schedule.types';
+	import { SvelteDate } from 'svelte/reactivity';
+	import { showFailToast, showSuccessToast } from '$lib/stores/toast.svelte';
+	import { Spinner } from '$lib/components/ui/spinner';
+	import { Skeleton } from '$lib/components/ui/skeleton';
+    import InputCalendar from '$lib/components/custom/inputCalendar.svelte';
 
-    // Fetch schedules
-    let schedulesQuery = $state(getSchedules());
+	import ScheduleCard from './components/ScheduleCard.svelte';
+	import FilterBar from './components/FilterBar.svelte';
+	import AuthBlock from '$lib/components/custom/AuthBlock/authBlock.svelte';
 
-    // Modal state
-    let isCreateModalOpen = $state(false);
-    let isDeleteModalOpen = $state(false);
-    let scheduleToDelete = $state<WeeklySchedule | null>(null);
+	// Pagination state
+	let currentPage = $state(1);
+	let perPage = $state(9);
+    let auth = authenticatedAccess();
 
-    // Form state
-    let formData = $state({
-        week_start_date: "",
-        week_end_date: "",
-        year: new Date().getFullYear()
-    });
+	// Fetch schedules with pagination
+	let schedulesQuery = $derived.by(() =>
+		getSchedulesWithMetricsPaginated({ page: currentPage, perPage })
+	);
 
-    // Loading state
-    let isCreating = $state(false);
-    let isDeleting = $state(false);
+	// Modal state
+	let isCreateModalOpen = $state(false);
+	let isDeleteModalOpen = $state(false);
+	let scheduleToDelete = $state<WeeklySchedule | null>(null);
 
-    // Get status badge variant and label
-    function getStatusBadge(status: string) {
-        switch (status) {
-            case SCHEDULE_STATUS.DRAFT:
-                return { variant: "secondary" as const, label: "Draft" };
-            case SCHEDULE_STATUS.PUBLISHED:
-                return { variant: "default" as const, label: "Published" };
-            case SCHEDULE_STATUS.ARCHIVED:
-                return { variant: "outline" as const, label: "Archived" };
-            default:
-                return { variant: "secondary" as const, label: status };
-        }
-    }
+	// Form state - separate week_start_date for reactivity
+	let weekStartDate = $state('');
+	let formData = $derived.by(() => {
+		if (!weekStartDate) {
+			return {
+				week_start_date: '',
+				week_end_date: '',
+				year: new SvelteDate().getFullYear()
+			};
+		}
 
-    // Format date for display
-    function formatDate(dateString: string) {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    }
+		const startDate = new SvelteDate(weekStartDate);
+		const endDate = new SvelteDate(startDate);
+		endDate.setDate(startDate.getDate() + 6);
 
-    // Handle create schedule
-    async function handleCreateSchedule() {
-        if (!formData.week_start_date || !formData.week_end_date) {
-            return;
-        }
+		return {
+			week_start_date: weekStartDate,
+			week_end_date: endDate.toISOString().split('T')[0],
+			year: startDate.getFullYear()
+		};
+	});
 
-        isCreating = true;
-        try {
-            const result = await createSchedule({
-                week_start_date: formData.week_start_date,
-                week_end_date: formData.week_end_date,
-                year: formData.year
-            });
+	// Loading state
+	let isCreating = $state(false);
+	let isDeleting = $state(false);
+	let isRefreshing = $state(false);
 
-            if (result.success && result.schedule) {
-                // Close modal and reset form
-                isCreateModalOpen = false;
-                formData = {
-                    week_start_date: "",
-                    week_end_date: "",
-                    year: new Date().getFullYear()
-                };
+	// Filter state
+	let statusFilter = $state('');
+	let yearFilter = $state('');
+	let searchQuery = $state('');
 
-                schedulesQuery.refresh();
+	// Get schedules and calculate available years
+	let allSchedules = $derived(schedulesQuery.current?.schedules ?? []);
+	let totalCount = $derived(schedulesQuery.current?.totalCount ?? 0);
+	let totalPages = $derived(schedulesQuery.current?.totalPages ?? 0);
 
-                // Navigate to the new schedule
-                goto(`/app/settings/schedule_settings/${result.schedule.id}`);
-            }
-        } finally {
-            isCreating = false;
-        }
-    }
+	let availableYears = $derived.by(() => {
+		const years = new Set(allSchedules.map((s) => s.year));
+		return Array.from(years).sort((a, b) => b - a);
+	});
 
-    // Handle delete schedule
-    async function handleDeleteSchedule() {
-        if (!scheduleToDelete) return;
+	// Filtered schedules
+	let filteredSchedules = $derived.by(() => {
+		let schedules = allSchedules;
 
-        isDeleting = true;
-        try {
-            const result = await deleteSchedule({ scheduleId: scheduleToDelete.id });
+		// Filter by status
+		if (statusFilter) {
+			schedules = schedules.filter((s) => s.status === statusFilter);
+		}
 
-            if (result.success) {
-                isDeleteModalOpen = false;
-                scheduleToDelete = null;
-                showSuccessToast('Success', result.message);
-                schedulesQuery.refresh();
-            }else{
-                showFailToast('Fail',result.message);
-            }
-        } finally {
-            isDeleting = false;
-        }
-    }
+		// Filter by year
+		if (yearFilter) {
+			schedules = schedules.filter((s) => s.year === parseInt(yearFilter));
+		}
 
-    // Auto-calculate week end date (6 days after start)
-    $effect(() => {
-        if (formData.week_start_date) {
-            const startDate = new SvelteDate(formData.week_start_date);
-            const endDate = new SvelteDate(startDate);
-            endDate.setDate(startDate.getDate() + 6);
-            formData.week_end_date = endDate.toISOString().split('T')[0];
-            formData.year = startDate.getFullYear();
-        }
-    });
+		// Filter by search query
+		if (searchQuery) {
+			const query = searchQuery.toLowerCase();
+			schedules = schedules.filter((s) => {
+				const startDate = formatDate(s.week_start_date).toLowerCase();
+				const endDate = formatDate(s.week_end_date).toLowerCase();
+				const year = s.year.toString();
+				return startDate.includes(query) || endDate.includes(query) || year.includes(query);
+			});
+		}
+
+		return schedules;
+	});
+
+	// Format date for display
+	function formatDate(dateString: string): string {
+		const date = new Date(dateString);
+		return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+	}
+
+	// Handle status change with proper typing
+	async function handleStatusChange(scheduleId: number, newStatus: string) {
+		const result = await updateScheduleStatus({
+			scheduleId,
+			status: newStatus as ScheduleStatus
+		});
+
+		if (result.success) {
+			showSuccessToast('Success', result.message);
+			await schedulesQuery.refresh();
+		} else {
+			showFailToast('Error', result.message || 'Failed to update status');
+		}
+	}
+
+	// Handle preview (placeholder for now)
+	function handlePreview(scheduleId: number) {
+		// TODO: Implement preview functionality
+		console.log('Preview schedule:', scheduleId);
+		showSuccessToast('Coming Soon', 'Preview functionality will be implemented soon');
+	}
+
+	// Reset form helper
+	function resetForm() {
+		weekStartDate = '';
+	}
+
+	// Handle create schedule
+	async function handleCreateSchedule() {
+		if (!formData.week_start_date || !formData.week_end_date) {
+			showFailToast('Validation Error', 'Please select a week start date');
+			return;
+		}
+
+		isCreating = true;
+		try {
+			const result = await createSchedule({
+				week_start_date: formData.week_start_date,
+				week_end_date: formData.week_end_date,
+				year: formData.year
+			});
+
+			if (result.success && result.schedule) {
+				isCreateModalOpen = false;
+				resetForm();
+				schedulesQuery.refresh();
+				showSuccessToast('Success', 'Schedule created successfully');
+				goto(`/app/settings/schedule_settings/${result.schedule.id}`);
+			} else {
+				showFailToast('Error', result.message || 'Failed to create schedule');
+			}
+		} catch (error) {
+			console.error('Error creating schedule:', error);
+			showFailToast('Error', 'An unexpected error occurred');
+		} finally {
+			isCreating = false;
+		}
+	}
+
+	// Handle delete schedule
+	async function handleDeleteSchedule() {
+		if (!scheduleToDelete) return;
+
+		isDeleting = true;
+		try {
+			const result = await deleteSchedule({ scheduleId: scheduleToDelete.id });
+
+			if (result.success) {
+				isDeleteModalOpen = false;
+				scheduleToDelete = null;
+				showSuccessToast('Success', result.message);
+				schedulesQuery.refresh();
+			} else {
+				showFailToast('Error', result.message || 'Failed to delete schedule');
+			}
+		} catch (error) {
+			console.error('Error deleting schedule:', error);
+			showFailToast('Error', 'An unexpected error occurred');
+		} finally {
+			isDeleting = false;
+		}
+	}
+
+	// Handle edit schedule
+	function handleEditSchedule(scheduleId: number) {
+		goto(`/app/settings/schedule_settings/${scheduleId}`);
+	}
+
+	// Handle delete click with proper typing
+	function handleDeleteClick(schedule: WeeklySchedule) {
+		scheduleToDelete = schedule;
+		isDeleteModalOpen = true;
+	}
+
+	// Handle refresh
+	async function handleRefresh() {
+		isRefreshing = true;
+		try {
+			await schedulesQuery.refresh();
+		} catch (error) {
+			console.error('Error refreshing schedules:', error);
+			showFailToast('Error', 'Failed to refresh schedules');
+		} finally {
+			isRefreshing = false;
+		}
+	}
+
+	// Handle clear filters
+	function handleClearFilters() {
+		statusFilter = '';
+		yearFilter = '';
+		searchQuery = '';
+	}
+
+	// Handle modal close
+	function handleModalClose() {
+		isCreateModalOpen = false;
+		resetForm();
+	}
+
+	// Handle delete modal close
+	function handleDeleteModalClose() {
+		isDeleteModalOpen = false;
+		scheduleToDelete = null;
+	}
 </script>
 
-<svelte:boundary>
-    {#snippet pending()}
-        <div class="flex items-center justify-center h-64">
-            <p class="text-muted-foreground">Loading schedules...</p>
-        </div>
-    {/snippet}
 
-    <div class="container mx-auto py-6 space-y-6">
-        <!-- Header -->
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-3xl font-bold">Schedule Management</h1>
-                <p class="text-muted-foreground">Create and manage weekly schedules for your team</p>
-            </div>
-            <Button onclick={() => isCreateModalOpen = true}>
-                <Plus class="mr-2 h-4 w-4" />
-                Create Schedule
-            </Button>
-        </div>
+{#if auth.loading}
+    <AuthBlock />
+{:else}
+<div class="container mx-auto space-y-6 py-6">
+	<!-- Header -->
+	<div>
+		<h1 class="text-3xl font-bold tracking-tight">Schedule Management</h1>
+		<p class="text-muted-foreground">Create and manage weekly schedules for your team</p>
+	</div>
 
-        <!-- Schedules Grid -->
-        {#await schedulesQuery then result}
-            {#if result.success && result.schedules.length > 0}
-                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {#each result.schedules as schedule (schedule.id)}
-                        <Card class="hover:shadow-lg transition-shadow">
-                            <CardHeader>
-                                <div class="flex items-start justify-between">
-                                    <div class="flex-1">
-                                        <CardTitle class="text-lg">
-                                            Week of {formatDate(schedule.week_start_date)}
-                                        </CardTitle>
-                                        <CardDescription>
-                                            {formatDate(schedule.week_start_date)} - {formatDate(schedule.week_end_date)}
-                                        </CardDescription>
-                                    </div>
-                                    <Badge variant={getStatusBadge(schedule.status).variant}>
-                                        {getStatusBadge(schedule.status).label}
-                                    </Badge>
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                <div class="flex items-center gap-2">
-                                    <Button
-                                        variant="default"
-                                        size="sm"
-                                        class="flex-1"
-                                        onclick={() => goto(`/app/settings/schedule_settings/${schedule.id}`)}
-                                    >
-                                        <Pencil class="mr-2 h-4 w-4" />
-                                        Edit Schedule
-                                    </Button>
-                                    <Button
-                                        variant="destructive"
-                                        size="sm"
-                                        onclick={() => {
-                                            scheduleToDelete = schedule;
-                                            isDeleteModalOpen = true;
-                                        }}
-                                    >
-                                        <Trash2 class="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    {/each}
-                </div>
-            {:else}
-                <Card>
-                    <CardContent class="flex flex-col items-center justify-center py-12">
-                        <Calendar class="h-12 w-12 text-muted-foreground mb-4" />
-                        <h3 class="text-lg font-semibold mb-2">No schedules yet</h3>
-                        <p class="text-muted-foreground mb-4">Create your first weekly schedule to get started</p>
-                        <Button onclick={() => isCreateModalOpen = true}>
-                            <Plus class="mr-2 h-4 w-4" />
-                            Create Schedule
-                        </Button>
-                    </CardContent>
-                </Card>
-            {/if}
-        {/await}
-    </div>
+	{#await schedulesQuery}
+		<!-- Loading State -->
+		<div class="space-y-6">
+			<div class="space-y-2">
+				<Skeleton class="h-32 w-full" />
+			</div>
+			<div class="flex items-center gap-4">
+				<Skeleton class="h-10 w-32" />
+				<Skeleton class="h-10 w-32" />
+				<Skeleton class="h-10 flex-1" />
+				<Skeleton class="h-10 w-24" />
+			</div>
+			<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+				{#each Array(6) as _, index (index)}
+					<Skeleton class="h-64" />
+				{/each}
+			</div>
+		</div>
+	{:then result}
 
-    <!-- Create Schedule Modal -->
-    <Dialog bind:open={isCreateModalOpen}>
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>Create New Schedule</DialogTitle>
-                <DialogDescription>
-                    Select the week start date. The week will automatically span 7 days.
-                </DialogDescription>
-            </DialogHeader>
+		<!-- Filter Bar -->
+		<FilterBar
+			{statusFilter}
+			{yearFilter}
+			{searchQuery}
+			{isRefreshing}
+			{availableYears}
+			onStatusChange={(value) => (statusFilter = value)}
+			onYearChange={(value) => (yearFilter = value)}
+			onSearchChange={(value) => (searchQuery = value)}
+			onRefresh={handleRefresh}
+			onClearFilters={handleClearFilters}
+			onCreate={() => (isCreateModalOpen = true)}
+		/>
 
-            <div class="space-y-4 py-4">
-                <div class="space-y-2">
-                    <Label for="week_start_date">Week Start Date</Label>
-                    <Input
+		<!-- Schedules Grid -->
+			{#if result.success}
+				{#if filteredSchedules.length > 0}
+					<!-- Results Count -->
+					<div class="flex items-center justify-between">
+						<p class="text-sm text-muted-foreground">
+							Showing {filteredSchedules.length} of {totalCount} schedule{totalCount !== 1
+								? 's'
+								: ''}
+						</p>
+					</div>
+
+					<!-- Schedule Cards Grid -->
+					<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+						{#each filteredSchedules as schedule (schedule.id)}
+							<ScheduleCard
+								{schedule}
+								onEdit={handleEditSchedule}
+								onDelete={handleDeleteClick}
+								onPreview={handlePreview}
+								onStatusChange={handleStatusChange}
+							/>
+						{/each}
+					</div>
+
+					<!-- Pagination -->
+					<div class="mt-8 flex justify-center">
+						<Pagination.Root count={totalCount} bind:page={currentPage} {perPage}>
+							{#snippet children({ pages })}
+								<Pagination.Content>
+									<Pagination.Item>
+										<Pagination.PrevButton>
+											<ChevronLeftIcon class="size-4" />
+											<span class="hidden sm:block">Previous</span>
+										</Pagination.PrevButton>
+									</Pagination.Item>
+
+									{#each pages as page (page.key)}
+										{#if page.type === 'ellipsis'}
+											<Pagination.Item>
+												<Pagination.Ellipsis />
+											</Pagination.Item>
+										{:else}
+											<Pagination.Item>
+												<Pagination.Link {page} isActive={currentPage === page.value}>
+													{page.value}
+												</Pagination.Link>
+											</Pagination.Item>
+										{/if}
+									{/each}
+
+									<Pagination.Item>
+										<Pagination.NextButton>
+											<span class="hidden sm:block">Next</span>
+											<ChevronRightIcon class="size-4" />
+										</Pagination.NextButton>
+									</Pagination.Item>
+								</Pagination.Content>
+							{/snippet}
+						</Pagination.Root>
+					</div>
+				{:else if totalCount > 0}
+					<!-- No Results from Filters -->
+					<Card>
+						<CardContent class="flex flex-col items-center justify-center py-12">
+							<Empty.Root>
+								<Empty.Header>
+									<Empty.Media variant="icon">
+										<Calendar class="h-12 w-12" />
+									</Empty.Media>
+									<Empty.Title>No schedules found</Empty.Title>
+									<Empty.Description>
+										No schedules match your current filters. Try adjusting your search criteria.
+									</Empty.Description>
+								</Empty.Header>
+								<Empty.Content>
+									<Button variant="outline" onclick={handleClearFilters}>Clear Filters</Button>
+								</Empty.Content>
+							</Empty.Root>
+						</CardContent>
+					</Card>
+				{:else}
+					<!-- No Schedules at All -->
+					<Card>
+						<CardContent class="flex flex-col items-center justify-center py-12">
+							<Empty.Root>
+								<Empty.Header>
+									<Empty.Media variant="icon">
+										<Calendar class="h-12 w-12" />
+									</Empty.Media>
+									<Empty.Title>No schedules yet</Empty.Title>
+									<Empty.Description>
+										Create your first weekly schedule to get started
+									</Empty.Description>
+								</Empty.Header>
+								<Empty.Content>
+									<Button onclick={() => (isCreateModalOpen = true)}>
+										<Calendar class="mr-2 h-4 w-4" />
+										Create Schedule
+									</Button>
+								</Empty.Content>
+							</Empty.Root>
+						</CardContent>
+					</Card>
+				{/if}
+			{:else}
+				<!-- Error state for unsuccessful result -->
+				<Card>
+					<CardContent class="flex flex-col items-center justify-center py-12">
+						<Empty.Root>
+							<Empty.Header>
+								<Empty.Media variant="icon">
+									<Calendar class="h-12 w-12 text-destructive" />
+								</Empty.Media>
+								<Empty.Title>Error Loading Schedules</Empty.Title>
+								<Empty.Description>
+									{result.message || 'Failed to load schedules. Please try again.'}
+								</Empty.Description>
+							</Empty.Header>
+							<Empty.Content>
+								<Button onclick={handleRefresh} variant="outline">
+									Try Again
+								</Button>
+							</Empty.Content>
+						</Empty.Root>
+					</CardContent>
+				</Card>
+			{/if}
+	{:catch error}
+		<!-- Error State -->
+		<Card>
+			<CardContent class="flex flex-col items-center justify-center py-12">
+				<Empty.Root>
+					<Empty.Header>
+						<Empty.Media variant="icon">
+							<Calendar class="h-12 w-12 text-destructive" />
+						</Empty.Media>
+						<Empty.Title>Error Loading Schedules</Empty.Title>
+						<Empty.Description>
+							An unexpected error occurred while loading schedules.
+						</Empty.Description>
+					</Empty.Header>
+					<Empty.Content>
+						<Button onclick={handleRefresh} variant="outline">
+							Try Again
+						</Button>
+					</Empty.Content>
+				</Empty.Root>
+			</CardContent>
+		</Card>
+	{/await}
+</div>
+{/if}
+
+<!-- Create Schedule Modal -->
+	<Dialog bind:open={isCreateModalOpen}>
+		<DialogContent>
+			<DialogHeader>
+				<DialogTitle>Create New Schedule</DialogTitle>
+				<DialogDescription>
+					Select the week start date. The week will automatically span 7 days.
+				</DialogDescription>
+			</DialogHeader>
+
+			<div class="space-y-4 py-4">
+				<div class="space-y-2">
+					<Label for="week_start_date">Week Start Date</Label>
+                    <InputCalendar 
                         id="week_start_date"
-                        type="date"
-                        bind:value={formData.week_start_date}
+                        bind:value={weekStartDate}
                         required
                     />
-                </div>
+				</div>
 
-                <div class="space-y-2">
-                    <Label for="week_end_date">Week End Date</Label>
-                    <Input
-                        id="week_end_date"
-                        type="date"
-                        bind:value={formData.week_end_date}
-                        disabled
-                    />
-                    <p class="text-sm text-muted-foreground">
-                        Automatically calculated as 6 days after start date
-                    </p>
-                </div>
+				<div class="space-y-2">
+					<Label for="week_end_date">Week End Date</Label>
+					<Input
+						id="week_end_date"
+						type="date"
+						value={formData.week_end_date}
+						disabled
+					/>
+					<p class="text-sm text-muted-foreground">
+						Automatically calculated as 6 days after start date
+					</p>
+				</div>
 
-                <div class="space-y-2">
-                    <Label for="year">Year</Label>
-                    <Input
-                        id="year"
-                        type="number"
-                        bind:value={formData.year}
-                        disabled
-                    />
-                </div>
-            </div>
+				<div class="space-y-2">
+					<Label for="year">Year</Label>
+					<Input
+						id="year"
+						type="number"
+						value={formData.year}
+						disabled
+					/>
+				</div>
+			</div>
 
-            <DialogFooter>
-                <Button
-                    variant="outline"
-                    onclick={() => {
-                        isCreateModalOpen = false;
-                        formData = {
-                            week_start_date: "",
-                            week_end_date: "",
-                            year: new Date().getFullYear()
-                        };
-                    }}
-                    disabled={isCreating}
-                >
-                    Cancel
-                </Button>
-                <Button
-                    onclick={handleCreateSchedule}
-                    disabled={isCreating || !formData.week_start_date}
-                >
-                    {#if isCreating}
-                        <Spinner />
-                        is creating...
-                    {:else}
-                        create
-                    {/if}
-                </Button>
-            </DialogFooter>
-        </DialogContent>
-    </Dialog>
+			<DialogFooter>
+				<Button
+					variant="outline"
+					onclick={handleModalClose}
+					disabled={isCreating}
+				>
+					Cancel
+				</Button>
+				<Button
+					onclick={handleCreateSchedule}
+					disabled={isCreating || !weekStartDate}
+				>
+					{#if isCreating}
+						<Spinner />
+						Creating...
+					{:else}
+						Create Schedule
+					{/if}
+				</Button>
+			</DialogFooter>
+		</DialogContent>
+	</Dialog>
 
-    <!-- Delete Confirmation Modal -->
-    <Dialog bind:open={isDeleteModalOpen}>
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>Delete Schedule</DialogTitle>
-                <DialogDescription>
-                    Are you sure you want to delete this schedule? This will also delete all shifts associated with it. This action cannot be undone.
-                </DialogDescription>
-            </DialogHeader>
+	<!-- Delete Confirmation Modal -->
+	<Dialog bind:open={isDeleteModalOpen}>
+		<DialogContent>
+			<DialogHeader>
+				<DialogTitle>Delete Schedule</DialogTitle>
+				<DialogDescription>
+					Are you sure you want to delete this schedule? This will also delete all shifts associated
+					with it. This action cannot be undone.
+				</DialogDescription>
+			</DialogHeader>
 
-            {#if scheduleToDelete}
-                <div class="py-4">
-                    <p class="font-medium">
-                        Week of {formatDate(scheduleToDelete.week_start_date)}
-                    </p>
-                    <p class="text-sm text-muted-foreground">
-                        {formatDate(scheduleToDelete.week_start_date)} - {formatDate(scheduleToDelete.week_end_date)}
-                    </p>
-                </div>
-            {/if}
+			{#if scheduleToDelete}
+				<div class="py-4">
+					<p class="font-medium">
+						Week of {formatDate(scheduleToDelete.week_start_date)}
+					</p>
+					<p class="text-sm text-muted-foreground">
+						{formatDate(scheduleToDelete.week_start_date)} - {formatDate(
+							scheduleToDelete.week_end_date
+						)}
+					</p>
+				</div>
+			{/if}
 
-            <DialogFooter>
-                <Button
-                    variant="outline"
-                    onclick={() => {
-                        isDeleteModalOpen = false;
-                        scheduleToDelete = null;
-                    }}
-                    disabled={isDeleting}
-                >
-                    Cancel
-                </Button>
-                <Button
-                    variant="destructive"
-                    onclick={handleDeleteSchedule}
-                    disabled={isDeleting}
-                >
-                    {#if isDeleting}
-                        <Spinner />
-                        is deleting...
-                    {:else}
-                        delete scedule
-                    {/if}
-                </Button>
-            </DialogFooter>
-        </DialogContent>
-    </Dialog>
-</svelte:boundary>
+			<DialogFooter>
+				<Button
+					variant="outline"
+					onclick={handleDeleteModalClose}
+					disabled={isDeleting}
+				>
+					Cancel
+				</Button>
+				<Button variant="destructive" onclick={handleDeleteSchedule} disabled={isDeleting}>
+					{#if isDeleting}
+						<Spinner />
+						Deleting...
+					{:else}
+						Delete Schedule
+					{/if}
+				</Button>
+			</DialogFooter>
+		</DialogContent>
+	</Dialog>

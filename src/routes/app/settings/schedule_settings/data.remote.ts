@@ -167,3 +167,129 @@ export const deleteSchedule = command(deleteScheduleSchema, async ({ scheduleId 
         };
     }
 });
+
+/**
+ * Update schedule status
+ */
+const updateScheduleStatusSchema = z.object({
+    scheduleId: z.number().int().positive(),
+    status: z.enum(['draft', 'published', 'archived'])
+});
+
+export const updateScheduleStatus = command(updateScheduleStatusSchema, async ({ scheduleId, status }) => {
+    const supabase = createServerClient();
+    const user = await requireAuthenticatedUser();
+
+    try {
+        const updateData: any = {
+            status
+        };
+
+        // If publishing, set published info
+        if (status === SCHEDULE_STATUS.PUBLISHED) {
+            updateData.published_by = user.id;
+            updateData.published_at = new Date().toISOString();
+        }
+
+        const { error: updateError } = await supabase
+            .from('weekly_schedules')
+            .update(updateData)
+            .eq('id', scheduleId);
+
+        if (updateError) {
+            console.error('Error updating schedule status:', updateError);
+            return {
+                success: false,
+                message: 'Failed to update schedule status'
+            };
+        }
+
+        return {
+            success: true,
+            message: `Schedule ${status === 'published' ? 'published' : status === 'archived' ? 'archived' : 'set to draft'} successfully`
+        };
+    } catch (err) {
+        console.error('Unexpected error during status update:', err);
+        return {
+            success: false,
+            message: 'An unexpected error occurred while updating schedule status'
+        };
+    }
+});
+
+// ======================== PAGINATION ==============
+
+/**
+ * Get schedules with pagination (no metrics)
+ */
+const paginationSchema = z.object({
+    page: z.number().int().positive().default(1),
+    perPage: z.number().int().positive().default(9)
+});
+
+export const getSchedulesWithMetricsPaginated = query(paginationSchema, async ({ page, perPage }) => {
+    const supabase = createServerClient();
+
+    try {
+        // Calculate offset
+        const offset = (page - 1) * perPage;
+
+        // Get total count
+        const { count, error: countError } = await supabase
+            .from('weekly_schedules')
+            .select('*', { count: 'exact', head: true });
+
+        if (countError) {
+            console.error('Error counting schedules:', countError);
+            return {
+                success: false,
+                message: 'Error fetching schedules',
+                schedules: [],
+                totalCount: 0,
+                totalPages: 0,
+                currentPage: page
+            };
+        }
+
+        // Get paginated schedules
+        const { data: schedules, error: schedulesError } = await supabase
+            .from('weekly_schedules')
+            .select('*')
+            .order('week_start_date', { ascending: false })
+            .range(offset, offset + perPage - 1)
+            .overrideTypes<WeeklySchedule[]>();
+
+        if (schedulesError) {
+            console.error('Error fetching schedules:', schedulesError);
+            return {
+                success: false,
+                message: 'Error fetching schedules',
+                schedules: [],
+                totalCount: 0,
+                totalPages: 0,
+                currentPage: page
+            };
+        }
+
+    
+        const totalPages = Math.ceil((count ?? 0) / perPage);
+
+        return {
+            success: true,
+            schedules: schedules ?? [],
+            totalCount: count ?? 0,
+            totalPages,
+            currentPage: page
+        };
+    } catch (err) {
+        console.error('Unexpected error fetching paginated schedules:', err);
+        return {
+            success: false,
+            message: 'An unexpected error occurred while fetching schedules',
+            schedules: [],
+            totalCount: 0,
+            totalPages: 0,
+            currentPage: page
+        };
+    }
+});

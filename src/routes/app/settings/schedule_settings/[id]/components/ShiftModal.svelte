@@ -144,6 +144,7 @@
 					type="date"
 					bind:value={formData.shift_date}
 					required
+					disabled
 				/>
 			</div>
 
