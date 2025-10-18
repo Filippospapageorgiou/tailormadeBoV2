@@ -7,8 +7,10 @@
 	import { Label } from '$lib/components/ui/label';
 	import * as Select from '$lib/components/ui/select';
 	import { Textarea } from '$lib/components/ui/textarea';
+	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
 
 	interface Props {
+		isLoading:boolean;
 		open: boolean;
 		mode: 'add' | 'edit';
 		shift?: Shift | null;
@@ -29,7 +31,7 @@
 		notes: string | null;
 	}
 
-	let { open, mode, shift, defaultDate, employeeName, onClose, onSave }: Props = $props();
+	let {isLoading ,open, mode, shift, defaultDate, employeeName, onClose, onSave }: Props = $props();
 
 	// Form state
 	let formData = $state<ShiftFormData>({
@@ -230,7 +232,21 @@
 		<Dialog.Footer>
 			<Button variant="outline" onclick={onClose}>Cancel</Button>
 			<Button onclick={handleSave}>
-				{mode === 'add' ? 'Add Shift' : 'Save Changes'}
+				{#if mode === 'add'}
+					{#if isLoading}
+						<Spinner />
+						Adding shift....
+					{:else}
+						Add shift
+					{/if}
+				{:else}
+					{#if isLoading}
+						<Spinner />
+						Saving changes....
+					{:else}
+						Save changes
+					{/if}
+				{/if}
 			</Button>
 		</Dialog.Footer>
 	</Dialog.Content>

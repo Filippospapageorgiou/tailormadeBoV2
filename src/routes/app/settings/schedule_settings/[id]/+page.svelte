@@ -18,6 +18,7 @@
 	import type { Shift, ShiftCategory, ShiftType } from '$lib/models/schedule.types';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
+	import { showFailToast, showSuccessToast } from '$lib/stores/toast.svelte';
 
 	let auth = authenticatedAccess();
 	let employeesQuery = getEmployees();
@@ -80,15 +81,13 @@
 	}
 
 	async function handleDeleteShift(shiftId: number) {
-		if (!confirm('Are you sure you want to delete this shift?')) return;
-
 		const result = await deleteShift({ shiftId });
 
 		if (result.success) {
-			// Refresh shifts
 			shiftsQuery?.refresh();
+			showSuccessToast('Success',result.message);
 		} else {
-			alert(result.message || 'Failed to delete shift');
+			showFailToast('Fail',result.message);
 		}
 	}
 
@@ -98,12 +97,14 @@
 		selectedDate = '';
 	}
 
+	let isLoading = $state(false);
 	async function handleSaveShift(formData: ShiftFormData) {
 		if (!selectedEmployee) return;
 
 		let result;
 
 		if (shiftModalMode === 'add') {
+			isLoading = true;
 			// Add new shift
 			if (!scheduleId || isNaN(scheduleId)) return;
 			result = await addShift({
@@ -119,6 +120,7 @@
 				notes: formData.notes
 			});
 		} else {
+			isLoading = true;
 			// Update existing shift
 			if (!formData.id) return;
 			result = await updateShift({
@@ -131,10 +133,12 @@
 				break_duration_minutes: formData.break_duration_minutes,
 				notes: formData.notes
 			});
+
 		}
 
 		if (result.success) {
 			// Refresh shifts
+			isLoading = false;
 			shiftsQuery?.refresh();
 			handleCloseModal();
 		} else {
@@ -201,6 +205,7 @@
 
 			<!-- Shift Modal -->
 			<ShiftModal
+				{isLoading}
 				open={shiftModalOpen}
 				mode={shiftModalMode}
 				shift={selectedShift}

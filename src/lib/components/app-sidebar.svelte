@@ -7,7 +7,7 @@
 	import MapIcon from "@lucide/svelte/icons/map";
 	import SendIcon from "@lucide/svelte/icons/send";
 	import Settings2Icon from "@lucide/svelte/icons/settings-2";
-	import { NotebookPen, Coffee, EuroIcon, CalendarRange  } from "lucide-svelte";
+	import { NotebookPen, Coffee, EuroIcon, CalendarRange, Globe  } from "lucide-svelte";
 	
 
 
@@ -85,7 +85,11 @@
 			},
 		],
 		projects: [
-			
+			{
+				name: "Manage organizations",
+				url: "#",
+				icon: Globe
+			},
 		],
 	};
 </script>

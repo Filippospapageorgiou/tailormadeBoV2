@@ -4,8 +4,7 @@
 	import { SHIFT_TYPE } from '$lib/models/schedule.types';
 	import * as Card from '$lib/components/ui/card';
 	import { Button } from '$lib/components/ui/button';
-	import { Badge } from '$lib/components/ui/badge';
-	import { Plus, Pencil, Trash2, CalendarPlusIcon } from 'lucide-svelte';
+	import { Plus, Pencil, Trash2, Calendar as CalendarIcon, Check } from 'lucide-svelte';
 	import { SvelteDate } from 'svelte/reactivity';
 
 	interface Props {
@@ -19,6 +18,9 @@
 
 	let { employee, weekStartDate, shifts, onAddShift, onEditShift, onDeleteShift }: Props = $props();
 
+	// Greek day names
+	const greekDayNames = ['Κυριακή', 'Δευτέρα', 'Τρίτη', 'Τετάρτη', 'Πέμπτη', 'Παρασκευή', 'Σάββατο'];
+
 	// Generate 7 days starting from weekStartDate
 	let weekDays = $derived.by(() => {
 		const startDate = new SvelteDate(weekStartDate);
@@ -29,9 +31,8 @@
 			date.setDate(startDate.getDate() + i);
 
 			const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
-			const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+			const dayName = greekDayNames[date.getDay()];
 			const dayNum = date.getDate();
-			const monthName = date.toLocaleDateString('en-US', { month: 'short' });
 
 			// Find shift for this day
 			const shift = shifts.find((s) => s.shift_date === dateStr);
@@ -40,7 +41,6 @@
 				date: dateStr,
 				dayName,
 				dayNum,
-				monthName,
 				shift
 			});
 		}
@@ -67,7 +67,7 @@
 			}
 		});
 
-		return (totalMinutes / 60).toFixed(1);
+		return Math.round(totalMinutes / 60);
 	});
 
 	// Format time for display (HH:MM:SS -> HH:MM)
@@ -90,162 +90,223 @@
 		const shiftMinutes = endMinutes - startMinutes;
 		const netMinutes = shiftMinutes - (shift.break_duration_minutes || 0);
 
-		return netMinutes / 60;
+		return Math.round(netMinutes / 60);
 	}
 
-	// Get shift type badge styling
-	function getShiftTypeBadge(
-		shiftType: string
-	): { variant: 'default' | 'secondary' | 'destructive' | 'outline'; label: string } {
-		switch (shiftType) {
-			case SHIFT_TYPE.WORK:
-				return { variant: 'default', label: 'Work' };
-			case SHIFT_TYPE.DAY_OFF:
-				return { variant: 'secondary', label: 'Day Off' };
-			case SHIFT_TYPE.SICK_LEAVE:
-				return { variant: 'destructive', label: 'Sick' };
-			case SHIFT_TYPE.VACATION:
-				return { variant: 'outline', label: 'Vacation' };
-			default:
-				return { variant: 'secondary', label: shiftType };
-		}
-	}
+	let badgeColor = $derived(employee?.badge_color || '#8b5cf6');
 </script>
 
 {#if !employee}
 	<!-- No Employee Selected State -->
-	<Card.Card>
-		<Card.CardContent class="flex flex-col items-center justify-center py-16">
-			<CalendarPlusIcon class="mb-4 h-12 w-12 text-muted-foreground" />
-			<p class="text-lg font-medium text-muted-foreground">No employee selected</p>
-			<p class="text-sm text-muted-foreground">Select an employee to view their schedule</p>
+	<Card.Card class="border-2 border-dashed">
+		<Card.CardContent class="flex flex-col items-center justify-center py-20">
+			<div class="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+				<CalendarIcon class="h-8 w-8 text-muted-foreground" />
+			</div>
+			<p class="mt-4 text-lg font-medium text-muted-foreground">No employee selected</p>
+			<p class="mt-1 text-sm text-muted-foreground">Select an employee above to view their schedule</p>
 		</Card.CardContent>
 	</Card.Card>
 {:else}
-	<!-- Employee Schedule Grid -->
-	<Card.Card>
-		<Card.CardHeader>
-			<div class="flex items-center justify-between">
-				<div>
-					<Card.CardTitle class="text-lg">{employee.username}'s Weekly Schedule</Card.CardTitle>
-					<Card.CardDescription>
-						Manage shifts for the week • Total: {totalHours}h / 40h
-					</Card.CardDescription>
+	<!-- Weekly Schedule -->
+	<div class="space-y-6">
+		<!-- Header with Employee Name and Total Hours -->
+		<div class="flex items-center justify-between">
+			<div class="flex items-center gap-3">
+				<div
+					class="flex h-10 w-10 items-center justify-center rounded-full text-lg font-bold text-white"
+					style="background-color: {badgeColor};"
+				>
+					<CalendarIcon class="h-5 w-5" />
 				</div>
-				{#if employee.badge_color}
-					<Badge style="background-color: {employee.badge_color}; color: white;">
-						{employee.role_name || 'Employee'}
-					</Badge>
-				{/if}
+				<div>
+					<h2 class="text-xl font-bold tracking-tight">
+						{employee.username} - WEEKLY SCHEDULE
+					</h2>
+					<p class="text-sm text-muted-foreground">
+						Manage shifts for the week
+					</p>
+				</div>
 			</div>
-		</Card.CardHeader>
+			<div class="flex items-center gap-2 rounded-lg bg-muted px-4 py-2">
+				<CalendarIcon class="h-4 w-4 text-muted-foreground" />
+				<span class="text-2xl font-bold">{totalHours}h</span>
+			</div>
+		</div>
 
-		<Card.CardContent>
-			<!-- Weekly Grid -->
-			<div class="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
-				{#each weekDays as day (day.date)}
-					<div class="rounded-lg border bg-card">
-						<!-- Day Header -->
-						<div class="border-b bg-muted/50 p-2 text-center">
-							<p class="text-xs font-medium text-muted-foreground">{day.dayName}</p>
-							<p class="text-sm font-semibold">
-								{day.monthName} {day.dayNum}
-							</p>
-						</div>
+		<!-- Weekly Grid -->
+		<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+			{#each weekDays as day (day.date)}
+				<div class="flex flex-col">
+					<!-- Day Header -->
+					<div class="mb-3 text-center">
+						<p class="text-sm font-medium text-muted-foreground">{day.dayName}</p>
+						<p class="text-2xl font-bold">{day.dayNum}</p>
+					</div>
 
-						<!-- Shift Content -->
-						<div class="p-3">
-							{#if day.shift}
-								{@const shiftBadge = getShiftTypeBadge(day.shift.shift_type)}
-								{@const hours = calculateShiftHours(day.shift)}
+					<!-- Shift Content -->
+					<div class="flex-1">
+						{#if day.shift}
+							{@const hours = calculateShiftHours(day.shift)}
 
-								<!-- Existing Shift -->
-								<div class="space-y-2">
-									<Badge variant={shiftBadge.variant} class="w-full justify-center text-xs">
-										{shiftBadge.label}
-									</Badge>
-
-									{#if day.shift.shift_type === SHIFT_TYPE.WORK}
-										<div class="space-y-1 text-center">
-											<p class="text-sm font-semibold">
-												{formatTime(day.shift.start_time)} - {formatTime(day.shift.end_time)}
-											</p>
-											<p class="text-xs text-muted-foreground">
-												{hours.toFixed(1)}h
-												{#if day.shift.break_duration_minutes}
-													(Break: {day.shift.break_duration_minutes}m)
-												{/if}
-											</p>
-											{#if day.shift.notes}
-												<p class="text-xs italic text-muted-foreground">
-													{day.shift.notes}
-												</p>
-											{/if}
-										</div>
-									{:else}
-										<p class="text-center text-xs text-muted-foreground">0h</p>
-									{/if}
-
-									<!-- Action Buttons -->
-									<div class="flex gap-1">
+							{#if day.shift.shift_type === SHIFT_TYPE.DAY_OFF}
+								<!-- Day Off Card -->
+								<div
+									class="group relative flex h-[240px] flex-col items-center justify-center gap-4 rounded-2xl p-6 text-white shadow-lg  hover:-translate-y-1 transition-all duration-200"
+									style="background-color: #ef4444;"
+								>
+									<div class="absolute right-3 top-3 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
 										<Button
-											variant="outline"
-											size="sm"
-											class="h-7 flex-1 text-xs"
+											variant="secondary"
+											size="icon"
+											class="h-8 w-8 rounded-lg bg-white/20 hover:bg-white/30"
 											onclick={() => onEditShift?.(day.shift!)}
 										>
-											<Pencil class="mr-1 h-3 w-3" />
-											Edit
+											<Pencil class="h-4 w-4" />
 										</Button>
 										<Button
-											variant="destructive"
-											size="sm"
-											class="h-7 flex-1 text-xs"
+											variant="secondary"
+											size="icon"
+											class="h-8 w-8 rounded-lg bg-white/20 hover:bg-white/30"
 											onclick={() => onDeleteShift?.(day.shift!.id)}
 										>
-											<Trash2 class="mr-1 h-3 w-3" />
-											Delete
+											<Trash2 class="h-4 w-4" />
 										</Button>
 									</div>
-								</div>
-							{:else}
-								<!-- No Shift - Add Button -->
-								<Button
-									variant="ghost"
-									class="h-24 w-full border-2 border-dashed hover:border-primary hover:bg-accent"
-									onclick={() => onAddShift?.(day.date)}
-								>
-									<div class="flex flex-col items-center gap-1">
-										<Plus class="h-5 w-5 text-muted-foreground" />
-										<span class="text-xs text-muted-foreground">Add Shift</span>
-									</div>
-								</Button>
-							{/if}
-						</div>
-					</div>
-				{/each}
-			</div>
 
-			<!-- Summary Footer -->
-			<div class="mt-4 flex items-center justify-between rounded-lg border bg-muted/30 p-3">
-				<div class="flex items-center gap-4">
-					<div class="text-sm">
-						<span class="text-muted-foreground">Work Shifts:</span>
-						<span class="ml-1 font-semibold">
-							{shifts.filter((s) => s.shift_type === SHIFT_TYPE.WORK).length}
-						</span>
-					</div>
-					<div class="text-sm">
-						<span class="text-muted-foreground">Days Off:</span>
-						<span class="ml-1 font-semibold">
-							{shifts.filter((s) => s.shift_type === SHIFT_TYPE.DAY_OFF).length}
-						</span>
+									<CalendarIcon class="h-10 w-10" />
+									<div class="text-center">
+										<p class="text-2xl font-bold">ΡΕΠΟ</p>
+										<p class="text-sm opacity-90">Day Off</p>
+									</div>
+								</div>
+							{:else if day.shift.shift_type === SHIFT_TYPE.WORK}
+								<!-- Work Shift Card -->
+								<div
+									class="group relative flex h-[240px] flex-col justify-between rounded-2xl p-6 text-white shadow-lg  hover:-translate-y-1 transition-all duration-200"
+									style="background-color: {badgeColor};"
+								>
+									<!-- Top Icons -->
+									<div class="flex items-start justify-between">
+										<div class="flex h-6 w-6 items-center justify-center rounded-full bg-white/20">
+											<Check class="h-4 w-4" />
+										</div>
+										<div class="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+											<Button
+												variant="secondary"
+												size="icon"
+												class="h-8 w-8 rounded-lg bg-white/20 hover:bg-white/30"
+												onclick={() => onEditShift?.(day.shift!)}
+											>
+												<Pencil class="h-4 w-4" />
+											</Button>
+											<Button
+												variant="secondary"
+												size="icon"
+												class="h-8 w-8 rounded-lg bg-white/20 hover:bg-white/30"
+												onclick={() => onDeleteShift?.(day.shift!.id)}
+											>
+												<Trash2 class="h-4 w-4" />
+											</Button>
+										</div>
+									</div>
+
+									<!-- Time Display -->
+									<div class="flex flex-col items-center gap-3">
+										<p class="text-3xl font-bold">
+											{formatTime(day.shift.start_time)}
+										</p>
+										<div class="h-px w-16 bg-white/40"></div>
+										<p class="text-3xl font-bold">
+											{formatTime(day.shift.end_time)}
+										</p>
+									</div>
+
+									<!-- Hours -->
+									<div class="text-center">
+										<p class="text-lg font-semibold">{hours}h</p>
+										{#if day.shift.break_duration_minutes}
+											<p class="text-xs opacity-75">Break: {day.shift.break_duration_minutes}m</p>
+										{/if}
+									</div>
+								</div>
+							{:else if day.shift.shift_type === SHIFT_TYPE.SICK_LEAVE}
+								<!-- Sick Leave Card -->
+								<div
+									class="group relative flex h-[240px] flex-col items-center justify-center gap-4 rounded-2xl p-6 text-white shadow-lg  hover:-translate-y-1 transition-all duration-200"
+									style="background-color: #f97316;"
+								>
+									<div class="absolute right-3 top-3 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+										<Button
+											variant="secondary"
+											size="icon"
+											class="h-8 w-8 rounded-lg bg-white/20 hover:bg-white/30"
+											onclick={() => onEditShift?.(day.shift!)}
+										>
+											<Pencil class="h-4 w-4" />
+										</Button>
+										<Button
+											variant="secondary"
+											size="icon"
+											class="h-8 w-8 rounded-lg bg-white/20 hover:bg-white/30"
+											onclick={() => onDeleteShift?.(day.shift!.id)}
+										>
+											<Trash2 class="h-4 w-4" />
+										</Button>
+									</div>
+
+									<div class="text-center">
+										<p class="text-xl font-bold">Sick Leave</p>
+										<p class="text-sm opacity-90">Άδεια Ασθενείας</p>
+									</div>
+								</div>
+							{:else if day.shift.shift_type === SHIFT_TYPE.VACATION}
+								<!-- Vacation Card -->
+								<div
+									class="group relative flex h-[240px] flex-col items-center justify-center gap-4 rounded-2xl p-6 text-white shadow-lg  hover:-translate-y-1 transition-all duration-200"
+									style="background-color: #06b6d4;"
+								>
+									<div class="absolute right-3 top-3 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+										<Button
+											variant="secondary"
+											size="icon"
+											class="h-8 w-8 rounded-lg bg-white/20 hover:bg-white/30"
+											onclick={() => onEditShift?.(day.shift!)}
+										>
+											<Pencil class="h-4 w-4" />
+										</Button>
+										<Button
+											variant="secondary"
+											size="icon"
+											class="h-8 w-8 rounded-lg bg-white/20 hover:bg-white/30"
+											onclick={() => onDeleteShift?.(day.shift!.id)}
+										>
+											<Trash2 class="h-4 w-4" />
+										</Button>
+									</div>
+
+									<div class="text-center">
+										<p class="text-xl font-bold">Vacation</p>
+										<p class="text-sm opacity-90">Διακοπές</p>
+									</div>
+								</div>
+							{/if}
+						{:else}
+							<!-- No Shift - Add Button -->
+							<button
+								type="button"
+								onclick={() => onAddShift?.(day.date)}
+								class="flex h-[240px] w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-muted-foreground/30 bg-muted/20 transition-all hover:border-primary hover:bg-muted/40"
+							>
+								<div class="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+									<Plus class="h-6 w-6 text-muted-foreground" />
+								</div>
+								<span class="text-sm font-medium text-muted-foreground">Add Shift</span>
+							</button>
+						{/if}
 					</div>
 				</div>
-				<div class="text-sm font-semibold">
-					Total: <span class="text-lg">{totalHours}h</span>
-				</div>
-			</div>
-		</Card.CardContent>
-	</Card.Card>
+			{/each}
+		</div>
+	</div>
 {/if}
