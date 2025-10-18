@@ -179,8 +179,6 @@ export const getShfitInfo = query(shiftIdSchema, async ({ id }) => {
             };
         }
 
-        console.log(shift);
-
         return {
             success: true,
             message: 'Shift fetched successfully',
