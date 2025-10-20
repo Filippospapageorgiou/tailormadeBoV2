@@ -10,8 +10,11 @@
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import * as Avatar from '$lib/components/ui/avatar/index.js';
 	import * as Dialog from '$lib/components/ui/dialog';
+	
 
 	let query = getCurrentSchedule();
+	let { data } = $props();
+	let { user } = data;
 
 	let schedule = $derived(query.current?.schedule ?? null);
 	let employees = $derived(query.current?.employees ?? []);
@@ -67,7 +70,7 @@
 
 		return `Εβδομάδα ${startDay}-${endDay} ${month} ${year}`;
 	}
-
+	let isSameUser:boolean = $state(false);
 	async function getShiftInformation(id: number) {
 		loadingShiftDetails = true;
 		isModalOpen = true;
@@ -76,6 +79,7 @@
 		
 		if (shiftInfo.success && shiftInfo.shift) {
 			selectedShiftData = shiftInfo.shift;
+			if(selectedShiftData.user_id === user?.id) isSameUser = true;
 		}
 		
 		loadingShiftDetails = false;

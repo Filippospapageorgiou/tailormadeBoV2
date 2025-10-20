@@ -35,7 +35,7 @@
 	let organization = $derived(data.organization);
 
 	let username = $state('');
-	let backgorundImage = $state('');
+	let backgroundImage = $state('');
 
 	$effect(() => {
 		username = profile.username;
@@ -48,13 +48,13 @@
         if(editing){
           if(files && files[0]){
             const reader = new FileReader();
-            reader.addEventListener('load', ()=>{
-                backgorundImage = reader.result?.toString() || '';
-            })
+            reader.onload = () => {
+                backgroundImage = reader.result?.toString() || '';
+            };
             reader.readAsDataURL(files[0])
           }
         }else{
-          backgorundImage = profile.image_url;
+          backgroundImage = profile.image_url;
         }
     })
 
@@ -90,7 +90,7 @@
 		toast.status = true;
 		toast.title = 'Success';
 		toast.text = text;
-		backgorundImage = newImageUrl;
+		backgroundImage = newImageUrl;
     	editing = false;
 		profileStore.updateAvatar(newImageUrl);
 	}
@@ -100,7 +100,6 @@
 		toast.status = false;
 		toast.title = 'Error';
 		toast.text = text;
-		isUpdatingAvatar = false;
     	editing = false;
 	}
 </script>
@@ -123,30 +122,34 @@
 						<div class="flex flex-col gap-6 md:flex-row">
 							<div class="group relative">
 								<form class="flex flex-col gap-2" enctype="multipart/form-data" {...updateAvatar.enhance(async ({ form, data,submit }) => {
-										isUpdatingAvatar = true;
-										await submit();
+										try {
+											isUpdatingAvatar = true;
+											await submit();
 
-										if (updateAvatar.issues?.avatar) {
-											handleAvatarUpdateError(updateAvatar.issues.avatar[0].message);
-											return;
-										}
+											if (updateAvatar.issues?.avatar) {
+												handleAvatarUpdateError(updateAvatar.issues.avatar[0].message);
+												return;
+											}
 
-										if (updateAvatar.result?.success && updateAvatar.result.imageUrl) {
-											handleAvatarUpdateSuccess(
-												'Avatar updated successfully',
-												updateAvatar.result.imageUrl
-											);
-										} else {
-											handleAvatarUpdateError(
-												updateAvatar.result?.message || 'An unknown error occurred'
-											);
+											if (updateAvatar.result?.success && updateAvatar.result.imageUrl) {
+												handleAvatarUpdateSuccess(
+													'Avatar updated successfully',
+													updateAvatar.result.imageUrl
+												);
+												files = undefined;
+												form.reset();
+											} else {
+												handleAvatarUpdateError(
+													updateAvatar.result?.message || 'An unknown error occurred'
+												);
+											}
+										} finally {
+											isUpdatingAvatar = false;
 										}
-										isUpdatingAvatar = false;
-										form.reset();
 									})}
 								>
 									<Avatar.Root class="h-32 w-32 border-4 border-background">
-										<Avatar.Image src={backgorundImage} alt={username} />
+										<Avatar.Image src={backgroundImage} alt={username} />
 										<Avatar.Fallback>{username?.charAt(0)}</Avatar.Fallback>
 									</Avatar.Root>
 									{#if editing}
@@ -156,6 +159,7 @@
 											accept="image/png,image/jpeg"
 											name="avatar"
 											class="cursor-pointer text-sm w-31"
+											disabled={isUpdatingAvatar || isUpdating}
 										/>
 										<Button
 											variant="outline"
@@ -180,16 +184,19 @@
 								{#if editing}
 									<form
 										{...updateUsername.enhance(async ({ form, data, submit }) => {
-											isUpdating = true;
-											await submit();
-											isUpdating = false;
+											try {
+												isUpdating = true;
+												await submit();
 
-											if (updateUsername.issues?.username) {
-												handleUpdateError(updateUsername.issues.username[0].message);
-												return;
+												if (updateUsername.issues?.username) {
+													handleUpdateError(updateUsername.issues.username[0].message);
+													return;
+												}
+												form.reset();
+												handleUpdateSuccess('Username updated successfully');
+											} finally {
+												isUpdating = false;
 											}
-											form.reset();
-											handleUpdateSuccess('Username updated successfully');
 										})}
 										class="flex flex-row gap-2 py-2"
 									>
@@ -198,7 +205,7 @@
 											name={updateUsername.field('username')}
 											bind:value={username}
 											placeholder={profile.username}
-											disabled={isUpdating}
+											disabled={isUpdating || isUpdatingAvatar}
 											aria-invalid={!!updateUsername.issues?.username}
 										/>
 										<Button
