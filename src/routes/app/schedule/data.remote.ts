@@ -1,4 +1,4 @@
-import { query } from "$app/server";
+import { query, form } from "$app/server";
 import { createServerClient } from "$lib/supabase/server";
 import { requireAuthenticatedUser } from '$lib/supabase/shared';
 import type { Profile, Organization } from "$lib/models/database.types";
@@ -190,6 +190,130 @@ export const getShfitInfo = query(shiftIdSchema, async ({ id }) => {
             success: false,
             message: 'Error fetching shift details',
             shift: null,
+        };
+    }
+});
+
+const shiftChangeRequestSchema = z.object({
+    shift_id: z.string().transform((val) => parseInt(val, 10)).pipe(z.number().int().positive()),
+    request_type:z.enum(['change','swap','cancel']),
+    swap_with_user_id: z.uuid().optional(),
+    swap_with_shift_id: z.string().transform((val) => parseInt(val, 10)).pipe(z.number().int().positive()).optional(),
+    proposed_date:z.string().optional(),
+    proposed_start_time:z.string().optional(),
+    proposed_end_time:z.string().optional(),
+    reason: z.string()
+        .min(10, { error: 'Η αιτιολογία πρέπει να είναι τουλάχιστον 10 χαρακτήρες' })
+        .max(500, { error: 'Η αιτιολογία δεν μπορεί να υπερβαίνει τους 500 χαρακτήρες' })
+})
+
+export const createShiftChangeRequest = form(shiftChangeRequestSchema, async (data) => {
+    const supabase = createServerClient();
+    const user = await requireAuthenticatedUser();
+
+    try {
+        // Get user's org_id
+        const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('org_id')
+            .eq('id', user.id)
+            .single<Pick<Profile, 'org_id'>>();
+
+        if (profileError || !profile) {
+            return {
+                success: false,
+                message: 'Error fetching user profile'
+            };
+        }
+
+        // Verify the shift belongs to the user
+        const { data: shift, error: shiftError } = await supabase
+            .from('shifts')
+            .select('user_id, org_id')
+            .eq('id', data.shift_id)
+            .single();
+
+        if (shiftError || !shift) {
+            return {
+                success: false,
+                message: 'Shift not found'
+            };
+        }
+
+        if (shift.user_id !== user.id) {
+            return {
+                success: false,
+                message: 'You can only request changes to your own shifts'
+            };
+        }
+
+        if (shift.org_id !== profile.org_id) {
+            return {
+                success: false,
+                message: 'Invalid organization'
+            };
+        }
+
+        // Check if there's already a pending request for this shift
+        const { data: existingRequest, error: existingError } = await supabase
+            .from('shift_change_requests')
+            .select('id, status')
+            .eq('shift_id', data.shift_id)
+            .eq('status', 'pending')
+            .maybeSingle();
+
+        if (existingError && existingError.code !== 'PGRST116') {
+            console.error('Error checking existing requests:', existingError);
+            return {
+                success: false,
+                message: 'Error checking existing requests'
+            };
+        }
+
+        if (existingRequest) {
+            return {
+                success: false,
+                message: 'There is already a pending request for this shift'
+            };
+        }
+
+        // Create the shift change request
+        const { data: newRequest, error: insertError } = await supabase
+            .from('shift_change_requests')
+            .insert({
+                org_id: profile.org_id,
+                shift_id: data.shift_id,
+                requested_by: user.id,
+                request_type: data.request_type,
+                swap_with_user_id: data.swap_with_user_id || null,
+                swap_with_shift_id: data.swap_with_shift_id || null,
+                proposed_date: data.proposed_date || null,
+                proposed_start_time: data.proposed_start_time || null,
+                proposed_end_time: data.proposed_end_time || null,
+                reason: data.reason,
+                status: 'pending'
+            })
+            .select()
+            .single();
+
+        if (insertError) {
+            console.error('Error creating shift change request:', insertError);
+            return {
+                success: false,
+                message: 'Failed to create shift change request'
+            };
+        }
+
+        return {
+            success: true,
+            message: 'Shift change request created successfully',
+            request: newRequest
+        };
+    } catch (err) {
+        console.error('Unexpected error creating shift change request:', err);
+        return {
+            success: false,
+            message: 'An unexpected error occurred'
         };
     }
 });

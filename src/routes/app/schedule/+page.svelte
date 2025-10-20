@@ -3,19 +3,34 @@
 	import type { Profile } from '$lib/models/database.types';
 	import type { Shift } from '$lib/models/schedule.types';
 	import { SHIFT_TYPE } from '$lib/models/schedule.types';
-	import { Calendar, ChevronLeft, ChevronRight, Users, Clock, Check, X, MapPin, Coffee, StickyNote, Briefcase } from 'lucide-svelte';
+	import {
+		Calendar,
+		ChevronLeft,
+		ChevronRight,
+		Users,
+		Clock,
+		Check,
+		X,
+		MapPin,
+		Coffee,
+		StickyNote,
+		Briefcase,
+		Flag
+	} from 'lucide-svelte';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
 	import { ScrollArea } from '$lib/components/ui/scroll-area';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import * as Avatar from '$lib/components/ui/avatar/index.js';
 	import * as Dialog from '$lib/components/ui/dialog';
-	
+	import ShiftChnageRrquestmodal from './shiftChnageRrquestmodal.svelte';
 
 	let query = getCurrentSchedule();
 	let { data } = $props();
 	let { user } = data;
 
+	let isRequestModalOpen = $state(false);
+	let requestShiftData = $state<any>(null);
 	let schedule = $derived(query.current?.schedule ?? null);
 	let employees = $derived(query.current?.employees ?? []);
 	let shifts = $derived(query.current?.shifts ?? []);
@@ -25,7 +40,7 @@
 
 	// Selected employee state
 	let selectedEmployeeId = $state<string | null>(null);
-	
+
 	// Modal state
 	let isModalOpen = $state(false);
 	let selectedShiftData = $state<any>(null);
@@ -70,24 +85,38 @@
 
 		return `Εβδομάδα ${startDay}-${endDay} ${month} ${year}`;
 	}
-	let isSameUser:boolean = $state(false);
+	let isSameUser: boolean = $state(false);
 	async function getShiftInformation(id: number) {
 		loadingShiftDetails = true;
 		isModalOpen = true;
-		
+
 		const shiftInfo = await getShfitInfo({ id });
-		
+
 		if (shiftInfo.success && shiftInfo.shift) {
 			selectedShiftData = shiftInfo.shift;
-			if(selectedShiftData.user_id === user?.id) isSameUser = true;
+			if (selectedShiftData.user_id === user?.id) isSameUser = true;
 		}
-		
+
 		loadingShiftDetails = false;
 	}
 
 	function closeModal() {
 		isModalOpen = false;
 		selectedShiftData = null;
+		isSameUser = false;
+	}
+
+	function openRequestModal() {
+		if (selectedShiftData) {
+			requestShiftData = selectedShiftData;
+			isModalOpen = false; // Close the shift details modal
+			isRequestModalOpen = true; // Open the request modal
+		}
+	}
+
+	function handleRequestSuccess() {
+		isRequestModalOpen = false;
+		requestShiftData = null;
 	}
 
 	// Format date to Greek
@@ -111,7 +140,7 @@
 			'Δεκεμβρίου'
 		];
 		const month = monthNames[date.getMonth()];
-		
+
 		return `${dayName}, ${day} ${month}`;
 	}
 
@@ -139,20 +168,24 @@
 	}
 
 	// Calculate shift duration
-	function calculateShiftDuration(startTime: string | null, endTime: string | null, breakMinutes: number | null): string {
+	function calculateShiftDuration(
+		startTime: string | null,
+		endTime: string | null,
+		breakMinutes: number | null
+	): string {
 		if (!startTime || !endTime) return 'N/A';
-		
+
 		const [startHour, startMin] = startTime.split(':').map(Number);
 		const [endHour, endMin] = endTime.split(':').map(Number);
-		
+
 		const startMinutes = startHour * 60 + startMin;
 		const endMinutes = endHour * 60 + endMin;
-		
+
 		const totalMinutes = endMinutes - startMinutes;
-		
+
 		const hours = Math.floor(totalMinutes / 60);
 		const minutes = totalMinutes % 60;
-		
+
 		return `${hours}ω ${minutes > 0 ? `${minutes}λ` : ''}`;
 	}
 
@@ -315,9 +348,12 @@
 
 										<!-- Avatar with Image or Initials -->
 										<div class="relative transition-transform group-hover:scale-105">
-											<Avatar.Root class="h-24 w-24 shadow-md" style="border: 3px solid {badgeColor};">
+											<Avatar.Root
+												class="h-24 w-24 shadow-md"
+												style="border: 3px solid {badgeColor};"
+											>
 												<Avatar.Image src={employee.image_url} alt={employee.username} />
-												<Avatar.Fallback 
+												<Avatar.Fallback
 													class="text-2xl font-bold text-white"
 													style="background-color: {badgeColor};"
 												>
@@ -406,7 +442,7 @@
 												{#if shift.shift_type === SHIFT_TYPE.DAY_OFF}
 													<button
 														onclick={() => getShiftInformation(shift.id)}
-														class="w-full flex cursor-pointer items-center justify-center rounded-lg bg-red-500/80 p-3 text-center text-sm font-semibold text-white backdrop-blur-sm transition-all duration-200 hover:scale-105 hover:bg-red-500/90 hover:shadow-lg"
+														class="flex w-full cursor-pointer items-center justify-center rounded-lg bg-red-500/80 p-3 text-center text-sm font-semibold text-white backdrop-blur-sm transition-all duration-200 hover:scale-105 hover:bg-red-500/90 hover:shadow-lg"
 													>
 														ΡΕΠΟ
 													</button>
@@ -421,14 +457,14 @@
 												{:else if shift.shift_type === SHIFT_TYPE.SICK_LEAVE}
 													<button
 														onclick={() => getShiftInformation(shift.id)}
-														class="w-full flex cursor-pointer items-center justify-center rounded-lg bg-orange-500/80 p-3 text-center text-sm font-semibold text-white backdrop-blur-sm transition-all duration-200 hover:scale-105 hover:bg-orange-500/90 hover:shadow-lg"
+														class="flex w-full cursor-pointer items-center justify-center rounded-lg bg-orange-500/80 p-3 text-center text-sm font-semibold text-white backdrop-blur-sm transition-all duration-200 hover:scale-105 hover:bg-orange-500/90 hover:shadow-lg"
 													>
 														Άδεια
 													</button>
 												{:else if shift.shift_type === SHIFT_TYPE.VACATION}
 													<button
 														onclick={() => getShiftInformation(shift.id)}
-														class="w-full flex cursor-pointer items-center justify-center rounded-lg bg-cyan-500/80 p-3 text-center text-sm font-semibold text-white backdrop-blur-sm transition-all duration-200 hover:scale-105 hover:bg-cyan-500/90 hover:shadow-lg"
+														class="flex w-full cursor-pointer items-center justify-center rounded-lg bg-cyan-500/80 p-3 text-center text-sm font-semibold text-white backdrop-blur-sm transition-all duration-200 hover:scale-105 hover:bg-cyan-500/90 hover:shadow-lg"
 													>
 														Διακοπές
 													</button>
@@ -464,7 +500,7 @@
 														<button
 															type="button"
 															onclick={() => getShiftInformation(shift.id)}
-															class="w-full flex cursor-pointer items-center justify-center rounded-lg bg-red-500/80 p-3 text-center text-sm font-semibold text-white backdrop-blur-sm transition-all duration-200 hover:scale-105 hover:bg-red-500/90 hover:shadow-lg"
+															class="flex w-full cursor-pointer items-center justify-center rounded-lg bg-red-500/80 p-3 text-center text-sm font-semibold text-white backdrop-blur-sm transition-all duration-200 hover:scale-105 hover:bg-red-500/90 hover:shadow-lg"
 														>
 															ΡΕΠΟ
 														</button>
@@ -481,7 +517,7 @@
 														<button
 															type="button"
 															onclick={() => getShiftInformation(shift.id)}
-															class="w-full flex cursor-pointer items-center justify-center rounded-lg bg-orange-500/80 p-3 text-center text-sm font-semibold text-white backdrop-blur-sm transition-all duration-200 hover:scale-105 hover:bg-orange-500/90 hover:shadow-lg"
+															class="flex w-full cursor-pointer items-center justify-center rounded-lg bg-orange-500/80 p-3 text-center text-sm font-semibold text-white backdrop-blur-sm transition-all duration-200 hover:scale-105 hover:bg-orange-500/90 hover:shadow-lg"
 														>
 															Άδεια
 														</button>
@@ -489,7 +525,7 @@
 														<button
 															type="button"
 															onclick={() => getShiftInformation(shift.id)}
-															class="w-full flex cursor-pointer items-center justify-center rounded-lg bg-cyan-500/80 p-3 text-center text-sm font-semibold text-white backdrop-blur-sm transition-all duration-200 hover:scale-105 hover:bg-cyan-500/90 hover:shadow-lg"
+															class="flex w-full cursor-pointer items-center justify-center rounded-lg bg-cyan-500/80 p-3 text-center text-sm font-semibold text-white backdrop-blur-sm transition-all duration-200 hover:scale-105 hover:bg-cyan-500/90 hover:shadow-lg"
 														>
 															Διακοπές
 														</button>
@@ -534,20 +570,22 @@
 
 <!-- Shift Details Modal -->
 <Dialog.Root bind:open={isModalOpen}>
-	<Dialog.Content class="max-w-2xl max-h-[90vh] overflow-y-auto">
+	<Dialog.Content class="max-h-[90vh] max-w-2xl overflow-y-auto">
 		{#if loadingShiftDetails}
 			<div class="flex flex-col items-center justify-center py-12">
-				<div class="h-12 w-12 animate-spin-clockwise rounded-full border-4 border-primary border-t-transparent"></div>
+				<div
+					class="h-12 w-12 animate-spin-clockwise rounded-full border-4 border-primary border-t-transparent"
+				></div>
 				<p class="mt-4 text-sm text-muted-foreground">Φόρτωση στοιχείων βάρδιας...</p>
 			</div>
 		{:else if selectedShiftData}
 			{@const employee = selectedShiftData.profiles}
 			{@const badgeColor = employee?.badge_color || '#3b82f6'}
 			{@const initials = getInitials(employee?.username || '')}
-			
+
 			<Dialog.Header>
 				<Dialog.Title class="flex items-center gap-3 text-2xl">
-					<div 
+					<div
 						class="flex h-10 w-10 items-center justify-center rounded-lg"
 						style="background-color: {badgeColor}22;"
 					>
@@ -566,18 +604,18 @@
 					<div class="flex items-center gap-4">
 						<Avatar.Root class="h-16 w-16 shadow-md" style="border: 3px solid {badgeColor};">
 							<Avatar.Image src={employee?.image_url} alt={employee?.username} />
-							<Avatar.Fallback 
+							<Avatar.Fallback
 								class="text-xl font-bold text-white"
 								style="background-color: {badgeColor};"
 							>
 								{initials}
 							</Avatar.Fallback>
 						</Avatar.Root>
-						
+
 						<div class="flex-1">
 							<h3 class="text-lg font-semibold">{employee?.username}</h3>
 							<p class="text-sm text-muted-foreground">{employee?.email}</p>
-							<Badge 
+							<Badge
 								class="mt-2 text-xs"
 								style="background-color: {badgeColor}; color: white; border: none;"
 							>
@@ -592,7 +630,7 @@
 					<!-- Shift Type -->
 					<div class="rounded-xl border bg-card p-4">
 						<div class="flex items-start gap-3">
-							<div 
+							<div
 								class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg"
 								style="background-color: {badgeColor}22;"
 							>
@@ -614,13 +652,17 @@
 					{#if selectedShiftData.shift_type === 'work' && selectedShiftData.start_time && selectedShiftData.end_time}
 						<div class="rounded-xl border bg-card p-4">
 							<div class="flex items-start gap-3">
-								<div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-blue-500/10">
+								<div
+									class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-blue-500/10"
+								>
 									<Clock class="h-5 w-5 text-blue-600" />
 								</div>
 								<div class="flex-1">
 									<p class="text-sm text-muted-foreground">Ώρες Εργασίας</p>
 									<p class="mt-1 text-lg font-semibold">
-										{formatTime(selectedShiftData.start_time)} - {formatTime(selectedShiftData.end_time)}
+										{formatTime(selectedShiftData.start_time)} - {formatTime(
+											selectedShiftData.end_time
+										)}
 									</p>
 								</div>
 							</div>
@@ -630,12 +672,16 @@
 						{#if selectedShiftData.break_duration_minutes}
 							<div class="rounded-xl border bg-card p-4">
 								<div class="flex items-start gap-3">
-									<div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/10">
+									<div
+										class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/10"
+									>
 										<Coffee class="h-5 w-5 text-amber-600" />
 									</div>
 									<div class="flex-1">
 										<p class="text-sm text-muted-foreground">Διάλειμμα</p>
-										<p class="mt-1 font-semibold">{selectedShiftData.break_duration_minutes} λεπτά</p>
+										<p class="mt-1 font-semibold">
+											{selectedShiftData.break_duration_minutes} λεπτά
+										</p>
 									</div>
 								</div>
 							</div>
@@ -644,7 +690,9 @@
 						<!-- Total Duration -->
 						<div class="rounded-xl border bg-card p-4">
 							<div class="flex items-start gap-3">
-								<div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-green-500/10">
+								<div
+									class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-green-500/10"
+								>
 									<Clock class="h-5 w-5 text-green-600" />
 								</div>
 								<div class="flex-1">
@@ -666,7 +714,9 @@
 				{#if selectedShiftData.notes}
 					<div class="rounded-xl border bg-card p-4">
 						<div class="flex items-start gap-3">
-							<div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-purple-500/10">
+							<div
+								class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-purple-500/10"
+							>
 								<StickyNote class="h-5 w-5 text-purple-600" />
 							</div>
 							<div class="flex-1">
@@ -709,10 +759,25 @@
 			</div>
 
 			<Dialog.Footer>
-				<Button variant="outline" onclick={closeModal} class="w-full md:w-auto">
-					Κλείσιμο
-				</Button>
+				{#if isSameUser}
+					<Button
+						variant="default"
+						onclick={openRequestModal}
+						class="w-full gap-2 bg-amber-600 hover:bg-amber-700 md:w-auto"
+					>
+						<Flag class="h-4 w-4" />
+						Αίτημα Αλλαγής
+					</Button>
+				{/if}
+				<Button variant="outline" onclick={closeModal} class="w-full md:w-auto">Κλείσιμο</Button>
 			</Dialog.Footer>
 		{/if}
 	</Dialog.Content>
 </Dialog.Root>
+
+
+<ShiftChnageRrquestmodal 
+	bind:open={isRequestModalOpen} 
+	shiftData={requestShiftData}
+	onSuccess={handleRequestSuccess}
+/>
