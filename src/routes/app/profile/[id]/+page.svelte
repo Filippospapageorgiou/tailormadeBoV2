@@ -165,7 +165,7 @@
 											variant="outline"
 											class="cursor-pointer"
 											type="submit"
-											disabled={isUpdatingAvatar}
+											disabled={isUpdatingAvatar || isUpdating}
 										>
 											{#if isUpdatingAvatar}
 												<Loader class="mr-2 h-4 w-4 animate-spin-clockwise" />
@@ -212,7 +212,7 @@
 											variant="outline"
 											class="cursor-pointer"
 											type="submit"
-											disabled={isUpdating}
+											disabled={isUpdatingAvatar || isUpdating}
 										>
 											{#if isUpdating}
 												<Loader class="mr-2 h-4 w-4 animate-spin-clockwise" />

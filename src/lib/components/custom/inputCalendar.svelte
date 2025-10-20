@@ -9,12 +9,10 @@
 		id,
 		value = $bindable(),
 		required = false,
-		name = $bindable()
 	}: {
 		id?: string;
 		value?: string;
 		required?: boolean;
-		name?:string
 	} = $props();
 
 	let open = $state(false);
@@ -56,7 +54,6 @@
 					open = false;
 				}}
 			/>
-			<input type="hidden" name={name} value={value} />
 		</Popover.Content>
 	</Popover.Root>
 </div>

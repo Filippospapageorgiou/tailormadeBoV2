@@ -7,16 +7,12 @@
 	import { Label } from '$lib/components/ui/label';
 	import { Textarea } from '$lib/components/ui/textarea';
 	import * as Alert from '$lib/components/ui/alert';
-	import { Loader, AlertCircle, Calendar, Repeat, X as XIcon } from 'lucide-svelte';
+	import { Loader, BadgeAlertIcon, Calendar, Repeat, X as XIcon } from 'lucide-svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { showProgress, hideProgress } from '$lib/stores/progress.svelte';
-    import InputCalendar from '$lib/components/custom/inputCalendar.svelte';
+	import InputCalendar from '$lib/components/custom/inputCalendar.svelte';
 
-	let {
-		open = $bindable(false),
-		shiftData,
-		onSuccess
-	}: any = $props();
+	let { open = $bindable(false), shiftData, onSuccess }: any = $props();
 
 	let requestType = $state<'change' | 'swap' | 'cancel'>('change');
 	let proposedDate = $state('');
@@ -26,9 +22,11 @@
 
 	// Derived label for select
 	let requestTypeLabel = $derived(
-		requestType === 'change' ? 'Αλλαγή Ωρών/Ημερομηνίας' :
-		requestType === 'swap' ? 'Ανταλλαγή με Συνάδελφο' :
-		'Ακύρωση Βάρδιας'
+		requestType === 'change'
+			? 'Αλλαγή Ωρών/Ημερομηνίας'
+			: requestType === 'swap'
+				? 'Ανταλλαγή με Συνάδελφο'
+				: 'Ακύρωση Βάρδιας'
 	);
 
 	// Reset form when modal closes
@@ -108,24 +106,27 @@
 						if (firstError && Array.isArray(firstError) && firstError[0]?.message) {
 							handleError(firstError[0].message);
 						}
-					} else if (createShiftChangeRequest.result?.success) {
+					}else if (createShiftChangeRequest.result?.success) {
 						handleSuccess();
-						refreshForm();
 					} else {
 						handleError(createShiftChangeRequest.result?.message || 'Αποτυχία υποβολής αιτήματος');
 					}
-
+					refreshForm();
 					hideProgress();
 					form.reset();
 				})}
 				class="space-y-6 py-6"
 			>
 				<!-- Hidden shift_id field -->
-				<input type="hidden" name={createShiftChangeRequest.field('shift_id')} value={shiftData.id} />
+				<input
+					type="hidden"
+					name={createShiftChangeRequest.field('shift_id')}
+					value={shiftData.id}
+				/>
 
 				<!-- Current Shift Info -->
 				<Alert.Root class="border-blue-200 bg-blue-50">
-					<AlertCircle class="h-4 w-4 text-blue-600" />
+					<BadgeAlertIcon class="h-4 w-4 text-blue-600" />
 					<Alert.Title>Τρέχουσα Βάρδια</Alert.Title>
 					<Alert.Description>
 						<div class="mt-2 space-y-1 text-sm">
@@ -143,7 +144,7 @@
 				<!-- Request Type Selection -->
 				<div class="space-y-2">
 					<Label for="request-type">Τύπος Αιτήματος *</Label>
-					<Select.Root type="single" name="request_type" bind:value={requestType}>
+					<Select.Root type="single" bind:value={requestType}>
 						<Select.Trigger class="w-full">
 							{requestTypeLabel}
 						</Select.Trigger>
@@ -184,11 +185,14 @@
 						<!-- Proposed Date -->
 						<div class="space-y-2">
 							<Label for="proposed-date">Νέα Ημερομηνία</Label>
-                            <InputCalendar 
-                                id="proposed-date"
-                                name={createShiftChangeRequest.field('proposed_date')}
-                                bind:value={proposedDate}
-                            />
+							<InputCalendar id="proposed-date" bind:value={proposedDate} />
+							<Input
+								bind:value={proposedDate}
+								class="hidden"
+								type="date"
+								id="proposed-date"
+								name={createShiftChangeRequest.field('proposed_date')}
+							/>
 						</div>
 
 						<!-- Proposed Time Range -->

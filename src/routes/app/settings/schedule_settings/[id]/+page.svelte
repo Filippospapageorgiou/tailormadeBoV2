@@ -7,7 +7,10 @@
 		updateShift,
 		deleteShift,
 		calculateUserHours,
-		getScheduleById
+		getScheduleById,
+
+		getShiftChanges
+
 	} from './data.remote';
 	import AuthBlock from '$lib/components/custom/AuthBlock/authBlock.svelte';
 	import ScheduleHeader from './components/ScheduleHeader.svelte';
@@ -15,16 +18,21 @@
 	import WeeklyGrid from './components/WeeklyGrid.svelte';
 	import ShiftModal, { type ShiftFormData } from './components/ShiftModal.svelte';
 	import type { Profile } from '$lib/models/database.types';
-	import type { Shift, ShiftCategory, ShiftType } from '$lib/models/schedule.types';
+	import type { Shift, ShiftCategory, ShiftType, ShiftChangeRequestPorfile } from '$lib/models/schedule.types';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { showFailToast, showSuccessToast } from '$lib/stores/toast.svelte';
+	import ShiftRequests from './components/ShiftRequests.svelte';
 
 	let auth = authenticatedAccess();
 	let employeesQuery = getEmployees();
 
 	// Get schedule ID from route parameter
 	let scheduleId = $derived(parseInt(page.params.id!));
+
+	// svelte-ignore state_referenced_locally
+	let shiftChanges = getShiftChanges({scheduleId});
+	let shiftRequests:ShiftChangeRequestPorfile[] = $derived(shiftChanges.current?.shiftRequests || []);
 
 	// Fetch schedule data
 	let scheduleQuery = $derived.by(() => {
@@ -171,6 +179,11 @@
 
 		employeeHoursMap = hoursMap;
 	}
+	
+
+	async function refresh() {
+		await shiftChanges.refresh();
+	}
 </script>
 
 {#if auth.loading}
@@ -213,6 +226,11 @@
 				employeeName={selectedEmployee?.username}
 				onClose={handleCloseModal}
 				onSave={handleSaveShift}
+			/>
+
+			<ShiftRequests
+				{shiftRequests} 
+				onSuccess={refresh}
 			/>
 		</main>
 	</div>

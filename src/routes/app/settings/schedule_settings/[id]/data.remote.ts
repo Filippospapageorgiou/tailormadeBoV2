@@ -2,7 +2,7 @@ import { query, command, form, prerender } from "$app/server";
 import { createServerClient, createAdminClient  } from "$lib/supabase/server";
 import { requireAuthenticatedUser } from '$lib/supabase/shared';
 import type { Profile } from "$lib/models/database.types";
-import type { WeeklySchedule, Shift, ShiftChangeRequest } from "$lib/models/schedule.types";
+import type { WeeklySchedule, Shift, ShiftChangeRequest, ShiftChangeRequestPorfile} from "$lib/models/schedule.types";
 import { SCHEDULE_STATUS, SHIFT_TYPE, SHIFT_CATEGORY } from "$lib/models/schedule.types";
 import { z } from 'zod/v4';
 import { error } from '@sveltejs/kit';
@@ -596,4 +596,129 @@ export const calculateUserHours = query(calculateHoursSchema, async ({ scheduleI
             totalHours: 0
         };
     }
+});
+
+
+const shiftChangesSchemaId = z.object({
+    scheduleId : z.number().positive().int()
+})
+
+export const getShiftChanges = query(shiftChangesSchemaId, async( scheduleId ) => {
+    const supabase = createServerClient();
+
+    const { data:shifts, error:shiftsError } = await supabase
+        .from('shifts')
+        .select('*')
+        .eq('schedule_id',scheduleId.scheduleId)
+        .overrideTypes<Shift[]>();
+    
+    if(shiftsError){
+        console.error(`Error fetching shifts from schedule ${scheduleId} error: `,shiftsError);
+        return {
+            success:false,
+            message:'An error occured trying to fetch shifts',
+            shiftRequests: []
+        };
+    }
+
+    let shiftChangesArray:ShiftChangeRequestPorfile[] = []
+    let shift:Shift
+    for(shift of shifts){
+        const { data: shiftRequest, error } = await supabase
+            .from('shift_change_requests')
+            .select(`
+                    *,
+                    shift:shift_id(*),
+                    profile:requested_by (*)
+                `)
+            .eq('shift_id', shift.id)
+            .eq('status', 'pending')
+            .maybeSingle<ShiftChangeRequestPorfile>();
+        
+        if(error){
+            console.error(`Error fetching shifts changes  error: `, error);
+            return {
+                success:false,
+                message:'An error occured trying to fetch shifts',
+                shiftRequests: []
+            };
+        }
+
+        if(shiftRequest) shiftChangesArray.push(shiftRequest);
+    }
+
+    return {
+        success: true,
+        message:'Sucess fetching shift requests',
+        shiftRequests: shiftChangesArray
+    }
+
+})  
+
+const shiftRequestId = z.object({
+    shiftChangeId : z.number().positive().int()
+})
+
+export const approveShiftRequest = command(shiftRequestId, async(shiftChangeId) => {
+    const supabase = createServerClient();
+    const user = await requireAuthenticatedUser();
+
+    const { data, error } = await supabase
+        .from('shift_change_requests')
+        .update({
+            status: 'approved',
+            reviewed_by: user.id,
+            reviewed_at: new Date().toISOString()
+            })
+        .eq('id', shiftChangeId.shiftChangeId)
+        .select()
+        .single();
+
+    if(error){
+        console.error('Error approving shift request: ',error);
+        return {
+            success: false,
+            message:'An unexpected error occured'
+        };
+    }
+
+    return {
+        success:true,
+        message:'Successfuly approved shift request'
+    };
+});
+
+const shiftRequestReject = z.object({
+    shiftChangeId : z.number().positive().int(),
+    adminText:z.string()
+})
+
+export const rejectShift = command(shiftRequestReject, async(dataRequest) => {
+    const supabase = createServerClient();
+    const user = await requireAuthenticatedUser();
+
+    const { data, error } = await supabase
+        .from('shift_change_requests')
+        .update({
+            status: 'rejected',
+            reviewed_by: user.id,
+            reviewed_at: new Date().toISOString(),
+            admin_notes:dataRequest.adminText
+            })
+        .eq('id', dataRequest.shiftChangeId)
+        .select()
+        .single();
+
+    if(error){
+        console.error('Error approving shift request: ',error);
+        return {
+            success: false,
+            message:'An unexpected error occured'
+        };
+    }
+
+    return {
+        success:true,
+        message:'Successfuly approved shift request'
+    };
 });

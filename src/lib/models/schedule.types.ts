@@ -1,3 +1,5 @@
+import type { Profile } from "./database.types";
+
 export const SCHEDULE_STATUS = {
   DRAFT: 'draft',
   PUBLISHED: 'published',
@@ -114,4 +116,9 @@ export interface ShiftChangeRequest {
   
   created_at: string;
   updated_at: string;
+}
+
+export interface ShiftChangeRequestPorfile extends ShiftChangeRequest {
+  shift:Shift;
+  profile:Profile | null;
 }

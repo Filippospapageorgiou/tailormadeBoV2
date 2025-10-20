@@ -210,7 +210,6 @@ const shiftChangeRequestSchema = z.object({
 export const createShiftChangeRequest = form(shiftChangeRequestSchema, async (data) => {
     const supabase = createServerClient();
     const user = await requireAuthenticatedUser();
-
     try {
         // Get user's org_id
         const { data: profile, error: profileError } = await supabase
