@@ -1,8 +1,12 @@
 <script lang="ts">
+	import { goto } from "$app/navigation";
+
     let {children} = $props();
 </script>
 
-<div class="rounded-2xl relative aspect-video overflow-hidden group">
+<button onclick={()=>{goto("/app/recipes/")}}>
+<div
+  class="rounded-2xl relative aspect-video overflow-hidden group cursor-pointer">
   <img
     src="/drink.jpg"
     placeholder="blur"
@@ -18,3 +22,4 @@
     <p>Fallback</p>
   {/if}
 </div>
+</button>

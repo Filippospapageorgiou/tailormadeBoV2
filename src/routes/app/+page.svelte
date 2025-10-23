@@ -8,6 +8,7 @@
   	import { Button } from "$lib/components/ui/button/index.js";
   	import RefreshCcwIcon from "@lucide/svelte/icons/refresh-ccw";
 	import { Search } from 'lucide-svelte';
+	import { goto } from '$app/navigation';
 
 	let { data } = $props();
 	let blog = $derived(data.blog as Blog);
@@ -53,9 +54,9 @@
 				/>
 			</CardImg1>
 		</div>
-
-		<div
-			class="group relative flex aspect-video flex-col justify-end overflow-hidden rounded-2xl bg-gradient-to-t from-slate-500 to-orange-50"
+		<button onclick={()=>{goto("/app/schedule/")}}>
+			<div
+			class="group relative flex aspect-video flex-col justify-end overflow-hidden rounded-2xl bg-gradient-to-t from-slate-500 to-orange-50 cursor-pointer"
 		>
 			<Calendar
 				type="multiple"
@@ -84,6 +85,8 @@
 				</div>
 			</div>
 		</div>
+		</button>
+		
 		{#if blog}
 			<a href="/app/blog/{blog.id}" class="group relative aspect-video overflow-hidden rounded-2xl">
 				<div class="absolute inset-0">
