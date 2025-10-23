@@ -15,7 +15,7 @@
 	import Label from '$lib/components/ui/label/label.svelte';
 	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
 	import { inviteUser } from './data.remote';
-	import { toast } from '$lib/stores/toast.svelte';
+	import { showFailToast, showSuccessToast, toast } from '$lib/stores/toast.svelte';
 	import AuthBlock from '$lib/components/custom/AuthBlock/authBlock.svelte';
 
 	let auth = authenticatedAccess();
@@ -38,24 +38,15 @@
 			});
 
 			if(result?.success){
-				toast.show = true;
-				toast.status = true;
-				toast.title = 'Success';
-				toast.text = result?.message;
+				showSuccessToast('Success',result?.message);
 				inviteEmail = '';
 			}else {
-				toast.show = true;
-				toast.status = false;
-				toast.title = 'Error';
-				toast.text = result?.message || 'Failed to send invitation';
+				showFailToast('Error',result?.message || 'Failed to send invitation');
 			}
 
 		}catch (error) {
 			console.error('Error inviting user:', error);
-			toast.show = true;
-			toast.status = false;
-			toast.title = 'Error';
-			toast.text = 'An error occured trying to invite user'
+			showFailToast('Error','Failed to send invitation');
 		} finally {
 			inviteUserDialog = false;
 			invite = false;

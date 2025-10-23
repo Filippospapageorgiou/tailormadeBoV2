@@ -8,7 +8,7 @@
 	import { Textarea } from '$lib/components/ui/textarea';
 	import * as Alert from '$lib/components/ui/alert';
 	import { Loader, BadgeAlertIcon, Calendar, Repeat, X as XIcon } from 'lucide-svelte';
-	import { toast } from '$lib/stores/toast.svelte';
+	import { showSuccessToast, toast } from '$lib/stores/toast.svelte';
 	import { showProgress, hideProgress } from '$lib/stores/progress.svelte';
 	import InputCalendar from '$lib/components/custom/inputCalendar.svelte';
 
@@ -56,14 +56,6 @@
 		return `${hours}:${minutes}`;
 	}
 
-	function handleSuccess() {
-		toast.show = true;
-		toast.status = true;
-		toast.title = 'Επιτυχία';
-		toast.text = 'Το αίτημα αλλαγής βάρδιας υποβλήθηκε επιτυχώς';
-		onSuccess?.();
-	}
-
 	function handleError(text: string) {
 		toast.show = true;
 		toast.status = false;
@@ -100,14 +92,15 @@
 					open = false;
 					showProgress('Υποβολή αιτήματος...');
 					await submit();
+					if(createShiftChangeRequest.result?.success === true){
+						showSuccessToast('Επιτυχία','Το αιτήμα σας υποβλήθηκε με επυτιχία');
+					}
 
 					if (createShiftChangeRequest.issues) {
 						const firstError = Object.values(createShiftChangeRequest.issues)[0];
 						if (firstError && Array.isArray(firstError) && firstError[0]?.message) {
 							handleError(firstError[0].message);
 						}
-					}else if (createShiftChangeRequest.result?.success) {
-						handleSuccess();
 					} else {
 						handleError(createShiftChangeRequest.result?.message || 'Αποτυχία υποβολής αιτήματος');
 					}

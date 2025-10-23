@@ -8,22 +8,25 @@
 	import { Pencil, Trash, Palette } from 'lucide-svelte';
 	import { deleteUser, getAllUserFromOrg, updateUserRole, updateBadgeColor } from './data.remote';
 	import { showProgress, hideProgress } from '$lib/stores/progress.svelte';
-	import { toast } from '$lib/stores/toast.svelte';
+	import { showFailToast, showSuccessToast, toast } from '$lib/stores/toast.svelte';
 	import type { RoleTypes } from '$lib/models/database.types';
 	import BadgeColorPicker from '$lib/components/custom/badge-color-picker.svelte';
+	import { Switch } from "$lib/components/ui/switch/index.js";
 
 	let {
 		id,
 		username,
 		role_id,
 		role_name,
-		badge_color
+		badge_color,
+		can_close_register
 	}: {
 		id: string;
 		username: string;
 		role_id: number;
 		role_name: string;
 		badge_color: string;
+		can_close_register:boolean;
 	} = $props();
 
 	let query = getAllUserFromOrg();
@@ -60,26 +63,18 @@
 		try {
 			const result = await updateUserRole({
 				userId: id,
-				roleId: parseInt(selectedRoleId, 10)
+				roleId: parseInt(selectedRoleId, 10),
+				canCloseRegister:can_close_register
 			});
 
 			if (result.success) {
 				await query.refresh();
-				toast.show = true;
-				toast.status = true;
-				toast.title = 'Success';
-				toast.text = result.message;
+				showSuccessToast('Success',result?.message)
 			} else {
-				toast.show = true;
-				toast.status = false;
-				toast.title = 'Error';
-				toast.text = result.message || 'Failed to update user role.';
+				showFailToast('Error',result?.message || 'Failed to update the user')
 			}
 		} catch (error: any) {
-			toast.show = true;
-			toast.status = false;
-			toast.title = 'Error';
-			toast.text = error.message || 'An unexpected error occurred.';
+			showFailToast('Error','An unexpected error occured')
 		} finally {
 			hideProgress();
 		}
@@ -94,21 +89,12 @@
 
 			if (result.success) {
 				await query.refresh();
-				toast.show = true;
-				toast.status = true;
-				toast.title = 'Success';
-				toast.text = result.message;
+				showSuccessToast('Success',result?.message)
 			} else {
-				toast.show = true;
-				toast.status = false;
-				toast.title = 'Error';
-				toast.text = result.message || 'Failed to delete user.';
+				showFailToast('Error',result?.message || 'Failed to update the user')
 			}
 		} catch (error: any) {
-			toast.show = true;
-			toast.status = false;
-			toast.title = 'Error';
-			toast.text = error.message || 'An unexpected error occurred.';
+			showFailToast('Error','An unexpected error occured')
 		} finally {
 			hideProgress();
 		}
@@ -126,21 +112,12 @@
 
 			if (result.success) {
 				await query.refresh();
-				toast.show = true;
-				toast.status = true;
-				toast.title = 'Success';
-				toast.text = result.message;
+				showSuccessToast('Success',result?.message)
 			} else {
-				toast.show = true;
-				toast.status = false;
-				toast.title = 'Error';
-				toast.text = result.message || 'Failed to update badge color.';
+				showFailToast('Error',result?.message || 'Failed to update the user')
 			}
 		} catch (error: any) {
-			toast.show = true;
-			toast.status = false;
-			toast.title = 'Error';
-			toast.text = error.message || 'An unexpected error occurred.';
+			showFailToast('Error','An unexpected error occured')
 		} finally {
 			hideProgress();
 		}
@@ -231,6 +208,10 @@
 							</Select.Group>
 						</Select.Content>
 					</Select.Root>
+				</div>
+				<div class="col-span-3 flex flex-row gap-8">
+					<Label class="text-right">Authorize to close register</Label>
+					 <Switch bind:checked={can_close_register} />
 				</div>
 			</div>
 		</div>

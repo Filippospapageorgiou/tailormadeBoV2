@@ -719,6 +719,6 @@ export const rejectShift = command(shiftRequestReject, async(dataRequest) => {
 
     return {
         success:true,
-        message:'Successfuly approved shift request'
+        message:'Successfuly rejected shift request'
     };
 });

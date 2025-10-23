@@ -12,6 +12,7 @@ export class ProfileStore {
 	orgId = $state();
 	role_id = $state();
 	role_name = $state('');
+	can_close_register = $state(false);
 
 	constructor(profile: Profile | null) {
 		if (profile) {
@@ -23,6 +24,7 @@ export class ProfileStore {
 			this.orgId = profile.org_id;
 			this.role_id = profile.role_id;
 			this.role_name = profile.role_name;
+			this.can_close_register = profile.can_close_register;
 		}
 	}
 
@@ -35,6 +37,7 @@ export class ProfileStore {
 		this.orgId = profile.org_id;
 		this.role_id = profile.role_id;
 		this.role_name = profile.role_name;
+		this.can_close_register = profile.can_close_register;
 	}
 
 	updateUsername(newUsername: string) {

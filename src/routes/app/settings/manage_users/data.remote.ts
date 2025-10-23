@@ -103,15 +103,18 @@ export const getAllUserFromOrg = query(async () => {
 
 const updateUserRoleSchema = z.object({
     userId: z.string({ error : 'Invalid user ID format' }),
-    roleId: z.number().int().positive({ error: 'Role ID must be a positive integer' })
+    roleId: z.number().int().positive({ error: 'Role ID must be a positive integer' }),
+    canCloseRegister: z.boolean({error:'Registry must me a boolean vallue'})
 });
 
-export const updateUserRole = command(updateUserRoleSchema, async ({ userId, roleId }) => {
+export const updateUserRole = command(updateUserRoleSchema, async ({ userId, roleId, canCloseRegister }) => {
     const supabase = createServerClient();
     try {
         const {error } = await supabase
             .from('profiles')
-            .update({ role_id: roleId })
+            .update({ role_id: roleId,
+                    can_close_register:canCloseRegister
+             })
             .eq('id', userId);
 
         if (error) {

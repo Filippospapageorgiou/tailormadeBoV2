@@ -108,6 +108,7 @@ export const columns: ColumnDef<Profile>[] = [
         role_id: row.original.role_id,
         role_name: row.original.role_name,
         badge_color: row.original.badge_color,
+        can_close_register: row.original.can_close_register
       });
     },
   },

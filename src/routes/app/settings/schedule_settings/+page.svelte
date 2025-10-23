@@ -257,7 +257,7 @@
 {#if auth.loading}
     <AuthBlock />
 {:else}
-<div class="container mx-auto space-y-6 py-6">
+<div class="container px-6 mx-auto space-y-6 py-6">
 	<!-- Header -->
 	<div>
 		<h1 class="text-3xl font-bold tracking-tight">Schedule Management</h1>
