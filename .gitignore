@@ -1,9 +1,10 @@
 node_modules
+agents
+CLAUDE.md
 
 # Output
 .output
 .vercel
-.agents
 .netlify
 .wrangler
 /.svelte-kit
