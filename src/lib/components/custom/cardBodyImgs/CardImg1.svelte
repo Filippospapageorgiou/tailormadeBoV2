@@ -4,7 +4,6 @@
     let {children} = $props();
 </script>
 
-<button onclick={()=>{goto("/app/recipes/")}}>
 <div
   class="rounded-2xl relative aspect-video overflow-hidden group cursor-pointer">
   <img
@@ -22,4 +21,3 @@
     <p>Fallback</p>
   {/if}
 </div>
-</button>

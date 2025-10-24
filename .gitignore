@@ -3,6 +3,7 @@ node_modules
 # Output
 .output
 .vercel
+.agents
 .netlify
 .wrangler
 /.svelte-kit
@@ -23,5 +24,4 @@ Thumbs.db
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
-CLUADE.md
-AGENTS.md
+.CLUADE.md

@@ -47,15 +47,17 @@
 	<div class="grid auto-rows-min gap-4 md:grid-cols-3 pt-0 md:pt-9">
 		<Hero />
 		
-		<div class="aspect-video rounded-2xl bg-muted/50">
+		<a 	
+			href="/app/recipes/"
+			class="aspect-video rounded-2xl bg-muted/50">
 			<CardImg1>
 				<CardBodyImg
 					class="absolute inset-x-0 bottom-2 flex size-full flex-col justify-end px-4 pb-0.5 md:pb-10"
 				/>
 			</CardImg1>
-		</div>
-		<button onclick={()=>{goto("/app/schedule/")}}>
-			<div
+		</a>
+			<a
+			href="/app/schedule/"
 			class="group relative flex aspect-video flex-col justify-end overflow-hidden rounded-2xl bg-gradient-to-t from-slate-500 to-orange-50 cursor-pointer"
 		>
 			<Calendar
@@ -84,8 +86,7 @@
 					</p>
 				</div>
 			</div>
-		</div>
-		</button>
+		</a>
 		
 		{#if blog}
 			<a href="/app/blog/{blog.id}" class="group relative aspect-video overflow-hidden rounded-2xl">
