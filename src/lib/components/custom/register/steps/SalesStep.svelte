@@ -18,15 +18,11 @@
 		cardSales = $bindable(0),
 		woltSales = $bindable(0),
 		efoodSales = $bindable(0),
-		otherDigitalSales = $bindable(0)
+		otherDigitalSales = $bindable(0),
 	}: Props = $props();
 
-	// Auto-calculate expected cash (total sales minus all digital payments)
-	let expectedCash = $derived(
-		totalSales - (cardSales + woltSales + efoodSales + otherDigitalSales)
-	);
-
 	let totalDigital = $derived(cardSales + woltSales + efoodSales + otherDigitalSales);
+	let expectedCash = $derived(totalSales - totalDigital);
 </script>
 
 <Card.Root class="border-neutral-200 shadow-sm">
