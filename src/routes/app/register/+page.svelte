@@ -88,7 +88,6 @@
 				<!-- Main Form Area -->
 				<div class="lg:col-span-2">
 					{#if currentStep === 1}
-
 					{:else if currentStep === 2}
 					
 					{:else if currentStep === 3}
