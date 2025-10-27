@@ -111,3 +111,84 @@ export const checkRegisterToday = query(async () => {
         };
     }
 });
+
+export const dailyRegisterSchema = z.object({
+  // Metadata
+  closing_date: z.string().nonempty("Closing date is required"), // 'YYYY-MM-DD'
+  closed_by: z.uuid("Invalid UUID"),
+
+  // Sales breakdown
+  total_sales: z
+    .string()
+    .transform((val) => parseInt(val, 10))
+    .pipe(z.number().int().nonnegative()),
+  card_sales: z
+    .string()
+    .transform((val) => parseInt(val, 10))
+    .pipe(z.number().int().nonnegative()),
+  wolt_sales: z
+    .string()
+    .transform((val) => parseInt(val, 10))
+    .pipe(z.number().int().nonnegative()),
+  efood_sales: z
+    .string()
+    .transform((val) => parseInt(val, 10))
+    .pipe(z.number().int().nonnegative()),
+  other_digital_sales: z
+    .string()
+    .transform((val) => parseInt(val, 10))
+    .pipe(z.number().int().nonnegative()),
+
+  expected_cash: z
+    .string()
+    .transform((val) => parseInt(val, 10))
+    .pipe(z.number().int().nonnegative()),
+
+  // Cash handling
+  opening_float: z
+    .string()
+    .transform((val) => parseInt(val, 10))
+    .pipe(z.number().int().nonnegative()),
+  actual_cash_counted: z
+    .string()
+    .transform((val) => parseInt(val, 10))
+    .pipe(z.number().int().nonnegative()),
+
+  // Payments & Expenses
+  total_supplier_payments: z
+    .string()
+    .transform((val) => parseInt(val, 10))
+    .pipe(z.number().int().nonnegative()),
+  total_expenses: z
+    .string()
+    .transform((val) => parseInt(val, 10))
+    .pipe(z.number().int().nonnegative()),
+
+  // Optional / computed / nullable fields
+  notes: z.string(),
+  status: z.enum(["draft", "submited", "reviewed"]), // adjust to your RegisterStatus enum
+  reviewed_by: z.uuid(),
+  reviewed_at: z.string()
+});
+
+
+
+export const dailyRegisterForm = form(dailyRegisterSchema, async( data ) => {
+    const supabase = createServerClient();
+    const user = await requireAuthenticatedUser();
+    try{
+        
+        const { error } = await supabase
+            .from('daily_register_closings')
+            .insert({
+                
+            })
+        
+    }catch(error){
+        console.error('An error occured trying to close register : ', error);
+        return {
+            success: false,
+            message:'An error occured trying to close register, try again'
+        }
+    }
+})
