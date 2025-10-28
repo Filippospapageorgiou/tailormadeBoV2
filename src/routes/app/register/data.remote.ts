@@ -7,7 +7,6 @@ import type { Supplier, DailyRegisterClosing,
               RegisterExpense } from "$lib/models/register.types";
 import z from "zod/v4";
 import { error } from '@sveltejs/kit';
-import { redirect } from '@sveltejs/kit';
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 
@@ -34,7 +33,7 @@ export const authenticatedAccess = query(async () => {
     if(!profile.can_close_register){
         return{
             success:false,
-            message:'Δεν έχεις προσβάση σε αυτήν την σελίδα περιηγήσου πίσω',
+            message:'Δεν έχεις προσβάση σε αυτήν την λειτούργια περιηγήσου πίσω',
             hasAccess: false,
             profile:null
         }
@@ -46,6 +45,74 @@ export const authenticatedAccess = query(async () => {
         profile,
     };
 })
+
+export const getOpeningFloat = query(async() => {
+  const supabase = createServerClient();
+  const user = await requireAuthenticatedUser();
+  try{
+
+      // Get user's org_id
+      const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('org_id')
+            .eq('id', user.id)
+            .single<Pick<Profile, 'org_id'>>();
+        
+        if (profileError || !profile) {
+            console.error('Error fetching user profile:', profileError);
+            return {
+                success: false,
+                message: 'Error fetching user profile',
+            };
+        }
+        
+        // Get yesterday's date
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        // Format as YYYY-MM-DD
+        const formattedDate = yesterday.toISOString().split('T')[0];
+
+        const { data: registry, error: registryError } = await supabase
+            .from('daily_register_closings')
+            .select('*')
+            .eq('closing_date', formattedDate)
+            .eq('org_id', profile.org_id)
+            .maybeSingle<DailyRegisterClosing>();
+
+        if (registryError) {
+            console.error('Error fetching register data:', registryError);
+            return {
+                success: false,
+                message: 'Error fetching register data',
+            };
+        }
+
+        // Return the opening float from yesterday's closing
+        if (registry) {
+            return {
+                success: true,
+                message: 'Opening float retrieved successfully',
+                openingFloat: registry.opening_float || 0.0
+            };
+        } else {
+            // No register from yesterday found
+            return {
+                success: true,
+                message: 'No previous register found',
+                openingFloat: 0.0
+            };
+        }
+
+  } catch(error) {
+    console.error('Error trying to get opening float: ', error);
+    return {
+      success: false,
+      message: 'Error trying to get opening float',
+      openingFloat: 0.0
+    }
+  }
+  
+});
 
 /**
  * Check if today there was a closing in the registry so 

@@ -44,7 +44,7 @@
 				>Συνολικές Πωλήσεις *</Label
 			>
 			<div class="relative">
-				<DollarSign class="absolute left-3 top-3 h-4 w-4 text-neutral-400" />
+				<DollarSign class="absolute left-3 top-3 h-4 w-4 text-green-700" />
 				<Input
 					id="total_sales"
 					type="number"
@@ -87,7 +87,7 @@
 			<div class="space-y-2">
 				<Label for="wolt_sales" class="text-sm text-neutral-600">Wolt</Label>
 				<div class="relative">
-					<Bike class="absolute left-3 top-3 h-4 w-4 text-neutral-400" />
+					<Bike class="absolute left-3 top-3 h-4 w-4 text-blue-400" />
 					<Input
 						id="wolt_sales"
 						type="number"
@@ -104,7 +104,7 @@
 			<div class="space-y-2">
 				<Label for="efood_sales" class="text-sm text-neutral-600">e-Food</Label>
 				<div class="relative">
-					<UtensilsCrossed class="absolute left-3 top-3 h-4 w-4 text-neutral-400" />
+					<UtensilsCrossed class="absolute left-3 top-3 h-4 w-4 text-red-400" />
 					<Input
 						id="efood_sales"
 						type="number"

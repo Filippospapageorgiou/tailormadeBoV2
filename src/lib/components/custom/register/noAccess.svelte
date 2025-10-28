@@ -4,11 +4,32 @@
 	import * as Avatar from "$lib/components/ui/avatar/index.js";
 	import { getProfileContext } from "$lib/stores/profile.svelte";
 	import { goto } from "$app/navigation";
+	import { onMount } from 'svelte';
+	
+	onMount(() => {
+		// Disable scrolling on body
+		document.body.style.overflow = 'hidden';
+		// Prevent iOS Safari bounce scrolling
+		document.body.style.position = 'fixed';
+		document.body.style.width = '100%';
+		document.body.style.top = `-${window.scrollY}px`;
+		
+		const scrollY = window.scrollY;
+		
+		// Re-enable scrolling when component unmounts
+		return () => {
+			document.body.style.overflow = '';
+			document.body.style.position = '';
+			document.body.style.width = '';
+			document.body.style.top = '';
+			window.scrollTo(0, scrollY);
+		};
+	});
 
 	let user = getProfileContext();
 </script>
 
-<div class="fixed inset-0 backdrop-blur-sm bg-black/20 flex items-center justify-center z-50">
+<div class="fixed backdrop-blur-sm w-full h-full flex items-center justify-center z-50">
 		<Empty.Root>
 			<Empty.Header>
 				<Empty.Media variant="default">
