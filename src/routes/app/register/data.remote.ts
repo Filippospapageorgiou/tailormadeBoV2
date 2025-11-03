@@ -92,7 +92,7 @@ export const getOpeningFloat = query(async() => {
             return {
                 success: true,
                 message: 'Opening float retrieved successfully',
-                openingFloat: registry.opening_float || 0.0
+                openingFloat: registry.tomorrowOpeningFloat || 0.0
             };
         } else {
             // No register from yesterday found
@@ -219,7 +219,16 @@ const dailyRegisterSchema = z.object({
     .string()
     .transform((val) => parseFloat(val))
     .pipe(z.number().nonnegative("Actual cash must be non-negative")),
-
+  
+  tommorow_opening_float: z
+    .string()
+    .transform((val) => parseFloat(val))
+    .pipe(z.number().nonnegative("Tomorrow opening float must be non-negative")),
+  
+  cash_deposit: z
+    .string()
+    .transform((val) => parseFloat(val))
+    .pipe(z.number().nonnegative("Cash deposit float must be non-negative")),
   // Optional fields
   notes: z.string().optional(),
   
@@ -510,6 +519,8 @@ export const dailyRegisterForm = form(dailyRegisterSchema, async (data) => {
         total_supplier_payments: total_supplier_payments,
         total_expenses: total_expenses,
         final_cash_balance: final_cash_balance,
+        tomorrow_opening_float: data.tommorow_opening_float,
+        cash_deposit:data.cash_deposit,
         notes: data.notes || null,
         status: data.status || 'submitted'
       })

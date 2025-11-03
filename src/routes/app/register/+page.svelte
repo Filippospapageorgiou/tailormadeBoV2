@@ -1,28 +1,34 @@
 <script lang="ts">
-	import {
-		ChevronLeft,
-		ChevronRight,
-		CheckCheck
-	} from 'lucide-svelte';
+	import { ChevronLeft, ChevronRight, CheckCheck } from 'lucide-svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import AuthBlock from '$lib/components/custom/AuthBlock/authBlock.svelte';
 	import { showFailToast, showSuccessToast } from '$lib/stores/toast.svelte';
-	import { authenticatedAccess, checkRegisterToday, dailyRegisterForm, getOpeningFloat } from './data.remote';
+	import {
+		authenticatedAccess,
+		checkRegisterToday,
+		dailyRegisterForm,
+		getOpeningFloat,
+		getActiveSuppliers
+	} from './data.remote';
 	import NoAccess from '$lib/components/custom/register/noAccess.svelte';
 	import RegisterProgressBar from '$lib/components/custom/register/RegisterProgressBar.svelte';
-	import SalesStep from '$lib/components/custom/register/steps/SalesStep.svelte';
 	import SuppliersStep from '$lib/components/custom/register/steps/SuppliersStep.svelte';
 	import ExpensesStep from '$lib/components/custom/register/steps/ExpensesStep.svelte';
-	import SummarizeSales from '$lib/components/custom/register/steps/summarizeSales.svelte';
-	import type { CreateSupplierPaymentInput, CreateExpenseInput } from '$lib/models/register.types';
+	import { getSalesRegister, setSalesRegister } from '$lib/stores/register.svelte';
+	import Summarize from '$lib/components/custom/register/steps/Summarize.svelte';
+	import SalesStep from '$lib/components/custom/register/steps/SalesStep.svelte';
+	import FinalStep from '$lib/components/custom/register/steps/FinalStep.svelte';
+	
 
 	let auth = authenticatedAccess();
 	let query = checkRegisterToday();
 	let queryOpeningFloat = getOpeningFloat();
+	let queryGetAllSupliers = getActiveSuppliers();
 
+	let suppliers = $derived(queryGetAllSupliers?.current?.suppliers || []);
+	let suppliersLoading = $derived(queryGetAllSupliers.loading);
 	let hasAccess = $derived(auth.current?.hasAccess);
 	let authMessage = $derived(auth.current?.message || '');
-	let openingFloat = $derived(queryOpeningFloat?.current?.openingFloat);
 
 	let checkRegister = $derived(query?.current?.hasRegisterToday);
 	let date = $derived(query?.current?.date);
@@ -37,39 +43,24 @@
 		}
 	});
 
-	// Step 1: Sales data
-	let totalSales = $state(0);
-	let cardSales = $state(0);
-	let woltSales = $state(0);
-	let efoodSales = $state(0);
-	let otherDigitalSales = $state(0);
-
-	let expectedCash = $derived(
-		totalSales - (cardSales + woltSales + efoodSales + otherDigitalSales)
-	);
-
-	// Step 2: Supplier payments
-	let supplierPayments = $state<CreateSupplierPaymentInput[]>([]);
-
-	let totalSuppliersPayments = $derived(supplierPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0));
-
-	// Step 3: Expenses
-	let expenses = $state<CreateExpenseInput[]>([]);
-
-	let totalExpenses = $derived(expenses.reduce((sum, p) => sum + (Number(p.amount) || 0),0));
-
-	let expectedFinal = $derived(
-		expectedCash - totalSuppliersPayments - totalExpenses
-	);
-
-
+	let sales = setSalesRegister({
+		totalSales: 0,
+		cardSales: 0,
+		woltSales: 0,
+		efoodSales: 0,
+		otherDigitalSales: 0,
+		actualCashCounted: 0,
+		openingFloat: queryOpeningFloat?.current?.openingFloat || 0.0,
+		supplierPayments: [],
+		expenses: [],
+		totalExpenses: 0,
+		totalSupplierPayments: 0
+	});
 
 	$effect(() => {
-		$inspect(supplierPayments);
-		$inspect(expenses);
+		$inspect(sales.supplierPayments);
+		$inspect(sales.expenses);
 	})
-
-	
 	let currentStep = $state(1);
 	const totalSteps = 4;
 
@@ -87,21 +78,19 @@
 	function validateCurrentStep(): boolean {
 		switch (currentStep) {
 			case 1:
-				if (totalSales <= 0) {
-					showFailToast('Σφάλμα', 'Παρακαλώ εισάγετε τις συνολικές πωλήσεις');
+				if(sales.totalSales <= 0 || sales.cardSales <= 0){
+					showFailToast('Σφάλμα', 'Παρακαλώ συμπληρώστε όλα τα πεδία του τάμιου');
 					return false;
 				}
 				return true;
 			case 2:
-				// Validate supplier payments if any
-				if (supplierPayments.some(p => !p.supplier_name || p.amount <= 0)) {
+				if (sales.supplierPayments.some((p) => !p.supplier_name || p.amount <= 0)) {
 					showFailToast('Σφάλμα', 'Παρακαλώ συμπληρώστε όλα τα πεδία προμηθευτών');
 					return false;
 				}
 				return true;
 			case 3:
-				// Validate expenses if any
-				if (expenses.some(e => !e.description || e.amount <= 0)) {
+				if (sales.expenses.some((e) => !e.description || e.amount <= 0)) {
 					showFailToast('Σφάλμα', 'Παρακαλώ συμπληρώστε όλα τα πεδία εξόδων');
 					return false;
 				}
@@ -113,7 +102,9 @@
 		}
 	}
 
-	
+	async function refreshSuppliers() {
+		await queryGetAllSupliers.refresh();
+	}
 </script>
 
 {#if auth.loading}
@@ -134,39 +125,27 @@
 				</p>
 			</div>
 
-			<RegisterProgressBar bind:currentStep {totalSteps}/>
+			<RegisterProgressBar bind:currentStep {totalSteps} />
 
 			<!-- Form Container -->
 			<div class="grid gap-8 px-4 lg:grid-cols-3">
 				<!-- Main Form Area -->
 				<div class="lg:col-span-2">
 					{#if currentStep === 1}
-						<SalesStep
-							bind:totalSales
-							bind:cardSales
-							bind:woltSales
-							bind:efoodSales
-							bind:otherDigitalSales
-						/>
+						<SalesStep />
 					{:else if currentStep === 2}
-						<SuppliersStep bind:payments={supplierPayments} />
+						<SuppliersStep
+							{suppliers}
+							{suppliersLoading}
+							onSuccess={refreshSuppliers}
+						/>
 					{:else if currentStep === 3}
-						<ExpensesStep bind:expenses />
+						<ExpensesStep />
 					{:else if currentStep === 4}
-					
-					{:else if currentStep === 5}
-						
+						<FinalStep />
 					{/if}
 				</div>
-
-				<!-- Sidebar Summary -->
-				<SummarizeSales 
-					{expectedCash} 
-					{totalSuppliersPayments}
-					{expectedFinal}
-					{totalExpenses}
-					{openingFloat}
-				/>
+				<Summarize />
 			</div>
 
 			<!-- Navigation Controls -->

@@ -207,7 +207,15 @@
 			const dayNum = date.getDate();
 
 			// Get all shifts for this day
-			const dayShifts = shifts.filter((s) => s.shift_date === dateStr);
+			const dayShifts = shifts.filter((s) => {
+				// First filter by date
+				const matchesDate = s.shift_date === dateStr;
+
+				// Then filter by selected employee (if any)
+				const matchesEmployee = selectedEmployeeId ? s.user_id === selectedEmployeeId : true;
+
+				return matchesDate && matchesEmployee;
+			});
 
 			days.push({
 				date: dateStr,
@@ -775,9 +783,8 @@
 	</Dialog.Content>
 </Dialog.Root>
 
-
-<ShiftChnageRrquestmodal 
-	bind:open={isRequestModalOpen} 
+<ShiftChnageRrquestmodal
+	bind:open={isRequestModalOpen}
 	shiftData={requestShiftData}
 	onSuccess={handleRequestSuccess}
 />

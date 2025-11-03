@@ -197,7 +197,7 @@
 									disabled={refreshAction}
 									class="h-6 cursor-pointer px-2 text-xs"
 								>
-									<RefreshCcw class={`mr-2 h-4 w-4 ${refreshAction ? 'animate-spin' : ''}`} />
+									<RefreshCcw class={`mr-2 h-4 w-4 ${refreshAction ? 'animate-spin-clockwise' : ''}`} />
 								</Button>
 							</Tooltip.Trigger>
 							<Tooltip.Content>

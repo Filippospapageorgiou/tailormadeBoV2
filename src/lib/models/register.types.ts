@@ -75,6 +75,9 @@ export interface DailyRegisterClosing {
   status: RegisterStatus;
   reviewed_by: string | null; // UUID
   reviewed_at: string | null; // ISO timestamp
+
+  tomorrowOpeningFloat:number;
+  depositCash: number;
   
   created_at: string; // ISO timestamp
   updated_at: string; // ISO timestamp
@@ -188,6 +191,7 @@ export interface CreateExpenseInput {
  * Form data for creating/updating supplier
  */
 export interface SupplierInput {
+  id:number;
   org_id: number;
   name: string;
   afm: string;

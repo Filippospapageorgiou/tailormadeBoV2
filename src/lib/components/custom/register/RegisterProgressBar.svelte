@@ -20,7 +20,6 @@
 			<div class="flex flex-1 items-center">
 				<div class="flex flex-col items-center flex-shrink-0">
 					<button
-						onclick={() => (currentStep = i + 1)}
 						class="flex h-10 w-10 items-center justify-center rounded-full font-semibold transition-all {currentStep >=
 						i + 1
 							? 'bg-[#8B6B4A] text-white shadow-lg'

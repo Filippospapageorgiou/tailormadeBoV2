@@ -8,11 +8,9 @@
 	import * as Select from '$lib/components/ui/select/index.js';
 	import type { CreateExpenseInput } from '$lib/models/register.types';
 
-	interface Props {
-		expenses?: CreateExpenseInput[];
-	}
+	import { getSalesRegister } from '$lib/stores/register.svelte';
 
-	let { expenses = $bindable([]) }: Props = $props();
+	let sales = getSalesRegister();
 
 	function createEmptyExpense(): CreateExpenseInput {
 		return {
@@ -23,14 +21,13 @@
 	}
 
 	function addExpense() {
-		expenses = [...expenses, createEmptyExpense()];
+		sales.expenses = [...sales.expenses, createEmptyExpense()];
 	}
 
 	function removeExpense(index: number) {
-		expenses = expenses.filter((_, i) => i !== index);
+		sales.expenses = sales.expenses.filter((_, i) => i !== index);
 	}
 
-	let totalExpenses = $derived(expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0));
 
 	const expenseCategories = [
 		{ value: 'personall', label: 'προσωπική' },
@@ -55,14 +52,14 @@
 				</div>
 			</div>
 			<Badge variant="outline" class="text-sm">
-				Σύνολο: €{totalExpenses.toFixed(2)}
+				Σύνολο: €{sales.totalExpenses.toFixed(2)}
 			</Badge>
 		</div>
 	</Card.Header>
 
 	<Card.Content class="space-y-4">
-		{#if expenses.length > 0}
-			{#each expenses as expense, index}
+		{#if sales.expenses.length > 0}
+			{#each sales.expenses as expense, index}
 				<div class="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">
 					<div class="mb-3 flex items-center justify-between">
 						<h4 class="text-sm font-semibold text-neutral-700">Έξοδο #{index + 1}</h4>
@@ -141,15 +138,5 @@
 			<Plus class="mr-2 h-4 w-4" />
 			Προσθήκη Εξόδου
 		</Button>
-
-		<!-- Total Summary -->
-		{#if expenses.length > 0}
-			<div class="mt-4 rounded-lg bg-[#8B6B4A]/5 p-4">
-				<div class="flex items-center justify-between">
-					<span class="text-sm font-semibold text-neutral-700">Σύνολο Εξόδων:</span>
-					<span class="text-xl font-bold text-[#8B6B4A]">€{totalExpenses.toFixed(2)}</span>
-				</div>
-			</div>
-		{/if}
 	</Card.Content>
 </Card.Root>

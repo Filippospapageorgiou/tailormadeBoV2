@@ -22,6 +22,7 @@
 	import ChevronsLeftIcon from "@lucide/svelte/icons/chevrons-left";     
 	import ChevronsRightIcon from "@lucide/svelte/icons/chevrons-right";
     import * as Select from '$lib/components/ui/select';  
+	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
 
 	type DataTableProps<TData, TValue> = {
 		columns: ColumnDef<TData, TValue>[];
@@ -144,7 +145,9 @@
 				</Table.Row>
 			{:else}
 				<Table.Row>
-					<Table.Cell colspan={columns.length} class="h-24 text-center">No results.</Table.Cell>
+					<Table.Cell colspan={columns.length} class="h-24 text-center">
+						<Spinner />
+					</Table.Cell>
 				</Table.Row>
 			{/each}
 		</Table.Body>

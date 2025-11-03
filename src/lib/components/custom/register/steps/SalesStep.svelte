@@ -4,25 +4,9 @@
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
 	import { Badge } from '$lib/components/ui/badge/index.js';
+    import { getSalesRegister } from '$lib/stores/register.svelte';
 
-	interface Props {
-		totalSales?: number;
-		cardSales?: number;
-		woltSales?: number;
-		efoodSales?: number;
-		otherDigitalSales?: number;
-	}
-
-	let {
-		totalSales = $bindable(0),
-		cardSales = $bindable(0),
-		woltSales = $bindable(0),
-		efoodSales = $bindable(0),
-		otherDigitalSales = $bindable(0),
-	}: Props = $props();
-
-	let totalDigital = $derived(cardSales + woltSales + efoodSales + otherDigitalSales);
-	let expectedCash = $derived(totalSales - totalDigital);
+    let sales = getSalesRegister();
 </script>
 
 <Card.Root class="border-neutral-200 shadow-sm">
@@ -48,7 +32,7 @@
 				<Input
 					id="total_sales"
 					type="number"
-					bind:value={totalSales}
+					bind:value={sales.totalSales}
 					placeholder="0.00"
 					min="0"
 					step="0.01"
@@ -74,7 +58,7 @@
 					<Input
 						id="card_sales"
 						type="number"
-						bind:value={cardSales}
+						bind:value={sales.cardSales}
 						placeholder="0.00"
 						min="0"
 						step="0.01"
@@ -91,7 +75,7 @@
 					<Input
 						id="wolt_sales"
 						type="number"
-						bind:value={woltSales}
+						bind:value={sales.woltSales}
 						placeholder="0.00"
 						min="0"
 						step="0.01"
@@ -108,7 +92,7 @@
 					<Input
 						id="efood_sales"
 						type="number"
-						bind:value={efoodSales}
+						bind:value={sales.efoodSales}
 						placeholder="0.00"
 						min="0"
 						step="0.01"
@@ -125,7 +109,7 @@
 					<Input
 						id="other_digital_sales"
 						type="number"
-						bind:value={otherDigitalSales}
+						bind:value={sales.otherDigitalSales}
 						placeholder="0.00"
 						min="0"
 						step="0.01"
@@ -134,13 +118,7 @@
 				</div>
 			</div>
 
-			<!-- Total Digital -->
-			<div class="border-t border-neutral-200 pt-4">
-				<div class="flex items-center justify-between">
-					<span class="text-sm font-semibold text-neutral-700">Σύνολο Ψηφιακών:</span>
-					<Badge variant="secondary" class="text-sm">€{totalDigital.toFixed(2)}</Badge>
-				</div>
-			</div>
+			
 		</div>
 
 		<!-- Expected Cash Calculation -->
@@ -151,8 +129,8 @@
 					<p class="text-xs text-neutral-500">Συνολικές πωλήσεις - Ψηφιακές πληρωμές</p>
 				</div>
 				<div class="text-right">
-					<p class="text-2xl font-bold text-[#8B6B4A]">€{expectedCash.toFixed(2)}</p>
-					{#if expectedCash < 0}
+					<p class="text-2xl font-bold text-[#8B6B4A]">€{sales.expectedCash.toFixed(2)}</p>
+					{#if sales.expectedCash < 0}
 						<Badge variant="destructive" class="mt-1 text-xs">Αρνητικό υπόλοιπο</Badge>
 					{/if}
 				</div>

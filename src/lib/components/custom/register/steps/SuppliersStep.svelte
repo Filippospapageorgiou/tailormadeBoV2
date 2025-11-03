@@ -6,13 +6,22 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import * as Select from '$lib/components/ui/select/index.js';
-	import type { CreateSupplierPaymentInput } from '$lib/models/register.types';
+	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
+	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
+	import type { CreateSupplierPaymentInput,Supplier } from '$lib/models/register.types';
+	import AddSupplierDialog from '../../../../../routes/app/register/components/AddSupplierDialog.svelte';
+	import { getSalesRegister } from '$lib/stores/register.svelte';
 
+	let sales = getSalesRegister();
 	interface Props {
-		payments?: CreateSupplierPaymentInput[];
+		suppliers?:Supplier[];
+		suppliersLoading?:boolean;
+		onSuccess: () => Promise<void>;
 	}
 
-	let { payments = $bindable([]) }: Props = $props();
+	let { suppliers = [], suppliersLoading, onSuccess }: Props = $props();
+
+	let addSupplierDialogOpen = $state(false);
 
 	function createEmptyPayment(): CreateSupplierPaymentInput {
 		return {
@@ -25,15 +34,12 @@
 	}
 
 	function addPayment() {
-		payments = [...payments, createEmptyPayment()];
+		sales.supplierPayments = [...sales.supplierPayments, createEmptyPayment()];
 	}
 
 	function removePayment(index: number) {
-		payments = payments.filter((_, i) => i !== index);
+		sales.supplierPayments = sales.supplierPayments.filter((_, i) => i !== index);
 	}
-
-	let totalPayments = $derived(payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0));
-
 	const paymentMethods = [
 		{ value: 'cash', label: 'Μετρητά' },
 		{ value: 'bank_transfer', label: 'Τραπεζική Μεταφορά' },
@@ -55,17 +61,17 @@
 					</Card.Description>
 				</div>
 			</div>
-			{#if payments.length > 0}
+			{#if sales.supplierPayments.length > 0}
 				<Badge variant="outline" class="text-sm">
-					Σύνολο: €{totalPayments.toFixed(2)}
+					Σύνολο: €{sales.totalSupplierPayments.toFixed(2)}
 				</Badge>
 			{/if}
 		</div>
 	</Card.Header>
 
 	<Card.Content class="space-y-5">
-		{#if payments.length > 0}
-			{#each payments as payment, index}
+		{#if sales.supplierPayments.length > 0}
+			{#each sales.supplierPayments as payment, index}
 				<div class="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm sm:p-5">
 					<div class="mb-3 flex items-center justify-between">
 						<h4 class="text-sm font-semibold text-neutral-700">Πληρωμή #{index + 1}</h4>
@@ -83,13 +89,49 @@
 					<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 						<!-- Supplier Name -->
 						<div class="space-y-2">
-							<Label class="text-sm text-neutral-600">Όνομα Προμηθευτή *</Label>
-							<Input
-								type="text"
-								bind:value={payment.supplier_name}
-								placeholder="π.χ. Καφές Λουμίδης"
-								required
-							/>
+							<div class="flex items-center justify-between">
+								<Label class="text-sm text-neutral-600">Όνομα Προμηθευτή *</Label>
+							</div>
+							{#if suppliersLoading}
+								<Skeleton class="h-10 w-full rounded-md" />
+							{:else}
+							<div class="flex flex-row gap-2">
+								<Select.Root type="single" name="supplierName" bind:value={payment.supplier_name}>
+									<Select.Trigger class="w-full sm:w-[360px]">
+										{suppliers.find((s) => s.name === payment.supplier_name)?.name ??
+											'Διάλεξε προμηθευτή'}
+									</Select.Trigger>
+									<Select.Content>
+										<Select.Group>
+											<Select.Label>Προμηθευτές</Select.Label>
+											{#each suppliers as supplier (supplier.id)}
+												<Select.Item value={supplier.name} label={supplier.name}>
+													{supplier.name}
+												</Select.Item>
+											{/each}
+										</Select.Group>
+									</Select.Content>
+								</Select.Root>
+
+								<Tooltip.Provider>
+									<Tooltip.Root>
+										<Tooltip.Trigger>
+											<Button
+												variant="ghost"
+												size="sm"
+												class="h-6 w-6 p-0 text-[#8B6B4A] hover:bg-[#8B6B4A]/10 hover:text-[#8B6B4A]"
+												onclick={() => (addSupplierDialogOpen = true)}
+											>
+												<Plus class="h-4 w-4" />
+											</Button>
+										</Tooltip.Trigger>
+										<Tooltip.Content>
+											<p>Προσθήκη νέου προμηθευτή</p>
+										</Tooltip.Content>
+									</Tooltip.Root>
+								</Tooltip.Provider>
+							</div>
+							{/if}
 						</div>
 
 						<!-- Amount -->
@@ -109,7 +151,7 @@
 						<div class="space-y-2 sm:col-span-2 md:col-span-1">
 							<Label class="text-sm text-neutral-600">Τρόπος Πληρωμής</Label>
 							<Select.Root type="single" name="paymentMethods" bind:value={payment.payment_method}>
-							<Select.Trigger class="w-full sm:w-[260px]">
+							<Select.Trigger class="w-[240px]">
 								{paymentMethods.find((f) => f.value === payment.payment_method)?.label ??
 									'Διάλεξε μέθοδο πληρωμής'}
 							</Select.Trigger>
@@ -163,15 +205,7 @@
 			<Plus class="mr-2 h-4 w-4" />
 			Προσθήκη Πληρωμής
 		</Button>
-
-		<!-- Total Summary -->
-		{#if payments.length > 0}
-			<div class="mt-4 rounded-lg bg-[#8B6B4A]/5 p-4">
-				<div class="flex items-center justify-between">
-					<span class="text-sm font-semibold text-neutral-700">Σύνολο Πληρωμών:</span>
-					<span class="text-xl font-bold text-[#8B6B4A]">€{totalPayments.toFixed(2)}</span>
-				</div>
-			</div>
-		{/if}
 	</Card.Content>
 </Card.Root>
+
+<AddSupplierDialog bind:open={addSupplierDialogOpen} {onSuccess} />
