@@ -19,6 +19,20 @@
 		onSuccess: () => Promise<void>;
 	}
 
+	$effect(() => {
+		sales.supplierPayments.forEach((payment) => {
+			if (payment.supplier_name) {
+				const supplier = suppliers.find((s) => s.name === payment.supplier_name);
+				if (supplier && payment.supplier_id !== supplier.id) {
+					payment.supplier_id = supplier.id;
+				}
+			}
+		});
+		$inspect(sales.supplierPayments);
+	});
+
+	
+
 	let { suppliers = [], suppliersLoading, onSuccess }: Props = $props();
 
 	let addSupplierDialogOpen = $state(false);

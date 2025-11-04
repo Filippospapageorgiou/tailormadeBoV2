@@ -183,61 +183,7 @@ export const checkRegisterToday = query(async () => {
 // ======================== SCHEMAS ==============
 
 const dailyRegisterSchema = z.object({
-  closing_date: z.string().min(1, "Closing date is required"),
-  total_sales: z
-    .string()
-    .transform((val) => parseFloat(val))
-    .pipe(z.number().nonnegative("Total sales must be non-negative")),
-  
-  card_sales: z
-    .string()
-    .transform((val) => parseFloat(val) || 0)
-    .pipe(z.number().nonnegative("Card sales must be non-negative")),
-  
-  wolt_sales: z
-    .string()
-    .transform((val) => parseFloat(val) || 0)
-    .pipe(z.number().nonnegative("Wolt sales must be non-negative")),
-  
-  efood_sales: z
-    .string()
-    .transform((val) => parseFloat(val) || 0)
-    .pipe(z.number().nonnegative("Efood sales must be non-negative")),
-  
-  other_digital_sales: z
-    .string()
-    .transform((val) => parseFloat(val) || 0)
-    .pipe(z.number().nonnegative("Other digital sales must be non-negative")),
-
-  // Cash handling
-  opening_float: z
-    .string()
-    .transform((val) => parseFloat(val))
-    .pipe(z.number().nonnegative("Opening float must be non-negative")),
-  
-  actual_cash_counted: z
-    .string()
-    .transform((val) => parseFloat(val))
-    .pipe(z.number().nonnegative("Actual cash must be non-negative")),
-  
-  tommorow_opening_float: z
-    .string()
-    .transform((val) => parseFloat(val))
-    .pipe(z.number().nonnegative("Tomorrow opening float must be non-negative")),
-  
-  cash_deposit: z
-    .string()
-    .transform((val) => parseFloat(val))
-    .pipe(z.number().nonnegative("Cash deposit float must be non-negative")),
-  // Optional fields
-  notes: z.string().optional(),
-  
-  // Status defaults to 'submitted' 
-  status: z.enum(["draft", "submitted", "reviewed"]).default("submitted"),
-  
-  // Suppliers and expenses as JSON strings (will be parsed)
-  suppliers: z.string().optional(), // JSON array of supplier payments
-  expenses: z.string().optional()   // JSON array of expenses
+  dailyRegister: z.string().optional()   // JSON array of expenses
 });
 
 // Supplier payment schema (for validation of array items)
@@ -259,6 +205,7 @@ const expenseSchema = z.object({
 
 // New supplier creation schema
 const newSupplierSchema = z.object({
+  id:z.string(),
   name: z.string().min(1, "Supplier name is required"),
   afm: z.string().min(1, "AFM (Tax ID) is required"),
   phone: z.string(),
@@ -304,6 +251,7 @@ async function createSupplier(
       .from('suppliers')
       .insert({
         org_id: orgId,
+        supplier_id: supplierData.id,
         name: supplierData.name,
         afm: supplierData.afm,
         phone: supplierData.phone || null,
@@ -417,9 +365,10 @@ async function insertExpenses(
 export const dailyRegisterForm = form(dailyRegisterSchema, async (data) => {
   const supabase = createServerClient();
   const user = await requireAuthenticatedUser();
-
   try {
+    const registerData = JSON.parse(data.dailyRegister || '{}');
     // Get user's org_id
+
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('org_id')
@@ -433,101 +382,39 @@ export const dailyRegisterForm = form(dailyRegisterSchema, async (data) => {
         message: 'Error fetching user profile'
       };
     }
+    
+    const today = new Date();
+    const closingDate = today.toISOString().split('T')[0];
 
-    // Check if closing already exists for this date
-    const { data: existingClosing, error: checkError } = await supabase
+
+    
+    //insert main closing record
+    const { data:newClosing, error:insertError } = await supabase
       .from('daily_register_closings')
-      .select('id')
-      .eq('org_id', profile.org_id)
-      .eq('closing_date', data.closing_date)
-      .maybeSingle();
-
-    if (checkError) {
-      console.error('Error checking existing closing:', checkError);
-      return {
-        success: false,
-        message: 'Error checking existing closing'
-      };
-    }
-
-    if (existingClosing) {
-      return {
-        success: false,
-        message: 'A register closing already exists for this date'
-      };
-    }
-
-    // Calculate computed fields
-    const excepted_cash = data.total_sales - (
-      data.card_sales + 
-      data.wolt_sales + 
-      data.efood_sales + 
-      data.other_digital_sales
-    );
-
-    // Parse suppliers and expenses from JSON strings
-    let supplierPayments: any[] = [];
-    let expensesList: any[] = [];
-    let total_supplier_payments = 0;
-    let total_expenses = 0;
-
-    if (data.suppliers) {
-      try {
-        supplierPayments = JSON.parse(data.suppliers);
-        total_supplier_payments = supplierPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
-      } catch (e) {
-        console.error('Error parsing suppliers:', e);
-        return {
-          success: false,
-          message: 'Invalid supplier data format'
-        };
-      }
-    }
-
-    if (data.expenses) {
-      try {
-        expensesList = JSON.parse(data.expenses);
-        total_expenses = expensesList.reduce((sum, e) => sum + (e.amount || 0), 0);
-      } catch (e) {
-        console.error('Error parsing expenses:', e);
-        return {
-          success: false,
-          message: 'Invalid expense data format'
-        };
-      }
-    }
-
-    const cash_diffrence = data.actual_cash_counted - (excepted_cash + data.opening_float);
-    const final_cash_balance = data.actual_cash_counted - total_supplier_payments - total_expenses;
-
-    // Insert main closing record
-    const { data: newClosing, error: insertError } = await supabase
-      .from('daily_register_closings')
-      .insert({
-        org_id: profile.org_id,
-        closing_date: data.closing_date,
-        closed_by: user.id,
-        total_sales: data.total_sales,
-        card_sales: data.card_sales,
-        wolt_sales: data.wolt_sales,
-        efood_sales: data.efood_sales,
-        other_digital_sales: data.other_digital_sales,
-        excepted_cash: excepted_cash,
-        opening_float: data.opening_float,
-        actual_cash_counted: data.actual_cash_counted,
-        cash_diffrence: cash_diffrence,
-        total_supplier_payments: total_supplier_payments,
-        total_expenses: total_expenses,
-        final_cash_balance: final_cash_balance,
-        tomorrow_opening_float: data.tommorow_opening_float,
-        cash_deposit:data.cash_deposit,
-        notes: data.notes || null,
-        status: data.status || 'submitted'
-      })
+      .insert(({
+        org_id:profile.org_id,
+        closing_date:closingDate,
+        closed_by:user.id,
+        total_sales: registerData.totalSales,
+        card_sales: registerData.cardSales,
+        wolt_sales: registerData.woltSales,
+        efood_sales: registerData.efoodSales,
+        other_digital_sales: registerData.otherDigitalSales,
+        excepted_cash: registerData.expectedCash,
+        opening_float: registerData.openingFloat,
+        final_cash_balance:registerData.expectedFinal,
+        actual_cash_counted: registerData.actualCashCounted,
+        total_supplier_payments: registerData.totalSupplierPayments,
+        total_expenses: registerData.totalExpenses,
+        tomorrow_opening_float: registerData.tomorrowOpeningFloat,
+        cash_deposit: registerData.cashDeposit,
+        notes: null,
+        status: 'submitted'
+      }))
       .select()
       .single<DailyRegisterClosing>();
 
-    if (insertError || !newClosing) {
+      if (insertError || !newClosing) {
       console.error('Error creating register closing:', insertError);
       return {
         success: false,
@@ -535,15 +422,14 @@ export const dailyRegisterForm = form(dailyRegisterSchema, async (data) => {
       };
     }
 
-    // Insert supplier payments
+  
     const suppliersResult = await insertSupplierPayments(
-      supabase,
-      newClosing.id,
-      supplierPayments
+      supabase, newClosing.id, registerData.supplierPayments
     );
 
+
+    
     if (!suppliersResult.success) {
-      // Try to delete the closing since suppliers failed
       await supabase
         .from('daily_register_closings')
         .delete()
@@ -555,15 +441,15 @@ export const dailyRegisterForm = form(dailyRegisterSchema, async (data) => {
       };
     }
 
+    
     // Insert expenses
     const expensesResult = await insertExpenses(
       supabase,
       newClosing.id,
-      expensesList
+      registerData.expenses
     );
 
     if (!expensesResult.success) {
-      // Try to delete the closing since expenses failed
       await supabase
         .from('daily_register_closings')
         .delete()
@@ -574,13 +460,12 @@ export const dailyRegisterForm = form(dailyRegisterSchema, async (data) => {
         message: expensesResult.error || 'Failed to insert expenses'
       };
     }
-
+    
     return {
       success: true,
-      message: 'Register closing created successfully',
+      message: 'Το ταμείο έκλεισε επιτυχώς',
       closing: newClosing
     };
-
   } catch (error) {
     console.error('An error occurred trying to close register:', error);
     return {

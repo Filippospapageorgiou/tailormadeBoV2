@@ -33,7 +33,7 @@
 	<Card.Content class="space-y-3">
 		<Separator />
 		<div>
-			Αναμένομενα μέτρητα : {sales.totalSales}
+		 	Συνολίκο τάμειο : {sales.totalSales}
 		</div>
 		<div>
 			Κάρτες-wolt-efood : {sales.digital}
@@ -72,8 +72,9 @@
 		<div>
 			Συνολίκα μέτρητα που πρέπει να βρεις : {sales.expectedFinal.toFixed(2)}
 		</div>
+		
 		<div>
-			Συνολίκα μέτρητα στο τάμειο : {sales.actualCashCounted.toFixed(2)}
-		</div>
+			Συνολίκα μέτρητα στο τάμειο : {(sales.getActualCashCounted().toFixed(2) || 0.0)}
+		</div>	
 	</Card.Content>
 </Card.Root>

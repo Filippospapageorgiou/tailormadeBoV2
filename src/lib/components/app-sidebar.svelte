@@ -68,6 +68,10 @@
 					{
 						title: "Schedule settings",
 						url: "/app/settings/schedule_settings",					
+					},
+					{
+						title: "Register settings",
+						url: "/app/settings/register_settings",	
 					}
 				],
 			},

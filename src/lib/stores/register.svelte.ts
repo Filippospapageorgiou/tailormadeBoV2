@@ -15,6 +15,8 @@ export interface SalesType {
     openingFloat: number;
     supplierPayments : CreateSupplierPaymentInput[];
     expenses : CreateExpenseInput[];
+    tommorow_opening_float:number;
+    cash_deposit:number;
 }
 
 export class Sales {
@@ -27,6 +29,8 @@ export class Sales {
     openingFloat = $state(0);
     supplierPayments = $state<CreateSupplierPaymentInput[]>([]);
     expenses = $state<CreateExpenseInput[]>([]);
+    tommorow_opening_float = $state(0);
+    cash_deposit = $state(0);
 
     totalSupplierPayments = $derived(
         this.supplierPayments
@@ -51,12 +55,6 @@ export class Sales {
         this.expectedCash + this.openingFloat
     );
 
-    difference = $derived(
-        this.actualCashCounted > 0 
-            ? this.actualCashCounted - (this.expectedFinal + this.openingFloat)
-            : 0
-    );
-
     constructor(sales: SalesType | null = null) {
         if (sales) {
             this.totalSales = sales.totalSales;
@@ -68,7 +66,13 @@ export class Sales {
             this.openingFloat = sales.openingFloat;
             this.supplierPayments = sales.supplierPayments;
             this.expenses = sales.expenses;
+            this.tommorow_opening_float = sales.tommorow_opening_float;
+            this.cash_deposit = sales.cash_deposit;
         }
+    }
+
+    getActualCashCounted(){
+        return this.actualCashCounted;
     }
 }
 
