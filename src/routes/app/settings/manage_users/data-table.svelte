@@ -146,7 +146,9 @@
 			{:else}
 				<Table.Row>
 					<Table.Cell colspan={columns.length} class="h-24 text-center">
-						loaidng....
+						<div class="flex items-center justify-center h-full">
+							<Spinner />
+						</div>
 					</Table.Cell>
 				</Table.Row>
 			{/each}

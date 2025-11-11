@@ -43,9 +43,8 @@
 			};
 		});
 
-		// Show every nth point to reduce crowding
-		const step = Math.ceil(data.length / 5);
-		return data.filter((_: any, i: number) => i % step === 0);
+		// Filter out dates with no sales data (only show dates that have actual sales)
+		return data.filter((item: any) => item.sales > 0);
 	});
 
 	// Calculate metrics for card

@@ -341,7 +341,7 @@ export const getExpensesData = query(getRegisterByDateRangeSchema, async ({ days
 const registerTableSchema = z.object({
     days: z.number().int().positive().default(30),
     start: z.number().int().positive().default(1),
-    end: z.number().int().positive().default(3)
+    end: z.number().int().positive().default(10)
 })
 
 /**

@@ -7,26 +7,28 @@
 		getCoreRowModel,
 		getPaginationRowModel,
 		getSortedRowModel,
-		getFilteredRowModel,
+		getFilteredRowModel
 	} from '@tanstack/table-core';
 	import { createSvelteTable, FlexRender } from '$lib/components/ui/data-table/index.js';
 	import * as Table from '$lib/components/ui/table/index.js';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { Input } from '$lib/components/ui/input/index.js';
-	import ChevronRightIcon from "@lucide/svelte/icons/chevron-right";
-	import ChevronLeftIcon from "@lucide/svelte/icons/chevron-left";
-	import ChevronsLeftIcon from "@lucide/svelte/icons/chevrons-left";
-	import ChevronsRightIcon from "@lucide/svelte/icons/chevrons-right";
+	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
+	import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left';
+	import ChevronsLeftIcon from '@lucide/svelte/icons/chevrons-left';
+	import ChevronsRightIcon from '@lucide/svelte/icons/chevrons-right';
+	import RangeDatePicker from '$lib/components/custom/register_settings/rangeDatePicker.svelte';
 	import * as Select from '$lib/components/ui/select';
+	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
 
 	type DataTableProps<TData, TValue> = {
 		columns: ColumnDef<TData, TValue>[];
 		data: TData[];
+		pagination: PaginationState;
 	};
 
-	let { columns, data }: DataTableProps<TData, TValue> = $props();
+	let { columns, data, pagination = $bindable() }: DataTableProps<TData, TValue> = $props();
 
-	let pagination = $state<PaginationState>({ pageIndex: 0, pageSize: 10 });
 	let sorting = $state<SortingState>([]);
 	let columnFilters = $state<ColumnFiltersState>([]);
 
@@ -69,27 +71,12 @@
 			},
 			get columnFilters() {
 				return columnFilters;
-			},
-		},
+			}
+		}
 	});
 </script>
 
 <div class="space-y-4">
-	<!-- Search Filter -->
-	<div class="flex items-center py-4 gap-2">
-		<Input
-			placeholder="Filter by status..."
-			value={(table.getColumn("status")?.getFilterValue() as string) ?? ""}
-			onchange={(e) => {
-				table.getColumn("status")?.setFilterValue(e.currentTarget.value);
-			}}
-			oninput={(e) => {
-				table.getColumn("status")?.setFilterValue(e.currentTarget.value);
-			}}
-			class="max-w-sm"
-		/>
-	</div>
-
 	<!-- Table -->
 	<div class="rounded-md">
 		<Table.Root>
@@ -121,7 +108,9 @@
 				{:else}
 					<Table.Row>
 						<Table.Cell colspan={columns.length} class="h-24 text-center">
-							No results found
+							<div class="flex items-center justify-center h-full">
+								<Spinner />
+							</div>
 						</Table.Cell>
 					</Table.Row>
 				{/each}
@@ -132,7 +121,7 @@
 	<!-- Pagination Controls -->
 	<div class="flex items-center justify-between px-2 py-4">
 		<!-- Left side: Row count info -->
-		<div class="text-muted-foreground flex-1 text-sm">
+		<div class="flex-1 text-sm text-muted-foreground">
 			Showing {table.getRowModel().rows.length} of {table.getFilteredRowModel().rows.length} row(s).
 		</div>
 

@@ -6,6 +6,9 @@
 		getExpensesData,
 		getRegisterDataTable
 	} from './data.remote';
+	import {
+		type PaginationState
+	} from '@tanstack/table-core';
 	import AuthBlock from '$lib/components/custom/AuthBlock/authBlock.svelte';
 	import * as Select from '$lib/components/ui/select';
 	import LineChartCard from '$lib/components/custom/register_settings/lineChartCard.svelte';
@@ -13,13 +16,21 @@
 	import ArcChartCard from '$lib/components/custom/register_settings/arcChartCard.svelte';
 	import RegisterDataTable from './data-table.svelte';
 	import { registerColumns } from './columns';
+	import RangeDatePicker from '$lib/components/custom/register_settings/rangeDatePicker.svelte';
+	import {getLocalTimeZone,now} from '@internationalized/date';
 
 	let auth = authenticatedAccess();
+	let pagination = $state<PaginationState>({ pageIndex: 0, pageSize: 10 });
 	
+	let start = $derived(pagination.pageIndex + 1);
+	let end = $derived(pagination.pageSize);
+
 	// State for time period selection
 	let selectedDays = $state(30);
 
-	let registerDataTableQuery = $derived.by(() => getRegisterDataTable({ days: selectedDays, start: 1, end: 10 }));
+	let registerDataTableQuery = $derived.by(() =>
+		getRegisterDataTable({ days: selectedDays, start, end })
+	);
 
 	// Fetch register data based on selected period
 	let registerQuery = $derived.by(() => getRegisterClosingByDateRange({ days: selectedDays }));
@@ -28,12 +39,12 @@
 	let expensesData = $derived(expensesQuery?.current);
 
 	let supplierData = $derived(suppliersPaymentsQuery.current?.supplierTotals);
-	let totalSupplierPayments = $derived(suppliersPaymentsQuery?.current?.totalSupplierPayments)
-	let countSuppliers = $derived(suppliersPaymentsQuery?.current?.countSuppliers)
+	let totalSupplierPayments = $derived(suppliersPaymentsQuery?.current?.totalSupplierPayments);
+	let countSuppliers = $derived(suppliersPaymentsQuery?.current?.countSuppliers);
 
-	let currentStartDate = $derived(registerQuery.current?.currentStartDate)
-	let currentEndDate = $derived(registerQuery.current?.currentEndDate)
-	
+	let currentStartDate = $derived(registerQuery.current?.currentStartDate);
+	let currentEndDate = $derived(registerQuery.current?.currentEndDate);
+
 	let registerData = $derived(registerQuery.current);
 	let percentageChange = $derived(registerQuery?.current?.percentageChange);
 
@@ -51,7 +62,12 @@
 		periodOptions.find((opt) => opt.value === String(selectedDays))?.label || 'Last 30 Days'
 	);
 
-	
+	let dateFilterMode = $state<'period' | 'range'>('period');
+
+	// Get today's date
+	let   rangeStart = $state(now(getLocalTimeZone()));
+	// svelte-ignore state_referenced_locally
+	let   rangeEnd = $state(rangeStart.subtract({ days: 7 }));
 </script>
 
 {#if auth.loading}
@@ -70,7 +86,23 @@
 			</div>
 
 			<!-- Time Period Selector -->
-			<div class="flex items-center gap-4">
+			<!-- Settings Page -->
+			<div class="flex items-center gap-2">
+				<span>Date Filter Style:</span>
+				<Select.Root type="single" value={dateFilterMode} onValueChange={(v) => (dateFilterMode = v as 'period' | 'range')}>
+					<Select.Trigger>
+						{dateFilterMode === 'period' ? 'Time Period' : 'Date Range'}
+					</Select.Trigger>
+					<Select.Content>
+						<Select.Item value="period">Time Period (Quick)</Select.Item>
+						<Select.Item value="range">Date Range Picker</Select.Item>
+					</Select.Content>
+				</Select.Root>
+			</div>
+
+			<!-- Table Page -->
+			{#if dateFilterMode === 'period'}
+				<div class="flex items-center gap-4">
 				<span class="text-sm font-medium text-muted-foreground">Time Period:</span>
 				<Select.Root
 					type="single"
@@ -94,13 +126,19 @@
 					</Select.Content>
 				</Select.Root>
 			</div>
+			{:else}
+				<div class="flex items-center gap-4">
+					<span class="text-sm font-medium text-muted-foreground">Range Picker:</span>
+					<RangeDatePicker
+						bind:rangeStart
+						bind:rangeEnd 
+					/>
+				</div>
+			{/if}
+
 
 			<!-- Analytics Cards -->
-			<LineChartCard 
-				{registerData}
-				{percentageChange}
-				{selectedPeriodLabel}
-			/>
+			<LineChartCard {registerData} {percentageChange} {selectedPeriodLabel} />
 
 			<div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
 				<PieChartCard
@@ -110,23 +148,18 @@
 					{countSuppliers}
 					{totalSupplierPayments}
 				/>
-				<ArcChartCard
-					{expensesData}
-					{selectedDays}
-				/>
+				<ArcChartCard {expensesData} {selectedDays} />
 			</div>
 
 			<!-- Register Data Table Section -->
 			<div class="space-y-4">
 				<div class="space-y-2">
-					<h2 class="text-2xl font-semibold text-neutral-800">
-						Register Closings
-					</h2>
+					<h2 class="text-2xl font-semibold text-neutral-800">Κλείσιμο ταμείων</h2>
 					<p class="text-sm text-muted-foreground">
-						All register closing records for the selected period
+						Όλα τα αρχεία κλεισίματος για την επιλεγμένη περίοδο
 					</p>
 				</div>
-				<RegisterDataTable data={tableData} columns={registerColumns} />
+				<RegisterDataTable data={tableData} columns={registerColumns} bind:pagination />
 			</div>
 		</main>
 	</div>
