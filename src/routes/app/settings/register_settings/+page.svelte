@@ -11,15 +11,15 @@
 	import LineChartCard from '$lib/components/custom/register_settings/lineChartCard.svelte';
 	import PieChartCard from '$lib/components/custom/register_settings/pieChartCard.svelte';
 	import ArcChartCard from '$lib/components/custom/register_settings/arcChartCard.svelte';
+	import RegisterDataTable from './data-table.svelte';
+	import { registerColumns } from './columns';
 
 	let auth = authenticatedAccess();
+	
 	// State for time period selection
 	let selectedDays = $state(30);
 
-	let pageStart = $state(1);
-	let pageEnd = $state(10);
-
-	let registerDataTableQuery = $derived.by(() => getRegisterDataTable({ days: selectedDays,start:pageStart, end:pageEnd }));
+	let registerDataTableQuery = $derived.by(() => getRegisterDataTable({ days: selectedDays, start: 1, end: 10 }));
 
 	// Fetch register data based on selected period
 	let registerQuery = $derived.by(() => getRegisterClosingByDateRange({ days: selectedDays }));
@@ -34,10 +34,11 @@
 	let currentStartDate = $derived(registerQuery.current?.currentStartDate)
 	let currentEndDate = $derived(registerQuery.current?.currentEndDate)
 	
-
 	let registerData = $derived(registerQuery.current);
 	let percentageChange = $derived(registerQuery?.current?.percentageChange);
 
+	// Table data
+	let tableData = $derived(registerDataTableQuery.current?.data ?? []);
 
 	// Time period options
 	const periodOptions = [
@@ -94,6 +95,7 @@
 				</Select.Root>
 			</div>
 
+			<!-- Analytics Cards -->
 			<LineChartCard 
 				{registerData}
 				{percentageChange}
@@ -114,7 +116,18 @@
 				/>
 			</div>
 
-			
+			<!-- Register Data Table Section -->
+			<div class="space-y-4">
+				<div class="space-y-2">
+					<h2 class="text-2xl font-semibold text-neutral-800">
+						Register Closings
+					</h2>
+					<p class="text-sm text-muted-foreground">
+						All register closing records for the selected period
+					</p>
+				</div>
+				<RegisterDataTable data={tableData} columns={registerColumns} />
+			</div>
 		</main>
 	</div>
 {/if}

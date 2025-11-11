@@ -54,14 +54,14 @@ export interface DailyRegisterClosing {
   efood_sales: number;
   other_digital_sales: number;
   
-  expected_cash: number;
+  excepted_cash: number;
   
   // Cash handling
   opening_float: number;
   actual_cash_counted: number;
   
   // Calculated difference (generated column)
-  cash_difference: number;
+  cash_diffrence: number;
   
   // Payments & Expenses
   total_supplier_payments: number;

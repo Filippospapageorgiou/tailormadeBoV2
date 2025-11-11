@@ -378,9 +378,6 @@ export const getRegisterDataTable = query(registerTableSchema, async ({ days, st
       };
     }
 
-    console.log('[getRegisterDataTable] register data table using range: ', registerData);
-    console.log(`page Start ${start} , pageEnd : ${end}, currentStartDate: ${currentStart}, currentEnd Date: ${currentEnd}`);
-
     return {
       success: true,
       message: 'Successfully fetched register table data',
@@ -400,6 +397,43 @@ export const getRegisterDataTable = query(registerTableSchema, async ({ days, st
       totalCount: 0,
       pageStart: start,
       pageEnd: end,
+    };
+  }
+});
+
+const deleteRegisterClosingSchema = z.object({
+  closingId: z.number().int().positive({ error: 'Closing ID must be a positive integer' })
+});
+
+/**
+ * Delete a register closing record
+ */
+export const deleteRegisterClosing = command(deleteRegisterClosingSchema, async ({ closingId }) => {
+  const supabase = createServerClient();
+
+  try {
+    const { error } = await supabase
+      .from('daily_register_closings')
+      .delete()
+      .eq('id', closingId);
+
+    if (error) {
+      console.error('[deleteRegisterClosing] Error deleting register closing:', error);
+      return {
+        success: false,
+        message: 'Failed to delete register closing'
+      };
+    }
+
+    return {
+      success: true,
+      message: 'Register closing deleted successfully'
+    };
+  } catch (err) {
+    console.error('[deleteRegisterClosing] Unexpected error:', err);
+    return {
+      success: false,
+      message: 'An unexpected error occurred while deleting register closing'
     };
   }
 });
