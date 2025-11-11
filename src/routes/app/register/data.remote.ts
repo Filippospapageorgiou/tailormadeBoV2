@@ -46,73 +46,65 @@ export const authenticatedAccess = query(async () => {
     };
 })
 
-export const getOpeningFloat = query(async() => {
+export const getOpeningFloat = query(async () => {
   const supabase = createServerClient();
   const user = await requireAuthenticatedUser();
-  try{
+  
+  try {
+    // Get user's org_id
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('org_id')
+      .eq('id', user.id)
+      .single<Pick<Profile, 'org_id'>>();
+      
+    if (profileError || !profile) {
+      console.error('Error fetching user profile:', profileError);
+      return {
+        success: false,
+        message: 'Error fetching user profile',
+      };
+    }
 
-      // Get user's org_id
-      const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('org_id')
-            .eq('id', user.id)
-            .single<Pick<Profile, 'org_id'>>();
-        
-        if (profileError || !profile) {
-            console.error('Error fetching user profile:', profileError);
-            return {
-                success: false,
-                message: 'Error fetching user profile',
-            };
-        }
-        
-        // Get yesterday's date
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        // Format as YYYY-MM-DD
-        const formattedDate = yesterday.toISOString().split('T')[0];
+    // Get yesterday's date in local time
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
 
-        const { data: registry, error: registryError } = await supabase
-            .from('daily_register_closings')
-            .select('*')
-            .eq('closing_date', formattedDate)
-            .eq('org_id', profile.org_id)
-            .maybeSingle<DailyRegisterClosing>();
+    // Format as YYYY-MM-DD (local, not UTC)
+    const formattedDate = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
 
-        if (registryError) {
-            console.error('Error fetching register data:', registryError);
-            return {
-                success: false,
-                message: 'Error fetching register data',
-            };
-        }
+    const { data: registry, error: registryError } = await supabase
+      .from('daily_register_closings')
+      .select('*')
+      .eq('closing_date', formattedDate)
+      .eq('org_id', profile.org_id)
+      .maybeSingle<DailyRegisterClosing>();
 
-        // Return the opening float from yesterday's closing
-        if (registry) {
-            return {
-                success: true,
-                message: 'Opening float retrieved successfully',
-                openingFloat: registry.tomorrowOpeningFloat || 0.0
-            };
-        } else {
-            // No register from yesterday found
-            return {
-                success: true,
-                message: 'No previous register found',
-                openingFloat: 0.0
-            };
-        }
+    
 
-  } catch(error) {
-    console.error('Error trying to get opening float: ', error);
+    if (registryError) {
+      console.error('Error fetching register data:', registryError);
+      return {
+        success: false,
+        message: 'Error fetching register data',
+      };
+    }
+
+    return {
+        success: true,
+        message: 'Opening float retrieved successfully',
+        openingFloat: registry?.tomorrow_opening_float || 0.0,
+    };
+  } catch (error) {
+    console.error('Error trying to get opening float:', error);
     return {
       success: false,
       message: 'Error trying to get opening float',
-      openingFloat: 0.0
-    }
+      openingFloat: 0.0,
+    };
   }
-  
 });
+
 
 /**
  * Check if today there was a closing in the registry so 
@@ -139,10 +131,11 @@ export const checkRegisterToday = query(async () => {
             };
         }
 
-        // Get today's date
         const today = new Date();
-        // If you want to format it as YYYY-MM-DD (for database queries)
-        const formattedDate = today.toISOString().split('T')[0];
+        const formattedDate = today.getFullYear() + '-' +
+            String(today.getMonth() + 1).padStart(2, '0') + '-' +
+            String(today.getDate()).padStart(2, '0');
+        
 
         const { data:registry, error:registryError } = await supabase
             .from('daily_register_closings')
@@ -150,6 +143,8 @@ export const checkRegisterToday = query(async () => {
             .eq('closing_date',formattedDate)
             .eq('org_id',profile.org_id)
             .maybeSingle<DailyRegisterClosing>();
+          
+        
 
 
         if (registryError) {
@@ -205,7 +200,7 @@ const expenseSchema = z.object({
 
 // New supplier creation schema
 const newSupplierSchema = z.object({
-  id:z.string(),
+  id:z.string().optional(),
   name: z.string().min(1, "Supplier name is required"),
   afm: z.string().min(1, "AFM (Tax ID) is required"),
   phone: z.string(),
@@ -384,7 +379,9 @@ export const dailyRegisterForm = form(dailyRegisterSchema, async (data) => {
     }
     
     const today = new Date();
-    const closingDate = today.toISOString().split('T')[0];
+        const formattedDate = today.getFullYear() + '-' +
+            String(today.getMonth() + 1).padStart(2, '0') + '-' +
+            String(today.getDate()).padStart(2, '0');
 
 
     
@@ -393,7 +390,7 @@ export const dailyRegisterForm = form(dailyRegisterSchema, async (data) => {
       .from('daily_register_closings')
       .insert(({
         org_id:profile.org_id,
-        closing_date:closingDate,
+        closing_date:formattedDate,
         closed_by:user.id,
         total_sales: registerData.totalSales,
         card_sales: registerData.cardSales,

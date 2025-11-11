@@ -7,6 +7,7 @@
     import { getSalesRegister } from '$lib/stores/register.svelte';
 
     let sales = getSalesRegister();
+	
 </script>
 
 <Card.Root class="border-neutral-200 shadow-sm">

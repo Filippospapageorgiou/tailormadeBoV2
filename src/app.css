@@ -55,6 +55,11 @@
   --chart-3: oklch(0.7 0.08 95); /* Light wood */
   --chart-4: oklch(0.45 0.06 65); /* Dark roast */
   --chart-5: oklch(0.8 0.05 85); /* Cream */
+  --chart-6: oklch(0.6 0.1 55); /* Medium espresso */
+  --chart-7: oklch(0.75 0.09 70); /* Golden caramel */
+  --chart-8: oklch(0.5 0.07 50); /* Deep mocha */
+  --chart-9: oklch(0.68 0.11 80); /* Honey golden */
+  --chart-10: oklch(0.52 0.06 40); /* Dark chocolate */
   
   /* Sidebar - Matching the café interior */
   --sidebar: oklch(0.97 0.01 80);

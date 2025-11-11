@@ -10,13 +10,11 @@ export interface SalesType {
     efoodSales: number;
     otherDigitalSales: number;
     actualCashCounted: number;
-    totalSupplierPayments: number;
-    totalExpenses: number;
     openingFloat: number;
-    supplierPayments : CreateSupplierPaymentInput[];
-    expenses : CreateExpenseInput[];
-    tommorow_opening_float:number;
-    cash_deposit:number;
+    supplierPayments: CreateSupplierPaymentInput[];
+    expenses: CreateExpenseInput[];
+    tommorow_opening_float: number;
+    cash_deposit: number;
 }
 
 export class Sales {
@@ -32,27 +30,38 @@ export class Sales {
     tommorow_opening_float = $state(0);
     cash_deposit = $state(0);
 
+    // Safe number conversion helper
+    private toNumber(value: any): number {
+        if (value === null || value === undefined || value === '') return 0;
+        const num = Number(value);
+        return isNaN(num) ? 0 : num;
+    }
+
     totalSupplierPayments = $derived(
         this.supplierPayments
-        .filter(p => p.payment_method === 'cash')
-        .reduce((sum, p) => sum + (Number(p.amount) || 0), 0)
+            .filter(p => p.payment_method === 'cash')
+            .reduce((sum, p) => sum + this.toNumber(p.amount), 0)
     );
 
     totalExpenses = $derived(
-        this.expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0)
+        this.expenses.reduce((sum, e) => sum + this.toNumber(e.amount), 0)
     );
 
     digital = $derived(
-        this.cardSales + this.woltSales + this.efoodSales + this.otherDigitalSales
-    )
+        this.toNumber(this.cardSales) + 
+        this.toNumber(this.woltSales) + 
+        this.toNumber(this.efoodSales) + 
+        this.toNumber(this.otherDigitalSales)
+    );
 
     // Derived values - automatically recalculate
     expectedCash = $derived(
-        this.totalSales - (this.digital + this.totalSupplierPayments + this.totalExpenses)
+        this.toNumber(this.totalSales) - 
+        (this.digital + this.totalSupplierPayments + this.totalExpenses)
     );
 
     expectedFinal = $derived(
-        this.expectedCash + this.openingFloat
+        this.expectedCash + this.toNumber(this.openingFloat)
     );
 
     constructor(sales: SalesType | null = null) {
@@ -71,8 +80,8 @@ export class Sales {
         }
     }
 
-    getActualCashCounted(){
-        return this.actualCashCounted;
+    getActualCashCounted() {
+        return this.toNumber(this.actualCashCounted);
     }
 }
 

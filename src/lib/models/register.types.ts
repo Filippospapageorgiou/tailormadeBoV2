@@ -76,8 +76,8 @@ export interface DailyRegisterClosing {
   reviewed_by: string | null; // UUID
   reviewed_at: string | null; // ISO timestamp
 
-  tomorrowOpeningFloat:number;
-  depositCash: number;
+  tomorrow_opening_float:number;
+  cash_deposit: number;
   
   created_at: string; // ISO timestamp
   updated_at: string; // ISO timestamp

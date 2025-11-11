@@ -53,14 +53,19 @@
 		efoodSales: 0,
 		otherDigitalSales: 0,
 		actualCashCounted: 0,
-		openingFloat: queryOpeningFloat?.current?.openingFloat || 0.0,
+		openingFloat: 0,
 		supplierPayments: [],
 		expenses: [],
-		totalExpenses: 0,
-		totalSupplierPayments: 0,
 		tommorow_opening_float: 0,
 		cash_deposit: 0
 	});
+
+	$effect(() => {
+		if(queryOpeningFloat?.current?.success){
+			sales.openingFloat = queryOpeningFloat?.current?.openingFloat || 0.0;
+		}
+	})
+	
 
 	let currentStep = $state(1);
 	const totalSteps = 4;
