@@ -37,7 +37,7 @@
 	<Card.Header class="items-center">
 		<Card.Title>Συνολίκα Εξοδα</Card.Title>
 		<Card.Description
-			>Εμφάνιση συνολικών εξόδων για τις τελευταίες {selectedDays} ημέρες</Card.Description
+			>Εμφάνιση συνολικών εξόδων για τις τελευταίες ημερομηνίες</Card.Description
 		>
 	</Card.Header>
 	<Card.Content class="flex-1">

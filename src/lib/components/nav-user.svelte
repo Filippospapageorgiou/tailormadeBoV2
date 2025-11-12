@@ -13,6 +13,7 @@
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 	import { useSidebar } from '$lib/components/ui/sidebar/index.js';
 	import { getProfileContext } from '$lib/stores/profile.svelte';
+	import Spinner from './ui/spinner/spinner.svelte';
 
 	let isLoggingOut = $state(false);
 
@@ -106,7 +107,7 @@
 						class="flex w-full items-center gap-2 text-start cursor-pointer"
 					>
 						{#if isLoggingOut}
-							<Loader size={18} strokeWidth={1.5} class="shrink-0 animate-spin" />
+							<Spinner />
 						{/if}
 						<span>
 							{isLoggingOut ? 'Logging out...' : 'Log out'}

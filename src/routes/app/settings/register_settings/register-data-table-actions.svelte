@@ -7,6 +7,8 @@
 	import { deleteRegisterClosing } from './data.remote';
 	import { showProgress, hideProgress } from '$lib/stores/progress.svelte';
 	import { showFailToast, showSuccessToast } from '$lib/stores/toast.svelte';
+	import { goto } from '$app/navigation';
+	import { Row } from '$lib/components/ui/table';
 
 	let {
 		id,
@@ -20,15 +22,10 @@
 		status: string;
 	} = $props();
 
-	// View details dialog state
-	let viewDetailsOpen = $state(false);
+	
 
 	// Delete dialog state
 	let deleteDialogOpen = $state(false);
-
-	function handleViewDetailsClick() {
-		viewDetailsOpen = true;
-	}
 
 	function handleDeleteClick() {
 		deleteDialogOpen = true;
@@ -71,6 +68,7 @@
 			currency: 'EUR',
 		}).format(totalSales || 0)
 	);
+
 </script>
 
 <DropdownMenu.Root>
@@ -90,7 +88,7 @@
 
 	<DropdownMenu.Content align="end" class="w-48">
 		<DropdownMenu.Item
-			onclick={handleViewDetailsClick}
+			onclick={() => goto(`/app/settings/register_settings/${id}`)}
 			class="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground transition-colors hover:bg-muted"
 		>
 			<Eye class="h-4 w-4 text-muted-foreground" />
@@ -107,38 +105,6 @@
 	</DropdownMenu.Content>
 </DropdownMenu.Root>
 
-<!-- View Details Dialog -->
-<Dialog.Root bind:open={viewDetailsOpen}>
-	<Dialog.Content class="sm:max-w-[600px]">
-		<Dialog.Header>
-			<Dialog.Title>Register Closing Details</Dialog.Title>
-			<Dialog.Description>
-				Complete information for closing on <span class="font-semibold">{formattedDate}</span>
-			</Dialog.Description>
-		</Dialog.Header>
-		<div class="space-y-4 py-4">
-			<div class="grid grid-cols-2 gap-4">
-				<div>
-					<p class="text-xs font-medium text-muted-foreground">Closing Date</p>
-					<p class="text-sm font-semibold">{formattedDate}</p>
-				</div>
-				<div>
-					<p class="text-xs font-medium text-muted-foreground">Status</p>
-					<p class="text-sm font-semibold">{status}</p>
-				</div>
-				<div>
-					<p class="text-xs font-medium text-muted-foreground">Total Sales</p>
-					<p class="text-sm font-semibold text-green-600">{formattedSales}</p>
-				</div>
-			</div>
-		</div>
-		<Dialog.Footer>
-			<Button variant="outline" onclick={() => (viewDetailsOpen = false)} class="cursor-pointer">
-				Close
-			</Button>
-		</Dialog.Footer>
-	</Dialog.Content>
-</Dialog.Root>
 
 <!-- Delete Dialog -->
 <Dialog.Root bind:open={deleteDialogOpen}>

@@ -168,7 +168,7 @@
 											disabled={isUpdatingAvatar || isUpdating}
 										>
 											{#if isUpdatingAvatar}
-												<Loader class="mr-2 h-4 w-4 animate-spin-clockwise" />
+												<Loader class="mr-2 h-4 w-4 animate-spin-clockwise repeat-infinite" />
 												Saving...
 											{:else}
 												<Save class="mr-2 h-4 w-4" />
@@ -215,7 +215,7 @@
 											disabled={isUpdatingAvatar || isUpdating}
 										>
 											{#if isUpdating}
-												<Loader class="mr-2 h-4 w-4 animate-spin-clockwise" />
+												<Loader class="mr-2 h-4 w-4 animate-spin-clockwise repeat-infinite" />
 												Saving...
 											{:else}
 												<Save class="mr-2 h-4 w-4" />

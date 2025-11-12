@@ -13,8 +13,7 @@
 	import { RangeCalendar } from '$lib/components/ui/range-calendar/index.js';
 	import * as Popover from '$lib/components/ui/popover/index.js';
 
-
-	let{
+	let {
 		rangeStart = $bindable(),
 		rangeEnd = $bindable()
 	} = $props();
@@ -30,20 +29,31 @@
 
 	let startValue: DateValue | undefined = $state(undefined);
 
+	// Sync changes back to parent
 	$effect(() => {
-		rangeStart = value.start;
-		rangeEnd = value.end;
+		if (value.start) rangeStart = value.start;
+		if (value.end) rangeEnd = value.end;
+	});
+
+	// Keep local value in sync when parent changes
+	$effect(() => {
+		if (rangeStart && rangeEnd) {
+			value = {
+				start: rangeStart,
+				end: rangeEnd
+			};
+		}
 	});
 </script>
 
 <div class="grid gap-2">
 	<Popover.Root>
 		<Popover.Trigger
-			class={cn(buttonVariants({ variant: 'datepicker' }), !value && 'text-muted-foreground')}
+			class={cn(buttonVariants({ variant: 'datepicker' }), !value.start && 'text-muted-foreground')}
 		>
 			<CalendarIcon class="mr-2 size-4" />
-			{#if value && value.start}
-				{#if value.end}
+			{#if value?.start}
+				{#if value?.end}
 					{df.format(value.start.toDate(getLocalTimeZone()))} - {df.format(
 						value.end.toDate(getLocalTimeZone())
 					)}

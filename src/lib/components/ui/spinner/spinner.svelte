@@ -11,6 +11,6 @@
 <Loader2Icon
 	role="status"
 	aria-label="Loading"
-	class={cn("size-4 animate-spin-clockwise", className)}
+	class={cn("size-4 animate-spin-clockwise repeat-infinite", className)}
 	{...restProps}
 />

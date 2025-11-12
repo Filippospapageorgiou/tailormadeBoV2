@@ -1,12 +1,12 @@
 <script lang="ts">
 	import * as Chart from '$lib/components/ui/chart/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
-	import { Arc, PieChart, Text} from 'layerchart';
+	import { Arc, PieChart, Text } from 'layerchart';
 
-	let { supplierData,currentStartDate,
-            currentEndDate,totalSupplierPayments,countSuppliers} = $props();
+	let { supplierData, currentStartDate, currentEndDate, totalSupplierPayments, countSuppliers } =
+		$props();
 
-    // Format currency
+	// Format currency
 	function formatCurrency(amount: number): string {
 		return new Intl.NumberFormat('el-GR', {
 			style: 'currency',
@@ -73,10 +73,7 @@
 		<Card.Description>
 			Ανάλυση πληρωμών ανά προμηθευτή μέτρητα
 			<p class="py-2 text-sm text-neutral-600">
-				{formatDateRange(
-					currentStartDate!,
-					currentEndDate!
-				)}
+				{formatDateRange(currentStartDate!, currentEndDate!)}
 			</p>
 		</Card.Description>
 	</Card.Header>
@@ -98,25 +95,25 @@
 					<Chart.Tooltip hideLabel labelFormatter={(value) => formatCurrency(value)} />
 				{/snippet}
 				{#snippet arc({ props, visibleData, index })}
-					{@const supplier = visibleData[index].supplier}
-					<Arc {...props}>
-						{#snippet children({ getArcTextProps })}
-							<Text
-								value={supplier}
-								{...getArcTextProps('centroid')}
-								class="fill-white text-xs font-semibold capitalize"
-							/>
-						{/snippet}
-					</Arc>
+					{@const supplier = visibleData?.[index]?.supplier}
+					{#if supplier}
+						<Arc {...props}>
+							{#snippet children({ getArcTextProps })}
+								<Text
+									value={supplier}
+									{...getArcTextProps('centroid')}
+									class="fill-white text-xs font-semibold capitalize"
+								/>
+							{/snippet}
+						</Arc>
+					{/if}
 				{/snippet}
 			</PieChart>
 		</Chart.Container>
 	</Card.Content>
 	<Card.Footer class="flex-col gap-2 text-sm">
 		<div class="flex items-center gap-2 leading-none font-medium">
-			Συνολικές πληρωμές: {formatCurrency(
-				totalSupplierPayments! || 0
-			)}
+			Συνολικές πληρωμές: {formatCurrency(totalSupplierPayments! || 0)}
 		</div>
 		<div class="py-2 leading-none text-muted-foreground">
 			{countSuppliers} - προμηθευτές

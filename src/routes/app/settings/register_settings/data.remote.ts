@@ -3,7 +3,8 @@ import { createServerClient } from "$lib/supabase/server";
 import { 
   getUserOrgId, 
   getUserProfileWithRoleCheck, 
-  getDateRanges 
+  getDateRanges,
+  getPreviousPeriodDates 
 } from '$lib/supabase/queries';
 import type { DailyRegisterClosing } from "$lib/models/register.types";
 import { z } from 'zod/v4'
@@ -19,20 +20,51 @@ export const authenticatedAccess = query(async () => {
 })
 
 
-const getRegisterByDateRangeSchema = z.object({
-    days: z.number().int().positive().default(30)
-})
+
+const registerTableSchema = z.discriminatedUnion('mode', [
+  z.object({
+    mode: z.literal('period'),
+    days: z.number().int().positive().default(30),
+    start: z.number().int().positive().default(1),
+    end: z.number().int().positive().default(10)
+  }),
+  z.object({
+    mode: z.literal('range'),
+    startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
+    endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
+    start: z.number().int().positive().default(1),
+    end: z.number().int().positive().default(10)
+  })
+]);
 
 /**
  * Get register closing data by date range
  * Fetches current and previous period sales data for comparison
  */
-export const getRegisterClosingByDateRange = query(getRegisterByDateRangeSchema, async ({ days }) => {
+export const getRegisterClosingByDateRange = query(registerTableSchema, async ( params ) => {
   const supabase = createServerClient();
 
   try {
     const org_id = await getUserOrgId();
-    const { currentStart, currentEnd, previousStart, previousEnd } = getDateRanges(days);
+    let currentStart: string;
+    let currentEnd: string;
+    let previousEnd:string;
+    let previousStart:string;
+    if (params.mode === 'period') {
+      const ranges = getDateRanges(params.days);
+      currentStart = ranges.currentStart;
+      currentEnd = ranges.currentEnd;
+      previousStart = ranges.previousStart;
+      previousEnd = ranges.previousEnd;
+    } else {
+      // mode === 'range'
+      currentStart = params.startDate;
+      currentEnd = params.endDate;
+      const previousDates = getPreviousPeriodDates(params.startDate, params.endDate);
+      previousStart = previousDates.previousStart;
+      previousEnd = previousDates.previousEnd;
+    }
+    
 
     // Fetch current period
     const { data: currentPeriod, error: currentError } = await supabase
@@ -152,12 +184,23 @@ async function getPayments(
  * Get supplier payment data by date range
  * Aggregates all supplier payments and calculates totals by supplier
  */
-export const getSuppliersDataPayments = query(getRegisterByDateRangeSchema, async ({ days }) => {
+export const getSuppliersDataPayments = query(registerTableSchema, async ( params ) => {
   const supabase = createServerClient();
 
   try {
     const org_id = await getUserOrgId();
-    const { currentStart, currentEnd } = getDateRanges(days);
+    let currentStart: string;
+    let currentEnd: string;
+     if (params.mode === 'period') {
+      const ranges = getDateRanges(params.days);
+      currentStart = ranges.currentStart;
+      currentEnd = ranges.currentEnd;
+    } else {
+      // mode === 'range'
+      currentStart = params.startDate;
+      currentEnd = params.endDate;
+    }
+
 
     // Fetch current period register closings
     const { data: currentPeriod, error: currentError } = await supabase
@@ -268,12 +311,24 @@ async function getExpenses(
  * Get expenses data by date range
  * Fetches all expenses for the specified period and calculates totals
  */
-export const getExpensesData = query(getRegisterByDateRangeSchema, async ({ days }) => {
+export const getExpensesData = query(registerTableSchema, async ( params ) => {
   const supabase = createServerClient();
 
   try {
+
     const org_id = await getUserOrgId();
-    const { currentStart, currentEnd } = getDateRanges(days);
+
+    let currentStart: string;
+    let currentEnd: string;
+    if (params.mode === 'period') {
+      const ranges = getDateRanges(params.days);
+      currentStart = ranges.currentStart;
+      currentEnd = ranges.currentEnd;
+    } else {
+      // mode === 'range'
+      currentStart = params.startDate;
+      currentEnd = params.endDate;
+    }
 
     // Fetch current period register closings
     const { data: currentPeriod, error: currentError } = await supabase
@@ -338,22 +393,25 @@ export const getExpensesData = query(getRegisterByDateRangeSchema, async ({ days
   }
 });
 
-const registerTableSchema = z.object({
-    days: z.number().int().positive().default(30),
-    start: z.number().int().positive().default(1),
-    end: z.number().int().positive().default(10)
-})
 
-/**
- * Get register data table with pagination
- * Returns paginated register closing data for display in tables
- */
-export const getRegisterDataTable = query(registerTableSchema, async ({ days, start, end }) => {
+export const getRegisterDataTable = query(registerTableSchema, async (params) => {
   const supabase = createServerClient();
 
   try {
     const org_id = await getUserOrgId();
-    const { currentStart, currentEnd } = getDateRanges(days);
+    
+    let currentStart: string;
+    let currentEnd: string;
+    
+    if (params.mode === 'period') {
+      const ranges = getDateRanges(params.days);
+      currentStart = ranges.currentStart;
+      currentEnd = ranges.currentEnd;
+    } else {
+      // mode === 'range'
+      currentStart = params.startDate;
+      currentEnd = params.endDate;
+    }
 
     // Fetch current period with pagination
     const { data: registerData, error: dataError, count } = await supabase
@@ -363,7 +421,7 @@ export const getRegisterDataTable = query(registerTableSchema, async ({ days, st
       .gte('closing_date', currentStart)
       .lte('closing_date', currentEnd)
       .order('closing_date', { ascending: false })
-      .range(start - 1, end - 1)
+      .range(params.start - 1, params.end - 1)
       .overrideTypes<DailyRegisterClosing[]>();
 
     if (dataError) {
@@ -373,8 +431,8 @@ export const getRegisterDataTable = query(registerTableSchema, async ({ days, st
         message: 'Error fetching register table data',
         data: [],
         totalCount: 0,
-        pageStart: start,
-        pageEnd: end,
+        pageStart: params.start,
+        pageEnd: params.end,
       };
     }
 
@@ -383,8 +441,8 @@ export const getRegisterDataTable = query(registerTableSchema, async ({ days, st
       message: 'Successfully fetched register table data',
       data: registerData || [],
       totalCount: count || 0,
-      pageStart: start,
-      pageEnd: end,
+      pageStart: params.start,
+      pageEnd: params.end,
       currentStartDate: currentStart,
       currentEndDate: currentEnd,
     };
@@ -395,8 +453,8 @@ export const getRegisterDataTable = query(registerTableSchema, async ({ days, st
       message: 'Ένα σφάλμα παρουσιάστηκε κάτα την προσπάθεια λήψης δεδομένων',
       data: [],
       totalCount: 0,
-      pageStart: start,
-      pageEnd: end,
+      pageStart: params.start,
+      pageEnd: params.end,
     };
   }
 });

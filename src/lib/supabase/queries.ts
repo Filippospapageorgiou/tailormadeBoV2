@@ -1,7 +1,7 @@
 import { createServerClient } from "./server";
 import { requireAuthenticatedUser } from "./shared";
 import type { Profile } from "$lib/models/database.types";
-import { error } from "@sveltejs/kit";
+import { error, redirect } from "@sveltejs/kit";
 
 
 /**
@@ -70,7 +70,7 @@ export async function getUserProfileWithRoleCheck(allowedRoles: number[]): Promi
       userRole: profile.role_id,
       allowedRoles
     });
-    throw error(403, 'Insufficient permissions');
+    throw redirect(303, '/app/');
   }
 
   return profile;
@@ -84,6 +84,15 @@ export async function getUserProfileWithRoleCheck(allowedRoles: number[]): Promi
  */
 export function formatLocalDate(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+/**
+ * Convert CalendarDate-like object to YYYY-MM-DD string
+ * Handles both CalendarDate objects and plain objects with year/month/day
+ */
+export function calendarDateToString(date: { year: number; month: number; day: number } | string): string {
+  if (typeof date === 'string') return date;
+  return `${date.year}-${String(date.month).padStart(2, '0')}-${String(date.day).padStart(2, '0')}`;
 }
 
 /**
@@ -115,4 +124,29 @@ export function getDateRanges(days: number) {
     previousStart,
     previousEnd,
   };
+}
+
+/**
+ * Calculate previous period dates for a given date range
+ * Returns dates for the same length period ending one day before the current start
+ * 
+ * @param startDate - Start date as YYYY-MM-DD string
+ * @param endDate - End date as YYYY-MM-DD string
+ * @returns Object with previousStart and previousEnd
+ */
+export function getPreviousPeriodDates(startDate: string, endDate: string) {
+  const currentStart = new Date(startDate);
+  const currentEnd = new Date(endDate);
+  
+  const daysInRange = Math.floor((currentEnd.getTime() - currentStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  
+  const previousEndDate = new Date(currentStart);
+  previousEndDate.setDate(previousEndDate.getDate() - 1);
+  const previousEnd = formatLocalDate(previousEndDate);
+  
+  const previousStartDate = new Date(previousEndDate);
+  previousStartDate.setDate(previousStartDate.getDate() - daysInRange + 1);
+  const previousStart = formatLocalDate(previousStartDate);
+  
+  return { previousStart, previousEnd };
 }
