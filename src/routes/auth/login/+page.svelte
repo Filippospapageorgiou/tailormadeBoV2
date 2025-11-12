@@ -33,7 +33,7 @@
 			</div>
 		</div>
 		<div class="flex flex-1 items-center justify-center py-4">
-			<div class="md:w-7/12 py-4">
+			<div class="py-4 md:w-7/12">
 				<Card.Root>
 					<Card.Header class="text-center">
 						<Card.Title class="text-xl">Welcome</Card.Title>
@@ -57,7 +57,13 @@
 								<div class="grid gap-6">
 									<div class="grid gap-3">
 										<Label for="email">Email</Label>
-										<Input id="email" name="email" type="email" placeholder="m@example.com" required />
+										<Input
+											id="email"
+											name="email"
+											type="email"
+											placeholder="m@example.com"
+											required
+										/>
 									</div>
 									<div class="grid gap-3">
 										<div class="flex items-center">
@@ -79,7 +85,7 @@
 									</div>
 									<Button
 										type="submit"
-										class="btn-coffee h-10 w-full font-medium cursor-pointer"
+										class="btn-coffee h-10 w-full cursor-pointer font-medium"
 										disabled={loading}
 									>
 										{#if loading}
@@ -96,11 +102,25 @@
 						</form>
 					</Card.Content>
 				</Card.Root>
-				<div
-					class="py-4 text-center text-xs text-balance text-muted-foreground *:[a]:underline *:[a]:underline-offset-4 *:[a]:hover:text-primary"
-				>
-					By clicking continue, you agree to our <a href="##">Terms of Service</a>
-					and <a href="##">Privacy Policy</a>.
+				<div class="space-y-2 py-6 text-center text-xs text-muted-foreground">
+					<p class="text-sm font-medium text-primary">Key Points</p>
+					<ul class="list-inside list-disc text-xs text-balance text-muted-foreground">
+						<li>Your account is used for work-related purposes only.</li>
+						<li>We collect basic data such as your name, schedule, and training progress.</li>
+						<li>Your data is stored securely and not shared outside the company.</li>
+						<li>Do not share internal app content with non-employees.</li>
+					</ul>
+
+					<div class="flex justify-center text-center text-xs text-balance text-muted-foreground">
+						By clicking continue, you agree to our
+						<span class="cursor-alias px-1 underline underline-offset-4 hover:text-primary">
+							Terms of Service
+						</span>
+						and
+						<span class="cursor-alias px-1 underline underline-offset-4 hover:text-primary">
+							Privacy Policy
+						</span>.
+					</div>
 				</div>
 			</div>
 		</div>

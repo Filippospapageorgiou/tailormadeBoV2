@@ -78,8 +78,8 @@
 		],
 		navSecondary: [
 			{
-				title: "Support",
-				url: "#",
+				title: "legal",
+				url: "/app/legal",
 				icon: LifeBuoyIcon,
 			},
 			{

@@ -4,14 +4,13 @@
 	import { Calendar } from '$lib/components/ui/calendar/index.js';
 	import type { Blog } from '$lib/models/database.types';
 	import Hero from '$lib/components/custom/hero/hero.svelte';
-	import * as Empty from "$lib/components/ui/empty/index.js";
-  	import { Button } from "$lib/components/ui/button/index.js";
-  	import RefreshCcwIcon from "@lucide/svelte/icons/refresh-ccw";
+	import * as Empty from '$lib/components/ui/empty/index.js';
 	import { Search } from 'lucide-svelte';
-	import { goto } from '$app/navigation';
+	import { enhance } from '$app/forms';
 
-	let { data } = $props();
+	let { data, form } = $props();
 	let blog = $derived(data.blog as Blog);
+	let tosFlag: any = $derived(data?.tos);
 
 	function getFirstImage(images: any) {
 		if (images && Array.isArray(images) && images.length > 0) {
@@ -41,24 +40,24 @@
 	}
 
 	let value: DateValue[] | undefined = $state([today(getLocalTimeZone())]);
+
+
 </script>
 
 <div class="flex flex-1 flex-col gap-4 p-4 pt-2">
-	<div class="grid auto-rows-min gap-4 md:grid-cols-3 pt-0 md:pt-9">
+	<div class="grid auto-rows-min gap-4 pt-0 md:grid-cols-3 md:pt-9">
 		<Hero />
-		
-		<a 	
-			href="/app/recipes/"
-			class="aspect-video rounded-2xl bg-muted/50">
+
+		<a href="/app/recipes/" class="aspect-video rounded-2xl bg-muted/50">
 			<CardImg1>
 				<CardBodyImg
 					class="absolute inset-x-0 bottom-2 flex size-full flex-col justify-end px-4 pb-0.5 md:pb-10"
 				/>
 			</CardImg1>
 		</a>
-			<a
+		<a
 			href="/app/schedule/"
-			class="group relative flex aspect-video flex-col justify-end overflow-hidden rounded-2xl bg-gradient-to-t from-slate-500 to-orange-50 cursor-pointer"
+			class="group relative flex aspect-video cursor-pointer flex-col justify-end overflow-hidden rounded-2xl bg-gradient-to-t from-slate-500 to-orange-50"
 		>
 			<Calendar
 				type="multiple"
@@ -87,7 +86,7 @@
 				</div>
 			</div>
 		</a>
-		
+
 		{#if blog}
 			<a href="/app/blog/{blog.id}" class="group relative aspect-video overflow-hidden rounded-2xl">
 				<div class="absolute inset-0">
@@ -172,11 +171,50 @@
 						<Search />
 					</Empty.Media>
 					<Empty.Title>No Blog available</Empty.Title>
-					<Empty.Description>
-						No blog available for readind wait for news...
-					</Empty.Description>
+					<Empty.Description>No blog available for readind wait for news...</Empty.Description>
 				</Empty.Header>
 			</Empty.Root>
 		{/if}
 	</div>
 </div>
+
+{#if !tosFlag}
+	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+		<div class="relative w-[90%] max-w-md rounded-2xl bg-white p-6 text-gray-800 shadow-2xl">
+			<h2 class="mb-3 text-center text-lg font-bold text-primary">Όροι Χρήσης Εφαρμογής</h2>
+
+			<div
+				class="max-h-[300px] space-y-2 overflow-y-auto text-sm leading-relaxed text-muted-foreground"
+			>
+				<p>Η εφαρμογή προορίζεται αποκλειστικά για εργαζομένους του καταστήματος.</p>
+				<p>
+					Τα προσωπικά δεδομένα (όνομα, πρόγραμμα εργασίας, αιτήματα βάρδιας κ.λπ.) χρησιμοποιούνται
+					μόνο για εσωτερική οργάνωση και δεν κοινοποιούνται εκτός εταιρείας.
+				</p>
+				<p>
+					Απαγορεύεται αυστηρά η κοινοποίηση πληροφοριών ή δεδομένων της εφαρμογής σε τρίτους ή
+					εξωτερικούς συνεργάτες χωρίς έγκριση της διοίκησης.
+				</p>
+				<p>
+					Η χρήση της εφαρμογής συνεπάγεται την τήρηση εμπιστευτικότητας και την αποφυγή
+					διαμοιρασμού εσωτερικού περιεχομένου (εκπαιδευτικά άρθρα, προγράμματα, πληροφορίες
+					καταστήματος) με τρίτους.
+				</p>
+				<p>
+					Με την είσοδό σας αποδέχεστε την αποθήκευση βασικών στοιχείων για σκοπούς διαχείρισης
+					λογαριασμού και βελτίωσης της εφαρμογής.
+				</p>
+			</div>
+
+			<form method="POST" action="?/acceptTerms" use:enhance class="mt-6 flex justify-center">
+				<input class="hidden" name="accept" id="accept" value="accept" />
+				<button
+					type="submit"
+					class="rounded-lg bg-primary px-6 py-2 font-medium text-white transition-all duration-300 hover:bg-primary/90"
+				>				
+					Αποδοχή
+				</button>
+			</form>
+		</div>
+	</div>
+{/if}
