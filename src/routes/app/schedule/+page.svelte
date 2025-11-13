@@ -8,8 +8,9 @@
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import ShiftGrid from './ShiftGrid.svelte';
+	import ShiftChnageRrquestmodal from './shiftChnageRrquestmodal.svelte';
 	import ShiftDetailsModal from './ShiftDetailsModal.svelte';
-	import ShiftChangeRequestModal from './shiftChnageRrquestmodal.svelte';
+
 	let test = $state(false);
 	let query = getCurrentSchedule();
 	let { data } = $props();
@@ -210,7 +211,7 @@
 	onOpenRequest={handleOpenRequestModal}
 />
 
-<ShiftChangeRequestModal
+<ShiftChnageRrquestmodal
 	bind:open={isRequestModalOpen}
 	shiftData={selectedShiftData}
 	onSuccess={handleRequestSuccess}
