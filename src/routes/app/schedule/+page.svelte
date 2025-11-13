@@ -10,7 +10,7 @@
 	import ShiftGrid from './Shiftgrid.svelte';
 	import ShiftDetailsModal from './ShiftDetailsModal.svelte';
 	import ShiftChangeRequestModal from './shiftChnageRrquestmodal.svelte';
-
+	let test = $state(false);
 	let query = getCurrentSchedule();
 	let { data } = $props();
 	let { user } = data;
