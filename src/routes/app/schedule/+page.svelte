@@ -7,7 +7,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import * as Dialog from '$lib/components/ui/dialog';
-	import ShiftGrid from './Shiftgrid.svelte';
+	import ShiftGrid from './ShiftGrid.svelte';
 	import ShiftDetailsModal from './ShiftDetailsModal.svelte';
 	import ShiftChangeRequestModal from './shiftChnageRrquestmodal.svelte';
 	let test = $state(false);

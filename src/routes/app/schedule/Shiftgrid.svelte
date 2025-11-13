@@ -39,14 +39,14 @@
 		<div class="flex">
 			<!-- Employee Column Header -->
 			<div class="w-48 flex-shrink-0 border-r border-border/50 px-4 py-4">
-				<p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Employee</p>
+				<p class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">Employee</p>
 			</div>
 
 			<!-- Day Column Headers -->
 			<div class="flex flex-1">
 				{#each weekDays as day (day.date)}
 					<div class="flex-1 border-r border-border/50 px-4 py-4 text-center last:border-r-0">
-						<p class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+						<p class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
 							{day.dayName}
 						</p>
 						<p class="text-lg font-bold">{day.dayNum}</p>
@@ -63,11 +63,7 @@
 			<div class="flex border-t border-border/30">
 				<!-- Employee Cell -->
 				<div class="w-48 flex-shrink-0">
-					<ScheduleEmployee
-						{employee}
-						isSelected={isSelected}
-						onClick={() => onEmployeeSelect(employee)}
-					/>
+					<ScheduleEmployee {employee} {isSelected} onClick={() => onEmployeeSelect(employee)} />
 				</div>
 
 				<!-- Day Cells with Shifts -->
