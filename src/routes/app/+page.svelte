@@ -7,6 +7,7 @@
 	import * as Empty from '$lib/components/ui/empty/index.js';
 	import { Search } from 'lucide-svelte';
 	import { enhance } from '$app/forms';
+	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
 
 	let { data, form } = $props();
 	let blog = $derived(data.blog as Blog);
@@ -41,7 +42,7 @@
 
 	let value: DateValue[] | undefined = $state([today(getLocalTimeZone())]);
 
-
+	let loading = $state(false);
 </script>
 
 <div class="flex flex-1 flex-col gap-4 p-4 pt-2">
@@ -206,13 +207,26 @@
 				</p>
 			</div>
 
-			<form method="POST" action="?/acceptTerms" use:enhance class="mt-6 flex justify-center">
+			<form
+				method="POST"
+				action="?/acceptTerms"
+				use:enhance={({}) => {
+					loading = true;
+				}}
+				class="mt-6 flex justify-center"
+			>
 				<input class="hidden" name="accept" id="accept" value="accept" />
 				<button
 					type="submit"
-					class="rounded-lg bg-primary px-6 py-2 font-medium text-white transition-all duration-300 hover:bg-primary/90"
-				>				
-					Αποδοχή
+					disabled={loading}
+					class="relative inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-primary/90 px-10 py-3 font-semibold text-white shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl active:scale-95 disabled:cursor-not-allowed disabled:opacity-70 disabled:shadow-lg disabled:hover:scale-100"
+				>
+					{#if loading}
+						<Spinner />
+						<span>Laoding...</span>
+					{:else}
+						<span>Accept</span>
+					{/if}
 				</button>
 			</form>
 		</div>
