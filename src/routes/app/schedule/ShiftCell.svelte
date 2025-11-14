@@ -41,7 +41,7 @@
 		style="border-left: 4px solid {badgeColor};"
 	>
 		{#if isWorkShift}
-			<Clock class="h-4 w-4 flex-shrink-0" style="color: {badgeColor};" />
+			<Clock class="hidden h-4 w-4 flex-shrink-0 sm:block" style="color: {badgeColor};" />
 			<span class="text-sm font-medium">
 				{formatTime(shift.start_time)} - {formatTime(shift.end_time)}
 			</span>
