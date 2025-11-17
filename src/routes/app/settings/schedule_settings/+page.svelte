@@ -17,7 +17,7 @@
 	import ChevronLeftIcon from 'lucide-svelte/icons/chevron-left';
 	import ChevronRightIcon from 'lucide-svelte/icons/chevron-right';
 	import {
-        authenticatedAccess,
+		authenticatedAccess,
 		getSchedulesWithMetricsPaginated,
 		createSchedule,
 		deleteSchedule,
@@ -29,7 +29,7 @@
 	import { showFailToast, showSuccessToast } from '$lib/stores/toast.svelte';
 	import { Spinner } from '$lib/components/ui/spinner';
 	import { Skeleton } from '$lib/components/ui/skeleton';
-    import InputCalendar from '$lib/components/custom/inputCalendar.svelte';
+	import InputCalendar from '$lib/components/custom/inputCalendar.svelte';
 
 	import ScheduleCard from './components/ScheduleCard.svelte';
 	import FilterBar from './components/FilterBar.svelte';
@@ -38,7 +38,7 @@
 	// Pagination state
 	let currentPage = $state(1);
 	let perPage = $state(9);
-    let auth = authenticatedAccess();
+	let auth = authenticatedAccess();
 
 	// Fetch schedules with pagination
 	let schedulesQuery = $derived.by(() =>
@@ -253,36 +253,15 @@
 	}
 </script>
 
-
 {#if auth.loading}
-    <AuthBlock />
+	<AuthBlock />
 {:else}
-<div class="container px-6 mx-auto space-y-6 py-6">
-	<!-- Header -->
-	<div>
-		<h1 class="text-3xl font-bold tracking-tight">Schedule Management</h1>
-		<p class="text-muted-foreground">Create and manage weekly schedules for your team</p>
-	</div>
-
-	{#await schedulesQuery}
-		<!-- Loading State -->
-		<div class="space-y-6">
-			<div class="space-y-2">
-				<Skeleton class="h-32 w-full" />
-			</div>
-			<div class="flex items-center gap-4">
-				<Skeleton class="h-10 w-32" />
-				<Skeleton class="h-10 w-32" />
-				<Skeleton class="h-10 flex-1" />
-				<Skeleton class="h-10 w-24" />
-			</div>
-			<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-				{#each Array(6) as _, index (index)}
-					<Skeleton class="h-64" />
-				{/each}
-			</div>
+	<div class="container mx-auto space-y-6 px-6 py-6">
+		<!-- Header -->
+		<div>
+			<h1 class="text-3xl font-bold tracking-tight">Schedule Management</h1>
+			<p class="text-muted-foreground">Create and manage weekly schedules for your team</p>
 		</div>
-	{:then result}
 
 		<!-- Filter Bar -->
 		<FilterBar
@@ -299,7 +278,15 @@
 			onCreate={() => (isCreateModalOpen = true)}
 		/>
 
-		<!-- Schedules Grid -->
+		{#await schedulesQuery}
+			<!-- Initial Loading State - Show Skeletons -->
+			<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+				{#each Array(perPage) as _, index (index)}
+					<Skeleton class="h-64" />
+				{/each}
+			</div>
+		{:then result}
+			<!-- Schedules Grid -->
 			{#if result.success}
 				{#if filteredSchedules.length > 0}
 					<!-- Results Count -->
@@ -419,147 +406,116 @@
 								</Empty.Description>
 							</Empty.Header>
 							<Empty.Content>
-								<Button onclick={handleRefresh} variant="outline">
-									Try Again
-								</Button>
+								<Button onclick={handleRefresh} variant="outline">Try Again</Button>
 							</Empty.Content>
 						</Empty.Root>
 					</CardContent>
 				</Card>
 			{/if}
-	{:catch error}
-		<!-- Error State -->
-		<Card>
-			<CardContent class="flex flex-col items-center justify-center py-12">
-				<Empty.Root>
-					<Empty.Header>
-						<Empty.Media variant="icon">
-							<Calendar class="h-12 w-12 text-destructive" />
-						</Empty.Media>
-						<Empty.Title>Error Loading Schedules</Empty.Title>
-						<Empty.Description>
-							An unexpected error occurred while loading schedules.
-						</Empty.Description>
-					</Empty.Header>
-					<Empty.Content>
-						<Button onclick={handleRefresh} variant="outline">
-							Try Again
-						</Button>
-					</Empty.Content>
-				</Empty.Root>
-			</CardContent>
-		</Card>
-	{/await}
-</div>
+		{:catch error}
+			<!-- Error State -->
+			<Card>
+				<CardContent class="flex flex-col items-center justify-center py-12">
+					<Empty.Root>
+						<Empty.Header>
+							<Empty.Media variant="icon">
+								<Calendar class="h-12 w-12 text-destructive" />
+							</Empty.Media>
+							<Empty.Title>Error Loading Schedules</Empty.Title>
+							<Empty.Description>
+								An unexpected error occurred while loading schedules.
+							</Empty.Description>
+						</Empty.Header>
+						<Empty.Content>
+							<Button onclick={handleRefresh} variant="outline">Try Again</Button>
+						</Empty.Content>
+					</Empty.Root>
+				</CardContent>
+			</Card>
+		{/await}
+	</div>
 {/if}
 
 <!-- Create Schedule Modal -->
-	<Dialog bind:open={isCreateModalOpen}>
-		<DialogContent>
-			<DialogHeader>
-				<DialogTitle>Create New Schedule</DialogTitle>
-				<DialogDescription>
-					Select the week start date. The week will automatically span 7 days.
-				</DialogDescription>
-			</DialogHeader>
+<Dialog bind:open={isCreateModalOpen}>
+	<DialogContent>
+		<DialogHeader>
+			<DialogTitle>Create New Schedule</DialogTitle>
+			<DialogDescription>
+				Select the week start date. The week will automatically span 7 days.
+			</DialogDescription>
+		</DialogHeader>
 
-			<div class="space-y-4 py-4">
-				<div class="space-y-2">
-					<Label for="week_start_date">Week Start Date</Label>
-                    <InputCalendar 
-                        id="week_start_date"
-                        bind:value={weekStartDate}
-                        required
-                    />
-				</div>
-
-				<div class="space-y-2">
-					<Label for="week_end_date">Week End Date</Label>
-					<Input
-						id="week_end_date"
-						type="date"
-						value={formData.week_end_date}
-						disabled
-					/>
-					<p class="text-sm text-muted-foreground">
-						Automatically calculated as 6 days after start date
-					</p>
-				</div>
-
-				<div class="space-y-2">
-					<Label for="year">Year</Label>
-					<Input
-						id="year"
-						type="number"
-						value={formData.year}
-						disabled
-					/>
-				</div>
+		<div class="space-y-4 py-4">
+			<div class="space-y-2">
+				<Label for="week_start_date">Week Start Date</Label>
+				<InputCalendar id="week_start_date" bind:value={weekStartDate} required />
 			</div>
 
-			<DialogFooter>
-				<Button
-					variant="outline"
-					onclick={handleModalClose}
-					disabled={isCreating}
-				>
-					Cancel
-				</Button>
-				<Button
-					onclick={handleCreateSchedule}
-					disabled={isCreating || !weekStartDate}
-				>
-					{#if isCreating}
-						<Spinner />
-						Creating...
-					{:else}
-						Create Schedule
-					{/if}
-				</Button>
-			</DialogFooter>
-		</DialogContent>
-	</Dialog>
+			<div class="space-y-2">
+				<Label for="week_end_date">Week End Date</Label>
+				<Input id="week_end_date" type="date" value={formData.week_end_date} disabled />
+				<p class="text-sm text-muted-foreground">
+					Automatically calculated as 6 days after start date
+				</p>
+			</div>
 
-	<!-- Delete Confirmation Modal -->
-	<Dialog bind:open={isDeleteModalOpen}>
-		<DialogContent>
-			<DialogHeader>
-				<DialogTitle>Delete Schedule</DialogTitle>
-				<DialogDescription>
-					Are you sure you want to delete this schedule? This will also delete all shifts associated
-					with it. This action cannot be undone.
-				</DialogDescription>
-			</DialogHeader>
+			<div class="space-y-2">
+				<Label for="year">Year</Label>
+				<Input id="year" type="number" value={formData.year} disabled />
+			</div>
+		</div>
 
-			{#if scheduleToDelete}
-				<div class="py-4">
-					<p class="font-medium">
-						Week of {formatDate(scheduleToDelete.week_start_date)}
-					</p>
-					<p class="text-sm text-muted-foreground">
-						{formatDate(scheduleToDelete.week_start_date)} - {formatDate(
-							scheduleToDelete.week_end_date
-						)}
-					</p>
-				</div>
-			{/if}
+		<DialogFooter>
+			<Button variant="outline" onclick={handleModalClose} disabled={isCreating}>Cancel</Button>
+			<Button onclick={handleCreateSchedule} disabled={isCreating || !weekStartDate}>
+				{#if isCreating}
+					<Spinner />
+					Creating...
+				{:else}
+					Create Schedule
+				{/if}
+			</Button>
+		</DialogFooter>
+	</DialogContent>
+</Dialog>
 
-			<DialogFooter>
-				<Button
-					variant="outline"
-					onclick={handleDeleteModalClose}
-					disabled={isDeleting}
-				>
-					Cancel
-				</Button>
-				<Button variant="destructive" onclick={handleDeleteSchedule} disabled={isDeleting}>
-					{#if isDeleting}
-						<Spinner />
-						Deleting...
-					{:else}
-						Delete Schedule
-					{/if}
-				</Button>
-			</DialogFooter>
-		</DialogContent>
-	</Dialog>
+<!-- Delete Confirmation Modal -->
+<Dialog bind:open={isDeleteModalOpen}>
+	<DialogContent>
+		<DialogHeader>
+			<DialogTitle>Delete Schedule</DialogTitle>
+			<DialogDescription>
+				Are you sure you want to delete this schedule? This will also delete all shifts associated
+				with it. This action cannot be undone.
+			</DialogDescription>
+		</DialogHeader>
+
+		{#if scheduleToDelete}
+			<div class="py-4">
+				<p class="font-medium">
+					Week of {formatDate(scheduleToDelete.week_start_date)}
+				</p>
+				<p class="text-sm text-muted-foreground">
+					{formatDate(scheduleToDelete.week_start_date)} - {formatDate(
+						scheduleToDelete.week_end_date
+					)}
+				</p>
+			</div>
+		{/if}
+
+		<DialogFooter>
+			<Button variant="outline" onclick={handleDeleteModalClose} disabled={isDeleting}>
+				Cancel
+			</Button>
+			<Button variant="destructive" onclick={handleDeleteSchedule} disabled={isDeleting}>
+				{#if isDeleting}
+					<Spinner />
+					Deleting...
+				{:else}
+					Delete Schedule
+				{/if}
+			</Button>
+		</DialogFooter>
+	</DialogContent>
+</Dialog>

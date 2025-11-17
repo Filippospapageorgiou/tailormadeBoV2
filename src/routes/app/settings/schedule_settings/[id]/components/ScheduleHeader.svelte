@@ -46,7 +46,7 @@
 	let weekDisplay = $derived(formatWeekRange(weekStartDate, weekEndDate));
 </script>
 
-<div class="flex items-center justify-between rounded-xl border bg-card p-6 shadow-sm">
+<div class="flex items-center justify-between p-6">
 	<div class="flex items-center gap-4">
 		{#if onBack}
 			<Button variant="ghost" size="icon" onclick={onBack} class="h-10 w-10">
@@ -58,7 +58,7 @@
 				<Calendar class="h-6 w-6 text-primary" />
 			</div>
 			<div>
-				<h1 class="text-2xl font-bold tracking-tight">Schedule Management</h1>
+				<h2 class="scroll-m-20 text-2xl font-semibold tracking-tight">Schedule Management</h2>
 				<p class="text-sm text-muted-foreground">Week of {weekDisplay}</p>
 			</div>
 		</div>

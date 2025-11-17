@@ -1,5 +1,5 @@
 <script lang="ts">
-	import BlurIn from "../blurIn/BlurIn.svelte";
+	import BlurIn from '../blurIn/BlurIn.svelte';
 </script>
 
 <div
@@ -14,19 +14,17 @@
 	>
 		<div class="mx-auto max-w-4xl text-center">
 			<BlurIn
-				word="TAILORMADE COFFEE ROASTERS"
-				class="scroll-m-20 text-4xl text-primary font-extrabold tracking-tight lg:text-5xl"
+				word="TAILOR MADE COFFEE ROASTERS"
+				class="scroll-m-20 text-4xl font-extrabold tracking-tight text-primary lg:text-5xl"
 			/>
 			<div
-				class="font-display mt-5 mb-8 text-xl font-light tracking-wide sm:mb-10 sm:text-2xl lg:mb-12 overflow-hidden"
+				class="font-display mt-5 mb-8 overflow-hidden text-xl font-light tracking-wide sm:mb-10 sm:text-2xl lg:mb-12"
 			>
 				<p>SEE THE WORLD THROUGH COFFEE</p>
 			</div>
 
 			<div class="mx-auto max-w-3xl">
-				<p
-					class="text-sm leading-relaxed font-light text-pretty sm:text-base md:text-lg"
-				>
+				<p class="text-sm leading-relaxed font-light text-pretty sm:text-base md:text-lg">
 					Καλώς ήρθατε στο back office του Tailor Made. Η πλατφόρma αυτή είναι για αποκλειστική
 					χρήση από τους υπαλλήλους και τους υπεύθυνους των καταστημάτων. Παρακαλούμε, να είστε
 					προσεκτικοί και να μην μοιράζεστε με τρίτους τις πληροφορίες και οποιαδήποτε ευαίσθητα
@@ -54,7 +52,8 @@
 		left: 0;
 		width: 100%;
 		height: 100%;
-		background-image: linear-gradient(rgba(139, 69, 19, 0.03) 1px, transparent 1px),
+		background-image:
+			linear-gradient(rgba(139, 69, 19, 0.03) 1px, transparent 1px),
 			linear-gradient(90deg, rgba(139, 69, 19, 0.03) 1px, transparent 1px);
 		background-size: 50px 50px;
 		animation: grid-move 20s linear infinite;

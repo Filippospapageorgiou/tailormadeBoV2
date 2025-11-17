@@ -1,6 +1,8 @@
 <script lang="ts">
-	import * as Sidebar from "$lib/components/ui/sidebar/index.js";
-	import type { Component, ComponentProps } from "svelte";
+	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
+	import type { Component, ComponentProps } from 'svelte';
+
+	const sidebar = Sidebar.useSidebar();
 
 	let {
 		ref = $bindable(null),
@@ -13,6 +15,13 @@
 			icon: Component;
 		}[];
 	} & ComponentProps<typeof Sidebar.Group> = $props();
+
+	// Close sidebar on mobile when link is clicked
+	function handleLinkClick() {
+		if (sidebar.isMobile) {
+			sidebar.setOpenMobile(false);
+		}
+	}
 </script>
 
 <Sidebar.Group bind:ref {...restProps}>
@@ -22,7 +31,7 @@
 				<Sidebar.MenuItem>
 					<Sidebar.MenuButton size="sm">
 						{#snippet child({ props })}
-							<a href={item.url} {...props}>
+							<a href={item.url} {...props} onclick={handleLinkClick}>
 								<item.icon />
 								<span>{item.title}</span>
 							</a>

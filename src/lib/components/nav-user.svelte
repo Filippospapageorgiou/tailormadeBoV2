@@ -17,6 +17,20 @@
 
 	let isLoggingOut = $state(false);
 
+	const sidebar = useSidebar();
+
+	// Close sidebar on mobile when link is clicked
+	function handleLinkClick() {
+		if (sidebar.isMobile) {
+			sidebar.setOpenMobile(false);
+		}
+	}
+
+	function gotoAccount(id: any) {
+		handleLinkClick();
+		goto(`/app/profile/${profile.id}`);
+	}
+
 	async function handleLogout() {
 		if (isLoggingOut) {
 			return true;
@@ -43,8 +57,6 @@
 	}
 
 	let profile = getProfileContext();
-
-	const sidebar = useSidebar();
 </script>
 
 <Sidebar.Menu>
@@ -94,17 +106,22 @@
 						Play memory game
 					</DropdownMenu.Item>
 				</DropdownMenu.Group>
-					<DropdownMenu.Item>
-						<BadgeCheckIcon />
-						<button class="text-start cursor-pointer w-full" onclick={() => {goto(`/app/profile/${profile.id}`)}}>Account</button>
-					</DropdownMenu.Item>
+				<DropdownMenu.Item>
+					<BadgeCheckIcon />
+					<button
+						class="w-full cursor-pointer text-start"
+						onclick={() => {
+							gotoAccount(profile.id);
+						}}>Account</button
+					>
+				</DropdownMenu.Item>
 				<DropdownMenu.Separator />
 				<DropdownMenu.Item>
 					<LogOutIcon />
 					<button
 						onclick={handleLogout}
 						disabled={isLoggingOut}
-						class="flex w-full items-center gap-2 text-start cursor-pointer"
+						class="flex w-full cursor-pointer items-center gap-2 text-start"
 					>
 						{#if isLoggingOut}
 							<Spinner />

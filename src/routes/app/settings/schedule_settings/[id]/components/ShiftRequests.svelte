@@ -173,7 +173,7 @@
 				{@const isChangeRequest = request.request_type === 'change'}
 				{@const shift = request.shift}
 				<div
-					class="group relative overflow-hidden rounded-2xl border-2 bg-card shadow-sm transition-all hover:shadow-lg"
+					class="group relative overflow-hidden rounded-2xl bg-card shadow-sm transition-all hover:shadow-lg"
 					style="border-color: {badgeColor}20;"
 				>
 					<!-- Decorative gradient bar at top -->
@@ -223,7 +223,7 @@
 							{#if isChangeRequest}
 								<!-- Date Change Comparison -->
 								{#if shift?.shift_date || request.proposed_date}
-									<div class="rounded-lg border bg-gradient-to-r from-muted/30 to-muted/50 p-3">
+									<div class="rounded-lg bg-gradient-to-r from-muted/30 to-muted/50 p-3">
 										<div class="mb-2 flex items-center gap-2">
 											<Calendar class="h-3.5 w-3.5" style="color: {badgeColor};" />
 											<p class="text-xs font-medium text-muted-foreground">Ημερομηνία</p>
@@ -248,7 +248,7 @@
 
 								<!-- Time Change Comparison -->
 								{#if (shift?.start_time && shift?.end_time) || (request.proposed_start_time && request.proposed_end_time)}
-									<div class="rounded-lg border bg-gradient-to-r from-muted/30 to-muted/50 p-3">
+									<div class="rounded-lg bg-gradient-to-r from-muted/30 to-muted/50 p-3">
 										<div class="mb-2 flex items-center gap-2">
 											<Clock class="h-3.5 w-3.5" style="color: {badgeColor};" />
 											<p class="text-xs font-medium text-muted-foreground">Ώρες Βάρδιας</p>
@@ -310,7 +310,7 @@
 
 							<!-- Reason -->
 							{#if request.reason}
-								<div class="rounded-lg border bg-card px-3 py-2.5">
+								<div class="rounded-lg bg-card px-3 py-2.5">
 									<div class="flex items-start gap-2">
 										<MessageCircle class="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
 										<div class="min-w-0 flex-1">

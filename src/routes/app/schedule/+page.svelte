@@ -10,6 +10,7 @@
 	import ShiftGrid from './ShiftGrid.svelte';
 	import ShiftChnageRrquestmodal from './shiftChnageRrquestmodal.svelte';
 	import ShiftDetailsModal from './ShiftDetailsModal.svelte';
+	import { formatWeekRange } from '$lib/utils';
 
 	let test = $state(true);
 	let query = getCurrentSchedule();
@@ -105,33 +106,6 @@
 		} else {
 			selectedEmployeeId = employee.id;
 		}
-	}
-
-	function formatWeekRange(start: string, end: string): string {
-		const startDate = new Date(start);
-		const endDate = new Date(end);
-
-		const startDay = startDate.getDate();
-		const endDay = endDate.getDate();
-
-		const monthNames = [
-			'Ιαν',
-			'Φεβ',
-			'Μαρ',
-			'Απρ',
-			'Μαι',
-			'Ιουν',
-			'Ιουλ',
-			'Αυγ',
-			'Σεπ',
-			'Οκτ',
-			'Νοε',
-			'Δεκ'
-		];
-		const month = monthNames[startDate.getMonth()];
-		const year = startDate.getFullYear();
-
-		return `Εβδομάδα ${startDay}-${endDay} ${month} ${year}`;
 	}
 </script>
 

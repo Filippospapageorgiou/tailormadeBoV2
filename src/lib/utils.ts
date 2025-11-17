@@ -1,17 +1,16 @@
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type WithoutChild<T> = T extends { child?: any } ? Omit<T, "child"> : T;
+export type WithoutChild<T> = T extends { child?: any } ? Omit<T, 'child'> : T;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type WithoutChildren<T> = T extends { children?: any } ? Omit<T, "children"> : T;
+export type WithoutChildren<T> = T extends { children?: any } ? Omit<T, 'children'> : T;
 export type WithoutChildrenOrChild<T> = WithoutChildren<WithoutChild<T>>;
 export type WithElementRef<T, U extends HTMLElement = HTMLElement> = T & { ref?: U | null };
-
 
 /**
  * Format a number as currency in EUR
@@ -22,12 +21,12 @@ export type WithElementRef<T, U extends HTMLElement = HTMLElement> = T & { ref?:
  * formatCurrency(0) // "€0.00"
  */
 export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'EUR',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount);
+	return new Intl.NumberFormat('en-US', {
+		style: 'currency',
+		currency: 'EUR',
+		minimumFractionDigits: 2,
+		maximumFractionDigits: 2
+	}).format(amount);
 }
 
 /**
@@ -39,33 +38,33 @@ export function formatCurrency(amount: number): string {
  * formatDate('2024-01-15T10:30:00') // "January 15, 2024 at 10:30 AM"
  */
 export function formatDate(dateString: string): string {
-  if (!dateString) return 'N/A';
-  
-  try {
-    const date = new Date(dateString);
-    
-    // Check if it has time component (ISO format with T)
-    if (dateString.includes('T')) {
-      return new Intl.DateTimeFormat('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true,
-      }).format(date);
-    }
-    
-    // Date only
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    }).format(date);
-  } catch (error) {
-    console.error('Error formatting date:', error, dateString);
-    return dateString;
-  }
+	if (!dateString) return 'N/A';
+
+	try {
+		const date = new Date(dateString);
+
+		// Check if it has time component (ISO format with T)
+		if (dateString.includes('T')) {
+			return new Intl.DateTimeFormat('en-US', {
+				year: 'numeric',
+				month: 'long',
+				day: 'numeric',
+				hour: '2-digit',
+				minute: '2-digit',
+				hour12: true
+			}).format(date);
+		}
+
+		// Date only
+		return new Intl.DateTimeFormat('en-US', {
+			year: 'numeric',
+			month: 'long',
+			day: 'numeric'
+		}).format(date);
+	} catch (error) {
+		console.error('Error formatting date:', error, dateString);
+		return dateString;
+	}
 }
 
 /**
@@ -78,7 +77,7 @@ export function formatDate(dateString: string): string {
  * formatPercentage(12.567, 1) // "12.6%"
  */
 export function formatPercentage(value: number, decimals: number = 2): string {
-  return value.toFixed(decimals) + '%';
+	return value.toFixed(decimals) + '%';
 }
 
 /**
@@ -88,7 +87,7 @@ export function formatPercentage(value: number, decimals: number = 2): string {
  * @returns Boolean indicating if difference is significant
  */
 export function isCashDiscrepancy(difference: number, threshold: number = 5): boolean {
-  return Math.abs(difference) > threshold;
+	return Math.abs(difference) > threshold;
 }
 
 /**
@@ -97,20 +96,20 @@ export function isCashDiscrepancy(difference: number, threshold: number = 5): bo
  * @returns CSS class string for styling
  */
 export function getStatusBadgeClass(status: string): string {
-  switch (status.toLowerCase()) {
-    case 'draft':
-      return 'bg-amber-100 text-amber-800 border-amber-300';
-    case 'submitted':
-      return 'bg-blue-100 text-blue-800 border-blue-300';
-    case 'reviewed':
-      return 'bg-green-100 text-green-800 border-green-300';
-    case 'approved':
-      return 'bg-green-100 text-green-800 border-green-300';
-    case 'rejected':
-      return 'bg-red-100 text-red-800 border-red-300';
-    default:
-      return 'bg-gray-100 text-gray-800 border-gray-300';
-  }
+	switch (status.toLowerCase()) {
+		case 'draft':
+			return 'bg-amber-100 text-amber-800 border-amber-300';
+		case 'submitted':
+			return 'bg-blue-100 text-blue-800 border-blue-300';
+		case 'reviewed':
+			return 'bg-green-100 text-green-800 border-green-300';
+		case 'approved':
+			return 'bg-green-100 text-green-800 border-green-300';
+		case 'rejected':
+			return 'bg-red-100 text-red-800 border-red-300';
+		default:
+			return 'bg-gray-100 text-gray-800 border-gray-300';
+	}
 }
 
 /**
@@ -119,14 +118,14 @@ export function getStatusBadgeClass(status: string): string {
  * @returns Human-readable label
  */
 export function getStatusLabel(status: string): string {
-  const labels: Record<string, string> = {
-    draft: 'Draft',
-    submitted: 'Submitted',
-    reviewed: 'Reviewed',
-    approved: 'Approved',
-    rejected: 'Rejected',
-  };
-  return labels[status.toLowerCase()] || status;
+	const labels: Record<string, string> = {
+		draft: 'Draft',
+		submitted: 'Submitted',
+		reviewed: 'Reviewed',
+		approved: 'Approved',
+		rejected: 'Rejected'
+	};
+	return labels[status.toLowerCase()] || status;
 }
 
 /**
@@ -135,12 +134,12 @@ export function getStatusLabel(status: string): string {
  * @returns Formatted display text
  */
 export function formatPaymentMethod(method: string): string {
-  const methods: Record<string, string> = {
-    cash: 'Cash',
-    bank_transfer: 'Bank Transfer',
-    check: 'Check',
-  };
-  return methods[method.toLowerCase()] || method;
+	const methods: Record<string, string> = {
+		cash: 'Cash',
+		bank_transfer: 'Bank Transfer',
+		check: 'Check'
+	};
+	return methods[method.toLowerCase()] || method;
 }
 
 /**
@@ -149,10 +148,35 @@ export function formatPaymentMethod(method: string): string {
  * @returns Status description string
  */
 export function getCashStatusDescription(difference: number): string {
-  const abs = Math.abs(difference);
-  if (abs < 0.5) return 'Accurate';
-  if (abs < 5) return 'Minor Difference';
-  return 'Significant Discrepancy';
+	const abs = Math.abs(difference);
+	if (abs < 0.5) return 'Accurate';
+	if (abs < 5) return 'Minor Difference';
+	return 'Significant Discrepancy';
 }
 
+export function formatWeekRange(start: string, end: string): string {
+	const startDate = new Date(start);
+	const endDate = new Date(end);
 
+	const startDay = startDate.getDate();
+	const endDay = endDate.getDate();
+
+	const monthNames = [
+		'Ιαν',
+		'Φεβ',
+		'Μαρ',
+		'Απρ',
+		'Μαι',
+		'Ιουν',
+		'Ιουλ',
+		'Αυγ',
+		'Σεπ',
+		'Οκτ',
+		'Νοε',
+		'Δεκ'
+	];
+	const month = monthNames[startDate.getMonth()];
+	const year = startDate.getFullYear();
+
+	return `Εβδομάδα ${startDay}-${endDay} ${month} ${year}`;
+}

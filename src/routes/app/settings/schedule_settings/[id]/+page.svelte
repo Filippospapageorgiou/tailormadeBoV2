@@ -8,17 +8,18 @@
 		deleteShift,
 		calculateUserHours,
 		getScheduleById,
-
 		getShiftChanges
-
 	} from './data.remote';
 	import AuthBlock from '$lib/components/custom/AuthBlock/authBlock.svelte';
 	import ScheduleHeader from './components/ScheduleHeader.svelte';
-	import EmployeeSelector from './components/EmployeeSelector.svelte';
-	import WeeklyGrid from './components/WeeklyGrid.svelte';
 	import ShiftModal, { type ShiftFormData } from './components/ShiftModal.svelte';
 	import type { Profile } from '$lib/models/database.types';
-	import type { Shift, ShiftCategory, ShiftType, ShiftChangeRequestPorfile } from '$lib/models/schedule.types';
+	import type {
+		Shift,
+		ShiftCategory,
+		ShiftType,
+		ShiftChangeRequestPorfile
+	} from '$lib/models/schedule.types';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { showFailToast, showSuccessToast } from '$lib/stores/toast.svelte';
@@ -31,8 +32,10 @@
 	let scheduleId = $derived(parseInt(page.params.id!));
 
 	// svelte-ignore state_referenced_locally
-	let shiftChanges = getShiftChanges({scheduleId});
-	let shiftRequests:ShiftChangeRequestPorfile[] = $derived(shiftChanges.current?.shiftRequests || []);
+	let shiftChanges = getShiftChanges({ scheduleId });
+	let shiftRequests: ShiftChangeRequestPorfile[] = $derived(
+		shiftChanges.current?.shiftRequests || []
+	);
 
 	// Fetch schedule data
 	let scheduleQuery = $derived.by(() => {
@@ -93,9 +96,9 @@
 
 		if (result.success) {
 			shiftsQuery?.refresh();
-			showSuccessToast('Success',result.message);
+			showSuccessToast('Success', result.message);
 		} else {
-			showFailToast('Fail',result.message);
+			showFailToast('Fail', result.message);
 		}
 	}
 
@@ -118,7 +121,7 @@
 			result = await addShift({
 				schedule_id: scheduleId,
 				user_id: selectedEmployee.id,
-				org_id:selectedEmployee.org_id,
+				org_id: selectedEmployee.org_id,
 				shift_date: formData.shift_date,
 				start_time: formData.start_time,
 				end_time: formData.end_time,
@@ -141,7 +144,6 @@
 				break_duration_minutes: formData.break_duration_minutes,
 				notes: formData.notes
 			});
-
 		}
 
 		if (result.success) {
@@ -179,7 +181,6 @@
 
 		employeeHoursMap = hoursMap;
 	}
-	
 
 	async function refresh() {
 		await shiftChanges.refresh();
@@ -190,31 +191,9 @@
 	<AuthBlock />
 {:else}
 	<div class="min-h-screen bg-background">
-		<main class="container mx-auto space-y-4 px-4 pb-10 pt-4 md:px-6">
+		<main class="container mx-auto space-y-4 px-4 pt-4 pb-10 md:px-6">
 			<!-- Header -->
-			<ScheduleHeader
-				{weekStartDate}
-				{weekEndDate}
-				onBack={handleBack}
-			/>
-
-			<!-- Employee Selector -->
-			<EmployeeSelector
-				{employees}
-				selectedEmployeeId={selectedEmployee?.id}
-				employeeHours={employeeHoursMap}
-				onSelectEmployee={handleSelectEmployee}
-			/>
-
-			<!-- Weekly Grid -->
-			<WeeklyGrid
-				employee={selectedEmployee}
-				{weekStartDate}
-				{shifts}
-				onAddShift={handleAddShift}
-				onEditShift={handleEditShift}
-				onDeleteShift={handleDeleteShift}
-			/>
+			<ScheduleHeader {weekStartDate} {weekEndDate} onBack={handleBack} />
 
 			<!-- Shift Modal -->
 			<ShiftModal
@@ -228,10 +207,7 @@
 				onSave={handleSaveShift}
 			/>
 
-			<ShiftRequests
-				{shiftRequests} 
-				onSuccess={refresh}
-			/>
+			<ShiftRequests {shiftRequests} onSuccess={refresh} />
 		</main>
 	</div>
 {/if}

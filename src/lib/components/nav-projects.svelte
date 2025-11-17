@@ -1,14 +1,14 @@
 <script lang="ts">
-	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
-	import * as Sidebar from "$lib/components/ui/sidebar/index.js";
-	import { useSidebar } from "$lib/components/ui/sidebar/index.js";
-	import EllipsisIcon from "@lucide/svelte/icons/ellipsis";
-	import FolderIcon from "@lucide/svelte/icons/folder";
-	import ShareIcon from "@lucide/svelte/icons/share";
-	import Trash2Icon from "@lucide/svelte/icons/trash-2";
+	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
+	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
+	import { useSidebar } from '$lib/components/ui/sidebar/index.js';
+	import EllipsisIcon from '@lucide/svelte/icons/ellipsis';
+	import FolderIcon from '@lucide/svelte/icons/folder';
+	import ShareIcon from '@lucide/svelte/icons/share';
+	import Trash2Icon from '@lucide/svelte/icons/trash-2';
 
 	let {
-		projects,
+		projects
 	}: {
 		projects: {
 			name: string;
@@ -20,6 +20,13 @@
 	} = $props();
 
 	const sidebar = useSidebar();
+
+	// Close sidebar on mobile when link is clicked
+	function handleLinkClick() {
+		if (sidebar.isMobile) {
+			sidebar.setOpenMobile(false);
+		}
+	}
 </script>
 
 <Sidebar.Group class="group-data-[collapsible=icon]:hidden">
@@ -29,7 +36,7 @@
 			<Sidebar.MenuItem>
 				<Sidebar.MenuButton>
 					{#snippet child({ props })}
-						<a href={item.url} {...props}>
+						<a href={item.url} {...props} onclick={handleLinkClick}>
 							<item.icon />
 							<span>{item.name}</span>
 						</a>
