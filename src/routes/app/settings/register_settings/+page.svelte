@@ -17,6 +17,9 @@
 	import RangeDatePicker from '$lib/components/custom/register_settings/rangeDatePicker.svelte';
 	import { getLocalTimeZone, now } from '@internationalized/date';
 	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
+	import { getDeleteAction, setDeleteAction } from './index.svelte';
+
+	let dateFilterMode = $state<'period' | 'range'>('period');
 
 	function calendarDateToString(calendarDate: any): string {
 		if (!calendarDate) {
@@ -171,7 +174,18 @@
 		periodOptions.find((opt) => opt.value === String(selectedDays))?.label || 'Last 30 Days'
 	);
 
-	let dateFilterMode = $state<'period' | 'range'>('period');
+	$effect(() => {
+		if (getDeleteAction()) {
+			refresh();
+		}
+	});
+	async function refresh() {
+		await registerDataTableQuery.refresh();
+		await registerQuery.refresh();
+		await suppliersPaymentsQuery.refresh();
+		await expensesQuery.refresh();
+		setDeleteAction(false);
+	}
 </script>
 
 {#if auth.loading}

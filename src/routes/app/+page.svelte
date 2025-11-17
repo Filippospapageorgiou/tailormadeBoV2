@@ -46,7 +46,7 @@
 </script>
 
 <div class="flex flex-1 flex-col gap-4 p-4 pt-2">
-	<div class="grid auto-rows-min gap-4 pt-0 md:grid-cols-3 md:pt-9">
+	<div class="grid auto-rows-min gap-4 pt-0 md:grid-cols-3 md:pt-1">
 		<Hero />
 
 		<a href="/app/recipes/" class="aspect-video rounded-2xl bg-muted/50">

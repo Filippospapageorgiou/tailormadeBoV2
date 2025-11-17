@@ -131,13 +131,14 @@
 
 				<!-- Email -->
 				<div class="space-y-2 sm:col-span-2">
-					<Label for="supplier-email">Email</Label>
+					<Label for="supplier-email">Email *</Label>
 					<Input
 						id="supplier-email"
 						type="email"
 						name={createSupplierForm.field('email')}
 						bind:value={formData.email}
 						placeholder="π.χ. info@supplier.gr"
+						required
 					/>
 				</div>
 

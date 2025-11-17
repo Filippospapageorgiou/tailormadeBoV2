@@ -9,20 +9,19 @@
 	import { showFailToast, showSuccessToast } from '$lib/stores/toast.svelte';
 	import { goto } from '$app/navigation';
 	import { Row } from '$lib/components/ui/table';
+	import { setDeleteAction } from './index.svelte';
 
 	let {
 		id,
 		closingDate,
 		totalSales,
-		status,
+		status
 	}: {
 		id: number;
 		closingDate: string;
 		totalSales: number;
 		status: string;
 	} = $props();
-
-	
 
 	// Delete dialog state
 	let deleteDialogOpen = $state(false);
@@ -32,6 +31,7 @@
 	}
 
 	async function handleDeleteSubmit() {
+		setDeleteAction(true);
 		deleteDialogOpen = false;
 		showProgress('Deleting register closing...');
 
@@ -57,7 +57,7 @@
 		new Date(closingDate).toLocaleDateString('en-US', {
 			year: 'numeric',
 			month: 'short',
-			day: 'numeric',
+			day: 'numeric'
 		})
 	);
 
@@ -65,10 +65,9 @@
 	let formattedSales = $derived(
 		new Intl.NumberFormat('en-US', {
 			style: 'currency',
-			currency: 'EUR',
+			currency: 'EUR'
 		}).format(totalSales || 0)
 	);
-
 </script>
 
 <DropdownMenu.Root>
@@ -105,7 +104,6 @@
 	</DropdownMenu.Content>
 </DropdownMenu.Root>
 
-
 <!-- Delete Dialog -->
 <Dialog.Root bind:open={deleteDialogOpen}>
 	<Dialog.Content class="rounded-2xl p-6 shadow-lg sm:max-w-[425px]">
@@ -117,8 +115,8 @@
 				with total sales of <span class="font-medium">{formattedSales}</span>?
 				<br />
 				<br />
-				This action <span class="font-semibold text-red-500">cannot</span> be undone. The closing
-				record will be permanently removed from the database.
+				This action <span class="font-semibold text-red-500">cannot</span> be undone. The closing record
+				will be permanently removed from the database.
 			</Dialog.Description>
 		</Dialog.Header>
 

@@ -71,7 +71,7 @@
 	<Card.Header class="items-center">
 		<Card.Title>Διανομή πληρωμών προμηθευτών</Card.Title>
 		<Card.Description>
-			Ανάλυση πληρωμών ανά προμηθευτή μέτρητα
+			Ανάλυση πληρωμών ανά προμηθευτή μέτρητα - εμφάνιση των κορυφαίων 10
 			<p class="py-2 text-sm text-neutral-600">
 				{formatDateRange(currentStartDate!, currentEndDate!)}
 			</p>
@@ -100,7 +100,7 @@
 						<Arc {...props}>
 							{#snippet children({ getArcTextProps })}
 								<Text
-									value={supplier}
+									value={supplier.slice(0, 2).toUpperCase()}
 									{...getArcTextProps('centroid')}
 									class="fill-white text-xs font-semibold capitalize"
 								/>
