@@ -2,6 +2,7 @@
 	import * as Chart from '$lib/components/ui/chart/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Arc, PieChart, Text } from 'layerchart';
+	import CustomButton from './customButton/customButton.svelte';
 
 	let { supplierData, currentStartDate, currentEndDate, totalSupplierPayments, countSuppliers } =
 		$props();
@@ -71,7 +72,10 @@
 	<Card.Header class="items-center">
 		<Card.Title>Διανομή πληρωμών προμηθευτών</Card.Title>
 		<Card.Description>
-			Ανάλυση πληρωμών ανά προμηθευτή μέτρητα - εμφάνιση των κορυφαίων 10
+			<div class="flex items-center justify-between gap-2">
+				Ανάλυση πληρωμών ανά προμηθευτή μέτρητα - εμφάνιση των κορυφαίων 10
+				<CustomButton href="/app/settings/register_settings/suppliers" />
+			</div>
 			<p class="py-2 text-sm text-neutral-600">
 				{formatDateRange(currentStartDate!, currentEndDate!)}
 			</p>

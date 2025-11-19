@@ -201,7 +201,7 @@ const newSupplierSchema = z.object({
 	name: z.string().min(1, 'Supplier name is required'),
 	afm: z.string().min(1, 'AFM (Tax ID) is required'),
 	phone: z.string().optional(),
-	email: z.email().optional(),
+	email: z.string().optional(),
 	address: z.string().optional(),
 	contact_person: z.string().optional(),
 	payment_terms: z.string().optional(),

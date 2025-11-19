@@ -4,10 +4,9 @@
 	import * as Chart from '$lib/components/ui/chart/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Arc, PieChart, Text, ArcChart } from 'layerchart';
-	import LineChartCard from '$lib/components/custom/register_settings/lineChartCard.svelte';
-	import PieChartCard from '$lib/components/custom/register_settings/pieChartCard.svelte';
+	import CustomButton from './customButton/customButton.svelte';
 
-    let { expensesData, selectedDays } = $props();
+	let { expensesData, selectedDays } = $props();
 
 	const chartDataArc = $derived.by(() => {
 		if (!expensesData)
@@ -36,9 +35,12 @@
 <Card.Root class="flex h-full flex-col bg-white">
 	<Card.Header class="items-center">
 		<Card.Title>Συνολίκα Εξοδα</Card.Title>
-		<Card.Description
-			>Εμφάνιση συνολικών εξόδων για τις τελευταίες ημερομηνίες</Card.Description
-		>
+		<Card.Description>
+			<div class="flex items-center justify-between gap-2">
+				Εμφάνιση συνολικών εξόδων για τις τελευταίες ημερομηνίες
+				<CustomButton href="/app/settings/register_settings/expenses" />
+			</div>
+		</Card.Description>
 	</Card.Header>
 	<Card.Content class="flex-1">
 		<Chart.Container config={chartConfigArc} class="mx-auto aspect-square max-h-[250px]">
