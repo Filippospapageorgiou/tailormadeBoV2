@@ -69,7 +69,7 @@
 										<div class="flex items-center">
 											<Label for="password">Password</Label>
 											<a
-												href="##"
+												href="/auth/forgot_password/"
 												class="ml-auto text-sm text-primary underline-offset-4 hover:underline"
 											>
 												Forgot your password?
