@@ -3,9 +3,9 @@ import { requireAuthenticatedUser } from './shared';
 import type { Profile } from '$lib/models/database.types';
 import { error, redirect } from '@sveltejs/kit';
 import { Resend } from 'resend';
-import { API_RESEND_KEY } from '$env/static/private';
+import { RESEND_API_KEY } from '$env/static/private';
 
-const resend = new Resend(API_RESEND_KEY);
+const resend = new Resend(RESEND_API_KEY);
 
 export function generateVerificationCode(): string {
 	return Math.floor(100000 + Math.random() * 900000).toString();

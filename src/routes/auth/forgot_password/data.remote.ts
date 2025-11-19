@@ -1,5 +1,4 @@
 import { Resend } from 'resend';
-import { API_RESEND_KEY } from '$env/static/private';
 import { command, form } from '$app/server';
 import { createServerClient } from '$lib/supabase/server';
 import z from 'zod';
