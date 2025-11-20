@@ -7,7 +7,7 @@
 	import MapIcon from '@lucide/svelte/icons/map';
 	import SendIcon from '@lucide/svelte/icons/send';
 	import Settings2Icon from '@lucide/svelte/icons/settings-2';
-	import { NotebookPen, Coffee, EuroIcon, CalendarRange, Globe } from 'lucide-svelte';
+	import { NotebookPen, Coffee, EuroIcon, CalendarRange, Globe, Wrench } from 'lucide-svelte';
 
 	const data = {
 		user: {
@@ -21,6 +21,11 @@
 				url: '/app/recipes',
 				icon: Coffee,
 				isActive: true
+			},
+			{
+				title: 'equipment',
+				url: '/app/equipment',
+				icon: Wrench
 			},
 			{
 				title: 'Manifesto',

@@ -1,5 +1,11 @@
 <script lang="ts">
-	import { getIngridients, deleteIngredient, editIngredient, addIngredient, authenticatedAccess } from './data.remote';
+	import {
+		getIngridients,
+		deleteIngredient,
+		editIngredient,
+		addIngredient,
+		authenticatedAccess
+	} from './data.remote';
 	import Skeleton from '$lib/components/ui/skeleton/skeleton.svelte';
 	import Input from '$lib/components/ui/input/input.svelte';
 	import * as Select from '$lib/components/ui/select';
@@ -203,212 +209,216 @@
 {#if auth.loading}
 	<AuthBlock />
 {:else}
-<div class="min-h-screen">
-	<main class="container mx-auto px-4 pt-4 pb-10 md:px-6">
-		<!-- Header Section -->
-		<div class="mb-8 space-y-4">
-			<div class="flex flex-col gap-2">
-				<h1 class="font-mono text-3xl tracking-wider text-neutral-800 md:text-4xl">
-					Our ingredients
-				</h1>
-				<p class="text-xs text-[#8B6B4A] md:text-sm">
-					Πρόσθεσε, διάγραψε, ενήμερωσε τα υλίκα για να φτιαξούμε τις συντάγες μας
-				</p>
-				<div class="flex items-center gap-2">
+	<div class="min-h-screen">
+		<main class="container mx-auto px-4 pt-4 pb-10 md:px-6">
+			<!-- Header Section -->
+			<div class="mb-8 space-y-4">
+				<div class="flex flex-col gap-2">
+					<h1 class="font-mono text-3xl tracking-wider text-neutral-800 md:text-4xl">
+						Our ingredients
+					</h1>
 					<p class="text-xs text-[#8B6B4A] md:text-sm">
-						Διαθέσιμα Συστατικά: <span class="font-semibold">{filteredIngridients()?.length}</span>
-						/ {allIngridients.length}
+						Πρόσθεσε, διάγραψε, ενήμερωσε τα υλίκα για να φτιαξούμε τις συντάγες μας
 					</p>
-					{#if value || searchQuery}
-						<Button
-							variant="secondary"
-							size="sm"
-							onclick={clearAllFilters}
-							class="h-6 cursor-pointer px-2 text-xs"
-						>
-							<X class="mr-1 h-3 w-3" />
-							Clear filters
-						</Button>
-					{/if}
-				</div>
-			</div>
-
-			<!-- Filters Section -->
-			<div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-				<div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-					<!-- Category Select -->
 					<div class="flex items-center gap-2">
-						<Select.Root type="single" name="filterCategory" bind:value>
-							<Select.Trigger class="w-full sm:w-[180px]">
-								{triggerContent}
-							</Select.Trigger>
-							<Select.Content>
-								<Select.Group>
-									<Select.Label>Categories</Select.Label>
-									{#each categories as category}
-										<Select.Item value={category ?? ''} label={category}>
-											{category}
-										</Select.Item>
-									{/each}
-								</Select.Group>
-							</Select.Content>
-						</Select.Root>
-					</div>
-				</div>
-
-				<!-- Search Input -->
-				<div class="relative flex items-center gap-2">
-					<Tooltip.Provider>
-						<Tooltip.Root>
-							<Tooltip.Trigger
-								><Button
-									variant="default"
-									size="sm"
-									class="h-6 cursor-pointer px-2 text-xs"
-									onclick={() => (addingIngredient = true)}
-								>
-									<Plus class="mr-1 h-3 w-3" />
-								</Button></Tooltip.Trigger
+						<p class="text-xs text-[#8B6B4A] md:text-sm">
+							Διαθέσιμα Συστατικά: <span class="font-semibold">{filteredIngridients()?.length}</span
 							>
-							<Tooltip.Content>
-								<p>Add Ingridient</p>
-							</Tooltip.Content>
-						</Tooltip.Root>
-					</Tooltip.Provider>
-					<Tooltip.Provider>
-						<Tooltip.Root>
-							<Tooltip.Trigger
-								><Button
-									variant="secondary"
-									size="sm"
-									onclick={refresh}
-									disabled={refreshAction}
-									class="h-6 cursor-pointer px-2 text-xs"
+							/ {allIngridients.length}
+						</p>
+						{#if value || searchQuery}
+							<Button
+								variant="secondary"
+								size="sm"
+								onclick={clearAllFilters}
+								class="h-6 cursor-pointer px-2 text-xs"
+							>
+								<X class="mr-1 h-3 w-3" />
+								Clear filters
+							</Button>
+						{/if}
+					</div>
+				</div>
+
+				<!-- Filters Section -->
+				<div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+					<div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+						<!-- Category Select -->
+						<div class="flex items-center gap-2">
+							<Select.Root type="single" name="filterCategory" bind:value>
+								<Select.Trigger class="w-full sm:w-[180px]">
+									{triggerContent}
+								</Select.Trigger>
+								<Select.Content>
+									<Select.Group>
+										<Select.Label>Categories</Select.Label>
+										{#each categories as category}
+											<Select.Item value={category ?? ''} label={category}>
+												{category}
+											</Select.Item>
+										{/each}
+									</Select.Group>
+								</Select.Content>
+							</Select.Root>
+						</div>
+					</div>
+
+					<!-- Search Input -->
+					<div class="relative flex items-center gap-2">
+						<Tooltip.Provider>
+							<Tooltip.Root>
+								<Tooltip.Trigger
+									><Button
+										variant="default"
+										size="sm"
+										class="h-6 cursor-pointer px-2 text-xs"
+										onclick={() => (addingIngredient = true)}
+									>
+										<Plus class="mr-1 h-3 w-3" />
+									</Button></Tooltip.Trigger
 								>
-									<RefreshCcw class={`mr-2 h-4 w-4 ${refreshAction ? 'animate-spin-clockwise' : ''}`} />
-								</Button>
-							</Tooltip.Trigger>
-							<Tooltip.Content>
-								<p>Refresh ingridients</p>
-							</Tooltip.Content>
-						</Tooltip.Root>
-					</Tooltip.Provider>
-					<Input
-						bind:value={searchQuery}
-						class="w-full py-1 pr-8 sm:w-72"
-						placeholder="Filter Ingredients..."
-					/>
-					{#if searchQuery}
-						<Button
-							variant="ghost"
-							size="icon"
-							onclick={clearSearch}
-							class="absolute right-1 h-7 w-7"
-						>
-							<X class="h-3 w-3" />
-						</Button>
-					{/if}
+								<Tooltip.Content>
+									<p>Add Ingridient</p>
+								</Tooltip.Content>
+							</Tooltip.Root>
+						</Tooltip.Provider>
+						<Tooltip.Provider>
+							<Tooltip.Root>
+								<Tooltip.Trigger
+									><Button
+										variant="secondary"
+										size="sm"
+										onclick={refresh}
+										disabled={refreshAction}
+										class="h-6 cursor-pointer px-2 text-xs"
+									>
+										<RefreshCcw
+											class={`mr-2 h-4 w-4 ${refreshAction ? 'animate-spin-clockwise' : ''}`}
+										/>
+									</Button>
+								</Tooltip.Trigger>
+								<Tooltip.Content>
+									<p>Refresh ingridients</p>
+								</Tooltip.Content>
+							</Tooltip.Root>
+						</Tooltip.Provider>
+						<Input
+							bind:value={searchQuery}
+							class="w-full py-1 pr-8 sm:w-72"
+							placeholder="Filter Ingredients..."
+						/>
+						{#if searchQuery}
+							<Button
+								variant="ghost"
+								size="icon"
+								onclick={clearSearch}
+								class="absolute right-1 h-7 w-7"
+							>
+								<X class="h-3 w-3" />
+							</Button>
+						{/if}
+					</div>
 				</div>
 			</div>
-		</div>
 
-		<!-- Ingredients Grid -->
-		{#if query.loading}
-			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-				{#each Array(20) as _}
-					<div
-						class="group relative rounded-lg border border-gray-100 bg-white p-3 shadow-sm transition-all duration-300"
+			<!-- Ingredients Grid -->
+			{#if query.loading}
+				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+					{#each Array(20) as _}
+						<div
+							class="group relative rounded-lg border border-gray-100 bg-white p-3 shadow-sm transition-all duration-300"
+						>
+							<div class="mb-2 flex items-start justify-between">
+								<div class="flex items-center">
+									<Skeleton class="mr-1 h-4 w-8" />
+									<Skeleton class="h-4 w-24" />
+								</div>
+							</div>
+
+							<div class="grid grid-cols-1 gap-2">
+								<div class="flex items-center justify-between">
+									<Skeleton class="h-5 w-20 rounded-full" />
+									<Skeleton class="h-4 w-10" />
+								</div>
+								<Skeleton class="mt-1 h-4 w-full" />
+								<Skeleton class="h-4 w-4/5" />
+
+								<div class="mt-1 text-right">
+									<Skeleton class="inline-block h-3 w-16" />
+								</div>
+							</div>
+						</div>
+					{/each}
+				</div>
+			{:else if filteredIngridients().length === 0}
+				<div class="flex flex-col items-center justify-center py-16 text-center">
+					<p class="mb-2 text-lg font-medium text-neutral-600">No ingredients found</p>
+					<p class="text-sm text-neutral-400">Try adjusting your filters</p>
+					<Button variant="outline" onclick={clearAllFilters} class="mt-4">Clear all filters</Button
 					>
-						<div class="mb-2 flex items-start justify-between">
-							<div class="flex items-center">
-								<Skeleton class="mr-1 h-4 w-8" />
-								<Skeleton class="h-4 w-24" />
-							</div>
-						</div>
-
-						<div class="grid grid-cols-1 gap-2">
-							<div class="flex items-center justify-between">
-								<Skeleton class="h-5 w-20 rounded-full" />
-								<Skeleton class="h-4 w-10" />
-							</div>
-							<Skeleton class="mt-1 h-4 w-full" />
-							<Skeleton class="h-4 w-4/5" />
-
-							<div class="mt-1 text-right">
-								<Skeleton class="inline-block h-3 w-16" />
-							</div>
-						</div>
-					</div>
-				{/each}
-			</div>
-		{:else if filteredIngridients().length === 0}
-			<div class="flex flex-col items-center justify-center py-16 text-center">
-				<p class="mb-2 text-lg font-medium text-neutral-600">No ingredients found</p>
-				<p class="text-sm text-neutral-400">Try adjusting your filters</p>
-				<Button variant="outline" onclick={clearAllFilters} class="mt-4">Clear all filters</Button>
-			</div>
-		{:else}
-			<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-				{#each filteredIngridients() as ingredient (ingredient.id)}
-					<div
-						class="group relative rounded-lg border border-gray-100 bg-white p-3 shadow-sm
+				</div>
+			{:else}
+				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+					{#each filteredIngridients() as ingredient (ingredient.id)}
+						<div
+							class="group relative rounded-lg border border-gray-100 bg-white p-3 shadow-sm
                     transition-all duration-300 hover:border-[#8B6B4A]/20 hover:shadow-md"
-					>
-						<!-- Header with ID, Name and Action Buttons -->
-						<div class="mb-2 flex items-start justify-between gap-2">
-							<div class="flex min-w-0 flex-1 items-center">
-								<span class="mr-1 flex-shrink-0 text-xs text-[#8B6B4A]">#{ingredient.id}</span>
-								<h3 class="truncate pl-1 text-sm font-medium text-neutral-800 sm:text-base">
-									{ingredient.name}
-								</h3>
+						>
+							<!-- Header with ID, Name and Action Buttons -->
+							<div class="mb-2 flex items-start justify-between gap-2">
+								<div class="flex min-w-0 flex-1 items-center">
+									<span class="mr-1 flex-shrink-0 text-xs text-[#8B6B4A]">#{ingredient.id}</span>
+									<h3 class="truncate pl-1 text-sm font-medium text-neutral-800 sm:text-base">
+										{ingredient.name}
+									</h3>
+								</div>
+
+								<!-- Action Buttons -->
+								<div class="flex flex-shrink-0 gap-1 transition-opacity">
+									<Button
+										variant="ghost"
+										size="icon"
+										class="h-7 w-7 hover:bg-[#8B6B4A]/10 hover:text-[#8B6B4A]"
+										onclick={() => openEditDialog(ingredient)}
+									>
+										<Pencil class="h-3.5 w-3.5" />
+									</Button>
+									<Button
+										variant="ghost"
+										size="icon"
+										class="h-7 w-7 hover:bg-red-50 hover:text-red-600"
+										onclick={() => openDeleteDialog(ingredient)}
+									>
+										<Trash2 class="h-3.5 w-3.5" />
+									</Button>
+								</div>
 							</div>
 
-							<!-- Action Buttons -->
-							<div class="flex flex-shrink-0 gap-1 transition-opacity">
-								<Button
-									variant="ghost"
-									size="icon"
-									class="h-7 w-7 hover:bg-[#8B6B4A]/10 hover:text-[#8B6B4A]"
-									onclick={() => openEditDialog(ingredient)}
-								>
-									<Pencil class="h-3.5 w-3.5" />
-								</Button>
-								<Button
-									variant="ghost"
-									size="icon"
-									class="h-7 w-7 hover:bg-red-50 hover:text-red-600"
-									onclick={() => openDeleteDialog(ingredient)}
-								>
-									<Trash2 class="h-3.5 w-3.5" />
-								</Button>
+							<div class="grid grid-cols-1 gap-1">
+								<div class="flex items-center justify-between">
+									<span class="rounded-full bg-[#8B6B4A]/10 px-1.5 py-0.5 text-xs text-[#8B6B4A]">
+										{ingredient.category || 'Χωρίς κατηγορία'}
+									</span>
+									<span class="text-xs text-neutral-700">
+										{ingredient.measurement_unit || '-'}
+									</span>
+								</div>
+								{#if ingredient.description}
+									<p class="line-clamp-2 text-xs text-neutral-600">{ingredient.description}</p>
+								{/if}
+
+								<div class="text-right">
+									<span class="text-xs text-neutral-400">
+										{new Date(ingredient.updated_at).toLocaleDateString('el-GR')}
+									</span>
+								</div>
 							</div>
 						</div>
-
-						<div class="grid grid-cols-1 gap-1">
-							<div class="flex items-center justify-between">
-								<span class="rounded-full bg-[#8B6B4A]/10 px-1.5 py-0.5 text-xs text-[#8B6B4A]">
-									{ingredient.category || 'Χωρίς κατηγορία'}
-								</span>
-								<span class="text-xs text-neutral-700">
-									{ingredient.measurement_unit || '-'}
-								</span>
-							</div>
-							{#if ingredient.description}
-								<p class="line-clamp-2 text-xs text-neutral-600">{ingredient.description}</p>
-							{/if}
-
-							<div class="text-right">
-								<span class="text-xs text-neutral-400">
-									{new Date(ingredient.updated_at).toLocaleDateString('el-GR')}
-								</span>
-							</div>
-						</div>
-					</div>
-				{/each}
-			</div>
-		{/if}
-	</main>
-</div>
+					{/each}
+				</div>
+			{/if}
+		</main>
+	</div>
 {/if}
 
 <!-- Edit Dialog -->
