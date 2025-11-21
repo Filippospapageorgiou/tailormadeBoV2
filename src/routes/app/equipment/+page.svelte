@@ -102,7 +102,7 @@
 							</Button>
 						</Tooltip.Trigger>
 						<Tooltip.Content>
-							<p>Refresh equipments</p>
+							<p>Refresh Equipments</p>
 						</Tooltip.Content>
 					</Tooltip.Root>
 				</Tooltip.Provider>
