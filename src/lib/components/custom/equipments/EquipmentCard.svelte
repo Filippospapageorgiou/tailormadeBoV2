@@ -3,6 +3,7 @@
 	import { differenceInDays, parseISO } from 'date-fns';
 	import type { Equipment, EquipmentStatus } from '$lib/models/equipment.types';
 	import CustomButton from '../register_settings/customButton/customButton.svelte';
+	import Label from '$lib/components/ui/label/label.svelte';
 
 	let { equipment }: { equipment: Equipment } = $props();
 
@@ -19,6 +20,12 @@
 		if (daysUntilService < 14) return 'warning';
 		return 'good';
 	});
+
+	let statusCustom = [
+		{ value: 'operational', label: 'Σε λειτουργία' },
+		{ value: 'maintenance', label: 'σε service' },
+		{ value: 'broken', label: 'Βλάβη' }
+	];
 
 	let serviceBars = $derived.by(() => {
 		if (serviceStatus === 'overdue') return { count: 1, color: 'bg-red-500' };
@@ -66,7 +73,7 @@
 				class={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-bold tracking-widest uppercase shadow-sm transition-colors ${statusColors[equipment.status]}`}
 			>
 				<StatusIcon class="h-3 w-3" />
-				{equipment.status}
+				{statusCustom.find((s) => s.value === equipment.status)?.label || equipment.status}
 			</span>
 		</div>
 	</div>
