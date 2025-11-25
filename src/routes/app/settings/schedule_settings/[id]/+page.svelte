@@ -222,7 +222,7 @@
 {:else}
 	<div class="min-h-screen bg-background">
 		<main class="container mx-auto space-y-6 px-4 pt-4 pb-10 md:px-6">
-			<div class="mb-6 flex items-center justify-between">
+			<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 				<ScheduleHeader
 					weekStartDate={schedule?.week_start_date ?? ''}
 					weekEndDate={schedule?.week_end_date ?? ''}
@@ -232,7 +232,7 @@
 				<Button
 					onclick={handleExportSchedule}
 					disabled={isExporting || !schedule}
-					class="gap-2"
+					class="w-full gap-2 sm:w-auto"
 					variant="default"
 				>
 					<Download class="h-4 w-4" />
