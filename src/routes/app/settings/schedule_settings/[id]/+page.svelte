@@ -23,6 +23,9 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { showFailToast, showSuccessToast } from '$lib/stores/toast.svelte';
+	import { Download } from 'lucide-svelte';
+	import { showProgress, hideProgress } from '$lib/stores/progress.svelte';
+	import Button from '$lib/components/ui/button/button.svelte';
 
 	let auth = authenticatedAccess();
 	let allEmployeesQuery = getEmployees(); // All org employees for dropdown
@@ -165,6 +168,53 @@
 		const emp = allEmployees.find((e) => e.id === selectedEmployeeId);
 		return emp?.username;
 	});
+
+	let isExporting = $state(false);
+
+	async function handleExportSchedule() {
+		isExporting = true;
+		showProgress('Generating Excel file...');
+
+		try {
+			const response = await fetch('/app/settings/schedule_settings/api/export', {
+				method: 'POST',
+				body: JSON.stringify({ scheduleId }),
+				headers: { 'Content-Type': 'application/json' }
+			});
+
+			if (!response.ok) {
+				throw new Error('Export failed');
+			}
+
+			// Handle file download
+			const blob = await response.blob();
+			const url = window.URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+
+			// Generate filename
+			const startDate = schedule?.week_start_date
+				? new Date(schedule.week_start_date).toISOString().split('T')[0]
+				: 'schedule';
+			const endDate = schedule?.week_end_date
+				? new Date(schedule.week_end_date).toISOString().split('T')[0]
+				: 'export';
+
+			a.download = `schedule_${startDate}_${endDate}.xlsx`;
+			document.body.appendChild(a);
+			a.click();
+			window.URL.revokeObjectURL(url);
+			document.body.removeChild(a);
+
+			showSuccessToast('Success', 'Schedule exported successfully');
+		} catch (error) {
+			console.error('Error exporting schedule:', error);
+			showFailToast('Export Error', 'Could not generate Excel file');
+		} finally {
+			hideProgress();
+			isExporting = false;
+		}
+	}
 </script>
 
 {#if auth.loading}
@@ -172,12 +222,27 @@
 {:else}
 	<div class="min-h-screen bg-background">
 		<main class="container mx-auto space-y-6 px-4 pt-4 pb-10 md:px-6">
-			<!-- Header -->
-			<ScheduleHeader
-				weekStartDate={schedule?.week_start_date ?? ''}
-				weekEndDate={schedule?.week_end_date ?? ''}
-				onBack={handleBack}
-			/>
+			<div class="mb-6 flex items-center justify-between">
+				<ScheduleHeader
+					weekStartDate={schedule?.week_start_date ?? ''}
+					weekEndDate={schedule?.week_end_date ?? ''}
+					onBack={handleBack}
+				/>
+
+				<Button
+					onclick={handleExportSchedule}
+					disabled={isExporting || !schedule}
+					class="gap-2"
+					variant="default"
+				>
+					<Download class="h-4 w-4" />
+					{#if isExporting}
+						Exporting...
+					{:else}
+						Export Schedule
+					{/if}
+				</Button>
+			</div>
 
 			<!-- Schedule Grid -->
 			{#if schedule}

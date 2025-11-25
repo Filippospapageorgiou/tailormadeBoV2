@@ -819,3 +819,129 @@ export const getScheduleWithAllShifts = query(shiftChangesSchemaId, async ({ sch
 		};
 	}
 });
+
+const scheduleExportSchema = z.object({
+	scheduleId: z.number().int().positive()
+});
+
+interface ScheduleExportData {
+	schedule: WeeklySchedule;
+	employees: [];
+	shifts: Shift[];
+	weekDays: Array<{ date: string; dayName: string; dayNum: number }>;
+}
+
+export const getScheduleDataForExport = query(scheduleExportSchema, async ({ scheduleId }) => {
+	const supabase = createServerClient();
+
+	try {
+		// 1. Fetch schedule
+		const { data: schedule, error: scheduleError } = await supabase
+			.from('weekly_schedules')
+			.select('*')
+			.eq('id', scheduleId)
+			.single<WeeklySchedule>();
+
+		if (scheduleError) {
+			console.error('Error fetching schedule:', scheduleError);
+			return {
+				success: false,
+				message: 'Error fetching schedule',
+				data: null
+			};
+		}
+
+		// 2. Fetch all shifts for this schedule
+		const { data: shifts, error: shiftsError } = await supabase
+			.from('shifts')
+			.select('*')
+			.eq('schedule_id', scheduleId)
+			.order('shift_date')
+			.overrideTypes<Shift[]>();
+
+		if (shiftsError) {
+			console.error('Error fetching shifts:', shiftsError);
+			return {
+				success: false,
+				message: 'Error fetching shifts',
+				data: null
+			};
+		}
+
+		// 3. Get unique employee IDs from shifts
+		const employeeIds = [...new Set((shifts || []).map((s) => s.user_id))];
+
+		// 4. Fetch employee profiles
+		let employees: Profile[] = [];
+		if (employeeIds.length > 0) {
+			const { data: employeeData, error: employeeError } = await supabase
+				.from('profiles')
+				.select('*')
+				.in('id', employeeIds)
+				.order('username')
+				.overrideTypes<Profile[]>();
+
+			if (employeeError) {
+				console.error('Error fetching employees:', employeeError);
+				return {
+					success: false,
+					message: 'Error fetching employees',
+					data: null
+				};
+			}
+
+			employees = employeeData || [];
+		}
+
+		// 5. Generate week days array
+		const weekDays = generateWeekDays(schedule.week_start_date);
+
+		return {
+			success: true,
+			message: 'Successfully fetched schedule data for export',
+			data: {
+				schedule,
+				employees,
+				shifts: shifts || [],
+				weekDays
+			}
+		};
+	} catch (err) {
+		console.error('Error fetching schedule export data:', err);
+		return {
+			success: false,
+			message: 'An unexpected error occurred while fetching schedule data',
+			data: null
+		};
+	}
+});
+
+/**
+ * Helper: Generate array of week days with dates and Greek day names
+ */
+function generateWeekDays(
+	startDate: string
+): Array<{ date: string; dayName: string; dayNum: number }> {
+	const greekDayNames = ['Δευ', 'Τρι', 'Τετ', 'Πεμ', 'Παρ', 'Σαβ', 'Κυρ'];
+	const days = [];
+
+	const start = new Date(startDate);
+
+	for (let i = 0; i < 7; i++) {
+		const date = new Date(start);
+		date.setDate(start.getDate() + i);
+
+		const dateStr = date.toISOString().split('T')[0];
+		const dayOfWeek = (date.getDay() + 6) % 7; // Monday = 0
+		const dayName = greekDayNames[dayOfWeek];
+		const dayNum = date.getDate();
+
+		days.push({
+			date: dateStr,
+			dayName,
+			dayNum
+		});
+	}
+
+	return days;
+}
