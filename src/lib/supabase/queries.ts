@@ -76,6 +76,27 @@ export async function getProfileByEmail(email: string): Promise<Profile> {
 }
 
 /**
+ * Get the current authenticated user's full profile
+ *
+ * @returns Promise with full Profile object
+ */
+export async function getProfileByUUId(id: string): Promise<Profile> {
+	const supabase = createServerClient();
+
+	const { data: profile, error: profileError } = await supabase
+		.from('profiles')
+		.select('*')
+		.eq('id', id)
+		.maybeSingle();
+
+	if (profileError || !profile) {
+		console.error('[getUserProfile] Error fetching user profile:', profileError);
+		throw error(404, 'User profile not found');
+	}
+	return profile.username!;
+}
+
+/**
  * Get user profile with role validation
  * Ensures user has required role_id (1 = admin, 2 = manager, etc.)
  *

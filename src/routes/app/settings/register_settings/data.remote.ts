@@ -35,6 +35,53 @@ const registerTableSchema = z.discriminatedUnion('mode', [
 	})
 ]);
 
+// A schema similar to your table schema but without pagination params
+const exportSchema = z.discriminatedUnion('mode', [
+	z.object({
+		mode: z.literal('period'),
+		days: z.number().int().positive().default(30)
+	}),
+	z.object({
+		mode: z.literal('range'),
+		startDate: z.string(),
+		endDate: z.string()
+	})
+]);
+
+// Fetch ALL data for the period (No .range() call)
+export const getRegisterDataForExport = query(exportSchema, async (params) => {
+	const supabase = createServerClient();
+	const org_id = await getUserOrgId();
+
+	let currentStart: string;
+	let currentEnd: string;
+
+	if (params.mode === 'period') {
+		const ranges = getDateRanges(params.days);
+		currentStart = ranges.currentStart;
+		currentEnd = ranges.currentEnd;
+	} else {
+		currentStart = params.startDate;
+		currentEnd = params.endDate;
+	}
+
+	const { data, error } = await supabase
+		.from('daily_register_closings')
+		.select('*')
+		.eq('org_id', org_id)
+		.gte('closing_date', currentStart)
+		.lte('closing_date', currentEnd)
+		.order('closing_date', { ascending: false })
+		.overrideTypes<DailyRegisterClosing[]>(); //
+
+	if (error) {
+		console.error('Export Fetch Error:', error);
+		return { success: false, data: [] };
+	}
+
+	return { success: true, data: data || [] };
+});
+
 /**
  * Get register closing data by date range
  * Fetches current and previous period sales data for comparison

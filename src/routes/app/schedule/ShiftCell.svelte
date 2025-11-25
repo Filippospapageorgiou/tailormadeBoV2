@@ -21,8 +21,8 @@
 		const labels: Record<string, string> = {
 			work: 'Εργασία',
 			day_off: 'Ρεπό',
-			sick_leave: 'Άδεια',
-			vacation: 'Διακοπές'
+			sick_leave: 'Άρρωστος',
+			vacation: 'Άδεια'
 		};
 		return labels[type] || type;
 	}

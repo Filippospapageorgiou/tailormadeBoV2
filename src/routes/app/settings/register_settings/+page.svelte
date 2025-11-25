@@ -18,6 +18,10 @@
 	import { getLocalTimeZone, now } from '@internationalized/date';
 	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
 	import { getDeleteAction, setDeleteAction } from './index.svelte';
+	import Button from '$lib/components/ui/button/button.svelte';
+	import FileSpreadsheet from '@lucide/svelte/icons/file-spreadsheet';
+	import { showProgress, hideProgress } from '$lib/stores/progress.svelte';
+	import { showFailToast } from '$lib/stores/toast.svelte';
 
 	let dateFilterMode = $state<'period' | 'range'>('period');
 
@@ -186,6 +190,42 @@
 		await expensesQuery.refresh();
 		setDeleteAction(false);
 	}
+
+	async function handleExport() {
+		showProgress('Generating Excel...');
+
+		try {
+			// Build payload based on current filter mode
+			const payload =
+				dateFilterMode === 'period'
+					? { mode: 'period', days: selectedDays }
+					: { mode: 'range', startDate: rangeStartString, endDate: rangeEndString };
+
+			const response = await fetch('/app/settings/register_settings/api/export', {
+				method: 'POST',
+				body: JSON.stringify(payload),
+				headers: { 'Content-Type': 'application/json' }
+			});
+
+			if (!response.ok) throw new Error('Export failed');
+
+			// Handle file download
+			const blob = await response.blob();
+			const url = window.URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = `register_report_${new Date().toISOString().slice(0, 10)}.xlsx`;
+			document.body.appendChild(a);
+			a.click();
+			window.URL.revokeObjectURL(url);
+			document.body.removeChild(a);
+		} catch (error) {
+			console.error(error);
+			showFailToast('Export Error', 'Could not generate Excel file');
+		} finally {
+			hideProgress();
+		}
+	}
 </script>
 
 {#if auth.loading}
@@ -287,6 +327,12 @@
 					<p class="text-sm text-muted-foreground">
 						Όλα τα αρχεία κλεισίματος για την επιλεγμένη περίοδο
 					</p>
+				</div>
+				<div class="flex items-center gap-2">
+					<Button variant="default" class="ml-auto gap-2" onclick={handleExport}>
+						<FileSpreadsheet class="h-4 w-4" />
+						Export Excel
+					</Button>
 				</div>
 				<RegisterDataTable data={tableData} columns={registerColumns} bind:pagination />
 			</div>

@@ -8,7 +8,7 @@
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
 	import Button from '$lib/components/ui/button/button.svelte';
-	import { RefreshCcw } from 'lucide-svelte';
+	import { RefreshCw } from 'lucide-svelte';
 
 	let query = getAllEquipments();
 
@@ -41,15 +41,10 @@
 	});
 
 	let refreshAction = $state(false);
-	function refresh() {
+	async function refresh() {
 		refreshAction = true;
-		query.refresh();
+		await query.refresh();
 		refreshAction = false;
-	}
-
-	function clearFilters() {
-		value = '';
-		searchQuery = '';
 	}
 </script>
 
@@ -96,8 +91,8 @@
 								disabled={refreshAction}
 								class="h-6 cursor-pointer px-2 text-xs"
 							>
-								<RefreshCcw
-									class={`h-4 w-4 ${refreshAction ? 'animate-spin-clockwise repeat-infinite' : ''}`}
+								<RefreshCw
+									class={`mr-2 h-4 w-4 ${refreshAction ? 'animate-spin-clockwise repeat-infinite' : ''}`}
 								/>
 							</Button>
 						</Tooltip.Trigger>

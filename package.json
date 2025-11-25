@@ -59,6 +59,7 @@
 		"@supabase/ssr": "^0.7.0",
 		"@supabase/supabase-js": "^2.57.4",
 		"date-fns": "^4.1.0",
+		"exceljs": "^4.4.0",
 		"lucide-svelte": "^0.544.0",
 		"resend": "^6.4.2",
 		"svelte-motion": "^0.12.2",

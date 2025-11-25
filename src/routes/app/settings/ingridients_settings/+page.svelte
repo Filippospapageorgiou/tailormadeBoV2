@@ -293,7 +293,7 @@
 										class="h-6 cursor-pointer px-2 text-xs"
 									>
 										<RefreshCcw
-											class={`mr-2 h-4 w-4 ${refreshAction ? 'animate-spin-clockwise' : ''}`}
+											class={`mr-2 h-4 w-4 ${refreshAction ? 'animate-spin-clockwise repeat-infinite' : ''}`}
 										/>
 									</Button>
 								</Tooltip.Trigger>
