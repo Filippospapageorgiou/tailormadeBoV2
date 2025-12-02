@@ -1,11 +1,7 @@
 // src/routes/posts/posts.remote.ts
 import { query } from '$app/server';
-import { error } from '@sveltejs/kit';
-import { createAdminClient, createServerClient } from '$lib/supabase/server';
-import type { Provider } from '@supabase/supabase-js';
-import { redirect } from '@sveltejs/kit';
-import type { Equipment, MaintenanceLog } from '$lib/models/equipment.types';
-import { z } from 'zod/v4';
+import { createServerClient } from '$lib/supabase/server';
+import type { Equipment } from '$lib/models/equipment.types';
 
 export const getAllEquipments = query(async () => {
 	const supabase = createServerClient();

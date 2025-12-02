@@ -1,7 +1,5 @@
 <script lang="ts">
-	import EquipmentCard from '$lib/components/custom/equipments/EquipmentCard.svelte';
-	import { addDays, subDays } from 'date-fns';
-	import type { Equipment, EquipmentStatus } from '$lib/models/equipment.types';
+	import EquipmentCard from './components/EquipmentCard.svelte';
 	import { getAllEquipments } from './data.remote';
 	import * as Select from '$lib/components/ui/select';
 	import Input from '$lib/components/ui/input/input.svelte';
@@ -46,6 +44,8 @@
 		await query.refresh();
 		refreshAction = false;
 	}
+
+	let open;
 </script>
 
 <div class="min-h-screen bg-white">

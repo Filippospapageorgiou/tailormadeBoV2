@@ -6,6 +6,11 @@
 	import * as Avatar from '$lib/components/ui/avatar';
 	import { Plus, UserPlus, X } from 'lucide-svelte';
 	import ScheduleDayCell from './ScheduleDayCell.svelte';
+	import SortableEmployeeRow from './SortableEmployeeRow.svelte';
+	import { DragDropProvider, DragOverlay } from '@dnd-kit-svelte/svelte';
+	import { sensors } from '$lib';
+	import { updateDisplayOrder } from '../data.remote';
+	import { invalidateAll } from '$app/navigation';
 
 	interface Props {
 		schedule: WeeklySchedule;
@@ -15,44 +20,44 @@
 		onAddShift: (employeeId: string, date: string) => void;
 		onEditShift: (shift: Shift) => void;
 		onDeleteShift: (shiftId: number) => void;
+		onReorderEmployees?: (employees: Profile[]) => void;
 	}
 
-	let { schedule, employees, shifts, allEmployees, onAddShift, onEditShift, onDeleteShift }: Props =
-		$props();
+	let {
+		schedule,
+		employees,
+		shifts,
+		allEmployees,
+		onAddShift,
+		onEditShift,
+		onDeleteShift,
+		onReorderEmployees
+	}: Props = $props();
 
 	const EMPLOYEE_COL_WIDTH = 'w-56';
 	const DAY_COL_WIDTH = 'w-40';
 
+	let localEmployees = $state(employees);
+	$effect(() => {
+		localEmployees = employees;
+	});
+
 	let weekDays = $derived.by(() => {
 		if (!schedule) return [];
-
 		const startDate = new Date(schedule.week_start_date);
 		const greekDayNames = ['Δευ', 'Τρι', 'Τετ', 'Πεμ', 'Παρ', 'Σαβ', 'Κυρ'];
-
 		const days = [];
-
 		for (let i = 0; i < 7; i++) {
 			const date = new Date(startDate);
 			date.setDate(startDate.getDate() + i);
-
-			const dateStr = date.toISOString().split('T')[0];
-			const dayOfWeek = (date.getDay() + 6) % 7;
-			const dayName = greekDayNames[dayOfWeek];
-			const dayNum = date.getDate();
-
 			days.push({
-				date: dateStr,
-				dayName,
-				dayNum
+				date: date.toISOString().split('T')[0],
+				dayName: greekDayNames[(date.getDay() + 6) % 7],
+				dayNum: date.getDate()
 			});
 		}
-
 		return days;
 	});
-
-	function getShiftForEmployeeAndDate(employeeId: string, date: string): Shift | null {
-		return shifts.find((s) => s.user_id === employeeId && s.shift_date === date) || null;
-	}
 
 	let availableEmployees = $derived(
 		allEmployees.filter((emp) => !employees.find((e) => e.id === emp.id))
@@ -60,46 +65,44 @@
 
 	function getInitials(name: string): string {
 		const parts = name.split(' ');
-		if (parts.length >= 2) {
-			return (parts[0][0] + parts[1][0]).toUpperCase();
-		}
+		if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
 		return name.substring(0, 2).toUpperCase();
 	}
 
 	let selectedEmployeeToAdd = $state<string | null>(null);
-
 	function handleSelectEmployee(employeeId: string) {
 		selectedEmployeeToAdd = employeeId;
 	}
-
 	function handleRemoveSelectedEmployee() {
 		selectedEmployeeToAdd = null;
 	}
-
 	let selectedEmployee = $derived(
 		selectedEmployeeToAdd ? allEmployees.find((e) => e.id === selectedEmployeeToAdd) : null
 	);
+
+	// 1. DISABLE REAL-TIME SORTING (Prevents the ripple effect)
+	function handleDragOver(event: any) {
+		return;
+	}
+
+	// 2. HANDLE SINGLE SWAP ON DROP
+	async function handleDragEnd(event: any) {}
 </script>
 
 <div class="space-y-6">
-	<!-- Schedule Grid Container -->
 	<div
 		class="animate-in overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.2] shadow-xl backdrop-blur-sm duration-700 fade-in slide-in-from-bottom-4"
 	>
 		<div class="overflow-x-auto">
 			<div class="inline-block min-w-full">
-				<!-- Header Row - Days -->
 				<div
 					class="sticky top-0 z-20 flex border-b border-white/10 bg-gradient-to-r from-blue-500/10 via-transparent to-transparent backdrop-blur-lg"
 				>
-					<!-- Employee Column Header -->
 					<div class="{EMPLOYEE_COL_WIDTH} flex-shrink-0 border-r border-white/10 px-6 py-4">
 						<p class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
 							Employee
 						</p>
 					</div>
-
-					<!-- Day Headers -->
 					{#each weekDays as day (day.date)}
 						<div
 							class="{DAY_COL_WIDTH} flex-shrink-0 border-r border-white/10 px-4 py-4 text-center transition-all duration-300 last:border-r-0 hover:bg-white/5"
@@ -112,79 +115,49 @@
 					{/each}
 				</div>
 
-				<!-- Employee Rows -->
-				{#each employees as employee, index (employee.id)}
-					{@const badgeColor = employee.badge_color || '#3b82f6'}
-					{@const initials = getInitials(employee.username)}
-
-					<div
-						class="flex animate-in border-b border-white/5 transition-all duration-300 fade-in slide-in-from-left-4 hover:bg-white/[0.03]"
-						style="animation-delay: {index * 50}ms"
-					>
-						<!-- Employee Cell -->
-						<div
-							class="{EMPLOYEE_COL_WIDTH} flex-shrink-0 border-r border-white/10 bg-gradient-to-r from-white/[0.02] to-transparent px-6 py-4"
-							style="border-left: 3px solid {badgeColor}40; border-left-color: {badgeColor};"
-						>
-							<div class="flex items-center gap-3">
-								<div class="relative">
-									<Avatar.Root
-										class="h-10 w-10 flex-shrink-0 ring-2 ring-offset-2 transition-all duration-300 hover:scale-110"
-										style="--tw-ring-color: {badgeColor}20;"
-									>
-										<Avatar.Image src={employee.image_url} alt={employee.username} />
-										<Avatar.Fallback
-											class="text-xs font-bold text-white"
-											style="background-color: {badgeColor};"
-										>
-											{initials}
-										</Avatar.Fallback>
-									</Avatar.Root>
-									<div
-										class="absolute inset-0 rounded-full opacity-0 transition-opacity duration-300 hover:opacity-100"
-										style="box-shadow: inset 0 0 0 2px {badgeColor}40;"
-									></div>
-								</div>
-
-								<div class="min-w-0 flex-1">
-									<p class="truncate text-sm leading-tight font-semibold text-white">
-										{employee.username}
-									</p>
-									<p class="truncate text-xs text-muted-foreground">
-										{employee.email.split('@')[0]}
-									</p>
-								</div>
-							</div>
-						</div>
-
-						<!-- Day Cells -->
-						{#each weekDays as day (day.date)}
-							{@const shift = getShiftForEmployeeAndDate(employee.id, day.date)}
-
-							<div
-								class="{DAY_COL_WIDTH} flex-shrink-0 border-r border-white/10 p-3 last:border-r-0"
-							>
-								<ScheduleDayCell
-									{shift}
-									{badgeColor}
-									onAdd={() => onAddShift(employee.id, day.date)}
-									onEdit={() => shift && onEditShift(shift)}
-									onDelete={() => shift && onDeleteShift(shift.id)}
-								/>
-							</div>
+				<DragDropProvider {sensors} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
+					<div class="flex flex-col">
+						{#each localEmployees as employee, index (employee.id)}
+							<SortableEmployeeRow
+								{employee}
+								{index}
+								{shifts}
+								{weekDays}
+								{onAddShift}
+								{onEditShift}
+								{onDeleteShift}
+							/>
 						{/each}
 					</div>
-				{/each}
 
-				<!-- Add Employee Row -->
+					<DragOverlay>
+						{#snippet children(source)}
+							{#if source}
+								{@const emp = localEmployees.find((e) => e.id === source.id)}
+								{#if emp}
+									<div class="rotate-2 opacity-80 shadow-2xl">
+										<SortableEmployeeRow
+											employee={emp}
+											index={0}
+											{shifts}
+											{weekDays}
+											{onAddShift}
+											{onEditShift}
+											{onDeleteShift}
+										/>
+									</div>
+								{/if}
+							{/if}
+						{/snippet}
+					</DragOverlay>
+				</DragDropProvider>
+
 				<div
 					class="flex animate-in border-t border-white/10 bg-gradient-to-r from-blue-500/5 to-transparent duration-700 fade-in slide-in-from-bottom-4"
 					style="animation-delay: 300ms;"
 				>
-					<!-- Add Employee Cell with Dropdown OR Selected Employee -->
 					<div class="{EMPLOYEE_COL_WIDTH} flex-shrink-0 border-r border-white/10 px-6 py-4">
 						{#if selectedEmployee}
-							<!-- Show selected employee with remove button -->
 							{@const badgeColor = selectedEmployee.badge_color || '#3b82f6'}
 							{@const initials = getInitials(selectedEmployee.username)}
 
@@ -192,7 +165,7 @@
 								class="scale-in-95 flex animate-in items-center gap-2 rounded-xl border border-blue-500/30 bg-gradient-to-r from-blue-500/10 to-blue-500/5 p-3 transition-all duration-300 fade-in hover:border-blue-500/50 hover:bg-blue-500/15"
 								style="border-left: 3px solid {badgeColor}; border-left-color: {badgeColor};"
 							>
-								<Avatar.Root class="border: 3px solid h-8 w-8 flex-shrink-0">
+								<Avatar.Root class="h-8 w-8 flex-shrink-0" style="border: 3px solid ">
 									<Avatar.Image src={selectedEmployee.image_url} alt={selectedEmployee.username} />
 									<Avatar.Fallback
 										class="text-xs font-bold text-white"
@@ -221,7 +194,6 @@
 								</Button>
 							</div>
 						{:else if availableEmployees.length > 0}
-							<!-- Show dropdown to select employee -->
 							<DropdownMenu.Root>
 								<DropdownMenu.Trigger class="w-full">
 									<button
@@ -281,7 +253,6 @@
 						{/if}
 					</div>
 
-					<!-- Day Cells - Empty or for selected employee -->
 					{#each weekDays as day (day.date)}
 						<div class="{DAY_COL_WIDTH} flex-shrink-0 border-r border-white/10 p-3 last:border-r-0">
 							{#if selectedEmployee}
@@ -298,7 +269,6 @@
 									onDelete={() => {}}
 								/>
 							{:else}
-								<!-- Empty placeholder -->
 								<div
 									class="flex h-12 items-center justify-center rounded-xl border-2 border-dashed border-transparent"
 								>

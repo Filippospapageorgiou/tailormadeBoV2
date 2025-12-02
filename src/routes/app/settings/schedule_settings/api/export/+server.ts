@@ -177,7 +177,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		const legends = [
 			{ short: 'RP', full: 'Ρεπό (Day Off)' },
 			{ short: 'Α', full: 'Αναρρωτική (Sick Leave)' },
-			{ short: 'ΑΔ', full: 'Άδεια (Vacation)' },
+			{ short: 'ΑΔ', full: 'Άδεια (permit)' },
 			{ short: 'HH:MM-HH:MM', full: 'Work shift with times' }
 		];
 

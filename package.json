@@ -55,6 +55,10 @@
 		"vitest-browser-svelte": "^0.1.0"
 	},
 	"dependencies": {
+		"@dnd-kit-svelte/svelte": "^0.1.5",
+		"@dnd-kit/core": "^6.3.1",
+		"@dnd-kit/helpers": "^0.1.21",
+		"@dnd-kit/utilities": "^3.2.2",
 		"@midudev/tailwind-animations": "^0.2.0",
 		"@supabase/ssr": "^0.7.0",
 		"@supabase/supabase-js": "^2.57.4",
@@ -63,6 +67,7 @@
 		"lucide-svelte": "^0.544.0",
 		"resend": "^6.4.2",
 		"svelte-motion": "^0.12.2",
+		"svelte-sonner": "^1.0.6",
 		"zod": "^4.1.9"
 	}
 }

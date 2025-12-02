@@ -48,8 +48,8 @@
 							use:enhance={() => {
 								loading = true;
 								return async ({ update }) => {
-									loading = false;
 									await update();
+									loading = false;
 								};
 							}}
 						>
@@ -90,7 +90,7 @@
 									>
 										{#if loading}
 											<div
-												class="mr-2 h-4 w-4 animate-spin-clockwise rounded-full border-2 border-primary-foreground border-t-transparent"
+												class="mr-2 h-4 w-4 animate-spin-clockwise rounded-full border-2 border-primary-foreground border-t-transparent repeat-infinite"
 											></div>
 											login in....
 										{:else}

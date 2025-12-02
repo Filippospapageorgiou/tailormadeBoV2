@@ -486,7 +486,6 @@ export const getRegisterDataTable = query(registerTableSchema, async (params) =>
 				pageEnd: params.end
 			};
 		}
-
 		return {
 			success: true,
 			message: 'Successfully fetched register table data',

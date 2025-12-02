@@ -1,12 +1,22 @@
 <script lang="ts">
-	import { Wrench, CheckCircle2, XCircle } from 'lucide-svelte';
+	import {
+		Wrench,
+		CheckCircle2,
+		XCircle,
+		AlertTriangle,
+		AlertCircleIcon,
+		AlertOctagon
+	} from 'lucide-svelte';
 	import { differenceInDays, parseISO } from 'date-fns';
 	import type { Equipment, EquipmentStatus } from '$lib/models/equipment.types';
-	import CustomButton from '../register_settings/customButton/customButton.svelte';
+	import CustomButton from '../../../../lib/components/custom/register_settings/customButton/customButton.svelte';
 	import Label from '$lib/components/ui/label/label.svelte';
+	import MaintanceModal from './MaintanceModal.svelte';
+	import { AlertTitle } from '$lib/components/ui/alert';
+	import { AlertDialog } from 'bits-ui';
 
 	let { equipment }: { equipment: Equipment } = $props();
-
+	let modalOpen = $state(false);
 	// Derived state for service calculations
 	let daysUntilService = $derived(
 		equipment.next_service_date
@@ -29,9 +39,9 @@
 
 	let serviceBars = $derived.by(() => {
 		if (serviceStatus === 'overdue') return { count: 1, color: 'bg-red-500' };
-		if (serviceStatus === 'warning') return { count: 3, color: 'bg-orange-400' };
+		if (serviceStatus === 'warning') return { count: 4, color: 'bg-orange-400' };
 		if (serviceStatus === 'unknown') return { count: 0, color: 'bg-gray-400' };
-		return { count: 7, color: 'bg-emerald-500' };
+		return { count: 9, color: 'bg-emerald-500' };
 	});
 
 	const statusColors: Record<EquipmentStatus, string> = {
@@ -95,7 +105,7 @@
 				{/if}
 			</div>
 
-			<CustomButton href="##" />
+			<CustomButton href={equipment.manual_url!} label="manual" />
 		</div>
 
 		<!-- Service Health Section -->
@@ -106,35 +116,49 @@
 				>
 
 				<!-- Bars and Text Layout -->
-				<div class="flex items-center gap-4">
-					<!-- Futuristic Vertical Bars -->
-					<div class="flex h-4 items-center gap-1">
-						{#each { length: 7 } as _, i}
-							<div
-								class={`w-1 rounded-full transition-all duration-500 ${
-									i < serviceBars.count ? serviceBars.color : 'bg-muted/30'
-								}`}
-								style="height: 100%"
-							></div>
-						{/each}
+				<div class="flex w-full items-center justify-between">
+					<!-- Left Group: Bars & Text -->
+					<div class="flex items-center gap-4">
+						<!-- Futuristic Vertical Bars -->
+						<div class="flex h-4 items-center gap-1">
+							{#each { length: 9 } as _, i}
+								<div
+									class={`w-1 rounded-full transition-all duration-500 ${
+										i < serviceBars.count ? serviceBars.color : 'bg-muted/30'
+									}`}
+									style="height: 100%"
+								></div>
+							{/each}
+						</div>
+
+						<!-- Days Text -->
+						<p
+							class={`text-xs font-medium tracking-wide ${
+								serviceStatus === 'overdue'
+									? 'text-red-600'
+									: serviceStatus === 'warning'
+										? 'text-orange-600'
+										: 'text-emerald-600'
+							}`}
+						>
+							{daysUntilService === null
+								? 'No service date'
+								: daysUntilService < 0
+									? `OVERDUE ${Math.abs(daysUntilService)} DAYS`
+									: `${daysUntilService} DAYS REMAINING`}
+						</p>
 					</div>
 
-					<!-- Days Text -->
-					<p
-						class={`text-xs font-medium tracking-wide ${
-							serviceStatus === 'overdue'
-								? 'text-red-600'
-								: serviceStatus === 'warning'
-									? 'text-orange-600'
-									: 'text-emerald-600'
-						}`}
+					<!-- Right Group: Report Button -->
+					<button
+						onclick={() => {
+							modalOpen = !modalOpen;
+						}}
+						class="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-orange-50 px-3 py-2 text-xs font-medium text-orange-700 transition-colors hover:bg-orange-100 active:bg-orange-200"
 					>
-						{daysUntilService === null
-							? 'No service date'
-							: daysUntilService < 0
-								? `OVERDUE ${Math.abs(daysUntilService)} DAYS`
-								: `${daysUntilService} DAYS REMAINING`}
-					</p>
+						<AlertTriangle class="h-3.5 w-3.5" />
+						Report Issue
+					</button>
 				</div>
 			</div>
 		{:else}
@@ -147,3 +171,5 @@
 		{/if}
 	</div>
 </div>
+
+<MaintanceModal bind:open={modalOpen} {equipment} />

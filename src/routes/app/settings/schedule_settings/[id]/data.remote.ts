@@ -784,7 +784,7 @@ export const getScheduleWithAllShifts = query(shiftChangesSchemaId, async ({ sch
 				.from('profiles')
 				.select('*')
 				.in('id', employeeIds)
-				.order('username')
+				.order('display_order', { ascending: false })
 				.overrideTypes<Profile[]>();
 
 			if (employeeError) {
@@ -823,13 +823,6 @@ export const getScheduleWithAllShifts = query(shiftChangesSchemaId, async ({ sch
 const scheduleExportSchema = z.object({
 	scheduleId: z.number().int().positive()
 });
-
-interface ScheduleExportData {
-	schedule: WeeklySchedule;
-	employees: [];
-	shifts: Shift[];
-	weekDays: Array<{ date: string; dayName: string; dayNum: number }>;
-}
 
 export const getScheduleDataForExport = query(scheduleExportSchema, async ({ scheduleId }) => {
 	const supabase = createServerClient();
@@ -945,3 +938,43 @@ function generateWeekDays(
 
 	return days;
 }
+
+const updateDisplayOrderSchema = z.object({
+	userId: z.uuid(),
+	newDisplayOrder: z.number().int().min(0)
+});
+
+export const updateDisplayOrder = command(
+	updateDisplayOrderSchema,
+	async ({ userId, newDisplayOrder }) => {
+		const supabase = createServerClient();
+		try {
+			const { error: updateError } = await supabase
+				.from('profiles')
+				.update({
+					display_order: newDisplayOrder
+				})
+				.eq('id', userId)
+				.single();
+
+			if (updateError) {
+				console.error('Error updating display order:', updateError);
+				return {
+					success: false,
+					message: 'Failed to update employee order'
+				};
+			}
+
+			return {
+				success: true,
+				message: 'Employee order updated successfully'
+			};
+		} catch (err) {
+			console.error('Unexpected error during display order update:', err);
+			return {
+				success: false,
+				message: 'An unexpected error occurred while updating order'
+			};
+		}
+	}
+);

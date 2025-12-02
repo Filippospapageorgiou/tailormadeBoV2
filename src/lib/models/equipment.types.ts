@@ -28,8 +28,8 @@ export interface MaintenanceLog {
 	action_taken: string | null;
 	status_after: EquipmentStatus | null;
 	cost: number;
-
 	created_at: string;
+	images: string[] | null;
 }
 
 // --- Joined Types (For UI Display) ---

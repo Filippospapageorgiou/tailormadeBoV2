@@ -59,14 +59,26 @@
 	}
 
 	let auth = authenticatedAccess();
-	let pagination = $state<PaginationState>({ pageIndex: 0, pageSize: 10 });
-
-	let start = $derived(pagination.pageIndex + 1);
-	let end = $derived(pagination.pageSize);
-
 	// State for time period selection
 	let selectedDays = $state(30);
+	let pagination = $state<PaginationState>({ pageIndex: 0, pageSize: 10 });
 
+	let daysDifference = $derived.by(() => {
+		if (dateFilterMode === 'period') {
+			return selectedDays;
+		} else {
+			const start = new Date(rangeStartString);
+			const end = new Date(rangeEndString);
+			const diffTime = Math.abs(end.getTime() - start.getTime());
+			const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+			return diffDays;
+		}
+	});
+
+	// svelte-ignore state_referenced_locally
+	let end = daysDifference;
+	// svelte-ignore state_referenced_locally
+	let start = pagination.pageIndex + 1;
 	// Get today's date - use derived to ensure they're always valid
 	let rangeStart = $state(now(getLocalTimeZone()).subtract({ days: 7 }));
 	let rangeEnd = $state(now(getLocalTimeZone()));

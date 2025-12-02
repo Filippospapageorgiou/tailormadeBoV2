@@ -9,7 +9,7 @@
 		Globe,
 		CheckCircle,
 		XCircle,
-		IdCard ,
+		IdCard,
 		Mail,
 		Calendar,
 		User,
@@ -22,41 +22,43 @@
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { updateUsername, updateAvatar } from './data.remote';
 	import { getProfileContext } from '$lib/stores/profile.svelte.js';
-  	import { toast } from '$lib/stores/toast.svelte';
+	import { toast } from '$lib/stores/toast.svelte';
 
 	let { data } = $props();
 
 	const profileStore = getProfileContext();
 
 	let isUpdating = $state(false);
-  	let isUpdatingAvatar = $state(false);
+	let isUpdatingAvatar = $state(false);
 
 	let profile = $derived(data.profile);
 	let organization = $derived(data.organization);
 
 	let username = $state('');
+	let phone = $state('');
 	let backgroundImage = $state('');
 
 	$effect(() => {
 		username = profile.username;
+		phone = profile.phone || '';
 	});
 
 	let editing = $state(false);
 
-  let files:FileList | undefined = $state();
-  $effect(() => {
-        if(editing){
-          if(files && files[0]){
-            const reader = new FileReader();
-            reader.onload = () => {
-                backgroundImage = reader.result?.toString() || '';
-            };
-            reader.readAsDataURL(files[0])
-          }
-        }else{
-          backgroundImage = profile.image_url;
-        }
-    })
+	let files: FileList | undefined = $state();
+	$effect(() => {
+		if (editing) {
+			if (files && files[0]) {
+				const reader = new FileReader();
+				reader.onload = () => {
+					backgroundImage = reader.result?.toString() || '';
+				};
+				reader.readAsDataURL(files[0]);
+			}
+		} else {
+			backgroundImage = profile.image_url;
+		}
+	});
 
 	function formatDate(dateString: string) {
 		return new Date(dateString).toLocaleDateString('el-GR', {
@@ -91,7 +93,7 @@
 		toast.title = 'Success';
 		toast.text = text;
 		backgroundImage = newImageUrl;
-    	editing = false;
+		editing = false;
 		profileStore.updateAvatar(newImageUrl);
 	}
 
@@ -100,7 +102,7 @@
 		toast.status = false;
 		toast.title = 'Error';
 		toast.text = text;
-    	editing = false;
+		editing = false;
 	}
 </script>
 
@@ -121,7 +123,10 @@
 					<div class="mb-6 flex flex-col md:flex-row md:items-start md:justify-between">
 						<div class="flex flex-col gap-6 md:flex-row">
 							<div class="group relative">
-								<form class="flex flex-col gap-2" enctype="multipart/form-data" {...updateAvatar.enhance(async ({ form, data,submit }) => {
+								<form
+									class="flex flex-col gap-2"
+									enctype="multipart/form-data"
+									{...updateAvatar.enhance(async ({ form, data, submit }) => {
 										try {
 											isUpdatingAvatar = true;
 											await submit();
@@ -158,7 +163,7 @@
 											type="file"
 											accept="image/png,image/jpeg"
 											name="avatar"
-											class="cursor-pointer text-sm w-31"
+											class="w-31 cursor-pointer text-sm"
 											disabled={isUpdatingAvatar || isUpdating}
 										/>
 										<Button
@@ -238,7 +243,9 @@
 							<Button
 								variant="outline"
 								size="sm"
-								onclick={(()=> {editing = !editing})}
+								onclick={() => {
+									editing = !editing;
+								}}
 								class="cursor-pointer gap-2"
 							>
 								<Pencil class="h-4 w-4" />

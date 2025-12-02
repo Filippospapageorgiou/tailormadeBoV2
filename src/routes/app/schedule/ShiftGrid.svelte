@@ -24,13 +24,24 @@
 	const { weekDays, employees, shifts, selectedEmployeeId, onEmployeeSelect, onShiftClick }: Props =
 		$props();
 
-	function getEmployee(userId: string): Profile | undefined {
-		return employees.find((e) => e.id === userId);
-	}
-
 	function getEmployeeShiftsForDay(employeeId: string, date: string): Shift[] {
 		return shifts.filter((s) => s.user_id === employeeId && s.shift_date === date);
 	}
+
+	const months = [
+		'Ιαν',
+		'Φεβ',
+		'Μαρ',
+		'Απρ',
+		'Μαΐ',
+		'Ιουν',
+		'Ιουλ',
+		'Αυγ',
+		'Σεπ',
+		'Οκτ',
+		'Νοε',
+		'Δεκ'
+	];
 </script>
 
 <div class="overflow-x-auto">
@@ -49,7 +60,10 @@
 						<p class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
 							{day.dayName}
 						</p>
-						<p class="text-lg font-bold">{day.dayNum}</p>
+						<p class="text-lg font-semibold">
+							{day.dayNum}
+							<span class="text-xs">{months[parseInt(day.date.split('-')[1], 10) - 1]}</span>
+						</p>
 					</div>
 				{/each}
 			</div>

@@ -6,7 +6,8 @@
 
 <button
 	onclick={() => {
-		goto(href);
+		if (href.startsWith('http')) window.open(href, '_blank');
+		else goto(href);
 	}}
 	class="group inline-flex cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors duration-300 ease-in-out hover:text-primary"
 >

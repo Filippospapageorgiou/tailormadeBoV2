@@ -60,6 +60,8 @@ export interface Profile {
 	role_name: string;
 	badge_color: string;
 	can_close_register: boolean;
+	phone: string;
+	display_order: number;
 }
 
 export interface RoleTypes {

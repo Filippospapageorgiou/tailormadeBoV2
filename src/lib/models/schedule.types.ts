@@ -86,6 +86,7 @@ export interface Shift {
 	created_by: string | null; // UUID
 	created_at: string;
 	updated_at: string;
+	display_order: number;
 }
 
 /**
