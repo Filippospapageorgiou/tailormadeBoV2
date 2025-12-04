@@ -80,12 +80,10 @@
 		selectedEmployeeToAdd ? allEmployees.find((e) => e.id === selectedEmployeeToAdd) : null
 	);
 
-	// 1. DISABLE REAL-TIME SORTING (Prevents the ripple effect)
 	function handleDragOver(event: any) {
 		return;
 	}
 
-	// 2. HANDLE SINGLE SWAP ON DROP
 	async function handleDragEnd(event: any) {}
 </script>
 

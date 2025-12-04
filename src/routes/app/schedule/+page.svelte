@@ -12,8 +12,11 @@
 	import ShiftDetailsModal from './ShiftDetailsModal.svelte';
 	import { formatWeekRange } from '$lib/utils';
 
-	let test = $state(true);
-	let query = getCurrentSchedule();
+	let weekStartDate: string | undefined = $state(undefined);
+	let next: boolean | undefined = $state(undefined);
+	let prev: boolean | undefined = $state(undefined);
+
+	let query = $derived(getCurrentSchedule({ weekStartDate, next, prev }));
 	let { data } = $props();
 	let { user } = data;
 
@@ -26,6 +29,8 @@
 	let schedule = $derived(query.current?.schedule ?? null);
 	let employees = $derived(query.current?.employees ?? []);
 	let shifts = $derived(query.current?.shifts ?? []);
+	let hasNextSchedule = $derived(query.current?.hasNextSchedule ?? false);
+	let hasPrevSchedule = $derived(query.current?.hasPrevSchedule ?? false);
 	let selectedEmployeeId = $state<string | null>(null);
 
 	// Generate week days from schedule
@@ -107,6 +112,22 @@
 			selectedEmployeeId = employee.id;
 		}
 	}
+
+	function handleNextWeek() {
+		if (schedule) {
+			weekStartDate = schedule.week_start_date;
+			next = true;
+			prev = false;
+		}
+	}
+
+	function handlePrevWeek() {
+		if (schedule) {
+			weekStartDate = schedule.week_start_date;
+			next = false;
+			prev = true;
+		}
+	}
 </script>
 
 <div class="min-h-screen bg-background">
@@ -127,12 +148,22 @@
 				</div>
 				<!-- Navigation -->
 				<div class="flex items-center gap-2 md:justify-end">
-					<Button variant="outline" size="icon" disabled>
+					<Button
+						variant="outline"
+						size="icon"
+						onclick={handlePrevWeek}
+						disabled={!hasPrevSchedule}
+					>
 						<ChevronLeft class="h-4 w-4" />
 					</Button>
 					<Button variant="outline" size="sm" disabled>Προηγ.</Button>
 					<Button variant="outline" size="sm" disabled>Επόμ.</Button>
-					<Button variant="outline" size="icon" disabled>
+					<Button
+						variant="outline"
+						size="icon"
+						onclick={handleNextWeek}
+						disabled={!hasNextSchedule}
+					>
 						<ChevronRight class="h-4 w-4" />
 					</Button>
 				</div>

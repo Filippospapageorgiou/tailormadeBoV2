@@ -5,151 +5,195 @@ import type { Profile, Organization } from '$lib/models/database.types';
 import type { WeeklySchedule, Shift } from '$lib/models/schedule.types';
 import { SCHEDULE_STATUS, SHIFT_TYPE } from '$lib/models/schedule.types';
 import z from 'zod/v4';
+import { getUserOrgId } from '$lib/supabase/queries';
 
 // ======================== QUERIES ==============
 
 /**
  * Get the most recent published schedule with all employees and shifts
  */
-export const getCurrentSchedule = query(async () => {
-	const supabase = createServerClient();
-	const user = await requireAuthenticatedUser();
+export const getCurrentSchedule = query(
+	z.object({
+		weekStartDate: z.string().date().optional(),
+		next: z.boolean().optional(),
+		prev: z.boolean().optional()
+	}),
+	async ({ weekStartDate, next, prev }) => {
+		const supabase = createServerClient();
+		const user = await requireAuthenticatedUser();
 
-	try {
-		// Get user's org_id
-		const { data: profile, error: profileError } = await supabase
-			.from('profiles')
-			.select('org_id')
-			.eq('id', user.id)
-			.single<Pick<Profile, 'org_id'>>();
+		try {
+			let org_id = await getUserOrgId();
+			console.log(weekStartDate, next, prev);
 
-		if (profileError || !profile) {
-			console.error('Error fetching user profile:', profileError);
-			return {
-				success: false,
-				message: 'Error fetching user profile',
-				schedule: null,
-				employees: [],
-				shifts: [],
-				totalHours: 0,
-				averageHours: 0
-			};
-		}
+			let query = supabase
+				.from('weekly_schedules')
+				.select('*')
+				.eq('org_id', org_id)
+				.eq('status', SCHEDULE_STATUS.PUBLISHED);
 
-		// Get the most recent published schedule for this organization
-		const { data: schedule, error: scheduleError } = await supabase
-			.from('weekly_schedules')
-			.select('*')
-			.eq('org_id', profile.org_id)
-			.eq('status', SCHEDULE_STATUS.PUBLISHED)
-			.order('week_start_date', { ascending: false })
-			.limit(1)
-			.maybeSingle<WeeklySchedule>();
-
-		if (scheduleError || !schedule) {
-			console.error('Error fetching schedule:', scheduleError);
-			return {
-				success: false,
-				message: 'No published schedule found',
-				schedule: null,
-				employees: [],
-				shifts: [],
-				totalHours: 0,
-				averageHours: 0
-			};
-		}
-
-		// Get all employees in this organization
-		const { data: employees, error: employeesError } = await supabase
-			.from('profiles')
-			.select('*')
-			.eq('org_id', profile.org_id)
-			.order('display_order', { ascending: false })
-			.overrideTypes<Profile[]>();
-
-		if (employeesError) {
-			console.error('Error fetching employees:', employeesError);
-			return {
-				success: false,
-				message: 'Error fetching employees',
-				schedule: schedule,
-				employees: [],
-				shifts: [],
-				totalHours: 0,
-				averageHours: 0
-			};
-		}
-
-		// Get all shifts for this schedule
-		const { data: shifts, error: shiftsError } = await supabase
-			.from('shifts')
-			.select('*')
-			.eq('schedule_id', schedule.id)
-			.order('shift_date')
-			.overrideTypes<Shift[]>();
-
-		if (shiftsError) {
-			console.error('Error fetching shifts:', shiftsError);
-			return {
-				success: false,
-				message: 'Error fetching shifts',
-				schedule: schedule,
-				employees: employees ?? [],
-				shifts: [],
-				totalHours: 0,
-				averageHours: 0
-			};
-		}
-
-		// Calculate total hours and average
-		let totalMinutes = 0;
-		const employeeHours = new Map<string, number>();
-
-		shifts?.forEach((shift) => {
-			if (shift.shift_type === SHIFT_TYPE.WORK && shift.start_time && shift.end_time) {
-				const [startHour, startMin] = shift.start_time.split(':').map(Number);
-				const [endHour, endMin] = shift.end_time.split(':').map(Number);
-
-				const startMinutes = startHour * 60 + startMin;
-				const endMinutes = endHour * 60 + endMin;
-
-				const shiftMinutes = endMinutes - startMinutes;
-				const netMinutes = shiftMinutes - (shift.break_duration_minutes || 0);
-
-				totalMinutes += netMinutes;
-
-				// Track per employee
-				const currentHours = employeeHours.get(shift.user_id) || 0;
-				employeeHours.set(shift.user_id, currentHours + netMinutes / 60);
+			// Handle navigation logic
+			if (weekStartDate !== undefined) {
+				// If weekStartDate is provided, use it for navigation
+				if (next === true) {
+					// Get next schedule (week_start_date > current)
+					query = query
+						.gt('week_start_date', weekStartDate)
+						.order('week_start_date', { ascending: true })
+						.limit(1);
+				} else if (prev === true) {
+					// Get previous schedule (week_start_date < current)
+					query = query
+						.lt('week_start_date', weekStartDate)
+						.order('week_start_date', { ascending: false })
+						.limit(1);
+				} else {
+					// If only weekStartDate provided (no navigation), get that specific schedule
+					query = query.eq('week_start_date', weekStartDate);
+				}
+			} else {
+				// Default: get most recent published schedule
+				query = query.order('week_start_date', { ascending: false }).limit(1);
 			}
-		});
 
-		const totalHours = Math.round(totalMinutes / 60);
-		const averageHours =
-			employees && employees.length > 0 ? Math.round(totalHours / employees.length) : 0;
+			const { data: schedule, error: scheduleError } = await query.maybeSingle<WeeklySchedule>();
 
-		return {
-			success: true,
-			schedule: schedule,
-			employees: employees ?? [],
-			shifts: shifts ?? [],
-			employeeHours: Object.fromEntries(employeeHours), // Convert Map to object for serialization
-			totalHours,
-			averageHours
-		};
-	} catch (err) {
-		console.error('Unexpected error fetching schedule:', err);
-		return {
-			success: false,
-			message: 'An unexpected error occurred',
-			schedule: null,
-			employees: [],
-			shifts: [],
-			totalHours: 0,
-			averageHours: 0
-		};
+			if (scheduleError || !schedule) {
+				console.error('Error fetching schedule:', scheduleError);
+				return {
+					success: false,
+					message: 'No published schedule found',
+					schedule: null,
+					employees: [],
+					shifts: [],
+					totalHours: 0,
+					averageHours: 0
+				};
+			}
+
+			// Get all employees in this organization
+			const { data: employees, error: employeesError } = await supabase
+				.from('profiles')
+				.select('*')
+				.eq('org_id', org_id)
+				.order('display_order', { ascending: false })
+				.overrideTypes<Profile[]>();
+
+			if (employeesError) {
+				console.error('Error fetching employees:', employeesError);
+				return {
+					success: false,
+					message: 'Error fetching employees',
+					schedule: schedule,
+					employees: [],
+					shifts: [],
+					totalHours: 0,
+					averageHours: 0
+				};
+			}
+
+			// Get all shifts for this schedule
+			const { data: shifts, error: shiftsError } = await supabase
+				.from('shifts')
+				.select('*')
+				.eq('schedule_id', schedule.id)
+				.order('shift_date')
+				.overrideTypes<Shift[]>();
+
+			if (shiftsError) {
+				console.error('Error fetching shifts:', shiftsError);
+				return {
+					success: false,
+					message: 'Error fetching shifts',
+					schedule: schedule,
+					employees: employees ?? [],
+					shifts: [],
+					totalHours: 0,
+					averageHours: 0
+				};
+			}
+
+			let totalMinutes = 0;
+			const employeeHours = new Map<string, number>();
+			const employeesWithShifts = new Set<string>();
+
+			shifts?.forEach((shift) => {
+				// Track which employees have shifts
+				employeesWithShifts.add(shift.user_id);
+
+				if (shift.shift_type === SHIFT_TYPE.WORK && shift.start_time && shift.end_time) {
+					const [startHour, startMin] = shift.start_time.split(':').map(Number);
+					const [endHour, endMin] = shift.end_time.split(':').map(Number);
+
+					const startMinutes = startHour * 60 + startMin;
+					const endMinutes = endHour * 60 + endMin;
+
+					const shiftMinutes = endMinutes - startMinutes;
+					const netMinutes = shiftMinutes - (shift.break_duration_minutes || 0);
+
+					totalMinutes += netMinutes;
+
+					// Track per employee
+					const currentHours = employeeHours.get(shift.user_id) || 0;
+					employeeHours.set(shift.user_id, currentHours + netMinutes / 60);
+				}
+			});
+
+			const filterdEmployees = (employees ?? []).filter((emp) => employeesWithShifts.has(emp.id));
+
+			const totalHours = Math.round(totalMinutes / 60);
+			const averageHours =
+				filterdEmployees.length > 0 ? Math.round(totalHours / filterdEmployees.length) : 0;
+
+			// Check if next schedule exists
+			const { data: nextScheduleExists, error: nextError } = await supabase
+				.from('weekly_schedules')
+				.select('id')
+				.eq('org_id', org_id)
+				.eq('status', SCHEDULE_STATUS.PUBLISHED)
+				.gt('week_start_date', schedule.week_start_date)
+				.limit(1);
+
+			const hasNextSchedule = !nextError && nextScheduleExists && nextScheduleExists.length > 0;
+
+			// Check if previous schedule exists
+			const { data: prevScheduleExists, error: prevError } = await supabase
+				.from('weekly_schedules')
+				.select('id')
+				.eq('org_id', org_id)
+				.eq('status', SCHEDULE_STATUS.PUBLISHED)
+				.lt('week_start_date', schedule.week_start_date)
+				.limit(1);
+
+			const hasPrevSchedule = !prevError && prevScheduleExists && prevScheduleExists.length > 0;
+
+			console.log(hasNextSchedule, hasPrevSchedule);
+
+			return {
+				success: true,
+				schedule: schedule,
+				employees: filterdEmployees ?? [],
+				shifts: shifts ?? [],
+				employeeHours: Object.fromEntries(employeeHours),
+				totalHours,
+				averageHours,
+				hasNextSchedule,
+				hasPrevSchedule
+			};
+		} catch (err) {
+			console.error('Unexpected error fetching schedule:', err);
+			return {
+				success: false,
+				message: 'An unexpected error occurred',
+				schedule: null,
+				employees: [],
+				shifts: [],
+				totalHours: 0,
+				averageHours: 0
+			};
+		}
 	}
-});
+);
 
 const shiftIdSchema = z.object({
 	id: z.number().int().positive()
