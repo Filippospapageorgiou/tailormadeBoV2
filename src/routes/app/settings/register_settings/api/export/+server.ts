@@ -29,13 +29,8 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		// Ανάλυση Πωλήσεων (Sales Breakdown)
 		{ header: 'Σύνολο Πωλήσεων', key: 'total_sales', width: 15, style: { numFmt: '"€"#,##0.00' } }, // Total Sales
-		{
-			header: 'Μετρητά (Πωλήσεις)',
-			key: 'excepted_cash',
-			width: 15,
-			style: { numFmt: '"€"#,##0.00' }
-		}, // Cash Sales
 		{ header: 'Πωλήσεις Κάρτας', key: 'card_sales', width: 15, style: { numFmt: '"€"#,##0.00' } }, // Card Sales
+		{ header: 'Πωλήσεις Μετρήτων', key: 'cash_sales', width: 15, style: { numFmt: '"€"#,##0.00' } }, // Card Sales
 		// Διαχείριση Μετρητών (Cash Handling)
 		{ header: 'Αρχικό Ταμείο', key: 'opening_float', width: 15, style: { numFmt: '"€"#,##0.00' } }, // Opening Float
 		{
@@ -92,8 +87,8 @@ export const POST: RequestHandler = async ({ request }) => {
 
 			// Sales
 			total_sales: item.total_sales,
-			excepted_cash: item.excepted_cash,
 			card_sales: item.card_sales,
+			cash_sales: item.total_sales - item.card_sales || 0,
 
 			// Cash Handling
 			opening_float: item.opening_float,

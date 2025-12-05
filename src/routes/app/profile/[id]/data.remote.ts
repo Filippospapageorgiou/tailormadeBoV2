@@ -14,10 +14,17 @@ const usernameSchema = z.object({
 			error: 'Username can only contain letters, numbers, underscores, and hyphens.'
 		})
 		.toLowerCase()
-		.trim()
+		.trim(),
+	phone: z
+		.string()
+		.min(10, { error: 'Phone number must be at least 10 digits.' })
+		.max(15, { error: 'Phone number must not exceed 15 digits.' })
+		.regex(/^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/, {
+			error: 'Invalid phone number format. Use digits, spaces, or dashes.'
+		})
 });
 
-export const updateUsername = form(usernameSchema, async ({ username }) => {
+export const updateUsername = form(usernameSchema, async ({ username, phone }) => {
 	const user = await requireAuthenticatedUser();
 	const supabase = createServerClient();
 	const { data: existing, error: checkError } = await supabase
@@ -42,7 +49,10 @@ export const updateUsername = form(usernameSchema, async ({ username }) => {
 
 	const { error: updateError } = await supabase
 		.from('profiles')
-		.update({ username })
+		.update({
+			username,
+			phone
+		})
 		.eq('id', user.id);
 
 	if (updateError) {

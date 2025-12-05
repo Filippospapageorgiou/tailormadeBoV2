@@ -21,13 +21,13 @@ export const registerColumns: ColumnDef<DailyRegisterClosing>[] = [
 		header: ({ column }) => {
 			return renderComponent(DataTableHeader, {
 				column,
-				title: 'Date'
+				title: 'Ημερομηνία'
 			});
 		},
 		cell: ({ row }) => {
 			const dateSnippet = createRawSnippet<[{ closingDate: string }]>((getDate) => {
 				const { closingDate } = getDate();
-				const formatted = new Date(closingDate).toLocaleDateString('en-US', {
+				const formatted = new Date(closingDate).toLocaleDateString('el-GR', {
 					year: 'numeric',
 					month: 'short',
 					day: 'numeric'
@@ -42,51 +42,17 @@ export const registerColumns: ColumnDef<DailyRegisterClosing>[] = [
 		}
 	},
 	{
-		accessorKey: 'status',
-		header: 'Status',
-		cell: ({ row }) => {
-			const statusSnippet = createRawSnippet<[{ status: string }]>((getStatus) => {
-				const { status } = getStatus();
-				const statusColors: Record<string, string> = {
-					submitted: '#10b981',
-					pending: '#f59e0b',
-					approved: '#3b82f6',
-					rejected: '#ef4444'
-				};
-				const bgColor = statusColors[status] || '#6b7280';
-				const capitalizedStatus = status.charAt(0).toUpperCase() + status.slice(1);
-
-				return {
-					render: () => `
-  <span
-    class="inline-flex items-center rounded-full px-3 py-0.5 text-xs font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-white/30 focus:ring-offset-1 backdrop-blur-sm border border-white/10 text-white hover:opacity-90"
-    style="
-      background: linear-gradient(135deg, ${bgColor}99, ${bgColor}66);
-      box-shadow: 0 2px 6px ${bgColor}26;
-    "
-  >
-    ${capitalizedStatus}
-  </span>
-`
-				};
-			});
-			return renderSnippet(statusSnippet, {
-				status: row.original.status
-			});
-		}
-	},
-	{
 		accessorKey: 'total_sales',
 		header: ({ column }) => {
 			return renderComponent(DataTableHeader, {
 				column,
-				title: 'Total Sales'
+				title: 'Σύνολο Πωλήσεων'
 			});
 		},
 		cell: ({ row }) => {
 			const salesSnippet = createRawSnippet<[{ totalSales: number }]>((getSales) => {
 				const { totalSales } = getSales();
-				const formatted = new Intl.NumberFormat('en-US', {
+				const formatted = new Intl.NumberFormat('el-GR', {
 					style: 'currency',
 					currency: 'EUR'
 				}).format(totalSales);
@@ -101,11 +67,11 @@ export const registerColumns: ColumnDef<DailyRegisterClosing>[] = [
 	},
 	{
 		accessorKey: 'card_sales',
-		header: 'Card Sales',
+		header: 'Πωλήσεις Κάρτας',
 		cell: ({ row }) => {
 			const salesSnippet = createRawSnippet<[{ cardSales: number }]>((getSales) => {
 				const { cardSales } = getSales();
-				const formatted = new Intl.NumberFormat('en-US', {
+				const formatted = new Intl.NumberFormat('el-GR', {
 					style: 'currency',
 					currency: 'EUR'
 				}).format(cardSales);
@@ -119,12 +85,31 @@ export const registerColumns: ColumnDef<DailyRegisterClosing>[] = [
 		}
 	},
 	{
+		accessorKey: 'cash_sales',
+		header: 'Πωλήσεις Μετρητών',
+		cell: ({ row }) => {
+			const salesSnippet = createRawSnippet<[{ cashSales: number }]>((getSales) => {
+				const { cashSales } = getSales();
+				const formatted = new Intl.NumberFormat('el-GR', {
+					style: 'currency',
+					currency: 'EUR'
+				}).format(cashSales);
+				return {
+					render: () => `<div class="text-sm">${formatted}</div>`
+				};
+			});
+			return renderSnippet(salesSnippet, {
+				cashSales: row.original.total_sales - row.original.card_sales || 0
+			});
+		}
+	},
+	{
 		accessorKey: 'final_cash_balance',
-		header: 'Expected final Cash',
+		header: 'Αναμενόμενα Μετρητά',
 		cell: ({ row }) => {
 			const cashSnippet = createRawSnippet<[{ final_cash_balance: number }]>((getCash) => {
 				const { final_cash_balance } = getCash();
-				const formatted = new Intl.NumberFormat('en-US', {
+				const formatted = new Intl.NumberFormat('el-GR', {
 					style: 'currency',
 					currency: 'EUR'
 				}).format(final_cash_balance);
@@ -139,11 +124,11 @@ export const registerColumns: ColumnDef<DailyRegisterClosing>[] = [
 	},
 	{
 		accessorKey: 'actual_cash_counted',
-		header: 'Actual Cash',
+		header: 'Πραγματικά Μετρητά',
 		cell: ({ row }) => {
 			const cashSnippet = createRawSnippet<[{ actualCash: number }]>((getCash) => {
 				const { actualCash } = getCash();
-				const formatted = new Intl.NumberFormat('en-US', {
+				const formatted = new Intl.NumberFormat('el-GR', {
 					style: 'currency',
 					currency: 'EUR'
 				}).format(actualCash);
@@ -158,11 +143,11 @@ export const registerColumns: ColumnDef<DailyRegisterClosing>[] = [
 	},
 	{
 		accessorKey: 'cash_diffrence',
-		header: 'Cash Difference',
+		header: 'Διαφορά Μετρητών',
 		cell: ({ row }) => {
 			const diffSnippet = createRawSnippet<[{ difference: number }]>((getDiff) => {
 				const { difference } = getDiff();
-				const formatted = new Intl.NumberFormat('en-US', {
+				const formatted = new Intl.NumberFormat('el-GR', {
 					style: 'currency',
 					currency: 'EUR'
 				}).format(difference);
@@ -178,11 +163,11 @@ export const registerColumns: ColumnDef<DailyRegisterClosing>[] = [
 	},
 	{
 		accessorKey: 'total_supplier_payments',
-		header: 'Supplier Payments',
+		header: 'Πληρωμές Προμηθευτών',
 		cell: ({ row }) => {
 			const paymentsSnippet = createRawSnippet<[{ payments: number }]>((getPayments) => {
 				const { payments } = getPayments();
-				const formatted = new Intl.NumberFormat('en-US', {
+				const formatted = new Intl.NumberFormat('el-GR', {
 					style: 'currency',
 					currency: 'EUR'
 				}).format(payments);
@@ -197,11 +182,11 @@ export const registerColumns: ColumnDef<DailyRegisterClosing>[] = [
 	},
 	{
 		accessorKey: 'total_expenses',
-		header: 'Expenses',
+		header: 'Έξοδα',
 		cell: ({ row }) => {
 			const expensesSnippet = createRawSnippet<[{ expenses: number }]>((getExpenses) => {
 				const { expenses } = getExpenses();
-				const formatted = new Intl.NumberFormat('en-US', {
+				const formatted = new Intl.NumberFormat('el-GR', {
 					style: 'currency',
 					currency: 'EUR'
 				}).format(expenses);
@@ -216,7 +201,7 @@ export const registerColumns: ColumnDef<DailyRegisterClosing>[] = [
 	},
 	{
 		id: 'actions',
-		header: 'Actions',
+		header: 'Ενέργειες',
 		cell: ({ row }) => {
 			return renderComponent(RegisterDataTableActions, {
 				id: row.original.id,

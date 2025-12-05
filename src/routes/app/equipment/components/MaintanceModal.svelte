@@ -9,8 +9,8 @@
 	import { Progress } from '$lib/components/ui/progress';
 	import { onDestroy } from 'svelte';
 	import { toast } from 'svelte-sonner';
-	import { enhance } from '$app/forms'; // [cite: 27]
-	import type { SubmitFunction } from '@sveltejs/kit'; //
+	import { enhance } from '$app/forms';
+	import type { SubmitFunction } from '@sveltejs/kit';
 	import { SvelteDate } from 'svelte/reactivity';
 	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
 	import { showFailToast, showSuccessToast } from '$lib/stores/toast.svelte';
@@ -105,18 +105,18 @@
 </script>
 
 <Dialog.Root bind:open>
-	<Dialog.Content class="sm:max-w-2xl">
+	<Dialog.Content class="max-h-[90vh] w-full max-w-full overflow-y-auto px-4 sm:max-w-2xl sm:px-6">
 		<Dialog.Header>
-			<Dialog.Title class="flex items-center gap-2">
-				<AlertCircle class="h-5 w-5 text-orange-600" />
-				Report Equipment Issue
+			<Dialog.Title class="flex items-center gap-2 text-lg sm:text-xl">
+				<AlertCircle class="h-5 w-5 flex-shrink-0 text-orange-600" />
+				<span class="truncate">Report Equipment Issue</span>
 			</Dialog.Title>
-			<Dialog.Description>
-				Submit a maintenance log for <span class="font-semibold text-foreground"
+			<Dialog.Description class="text-sm sm:text-base">
+				Submit a maintenance log for <span class="font-semibold break-words text-foreground"
 					>{equipment.name}</span
 				>.
 				{#if equipment.model}
-					(Model: {equipment.model})
+					<span class="block sm:inline">(Model: {equipment.model})</span>
 				{/if}
 			</Dialog.Description>
 		</Dialog.Header>
@@ -125,7 +125,7 @@
 			action="?/addMaintenanceLog"
 			method="POST"
 			enctype="multipart/form-data"
-			class="space-y-4 py-4"
+			class="space-y-3 py-4 sm:space-y-4"
 			use:enhance={handleSubmit}
 		>
 			<input type="hidden" name="equipmentId" value={equipment.id} />
@@ -142,7 +142,7 @@
 					name="issueDescription"
 					bind:value={issueDescription}
 					placeholder="Describe the problem in detail..."
-					class="min-h-24"
+					class="min-h-20 text-sm sm:min-h-24"
 				/>
 			</div>
 
@@ -158,12 +158,12 @@
 					name="actionTaken"
 					bind:value={actionTaken}
 					placeholder="What action was taken to resolve the issue..."
-					class="min-h-20"
+					class="min-h-16 text-sm sm:min-h-20"
 				/>
 			</div>
 
 			<div class="space-y-2">
-				<div class="flex w-full flex-col gap-2 rounded-md p-4">
+				<div class="flex w-full flex-col gap-2 rounded-md bg-muted/50 p-2 sm:p-4">
 					<FileDropZone
 						{onUpload}
 						{onFileRejected}
@@ -174,12 +174,14 @@
 						name="images[]"
 					/>
 
-					<div class="flex flex-col gap-2">
+					<div class="flex max-h-48 flex-col gap-2 overflow-y-auto sm:max-h-64">
 						{#each files as file, i (file.name)}
-							<div class="flex items-center justify-between gap-2 rounded-md p-2">
-								<div class="flex items-center gap-3">
+							<div class="flex items-center justify-between gap-2 rounded-md bg-background p-2">
+								<div class="flex min-w-0 items-center gap-2 sm:gap-3">
 									{#await file.url then src}
-										<div class="relative size-10 overflow-hidden rounded-md">
+										<div
+											class="relative size-8 flex-shrink-0 overflow-hidden rounded-md sm:size-10"
+										>
 											<img
 												{src}
 												alt={file.name}
@@ -187,30 +189,31 @@
 											/>
 										</div>
 									{/await}
-									<div class="flex flex-col">
-										<span class="text-sm font-medium">{file.name}</span>
+									<div class="flex min-w-0 flex-col">
+										<span class="truncate text-xs font-medium sm:text-sm">{file.name}</span>
 										<span class="text-xs text-muted-foreground">{displaySize(file.size)}</span>
 									</div>
 								</div>
 
-								<div class="flex items-center gap-2">
+								<div class="flex flex-shrink-0 items-center gap-1 sm:gap-2">
 									{#await file.url}
 										<Progress
-											class="h-2 w-20"
+											class="h-2 w-12 sm:w-20"
 											value={((date.getTime() - file.uploadedAt) / 1000) * 100}
 											max={100}
 										/>
 									{:then url}
 										<Button
+											type="button"
 											variant="ghost"
 											size="icon"
-											class="h-8 w-8 text-muted-foreground hover:text-destructive"
+											class="h-6 w-6 flex-shrink-0 text-muted-foreground hover:text-destructive sm:h-8 sm:w-8"
 											onclick={() => {
 												URL.revokeObjectURL(url);
 												files = files.filter((_, index) => index !== i);
 											}}
 										>
-											<X class="h-4 w-4" />
+											<X class="h-3 w-3 sm:h-4 sm:w-4" />
 										</Button>
 									{/await}
 								</div>
@@ -220,16 +223,17 @@
 				</div>
 			</div>
 
-			<Dialog.Footer>
+			<Dialog.Footer class="flex-col-reverse gap-2 pt-2 sm:flex-row sm:gap-3">
 				<Button
 					type="button"
 					variant="outline"
 					onclick={() => (open = false)}
 					disabled={isSubmitting}
+					class="w-full sm:w-auto"
 				>
 					Cancel
 				</Button>
-				<Button type="submit" disabled={isSubmitting}>
+				<Button type="submit" disabled={isSubmitting} class="w-full sm:w-auto">
 					{#if isSubmitting}
 						Submitting... <Spinner class="ml-2 h-4 w-4" />
 					{:else}

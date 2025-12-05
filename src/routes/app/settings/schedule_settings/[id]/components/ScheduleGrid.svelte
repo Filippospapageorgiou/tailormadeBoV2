@@ -42,6 +42,13 @@
 		localEmployees = employees;
 	});
 
+	let orderEmployees = $derived.by(() => {
+		return localEmployees.map((employee, index) => ({
+			id: employee.id,
+			orderDisplay: employee.display_order
+		}));
+	});
+
 	let weekDays = $derived.by(() => {
 		if (!schedule) return [];
 		const startDate = new Date(schedule.week_start_date);
@@ -133,7 +140,7 @@
 							{#if source}
 								{@const emp = localEmployees.find((e) => e.id === source.id)}
 								{#if emp}
-									<div class="rotate-2 opacity-80 shadow-2xl">
+									<div class="opacity-80 shadow-2xl">
 										<SortableEmployeeRow
 											employee={emp}
 											index={0}

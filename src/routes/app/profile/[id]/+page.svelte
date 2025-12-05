@@ -14,7 +14,8 @@
 		Calendar,
 		User,
 		MailIcon,
-		Loader
+		Loader,
+		PhoneCall
 	} from 'lucide-svelte';
 	import * as Avatar from '$lib/components/ui/avatar/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
@@ -22,7 +23,7 @@
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { updateUsername, updateAvatar } from './data.remote';
 	import { getProfileContext } from '$lib/stores/profile.svelte.js';
-	import { toast } from '$lib/stores/toast.svelte';
+	import { showSuccessToast, showFailToast } from '$lib/stores/toast.svelte';
 
 	let { data } = $props();
 
@@ -67,43 +68,6 @@
 			day: 'numeric'
 		});
 	}
-
-	function handleUpdateSuccess(text: string) {
-		toast.show = true;
-		toast.status = true;
-		toast.title = 'Success';
-		toast.text = text;
-		isUpdating = false;
-		editing = false;
-		profileStore.updateUsername(username);
-	}
-
-	function handleUpdateError(text: string) {
-		toast.show = true;
-		toast.status = false;
-		toast.title = 'Error';
-		toast.text = text;
-		isUpdating = false;
-		editing = false;
-	}
-
-	function handleAvatarUpdateSuccess(text: string, newImageUrl: string) {
-		toast.show = true;
-		toast.status = true;
-		toast.title = 'Success';
-		toast.text = text;
-		backgroundImage = newImageUrl;
-		editing = false;
-		profileStore.updateAvatar(newImageUrl);
-	}
-
-	function handleAvatarUpdateError(text: string) {
-		toast.show = true;
-		toast.status = false;
-		toast.title = 'Error';
-		toast.text = text;
-		editing = false;
-	}
 </script>
 
 <div class="">
@@ -132,19 +96,20 @@
 											await submit();
 
 											if (updateAvatar.issues?.avatar) {
-												handleAvatarUpdateError(updateAvatar.issues.avatar[0].message);
+												showFailToast('Error', updateAvatar.issues.avatar[0].message);
 												return;
 											}
 
 											if (updateAvatar.result?.success && updateAvatar.result.imageUrl) {
-												handleAvatarUpdateSuccess(
+												showSuccessToast(
 													'Avatar updated successfully',
 													updateAvatar.result.imageUrl
 												);
 												files = undefined;
 												form.reset();
 											} else {
-												handleAvatarUpdateError(
+												showFailToast(
+													'Error',
 													updateAvatar.result?.message || 'An unknown error occurred'
 												);
 											}
@@ -194,16 +159,16 @@
 												await submit();
 
 												if (updateUsername.issues?.username) {
-													handleUpdateError(updateUsername.issues.username[0].message);
+													showFailToast('Error', updateUsername.issues.username[0].message);
 													return;
 												}
 												form.reset();
-												handleUpdateSuccess('Username updated successfully');
+												showSuccessToast('Success', 'Username updated successfully');
 											} finally {
 												isUpdating = false;
 											}
 										})}
-										class="flex flex-row gap-2 py-2"
+										class="flex flex-col gap-2 py-2"
 									>
 										<Input
 											id="username"
@@ -213,6 +178,15 @@
 											disabled={isUpdating || isUpdatingAvatar}
 											aria-invalid={!!updateUsername.issues?.username}
 										/>
+										<Input
+											id="phone"
+											name={updateUsername.field('phone')}
+											bind:value={phone}
+											placeholder={profile.phone}
+											disabled={isUpdating || isUpdatingAvatar}
+											aria-invalid={!!updateUsername.issues?.phone}
+										/>
+
 										<Button
 											variant="outline"
 											class="cursor-pointer"
@@ -230,6 +204,10 @@
 									</form>
 								{:else}
 									<h2 class="mb-2 text-3xl font-bold text-neutral-800">{profile.username}</h2>
+									<p class="mb-3 flex items-center gap-2 text-neutral-600">
+										<PhoneCall class="h-4 w-4" />
+										{profile.phone || '-'}
+									</p>
 								{/if}
 								<p class="mb-3 flex items-center gap-2 text-neutral-600">
 									<Mail class="h-4 w-4" />
