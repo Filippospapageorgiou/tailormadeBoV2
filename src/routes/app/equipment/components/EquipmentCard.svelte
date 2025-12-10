@@ -1,19 +1,9 @@
 <script lang="ts">
-	import {
-		Wrench,
-		CheckCircle2,
-		XCircle,
-		AlertTriangle,
-		AlertCircleIcon,
-		AlertOctagon
-	} from 'lucide-svelte';
+	import { Wrench, CheckCircle2, XCircle, AlertTriangle } from 'lucide-svelte';
 	import { differenceInDays, parseISO } from 'date-fns';
 	import type { Equipment, EquipmentStatus } from '$lib/models/equipment.types';
 	import CustomButton from '../../../../lib/components/custom/register_settings/customButton/customButton.svelte';
-	import Label from '$lib/components/ui/label/label.svelte';
 	import MaintanceModal from './MaintanceModal.svelte';
-	import { AlertTitle } from '$lib/components/ui/alert';
-	import { AlertDialog } from 'bits-ui';
 
 	let { equipment }: { equipment: Equipment } = $props();
 	let modalOpen = $state(false);

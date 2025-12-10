@@ -10,13 +10,19 @@
 
 	let query = getAllEquipments();
 
-	let equipmentStatus = ['operational', 'broken', 'maintenance'];
+	let equipmentStatus = [
+		{ value: 'operational', label: 'Σε λειτουργία' },
+		{ value: 'maintenance', label: 'σε service' },
+		{ value: 'broken', label: 'Βλάβη' }
+	];
 
 	let equipmentList = $derived(query?.current?.equipments || []);
 	let total = $derived(query?.current?.total);
 
 	let value = $state('');
-	const triggerContent = $derived(equipmentStatus.find((c) => c === value) ?? 'select a category');
+	const triggerContent = $derived(
+		equipmentStatus.find((c) => c.value === value)?.label ?? 'Διαλέξε κατάσταση'
+	);
 
 	let searchQuery = $state('');
 
@@ -44,8 +50,6 @@
 		await query.refresh();
 		refreshAction = false;
 	}
-
-	let open;
 </script>
 
 <div class="min-h-screen bg-white">
@@ -70,10 +74,11 @@
 				</Select.Trigger>
 				<Select.Content>
 					<Select.Group>
-						<Select.Label>Categories</Select.Label>
+						<Select.Label>Κατάσταση</Select.Label>
+						<Select.Item value={''}>όλα</Select.Item>
 						{#each equipmentStatus as status}
-							<Select.Item value={status ?? ''}>
-								{status}
+							<Select.Item value={status.value ?? ''}>
+								{status.label}
 							</Select.Item>
 						{/each}
 					</Select.Group>

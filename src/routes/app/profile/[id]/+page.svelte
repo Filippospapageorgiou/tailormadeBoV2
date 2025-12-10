@@ -1,8 +1,6 @@
 <script lang="ts">
 	import {
 		Pencil,
-		Save,
-		X,
 		Building,
 		Phone,
 		MapPin,
@@ -11,19 +9,19 @@
 		XCircle,
 		IdCard,
 		Mail,
-		Calendar,
-		User,
-		MailIcon,
-		Loader,
 		PhoneCall
 	} from 'lucide-svelte';
 	import * as Avatar from '$lib/components/ui/avatar/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
-	import { Button } from '$lib/components/ui/button/index.js';
+	import { Button, buttonVariants } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge/index.js';
-	import { updateUsername, updateAvatar } from './data.remote';
+	import { updateProfile } from './data.remote.js';
 	import { getProfileContext } from '$lib/stores/profile.svelte.js';
 	import { showSuccessToast, showFailToast } from '$lib/stores/toast.svelte';
+	import * as Modal from '$lib/components/ui/modal';
+	import { Label } from '$lib/components/ui/label';
+	import { PhoneInput } from '$lib/components/ui/phone-input';
+	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
 
 	let { data } = $props();
 
@@ -34,30 +32,40 @@
 
 	let profile = $derived(data.profile);
 	let organization = $derived(data.organization);
+	let managers = $derived(data.managers);
+
+	function getInitials(name: string) {
+		return name
+			.split(' ')
+			.map((n) => n[0])
+			.join('')
+			.toUpperCase()
+			.slice(0, 2);
+	}
 
 	let username = $state('');
 	let phone = $state('');
 	let backgroundImage = $state('');
+	let editingBackgroundImage = $state('');
 
 	$effect(() => {
 		username = profile.username;
 		phone = profile.phone || '';
+		backgroundImage = profile.image_url;
+		editingBackgroundImage = profile.image_url;
 	});
 
-	let editing = $state(false);
-
 	let files: FileList | undefined = $state();
+
 	$effect(() => {
-		if (editing) {
-			if (files && files[0]) {
-				const reader = new FileReader();
-				reader.onload = () => {
-					backgroundImage = reader.result?.toString() || '';
-				};
-				reader.readAsDataURL(files[0]);
-			}
+		if (files && files[0]) {
+			const reader = new FileReader();
+			reader.onload = () => {
+				editingBackgroundImage = reader.result?.toString() || '';
+			};
+			reader.readAsDataURL(files[0]);
 		} else {
-			backgroundImage = profile.image_url;
+			editingBackgroundImage = profile.image_url;
 		}
 	});
 
@@ -70,349 +78,305 @@
 	}
 </script>
 
-<div class="">
+<div>
 	<main class="container mx-auto px-4 pt-8 pb-20 md:px-6">
 		<div class="mx-auto max-w-5xl">
-			<!-- Header Section -->
-			<div class="mb-8">
-				<h1 class="font-mono text-4xl tracking-wider text-neutral-800">PROFILE</h1>
-				<p class="mt-1 text-sm text-[#8B6B4A]">Manage your account and organization details</p>
+			<!-- Header -->
+			<div class="mb-12">
+				<h1 class="font-mono text-4xl tracking-wider text-neutral-900">PROFILE</h1>
+				<p class="mt-2 text-neutral-600">Manage your account and organization details</p>
 			</div>
 
-			<!-- Main Profile Card -->
-			<div class="mb-6 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-				<!-- Profile Content -->
-				<div class="px-8 py-8">
-					<!-- Avatar & Basic Info -->
-					<div class="mb-6 flex flex-col md:flex-row md:items-start md:justify-between">
-						<div class="flex flex-col gap-6 md:flex-row">
-							<div class="group relative">
-								<form
-									class="flex flex-col gap-2"
-									enctype="multipart/form-data"
-									{...updateAvatar.enhance(async ({ form, data, submit }) => {
-										try {
-											isUpdatingAvatar = true;
-											await submit();
+			<!-- Profile Header Section -->
+			<div class="mb-12">
+				<div class="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
+					<!-- Avatar & Info -->
+					<div class="flex flex-col gap-6 md:flex-row md:items-start">
+						<!-- Avatar Upload -->
+						<div>
+							<Avatar.Root class="h-40 w-40">
+								<Avatar.Image src={backgroundImage} alt={username} />
+								<Avatar.Fallback>{username?.charAt(0)}</Avatar.Fallback>
+							</Avatar.Root>
+						</div>
 
-											if (updateAvatar.issues?.avatar) {
-												showFailToast('Error', updateAvatar.issues.avatar[0].message);
-												return;
-											}
-
-											if (updateAvatar.result?.success && updateAvatar.result.imageUrl) {
-												showSuccessToast(
-													'Avatar updated successfully',
-													updateAvatar.result.imageUrl
-												);
-												files = undefined;
-												form.reset();
-											} else {
-												showFailToast(
-													'Error',
-													updateAvatar.result?.message || 'An unknown error occurred'
-												);
-											}
-										} finally {
-											isUpdatingAvatar = false;
-										}
-									})}
-								>
-									<Avatar.Root class="h-32 w-32 border-4 border-background">
-										<Avatar.Image src={backgroundImage} alt={username} />
-										<Avatar.Fallback>{username?.charAt(0)}</Avatar.Fallback>
-									</Avatar.Root>
-									{#if editing}
-										<Input
-											bind:files
-											type="file"
-											accept="image/png,image/jpeg"
-											name="avatar"
-											class="w-31 cursor-pointer text-sm"
-											disabled={isUpdatingAvatar || isUpdating}
-										/>
-										<Button
-											variant="outline"
-											class="cursor-pointer"
-											type="submit"
-											disabled={isUpdatingAvatar || isUpdating}
-										>
-											{#if isUpdatingAvatar}
-												<Loader class="mr-2 h-4 w-4 animate-spin-clockwise repeat-infinite" />
-												Saving...
-											{:else}
-												<Save class="mr-2 h-4 w-4" />
-												Save Avatar
-											{/if}
-										</Button>
-									{/if}
-								</form>
-							</div>
-
-							<!-- Name & Email -->
+						<!-- Name & Email -->
+						<div class="flex-1 space-y-2">
 							<div>
-								{#if editing}
+								<h2 class="text-2xl font-semibold text-neutral-900">{profile.username}</h2>
+								<div class="mt-3 space-y-2">
+									<p class="flex items-center gap-2 text-neutral-700">
+										<Mail class="h-4 w-4 text-neutral-500" />
+										{profile.email}
+									</p>
+									{#if profile.phone}
+										<p class="flex items-center gap-2 text-neutral-700">
+											<PhoneCall class="h-4 w-4 text-neutral-500" />
+											{profile.phone}
+										</p>
+									{/if}
+								</div>
+							</div>
+							<Modal.Root>
+								<Modal.Trigger
+									class="inline-flex cursor-pointer items-center gap-2 rounded-md border border-border bg-transparent px-1.5 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted active:scale-95"
+								>
+									Edit Profile
+								</Modal.Trigger>
+								<Modal.Content>
+									<Modal.Header>
+										<Modal.Title>Edit Profile</Modal.Title>
+										<Modal.Description>
+											Make changes to your profile here. Click save when you're done.
+										</Modal.Description>
+									</Modal.Header>
 									<form
-										{...updateUsername.enhance(async ({ form, data, submit }) => {
+										{...updateProfile.enhance(async ({ form, data, submit }) => {
 											try {
 												isUpdating = true;
 												await submit();
-
-												if (updateUsername.issues?.username) {
-													showFailToast('Error', updateUsername.issues.username[0].message);
+												if (updateProfile.result?.success) {
+													showSuccessToast('Επιτυχία', updateProfile.result.message);
+													profileStore.updateUsername(username);
+													profileStore.updatePhone(phone);
+													profileStore.updateAvatar(editingBackgroundImage);
+												} else {
+													showFailToast(
+														'Σφάλμα',
+														updateProfile.result?.message ||
+															'Ένα σφάλμα προέκυψε κάτα την ενημέρωση προσπάθησε ξάνα'
+													);
+													isUpdating = false;
 													return;
 												}
 												form.reset();
-												showSuccessToast('Success', 'Username updated successfully');
-											} finally {
 												isUpdating = false;
+											} catch (error) {
+												showFailToast(
+													'Σφάλμα',
+													'Ένα σφάλμα προέκυψε κάτα την ενημέρωση προσπάθησε ξάνα'
+												);
 											}
 										})}
-										class="flex flex-col gap-2 py-2"
+										enctype="multipart/form-data"
+										class="flex flex-col gap-2"
 									>
-										<Input
-											id="username"
-											name={updateUsername.field('username')}
-											bind:value={username}
-											placeholder={profile.username}
-											disabled={isUpdating || isUpdatingAvatar}
-											aria-invalid={!!updateUsername.issues?.username}
-										/>
-										<Input
-											id="phone"
-											name={updateUsername.field('phone')}
-											bind:value={phone}
-											placeholder={profile.phone}
-											disabled={isUpdating || isUpdatingAvatar}
-											aria-invalid={!!updateUsername.issues?.phone}
-										/>
-
-										<Button
-											variant="outline"
-											class="cursor-pointer"
-											type="submit"
-											disabled={isUpdatingAvatar || isUpdating}
-										>
-											{#if isUpdating}
-												<Loader class="mr-2 h-4 w-4 animate-spin-clockwise repeat-infinite" />
-												Saving...
-											{:else}
-												<Save class="mr-2 h-4 w-4" />
-												Save
-											{/if}
-										</Button>
+										<div class="flex flex-col items-center justify-center">
+											<!-- Avatar with Pencil Overlay -->
+											<div class="relative inline-block">
+												<Avatar.Root class="h-40 w-40">
+													<Avatar.Image src={editingBackgroundImage} alt={username} />
+													<Avatar.Fallback>{username?.charAt(0)}</Avatar.Fallback>
+												</Avatar.Root>
+												<Label
+													for="avatar-input"
+													class="absolute right-0 bottom-0 cursor-pointer rounded-full p-2.5 transition-all hover:bg-primary hover:text-white"
+													title="Change avatar"
+												>
+													<Pencil class="h-4 w-4" />
+												</Label>
+											</div>
+											<Input
+												id="avatar-input"
+												bind:files
+												type="file"
+												accept="image/png,image/jpeg"
+												name={updateProfile.field('avatar')}
+												class="hidden"
+												disabled={isUpdating}
+											/>
+										</div>
+										<div class="space-y-2">
+											<Label for="username">Username</Label>
+											<Input
+												id="username"
+												name={updateProfile.field('username')}
+												bind:value={username}
+												placeholder={profile.username}
+												disabled={isUpdating}
+											/>
+										</div>
+										<div class="space-y-2">
+											<Label for="phone">Phone</Label>
+											<PhoneInput
+												country="GR"
+												name={updateProfile.field('phone')}
+												bind:value={phone}
+												placeholder={profile.phone ?? 'πρόσθεσε κίνητο'}
+												disabled={isUpdating}
+											/>
+										</div>
+										<Modal.Footer>
+											<Button type="submit" disabled={isUpdating}>
+												{#if isUpdating}
+													<Spinner /> Saving...
+												{:else}
+													Save Changes
+												{/if}
+											</Button>
+										</Modal.Footer>
 									</form>
-								{:else}
-									<h2 class="mb-2 text-3xl font-bold text-neutral-800">{profile.username}</h2>
-									<p class="mb-3 flex items-center gap-2 text-neutral-600">
-										<PhoneCall class="h-4 w-4" />
-										{profile.phone || '-'}
-									</p>
-								{/if}
-								<p class="mb-3 flex items-center gap-2 text-neutral-600">
-									<Mail class="h-4 w-4" />
-									{profile.email}
-								</p>
-							</div>
-						</div>
-
-						<!-- Edit Username Button -->
-						<div class="mt-4 md:mt-0">
-							<Button
-								variant="outline"
-								size="sm"
-								onclick={() => {
-									editing = !editing;
-								}}
-								class="cursor-pointer gap-2"
-							>
-								<Pencil class="h-4 w-4" />
-								Edit Profile
-							</Button>
+								</Modal.Content>
+							</Modal.Root>
 						</div>
 					</div>
+				</div>
 
-					<!-- Account Details Grid -->
-					<div class="mt-8 grid grid-cols-1 gap-6 border-t border-neutral-200 pt-6 md:grid-cols-3">
-						<div class="flex items-start gap-3">
-							<div class="rounded-lg bg-neutral-100 p-2">
-								<User class="h-5 w-5 text-[#8B6B4A]" />
-							</div>
-							<div>
-								<p class="mb-1 text-sm text-neutral-500">User ID</p>
-								<p class="font-mono text-sm font-medium text-neutral-800">
-									{profile.id.slice(0, 8)}...
-								</p>
-							</div>
-						</div>
+				<!-- Account Details -->
+				<div class="mt-8 grid grid-cols-2 gap-6 border-t border-neutral-200 pt-8 md:grid-cols-3">
+					<div>
+						<p class="mb-1 text-sm text-neutral-500">User ID</p>
+						<p class="font-mono text-sm font-medium text-neutral-900">
+							{profile.id.slice(0, 8)}...
+						</p>
+					</div>
 
-						<div class="flex items-start gap-3">
-							<div class="rounded-lg bg-neutral-100 p-2">
-								<IdCard class="h-5 w-5 text-[#8B6B4A]" />
-							</div>
-							<div>
-								<p class="mb-1 text-sm text-neutral-500">Role</p>
-								<p class="font-mono text-sm font-medium text-neutral-800">
-									{profileStore.role_name}
-								</p>
-							</div>
-						</div>
+					<div>
+						<p class="mb-1 text-sm text-neutral-500">Role</p>
+						<p class="text-sm font-medium text-neutral-900">
+							{profileStore.role_name}
+						</p>
+					</div>
 
-						<div class="flex items-start gap-3">
-							<div class="rounded-lg bg-neutral-100 p-2">
-								<Calendar class="h-5 w-5 text-[#8B6B4A]" />
-							</div>
-							<div>
-								<p class="mb-1 text-sm text-neutral-500">Member Since</p>
-								<p class="font-medium text-neutral-800">{formatDate(profile.created_at)}</p>
-							</div>
-						</div>
+					<div>
+						<p class="mb-1 text-sm text-neutral-500">Member Since</p>
+						<p class="text-sm font-medium text-neutral-900">{formatDate(profile.created_at)}</p>
 					</div>
 				</div>
 			</div>
 
-			<!-- Organization & Manager Cards -->
-			<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-				<!-- Organization Card -->
-				<div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-					<div class="border-b border-neutral-200 px-6 py-5">
-						<div class="flex items-center justify-between">
-							<div class="flex items-center gap-3">
-								<div class="rounded-lg bg-[#8B6B4A]/10 p-2">
-									<Building class="h-5 w-5 text-[#8B6B4A]" />
-								</div>
-								<h3 class="text-lg font-bold text-neutral-800">Organization</h3>
-							</div>
-							{#if organization.status}
-								<Badge class="bg-green-100 text-green-700 hover:bg-green-100">
-									<CheckCircle class="mr-1 h-3 w-3" />
-									Active
-								</Badge>
-							{:else}
-								<Badge class="bg-red-100 text-red-700 hover:bg-red-100">
-									<XCircle class="mr-1 h-3 w-3" />
-									Inactive
-								</Badge>
-							{/if}
-						</div>
-					</div>
-
-					<div class="px-6 py-5">
-						<div class="space-y-4">
-							<!-- Store Name -->
-							<div class="flex items-start gap-3">
-								<div class="rounded-lg bg-neutral-100 p-2">
-									<Building class="h-4 w-4 text-[#8B6B4A]" />
-								</div>
-								<div class="flex-1">
-									<p class="mb-0.5 text-sm text-neutral-500">Store Name</p>
-									<p class="font-medium text-neutral-800">
-										{organization.store_name || 'Not specified'}
-									</p>
-								</div>
-							</div>
-
-							<!-- Phone -->
-							<div class="flex items-start gap-3">
-								<div class="rounded-lg bg-neutral-100 p-2">
-									<Phone class="h-4 w-4 text-[#8B6B4A]" />
-								</div>
-								<div class="flex-1">
-									<p class="mb-0.5 text-sm text-neutral-500">Phone</p>
-									<p class="font-medium text-neutral-800">
-										{organization.phone || 'Not specified'}
-									</p>
-								</div>
-							</div>
-
-							<!-- Location -->
-							<div class="flex items-start gap-3">
-								<div class="rounded-lg bg-neutral-100 p-2">
-									<MapPin class="h-4 w-4 text-[#8B6B4A]" />
-								</div>
-								<div class="flex-1">
-									<p class="mb-0.5 text-sm text-neutral-500">Location</p>
-									<p class="font-medium text-neutral-800">
-										{organization.location || 'Not specified'}
-									</p>
-								</div>
-							</div>
-
-							<!-- Country -->
-							<div class="flex items-start gap-3">
-								<div class="rounded-lg bg-neutral-100 p-2">
-									<Globe class="h-4 w-4 text-[#8B6B4A]" />
-								</div>
-								<div class="flex-1">
-									<p class="mb-0.5 text-sm text-neutral-500">Country</p>
-									<p class="font-medium text-neutral-800">
-										{organization.country || 'Not specified'}
-									</p>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<!-- Store Manager Card -->
-				<div class="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-					<div class="border-b border-neutral-200 px-6 py-5">
+			<!-- Organization & Team Section -->
+			<div class="grid grid-cols-1 gap-12 lg:grid-cols-2">
+				<!-- Organization Info -->
+				<div>
+					<div class="mb-6 flex items-center justify-between">
 						<div class="flex items-center gap-3">
-							<div class="rounded-lg bg-[#8B6B4A]/10 p-2">
-								<User class="h-5 w-5 text-[#8B6B4A]" />
-							</div>
-							<h3 class="text-lg font-bold text-neutral-800">Store Manager</h3>
+							<Building class="h-5 w-5 text-neutral-900" />
+							<h3 class="text-lg font-bold text-neutral-900">Organization</h3>
 						</div>
+						{#if organization.status}
+							<Badge class="bg-green-100 text-green-700 hover:bg-green-100">
+								<CheckCircle class="mr-1 h-3 w-3" />
+								Active
+							</Badge>
+						{:else}
+							<Badge class="bg-red-100 text-red-700 hover:bg-red-100">
+								<XCircle class="mr-1 h-3 w-3" />
+								Inactive
+							</Badge>
+						{/if}
 					</div>
 
-					<div class="px-6 py-5">
-						<div class="space-y-4">
-							<p class="mb-4 text-sm text-neutral-600">Need help? Contact your store manager</p>
-
-							{#if organization.manager}
-								<!-- Manager Username -->
-								<div class="flex items-start gap-3">
-									<div class="rounded-lg bg-neutral-100 p-2">
-										<User class="h-4 w-4 text-[#8B6B4A]" />
-									</div>
-									<div class="flex-1">
-										<p class="mb-0.5 text-sm text-neutral-500">Manager Name</p>
-										<p class="font-medium text-neutral-800">
-											{organization.manager.username}
-										</p>
-									</div>
-								</div>
-
-								<!-- Manager Email -->
-								<div class="flex items-start gap-3">
-									<div class="rounded-lg bg-neutral-100 p-2">
-										<MailIcon class="h-4 w-4 text-[#8B6B4A]" />
-									</div>
-									<div class="flex-1">
-										<p class="mb-0.5 text-sm text-neutral-500">Manager Email</p>
-										<p class="font-medium text-neutral-800">
-											{organization.manager.email}
-										</p>
-									</div>
-								</div>
-
-								<!-- Contact Button -->
-								<div class="pt-2">
-									<Button class="w-full gap-2 bg-[#8B6B4A] text-white hover:bg-[#6B5239]">
-										<Mail class="h-4 w-4" />
-										Contact Manager
-									</Button>
-								</div>
-							{:else}
-								<p class="text-sm text-neutral-500">No manager assigned to this organization</p>
-							{/if}
-
-							<p class="pt-2 text-center text-xs text-neutral-500">
-								Your manager can help with schedules, time-off requests, and other workplace matters
+					<div class="space-y-6">
+						<!-- Store Name -->
+						<div>
+							<p class="mb-1 text-sm text-neutral-500">Store Name</p>
+							<p class="font-medium text-neutral-900">
+								{organization.store_name || 'Not specified'}
 							</p>
 						</div>
+
+						<!-- Phone -->
+						<div>
+							<p class="mb-1 text-sm text-neutral-500">Phone</p>
+							<div class="flex items-center gap-2">
+								<Phone class="h-4 w-4 text-neutral-500" />
+								<p class="font-medium text-neutral-900">
+									{organization.phone || 'Not specified'}
+								</p>
+							</div>
+						</div>
+
+						<!-- Location -->
+						<div>
+							<p class="mb-1 text-sm text-neutral-500">Location</p>
+							<div class="flex items-center gap-2">
+								<MapPin class="h-4 w-4 text-neutral-500" />
+								<p class="font-medium text-neutral-900">
+									{organization.location || 'Not specified'}
+								</p>
+							</div>
+						</div>
+
+						<!-- Country -->
+						<div>
+							<p class="mb-1 text-sm text-neutral-500">Country</p>
+							<div class="flex items-center gap-2">
+								<Globe class="h-4 w-4 text-neutral-500" />
+								<p class="font-medium text-neutral-900">
+									{organization.country || 'Not specified'}
+								</p>
+							</div>
+						</div>
 					</div>
 				</div>
+
+				<section>
+					<div class="mb-8">
+						<h2 class="text-lg font-medium text-neutral-900">Management Team</h2>
+						<p class="mt-1 text-sm text-neutral-500">Get in touch with your team for support</p>
+					</div>
+
+					{#if managers.length > 0}
+						<div class="space-y-4">
+							{#each managers as manager (manager.id)}
+								<div
+									class="group rounded-xl bg-white p-5 shadow-sm ring-1 ring-neutral-900/5 transition-all hover:shadow-md"
+								>
+									<div class="flex gap-5">
+										<!-- Avatar -->
+										<Avatar.Root class="h-16 w-16 shrink-0 ring-2 ring-neutral-100">
+											<Avatar.Image src={manager.image_url} alt={manager.username} />
+											<Avatar.Fallback class="text-lg"
+												>{getInitials(manager.username)}</Avatar.Fallback
+											>
+										</Avatar.Root>
+
+										<!-- Info -->
+										<div class="min-w-0 flex-1">
+											<div class="flex items-start justify-between gap-4">
+												<div>
+													<h3 class="text-base font-semibold text-neutral-900">
+														{manager.username}
+													</h3>
+													<p
+														class="mt-0.5 text-xs font-medium tracking-wide text-neutral-400 uppercase"
+													>
+														Store Manager
+													</p>
+												</div>
+											</div>
+
+											<!-- Contact Details - All visible -->
+											<div class="mt-4 flex flex-wrap gap-x-6 gap-y-2">
+												<a
+													href={`mailto:${manager.email}`}
+													class="inline-flex items-center gap-2 text-sm text-neutral-600 transition-colors hover:text-neutral-900"
+												>
+													<Mail class="h-4 w-4 text-neutral-400" />
+													<span>{manager.email}</span>
+												</a>
+												{#if manager.phone}
+													<a
+														href={`tel:${manager.phone}`}
+														class="inline-flex items-center gap-2 text-sm text-neutral-600 transition-colors hover:text-neutral-900"
+													>
+														<Phone class="h-4 w-4 text-neutral-400" />
+														<span>{manager.phone}</span>
+													</a>
+												{/if}
+											</div>
+										</div>
+									</div>
+								</div>
+							{/each}
+						</div>
+					{:else}
+						<div class="py-8 text-center">
+							<p class="text-sm text-neutral-500">No managers assigned yet</p>
+						</div>
+					{/if}
+				</section>
 			</div>
 		</div>
 	</main>

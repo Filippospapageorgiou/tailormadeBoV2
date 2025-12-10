@@ -13,6 +13,8 @@ export class ProfileStore {
 	role_id = $state();
 	role_name = $state('');
 	can_close_register = $state(false);
+	phone = $state('');
+	isManager = $state(false);
 
 	constructor(profile: Profile | null) {
 		if (profile) {
@@ -25,6 +27,8 @@ export class ProfileStore {
 			this.role_id = profile.role_id;
 			this.role_name = profile.role_name;
 			this.can_close_register = profile.can_close_register;
+			this.phone = profile.phone;
+			this.isManager = profile.is_manager;
 		}
 	}
 
@@ -38,6 +42,8 @@ export class ProfileStore {
 		this.role_id = profile.role_id;
 		this.role_name = profile.role_name;
 		this.can_close_register = profile.can_close_register;
+		this.phone = profile.phone;
+		this.isManager = profile.is_manager;
 	}
 
 	updateUsername(newUsername: string) {
@@ -46,6 +52,9 @@ export class ProfileStore {
 
 	updateAvatar(newAvatarUrl: string) {
 		this.imageUrl = newAvatarUrl;
+	}
+	updatePhone(phone: string) {
+		this.phone = phone;
 	}
 }
 

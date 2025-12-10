@@ -5,7 +5,7 @@ import type { Provider } from '@supabase/supabase-js';
 import { requireAuthenticatedUser } from '$lib/supabase/shared';
 import { z } from 'zod/v4';
 
-const usernameSchema = z.object({
+const updateProfileSchema = z.object({
 	username: z
 		.string({ error: 'Username is required.' })
 		.min(3, { error: 'Username must be at least 3 characters long.' })
@@ -15,57 +15,6 @@ const usernameSchema = z.object({
 		})
 		.toLowerCase()
 		.trim(),
-	phone: z
-		.string()
-		.min(10, { error: 'Phone number must be at least 10 digits.' })
-		.max(15, { error: 'Phone number must not exceed 15 digits.' })
-		.regex(/^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/, {
-			error: 'Invalid phone number format. Use digits, spaces, or dashes.'
-		})
-});
-
-export const updateUsername = form(usernameSchema, async ({ username, phone }) => {
-	const user = await requireAuthenticatedUser();
-	const supabase = createServerClient();
-	const { data: existing, error: checkError } = await supabase
-		.from('profiles')
-		.select('username')
-		.eq('username', username)
-		.maybeSingle();
-
-	if (checkError) {
-		return {
-			success: false,
-			message: 'Database error checking username availability'
-		};
-	}
-
-	if (existing) {
-		return {
-			success: false,
-			message: 'Username has already been taken'
-		};
-	}
-
-	const { error: updateError } = await supabase
-		.from('profiles')
-		.update({
-			username,
-			phone
-		})
-		.eq('id', user.id);
-
-	if (updateError) {
-		return {
-			success: false,
-			message: 'An error occurred while trying to update username'
-		};
-	}
-
-	return { success: true };
-});
-
-const avatarFormSchema = z.object({
 	avatar: z
 		.instanceof(File, { message: 'Please upload a file.' })
 		.refine((file) => file.size > 0, 'File cannot be empty.')
@@ -75,97 +24,122 @@ const avatarFormSchema = z.object({
 				['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'].includes(file.type),
 			'Only image files (JPEG, PNG, WebP, GIF) are allowed.'
 		)
+		.optional(),
+	phone: z.string()
 });
 
-export const updateAvatar = form(avatarFormSchema, async ({ avatar }) => {
+export const updateProfile = form(updateProfileSchema, async ({ username, avatar, phone }) => {
 	const user = await requireAuthenticatedUser();
 	const supabase = createServerClient();
 
-	try {
-		// Get current profile to check for existing avatar
-		const { data: currentProfile, error: profileError } = await supabase
-			.from('profiles')
-			.select('image_url')
-			.eq('id', user.id)
-			.single<Pick<import('$lib/models/database.types').Profile, 'image_url'>>();
+	// Check if username already exists
+	const { count, error: countError } = await supabase
+		.from('profiles')
+		.select('*', { count: 'exact', head: true })
+		.neq('id', user.id)
+		.eq('username', username);
 
-		if (profileError) {
-			console.error('Error fetching current profile:', profileError);
-			return {
-				success: false,
-				message: 'Failed to fetch current profile'
-			};
-		}
-
-		// Delete old avatar if it exists (except default images)
-		if (currentProfile?.image_url && currentProfile.image_url.includes('avatars_url')) {
-			const oldPath = currentProfile.image_url.split('/avatars_url/')[1];
-			if (oldPath) {
-				const { error: deleteError } = await supabase.storage.from('avatars_url').remove([oldPath]);
-
-				if (deleteError) {
-					console.warn('Failed to delete old avatar:', deleteError);
-					// Continue anyway - not critical
-				}
-			}
-		}
-
-		// Generate unique filename to avoid collisions
-		const fileExt = avatar.name.split('.').pop();
-		const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-		const filePath = `${user.id}/${fileName}`;
-
-		// Upload new avatar
-		const { data: uploadData, error: uploadError } = await supabase.storage
-			.from('avatars_url')
-			.upload(filePath, avatar, {
-				cacheControl: '3600',
-				upsert: false
-			});
-
-		if (uploadError) {
-			console.error('Error uploading avatar:', uploadError);
-			return {
-				success: false,
-				message: 'Failed to upload avatar'
-			};
-		}
-
-		// Get public URL
-		const { data: urlData } = supabase.storage.from('avatars_url').getPublicUrl(uploadData.path);
-
-		const publicUrl = urlData.publicUrl;
-
-		// Update profile with new avatar URL
-		const { error: updateError } = await supabase
-			.from('profiles')
-			.update({ image_url: publicUrl })
-			.eq('id', user.id);
-
-		if (updateError) {
-			console.error('Error updating profile:', updateError);
-			// Try to clean up uploaded file
-			const { error: cleanupError } = await supabase.storage.from('avatars_url').remove([filePath]);
-
-			if (cleanupError) {
-				console.error('Failed to cleanup uploaded file:', cleanupError);
-			}
-
-			return {
-				success: false,
-				message: 'Failed to update profile with new avatar'
-			};
-		}
-
-		return {
-			success: true,
-			imageUrl: publicUrl
-		};
-	} catch (err) {
-		console.error('Unexpected error during avatar update:', err);
+	const usernameExists = count && count > 0;
+	if (usernameExists || countError) {
+		console.error('[updateProfile] error checking username if exists: ', countError);
 		return {
 			success: false,
-			message: 'An unexpected error occurred while updating avatar'
+			message: 'Το username υπάρχει δόκιμασε κάτι άλλο'
 		};
 	}
+
+	// Update username and phone first
+	const { error: updateError } = await supabase
+		.from('profiles')
+		.update({
+			username,
+			phone
+		})
+		.eq('id', user.id);
+
+	if (updateError) {
+		console.error('[updateProfile] error updating profile: ', updateError);
+		return {
+			success: false,
+			message: 'Σφάλμα κατά την ενημέρωση του προφιλ'
+		};
+	}
+
+	// Handle avatar upload if it exists
+	if (avatar && avatar.size > 0) {
+		try {
+			// Get current profile to find old avatar
+			const { data: currentProfile, error: fetchError } = await supabase
+				.from('profiles')
+				.select('image_url')
+				.eq('id', user.id)
+				.single();
+
+			if (fetchError) {
+				console.error('[updateProfile] error fetching current profile: ', fetchError);
+				return {
+					success: false,
+					message: 'Σφάλμα κατά την ανάκτηση του προφιλ'
+				};
+			}
+
+			// Delete old avatar if it exists
+			if (currentProfile?.image_url) {
+				try {
+					const urlPath = currentProfile.image_url.split('avatars_url/')[1];
+					if (urlPath) {
+						await supabase.storage.from('avatars_url').remove([urlPath]);
+					}
+				} catch (err) {
+					console.warn('[updateProfile] could not delete old avatar:', err);
+				}
+			}
+
+			// Upload new avatar
+			const buffer = await avatar.arrayBuffer();
+			const fileName = `${user.id}/${Date.now()}-${avatar.name}`;
+
+			const { error: uploadError } = await supabase.storage
+				.from('avatars_url')
+				.upload(fileName, buffer, { upsert: true });
+
+			if (uploadError) {
+				console.error('[updateProfile] error uploading avatar: ', uploadError);
+				return {
+					success: false,
+					message: 'Σφάλμα κατά την μεταφόρτωση της εικόνας'
+				};
+			}
+
+			// Get public URL
+			const { data: publicUrlData } = supabase.storage.from('avatars_url').getPublicUrl(fileName);
+
+			const avatarUrl = publicUrlData.publicUrl;
+
+			// Update avatar_url in profile
+			const { error: avatarUpdateError } = await supabase
+				.from('profiles')
+				.update({ image_url: avatarUrl })
+				.eq('id', user.id);
+
+			if (avatarUpdateError) {
+				console.error('[updateProfile] error updating avatar_url: ', avatarUpdateError);
+				return {
+					success: false,
+					message: 'Σφάλμα κατά την ενημέρωση της εικόνας'
+				};
+			}
+		} catch (err) {
+			console.error('[updateProfile] error handling avatar: ', err);
+			return {
+				success: false,
+				message: 'Σφάλμα κατά την επεξεργασία της εικόνας'
+			};
+		}
+	}
+
+	return {
+		success: true,
+		message: 'Το προφιλ σου ενημερωθήκε επιτυχώς'
+	};
 });

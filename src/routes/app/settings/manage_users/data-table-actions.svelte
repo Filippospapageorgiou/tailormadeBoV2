@@ -11,7 +11,7 @@
 	import { showFailToast, showSuccessToast, toast } from '$lib/stores/toast.svelte';
 	import type { RoleTypes } from '$lib/models/database.types';
 	import BadgeColorPicker from '$lib/components/custom/badge-color-picker.svelte';
-	import { Switch } from "$lib/components/ui/switch/index.js";
+	import { Switch } from '$lib/components/ui/switch/index.js';
 
 	let {
 		id,
@@ -19,14 +19,16 @@
 		role_id,
 		role_name,
 		badge_color,
-		can_close_register
+		can_close_register,
+		is_manager
 	}: {
 		id: string;
 		username: string;
 		role_id: number;
 		role_name: string;
 		badge_color: string;
-		can_close_register:boolean;
+		can_close_register: boolean;
+		is_manager: boolean;
 	} = $props();
 
 	let query = getAllUserFromOrg();
@@ -64,17 +66,18 @@
 			const result = await updateUserRole({
 				userId: id,
 				roleId: parseInt(selectedRoleId, 10),
-				canCloseRegister:can_close_register
+				canCloseRegister: can_close_register,
+				isManager: is_manager
 			});
 
 			if (result.success) {
 				await query.refresh();
-				showSuccessToast('Success',result?.message)
+				showSuccessToast('Success', result?.message);
 			} else {
-				showFailToast('Error',result?.message || 'Failed to update the user')
+				showFailToast('Error', result?.message || 'Failed to update the user');
 			}
 		} catch (error: any) {
-			showFailToast('Error','An unexpected error occured')
+			showFailToast('Error', 'An unexpected error occured');
 		} finally {
 			hideProgress();
 		}
@@ -89,12 +92,12 @@
 
 			if (result.success) {
 				await query.refresh();
-				showSuccessToast('Success',result?.message)
+				showSuccessToast('Success', result?.message);
 			} else {
-				showFailToast('Error',result?.message || 'Failed to update the user')
+				showFailToast('Error', result?.message || 'Failed to update the user');
 			}
 		} catch (error: any) {
-			showFailToast('Error','An unexpected error occured')
+			showFailToast('Error', 'An unexpected error occured');
 		} finally {
 			hideProgress();
 		}
@@ -112,12 +115,12 @@
 
 			if (result.success) {
 				await query.refresh();
-				showSuccessToast('Success',result?.message)
+				showSuccessToast('Success', result?.message);
 			} else {
-				showFailToast('Error',result?.message || 'Failed to update the user')
+				showFailToast('Error', result?.message || 'Failed to update the user');
 			}
 		} catch (error: any) {
-			showFailToast('Error','An unexpected error occured')
+			showFailToast('Error', 'An unexpected error occured');
 		} finally {
 			hideProgress();
 		}
@@ -211,7 +214,11 @@
 				</div>
 				<div class="col-span-3 flex flex-row gap-8">
 					<Label class="text-right">Authorize to close register</Label>
-					 <Switch bind:checked={can_close_register} />
+					<Switch bind:checked={can_close_register} />
+				</div>
+				<div class="col-span-3 flex flex-row gap-8">
+					<Label class="text-right">Is Manager</Label>
+					<Switch bind:checked={is_manager} />
 				</div>
 			</div>
 		</div>
@@ -272,7 +279,11 @@
 			<BadgeColorPicker bind:value={selectedBadgeColor} />
 		</div>
 		<Dialog.Footer>
-			<Button variant="outline" onclick={() => (badgeColorDialogOpen = false)} class="cursor-pointer">
+			<Button
+				variant="outline"
+				onclick={() => (badgeColorDialogOpen = false)}
+				class="cursor-pointer"
+			>
 				Cancel
 			</Button>
 			<Button onclick={handleBadgeColorSubmit} class="cursor-pointer">Save changes</Button>

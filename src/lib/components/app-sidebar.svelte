@@ -73,6 +73,10 @@
 						url: '/app/settings/schedule_settings'
 					},
 					{
+						title: 'Equipment Settings',
+						url: '/app/settings/equipment_settings'
+					},
+					{
 						title: 'Register settings',
 						url: '/app/settings/register_settings'
 					}

@@ -97,17 +97,18 @@ export const getAllUserFromOrg = query(async () => {
 const updateUserRoleSchema = z.object({
 	userId: z.string({ error: 'Invalid user ID format' }),
 	roleId: z.number().int().positive({ error: 'Role ID must be a positive integer' }),
-	canCloseRegister: z.boolean({ error: 'Registry must me a boolean vallue' })
+	canCloseRegister: z.boolean({ error: 'Registry must me a boolean vallue' }),
+	isManager: z.boolean({ error: 'Registry must me a boolean vallue' })
 });
 
 export const updateUserRole = command(
 	updateUserRoleSchema,
-	async ({ userId, roleId, canCloseRegister }) => {
+	async ({ userId, roleId, canCloseRegister, isManager }) => {
 		const supabase = createServerClient();
 		try {
 			const { error } = await supabase
 				.from('profiles')
-				.update({ role_id: roleId, can_close_register: canCloseRegister })
+				.update({ role_id: roleId, can_close_register: canCloseRegister, is_manager: isManager })
 				.eq('id', userId);
 
 			if (error) {
@@ -220,11 +221,9 @@ export const deleteUser = command(deleteUserSchema, async ({ userId }) => {
 
 const updateBadgeColorSchema = z.object({
 	userId: z.string({ error: 'Invalid user ID format' }),
-	badgeColor: z
-		.string()
-		.regex(/^#[0-9A-Fa-f]{6}$/, {
-			error: 'Invalid color format. Must be a hex color (e.g., #3b82f6)'
-		})
+	badgeColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, {
+		error: 'Invalid color format. Must be a hex color (e.g., #3b82f6)'
+	})
 });
 
 export const updateBadgeColor = command(updateBadgeColorSchema, async ({ userId, badgeColor }) => {

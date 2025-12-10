@@ -62,6 +62,7 @@ export interface Profile {
 	can_close_register: boolean;
 	phone: string;
 	display_order: number;
+	is_manager: boolean;
 }
 
 export interface RoleTypes {
@@ -81,8 +82,6 @@ export interface Organization {
 	created_at: string;
 	updated_at: string | null;
 	location: string | null;
-	manager_id: string;
-	manager: Profile | null;
 }
 
 export interface verification_codes {
