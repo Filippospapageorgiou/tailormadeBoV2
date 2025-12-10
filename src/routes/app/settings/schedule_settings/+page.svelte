@@ -30,7 +30,7 @@
 	import { Spinner } from '$lib/components/ui/spinner';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import InputCalendar from '$lib/components/custom/inputCalendar.svelte';
-
+	import { toast } from 'svelte-sonner';
 	import ScheduleCard from './components/ScheduleCard.svelte';
 	import FilterBar from './components/FilterBar.svelte';
 	import AuthBlock from '$lib/components/custom/AuthBlock/authBlock.svelte';
@@ -39,6 +39,12 @@
 	let currentPage = $state(1);
 	let perPage = $state(9);
 	let auth = authenticatedAccess();
+
+	$effect(() => {
+		if (auth.current?.susscess) {
+			toast.success('Επιτυχής πρόσβαση');
+		}
+	});
 
 	// Fetch schedules with pagination
 	let schedulesQuery = $derived.by(() =>

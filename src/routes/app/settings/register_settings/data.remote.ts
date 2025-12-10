@@ -15,8 +15,11 @@ import type { RegisterSupplierPayment, RegisterExpense } from '$lib/models/regis
  * Authenticated access check - verifies user has admin or manager role
  */
 export const authenticatedAccess = query(async () => {
-	const profile = await getUserProfileWithRoleCheck([1, 2]); // 1 = admin, 2 = manager
-	return { profile };
+	const profile = await getUserProfileWithRoleCheck([1, 2]);
+	return {
+		success: true,
+		profile
+	};
 });
 
 const registerTableSchema = z.discriminatedUnion('mode', [

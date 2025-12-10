@@ -11,27 +11,30 @@ export const authenticatedAccess = query(async () => {
 	const supabase = createServerClient();
 	const user = await requireAuthenticatedUser();
 
-	const {data , error:profileError} = await supabase
-	  .from('profiles')
-	  .select('*')
-	  .eq('id',user.id)
-	  .overrideTypes<Profile[]>();
+	const { data, error: profileError } = await supabase
+		.from('profiles')
+		.select('*')
+		.eq('id', user.id)
+		.overrideTypes<Profile[]>();
 
-	if(profileError){
-	  console.error('Error fetching profile info in load time:', profileError);
-	  error(404,'Not found user info');
+	if (profileError) {
+		console.error('Error fetching profile info in load time:', profileError);
+		error(404, 'Not found user info');
 	}
 
-	let profile:Profile;
+	let profile: Profile;
 
-	if(data && data.length > 0)  profile = data[0];
-	else error(404,'Not found user info');
+	if (data && data.length > 0) profile = data[0];
+	else error(404, 'Not found user info');
 
-	if(profile.role_id !== 1 && profile.role_id !== 2 && profile.role_id !== 4){
-	  throw redirect(308,'/app')
+	if (profile.role_id !== 1 && profile.role_id !== 2 && profile.role_id !== 4) {
+		throw redirect(308, '/app');
 	}
-	return { profile };
-})
+	return {
+		success: true,
+		profile
+	};
+});
 
 export const getIngridients = query(async () => {
 	const supabase = createServerClient();
@@ -44,7 +47,7 @@ export const getIngridients = query(async () => {
         recipe_ingredients!left(count)
     `
 		)
-		.order('category', {ascending : false})
+		.order('category', { ascending: false })
 		.overrideTypes<Ingredient[]>();
 
 	const total: number = Ingredient?.length || 0;
@@ -98,8 +101,8 @@ export const deleteIngredient = command(deleteIngridientId, async ({ ingridientI
 const editIngredientSchema = z.object({
 	id: z.number().int().positive(),
 	name: z.string().min(1, { error: 'Name is required' }),
-	category: z.string().min(1, {error: 'Category is required'}),
-	measurement_unit: z.string().min(1, {error: 'measurment unit is required'}),
+	category: z.string().min(1, { error: 'Category is required' }),
+	measurement_unit: z.string().min(1, { error: 'measurment unit is required' }),
 	description: z.string().optional()
 });
 
@@ -132,8 +135,8 @@ export const editIngredient = command(editIngredientSchema, async (ingredientDat
 
 const addIngredientSchema = z.object({
 	name: z.string().min(1, { message: 'Name is required' }),
-	category: z.string().min(1, {error: 'Category is required'}),
-	measurement_unit: z.string().min(1, {error: 'measurment unit is required'}),
+	category: z.string().min(1, { error: 'Category is required' }),
+	measurement_unit: z.string().min(1, { error: 'measurment unit is required' }),
 	description: z.string().optional()
 });
 

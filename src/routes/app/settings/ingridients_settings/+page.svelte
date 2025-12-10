@@ -16,8 +16,9 @@
 	import type { Ingredient } from '$lib/models/database.types';
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
 	import { showProgress, hideProgress } from '$lib/stores/progress.svelte';
-	import { toast } from '$lib/stores/toast.svelte';
 	import AuthBlock from '$lib/components/custom/AuthBlock/authBlock.svelte';
+	import { toast } from 'svelte-sonner';
+	import { showFailToast, showSuccessToast } from '$lib/stores/toast.svelte';
 
 	const unitItems = [
 		{ value: 'γραμμάρια (g)', label: 'γραμμάρια (g)' },
@@ -29,6 +30,12 @@
 
 	let auth = authenticatedAccess();
 	let query = getIngridients();
+
+	$effect(() => {
+		if (auth.current?.success) {
+			toast.success('Επιτυχής πρόσβαση');
+		}
+	});
 
 	let refreshAction = $state(false);
 	async function refresh() {
@@ -122,21 +129,12 @@
 
 			if (result.success) {
 				await query.refresh();
-				toast.show = true;
-				toast.status = true;
-				toast.title = 'Success';
-				toast.text = result.message;
+				showSuccessToast('Επιτυχία', result.message);
 			} else {
-				toast.show = true;
-				toast.status = false;
-				toast.title = 'Error';
-				toast.text = result.message || 'Failed to update ingredient.';
+				showFailToast('Σφάλμα', result.message);
 			}
 		} catch (error: any) {
-			toast.show = true;
-			toast.status = false;
-			toast.title = 'Error';
-			toast.text = error.message || 'An unexpected error occurred.';
+			showFailToast('Σφάλμα', error.message);
 		} finally {
 			hideProgress();
 		}
@@ -151,22 +149,15 @@
 
 			if (result.success) {
 				await query.refresh();
-				toast.show = true;
-				toast.status = true;
-				toast.title = 'Success';
-				toast.text = result.message;
+				showSuccessToast('Επιτυχία', result.message);
 				addFormData = { name: '', category: '', measurement_unit: '', description: '' };
 			} else {
-				toast.show = true;
-				toast.status = false;
-				toast.title = 'Error';
-				toast.text = result.message || 'Failed to add ingredient.';
+				showFailToast('Σφάλμα', result.message);
+				showFailToast;
 			}
 		} catch (error: any) {
-			toast.show = true;
-			toast.status = false;
-			toast.title = 'Error';
-			toast.text = error.message || 'An unexpected error occurred.';
+			showFailToast('Σφάλμα', error.message);
+			showFailToast;
 		} finally {
 			hideProgress();
 		}
@@ -183,23 +174,14 @@
 			const result = await deleteIngredient({ ingridientId: id.toString() });
 			returnMessage = result.message;
 			if (result.success) {
-				toast.show = true;
-				toast.status = true;
-				toast.title = 'Success';
-				toast.text = returnMessage;
+				showSuccessToast('Επιτυχία', result.message);
 				await query.refresh();
 			} else {
-				toast.show = true;
-				toast.status = false;
-				toast.title = 'Error';
-				toast.text = returnMessage;
+				showFailToast('Σφάλμα', result.message);
 			}
-		} catch (error) {
+		} catch (error: any) {
 			console.error('Error deleting ingredient:', error);
-			toast.show = true;
-			toast.status = false;
-			toast.title = 'Error';
-			toast.text = returnMessage;
+			showFailToast('Σφάλμα', error.message);
 		} finally {
 			hideProgress();
 		}

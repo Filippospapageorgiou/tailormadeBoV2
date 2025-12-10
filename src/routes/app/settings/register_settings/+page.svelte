@@ -22,6 +22,7 @@
 	import FileSpreadsheet from '@lucide/svelte/icons/file-spreadsheet';
 	import { showProgress, hideProgress } from '$lib/stores/progress.svelte';
 	import { showFailToast } from '$lib/stores/toast.svelte';
+	import { toast } from 'svelte-sonner';
 
 	let dateFilterMode = $state<'period' | 'range'>('period');
 
@@ -59,6 +60,11 @@
 	}
 
 	let auth = authenticatedAccess();
+	$effect(() => {
+		if (auth.current?.success) {
+			toast.success('Επιτυχής πρόσβαση');
+		}
+	});
 	// State for time period selection
 	let selectedDays = $state(30);
 	let pagination = $state<PaginationState>({ pageIndex: 0, pageSize: 10 });

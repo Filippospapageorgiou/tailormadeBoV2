@@ -12,8 +12,11 @@ import { getUserProfileWithRoleCheck } from '$lib/supabase/queries';
 // ======================== AUTH ACCESS CHECK ==============
 
 export const authenticatedAccess = query(async () => {
-	const profile = await getUserProfileWithRoleCheck([1, 2]); // 1 = admin, 2 = manager
-	return { profile };
+	const profile = await getUserProfileWithRoleCheck([1, 2]);
+	return {
+		susscess: true,
+		profile
+	};
 });
 
 // ======================== SCHEDULE LIST QUERIES ==============
