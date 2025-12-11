@@ -13,6 +13,7 @@
 	import * as Modal from '$lib/components/ui/modal';
 	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
 	import * as Avatar from '$lib/components/ui/avatar/index.js';
+	import EquipmentCard from './components/equipmentCard.svelte';
 
 	let auth = authenticatedAccess();
 	let query = getAllEquipments();
@@ -151,8 +152,10 @@
 				</div>
 			</div>
 			{#if query?.loading}{:else}
-				<div class="grid gap-4">
-					{#each filterEquipments as equipment (equipment.id)}{/each}
+				<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+					{#each filterEquipments as equipment (equipment.id)}
+						<EquipmentCard {equipment} />
+					{/each}
 				</div>
 			{/if}
 		</main>
