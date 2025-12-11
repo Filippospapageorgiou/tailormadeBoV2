@@ -120,7 +120,7 @@ export const addBeverage = form(addBeverageSchema, async (beverageData) => {
 		if (beverageData.image_url && beverageData.image_url instanceof File) {
 			const fileExt = beverageData.image_url.name.split('.').pop();
 			const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-			const filePath = `new/${fileName}`;
+			const filePath = `${beverageData.name}/${fileName}`;
 
 			const { data: uploadData, error: uploadError } = await supabase.storage
 				.from('beverages')
@@ -293,6 +293,23 @@ const deleteBeverageSchema = z.object({
 
 export const deleteBeverage = query(deleteBeverageSchema, async ({ beverageId }) => {
 	const supabase = createServerClient();
+
+	const { data: currentBeverage } = await supabase
+		.from('beverages')
+		.select('image_url')
+		.eq('id', beverageId)
+		.single();
+
+	if (
+		currentBeverage?.image_url &&
+		currentBeverage.image_url.includes('beverages') &&
+		!currentBeverage.image_url.includes('default_url')
+	) {
+		const oldPath = currentBeverage.image_url.split('/beverages/')[1];
+		if (oldPath) {
+			await supabase.storage.from('beverages').remove([oldPath]);
+		}
+	}
 
 	const { error } = await supabase.from('beverages').delete().eq('id', beverageId);
 

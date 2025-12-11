@@ -45,5 +45,5 @@ export interface MaintenanceLogWithUser extends MaintenanceLog {
 
 // When fetching Equipment, you might want the latest log attached
 export interface EquipmentWithLogs extends Equipment {
-	maintenance_logs: MaintenanceLog[];
+	maintenance_logs: MaintenanceLogWithUser[];
 }
