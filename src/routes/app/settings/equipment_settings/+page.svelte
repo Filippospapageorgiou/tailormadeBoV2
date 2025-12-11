@@ -12,6 +12,7 @@
 	import { Plus, RefreshCw } from 'lucide-svelte';
 	import * as Modal from '$lib/components/ui/modal';
 	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
+	import * as Avatar from '$lib/components/ui/avatar/index.js';
 
 	let auth = authenticatedAccess();
 	let query = getAllEquipments();
@@ -79,7 +80,7 @@
 				</p>
 				<div class="flex items-center gap-2">
 					<p class="text-xs text-[#8B6B4A] md:text-sm">
-						Διαθέσιμα εξοπλισμοί: <span class="font-semibold">{equipmentList?.length ?? 0}</span>
+						Διαθέσιμα εξοπλισμοί: <span class="font-semibold">{filterEquipments?.length ?? 0}</span>
 						/ {total}
 					</p>
 				</div>
@@ -149,7 +150,11 @@
 					/>
 				</div>
 			</div>
-			{#if query?.loading}{:else}{/if}
+			{#if query?.loading}{:else}
+				<div class="grid gap-4">
+					{#each filterEquipments as equipment (equipment.id)}{/each}
+				</div>
+			{/if}
 		</main>
 	</div>
 {/if}
