@@ -14,6 +14,8 @@
 	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
 	import * as Avatar from '$lib/components/ui/avatar/index.js';
 	import EquipmentCard from './components/equipmentCard.svelte';
+	import { any } from 'zod';
+	import Label from '$lib/components/ui/label/label.svelte';
 
 	let auth = authenticatedAccess();
 	let query = getAllEquipments();
@@ -67,6 +69,11 @@
 
 	let isUpdating = $state(false);
 	let addEquipmentModal = $state(false);
+
+	let name = $state('');
+	let model = $state('');
+	let serialNumber = $state('');
+	let files: FileList | undefined = $state();
 </script>
 
 {#if auth.loading}
@@ -170,14 +177,29 @@
 				Προσθέσε της απαραιτήτες πληροφορίες και εικονές για τον νέο εξοπλισμό
 			</Modal.Description>
 		</Modal.Header>
-		<Modal.Footer>
-			<Button type="submit" disabled={isUpdating}>
-				{#if isUpdating}
-					<Spinner /> Saving...
-				{:else}
-					Save Changes
-				{/if}
-			</Button>
-		</Modal.Footer>
+		<form
+			class="gap-2 space-y-2 px-2 py-2"
+			{...addEquipment.enhance(async ({ form, data, submit }) => {
+				isUpdating = true;
+				await submit();
+				if (addEquipment.result?.success) {
+					toast.success(addEquipment.result.message);
+				} else {
+					toast.error(addEquipment.result?.message || 'Αποτυχία προσθήκης προσπάθησε πάλι');
+				}
+				form.reset();
+				isUpdating = false;
+			})}
+		>
+			<Modal.Footer>
+				<Button type="submit" disabled={isUpdating}>
+					{#if isUpdating}
+						<Spinner /> Προσθήκη εξοπλισμού
+					{:else}
+						Προσθήκη εξοπλισμού
+					{/if}
+				</Button>
+			</Modal.Footer>
+		</form>
 	</Modal.Content>
 </Modal.Root>
