@@ -14,8 +14,10 @@
 	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
 	import * as Avatar from '$lib/components/ui/avatar/index.js';
 	import EquipmentCard from './components/equipmentCard.svelte';
-	import { any } from 'zod';
+	import { Cloud } from 'lucide-svelte';
 	import Label from '$lib/components/ui/label/label.svelte';
+	import * as Empty from '$lib/components/ui/empty/index.js';
+	import { ScrollArea } from '$lib/components/ui/scroll-area/index.js';
 
 	let auth = authenticatedAccess();
 	let query = getAllEquipments();
@@ -74,6 +76,22 @@
 	let model = $state('');
 	let serialNumber = $state('');
 	let files: FileList | undefined = $state();
+	let previewUrl: string | null = $state(null);
+
+	function handleFileChange(e: Event) {
+		const target = e.target as HTMLInputElement;
+		const file = target.files?.[0];
+
+		if (file) {
+			const reader = new FileReader();
+			reader.onload = (e) => {
+				previewUrl = e.target?.result as string;
+			};
+			reader.readAsDataURL(file);
+		} else {
+			previewUrl = null;
+		}
+	}
 </script>
 
 {#if auth.loading}
@@ -170,7 +188,7 @@
 {/if}
 
 <Modal.Root bind:open={addEquipmentModal}>
-	<Modal.Content>
+	<Modal.Content class="flex max-h-[95vh] flex-col">
 		<Modal.Header>
 			<Modal.Title>Πρόσθεσε νέο εξοπλισμό</Modal.Title>
 			<Modal.Description>
@@ -178,7 +196,7 @@
 			</Modal.Description>
 		</Modal.Header>
 		<form
-			class="gap-2 space-y-2 px-2 py-2"
+			class="flex flex-col gap-2 space-y-2 px-2 py-2"
 			{...addEquipment.enhance(async ({ form, data, submit }) => {
 				isUpdating = true;
 				await submit();
@@ -191,13 +209,88 @@
 				isUpdating = false;
 			})}
 		>
-			<Modal.Footer>
+			<ScrollArea class="h-[20vh] w-full md:h-auto md:max-h-[60vh]">
+				<div class="w-full space-y-2">
+					<Label class="gap-1">
+						Όνομα εξοπλισμού <span class="text-destructive">*</span>
+					</Label>
+					<Input type="text" placeholder="La marzoco machine" required />
+					<Label class="gap-1">
+						Μοντέλο εξοπλισμού <span class="text-destructive">*</span>
+					</Label>
+					<Input type="text" placeholder="2-Group AV" required />
+					<Label class="gap-1">Σειριακός αριθμός εξοπλισμού</Label>
+					<Input type="text" placeholder="LM-1234-5678" />
+
+					<input
+						id="image-upload"
+						name="image_url"
+						type="file"
+						accept="image/*"
+						class="hidden"
+						bind:files
+						onchange={handleFileChange}
+					/>
+
+					{#if previewUrl}
+						<button
+							type="button"
+							onclick={() => document.getElementById('image-upload')?.click()}
+							class="w-full"
+						>
+							<Empty.Root class="cursor-pointer transition-colors hover:bg-muted/50">
+								<Empty.Header>
+									<Empty.Description>
+										<img
+											src={previewUrl}
+											alt="Preview"
+											class="mx-auto max-h-48 rounded-md object-cover"
+										/>
+									</Empty.Description>
+								</Empty.Header>
+								<Empty.Content>
+									<p class="text-xs text-muted-foreground">Κλικ για αλλαγή εικόνας</p>
+								</Empty.Content>
+							</Empty.Root>
+						</button>
+					{:else}
+						<button
+							type="button"
+							onclick={() => document.getElementById('image-upload')?.click()}
+							class="w-full"
+						>
+							<Empty.Root
+								class="cursor-pointer border border-dashed transition-colors hover:bg-muted/50"
+							>
+								<Empty.Header>
+									<Empty.Media variant="icon">
+										<Cloud />
+									</Empty.Media>
+									<Empty.Title>Ανέβασε εικόνα</Empty.Title>
+									<Empty.Description>
+										Κάνε κλικ για να ανεβάσεις εικόνα του εξοπλισμού
+									</Empty.Description>
+								</Empty.Header>
+							</Empty.Root>
+						</button>
+					{/if}
+				</div>
+			</ScrollArea>
+			<Modal.Footer class="py-2">
 				<Button type="submit" disabled={isUpdating}>
 					{#if isUpdating}
 						<Spinner /> Προσθήκη εξοπλισμού
 					{:else}
 						Προσθήκη εξοπλισμού
 					{/if}
+				</Button>
+				<Button
+					variant="outline"
+					onclick={() => {
+						addEquipmentModal = false;
+					}}
+				>
+					Κλείσιμο
 				</Button>
 			</Modal.Footer>
 		</form>
