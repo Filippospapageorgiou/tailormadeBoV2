@@ -8,7 +8,7 @@
 	let {
 		id,
 		value = $bindable(),
-		required = false,
+		required = false
 	}: {
 		id?: string;
 		value?: string;
@@ -40,7 +40,7 @@
 				>
 					{calendarValue
 						? calendarValue.toDate(getLocalTimeZone()).toLocaleDateString()
-						: 'Select date'}
+						: 'Διαλέξε ημερομηνία'}
 					<ChevronDownIcon />
 				</Button>
 			{/snippet}

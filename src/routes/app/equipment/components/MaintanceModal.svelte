@@ -167,7 +167,7 @@
 					<FileDropZone
 						{onUpload}
 						{onFileRejected}
-						maxFileSize={2 * MEGABYTE}
+						maxFileSize={5 * MEGABYTE}
 						accept="image/*"
 						maxFiles={4}
 						fileCount={files.length}

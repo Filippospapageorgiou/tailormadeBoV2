@@ -4,7 +4,7 @@ import { getAuthenticatedUser, requireAuthenticatedUser } from '$lib/supabase/sh
 import { z } from 'zod/v4';
 import { error } from '@sveltejs/kit';
 import { redirect } from '@sveltejs/kit';
-import { getUserOrgId, getUserProfileWithRoleCheck } from '$lib/supabase/queries';
+import { getUserOrgId, getUserProfile, getUserProfileWithRoleCheck } from '$lib/supabase/queries';
 import { type MaintenanceLog, type EquipmentWithLogs } from '$lib/models/equipment.types';
 import { Trophy } from 'lucide-svelte';
 
@@ -67,7 +67,7 @@ export const getAllEquipments = query(async () => {
 });
 
 const EquipmentSchema = z.object({
-	id: z.string(),
+	id: z.string().optional(),
 	name: z.string(),
 	model: z.string(),
 	serial_number: z.string().optional(),
@@ -89,12 +89,13 @@ const EquipmentSchema = z.object({
 
 export const addEquipment = form(EquipmentSchema, async (data) => {
 	const supabase = createServerClient();
+	const user = await getUserProfile();
 	let imageUrl = '';
 	try {
 		if (data.image_url && data.image_url instanceof File) {
 			const fileExt = data.image_url.name.split('.').pop();
 			const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-			const filePath = `${data.name}/${fileName}`;
+			const filePath = `private/${data.name}/${fileName}`;
 
 			const { data: uploadData, error: uploadError } = await supabase.storage
 				.from('equipment')
@@ -117,6 +118,7 @@ export const addEquipment = form(EquipmentSchema, async (data) => {
 		}
 
 		const { error: insertError } = await supabase.from('equipment').insert({
+			org_id: user.org_id,
 			name: data.name,
 			model: data.model,
 			serial_number: data.serial_number,
@@ -124,8 +126,7 @@ export const addEquipment = form(EquipmentSchema, async (data) => {
 			manual_url: data.manual_url,
 			status: data.status,
 			last_service_date: data.last_service_date,
-			next_service_date: data.next_service_date,
-			create_at: Date.now()
+			next_service_date: data.next_service_date
 		});
 
 		if (insertError) {
@@ -170,7 +171,7 @@ export const editEquipment = form(EquipmentSchema, async (data) => {
 
 			const fileExt = data.image_url.name.split('.').pop();
 			const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-			const filePath = `${data.name}/${fileName}`;
+			const filePath = `private/${data.name}/${fileName}`;
 
 			const { data: uploadData, error: uploadError } = await supabase.storage
 				.from('equipment')
@@ -248,9 +249,9 @@ export const deleteEquipment = form(deleteEquipmentSchema, async ({ equipmentId 
 			.single();
 
 		if (currentEquipment?.image_url && currentEquipment.image_url.includes('equipment')) {
-			const oldPath = currentEquipment.image_url.split('/equipment/')[1];
+			const oldPath = currentEquipment.image_url.split('/equipment/')[1].split('?')[0];
 			if (oldPath) {
-				await supabase.storage.from('beverages').remove([oldPath]);
+				await supabase.storage.from('equipment').remove([oldPath]);
 			}
 		}
 

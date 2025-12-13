@@ -77,7 +77,6 @@ export const actions = {
 			};
 		}
 
-		console.log(`User ${user.id} accepted terms`);
 		return {
 			success: true
 		};

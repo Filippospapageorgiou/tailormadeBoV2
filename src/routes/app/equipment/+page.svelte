@@ -114,32 +114,48 @@
 			</div>
 		</div>
 		{#if query?.loading}
-			<div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-				{#each Array(10) as _}
-					<div class="flex flex-col overflow-hidden rounded-lg bg-white shadow-sm">
-						<Skeleton class="aspect-video w-full" />
+			<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+				{#each Array(6) as _, i}
+					<div
+						class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
+						style="animation-delay: {i * 100}ms;"
+					>
+						<!-- Top Bar with Action Buttons -->
+						<div class="absolute top-3 right-3 left-3 z-10 flex items-center justify-between">
+							<div class="flex gap-1">
+								<Skeleton class="h-7 w-7 rounded-md" />
+								<Skeleton class="h-7 w-7 rounded-md" />
+							</div>
+							<Skeleton class="h-6 w-20 rounded-full" />
+						</div>
 
-						<div class="flex flex-grow flex-col p-4">
-							<Skeleton class="mb-2 h-5 w-4/5" />
+						<!-- Hero Image Section -->
+						<Skeleton class="h-40 w-full" />
 
+						<!-- Content Section -->
+						<div class="space-y-4 p-4">
+							<!-- Equipment Name & ID -->
 							<div class="space-y-2">
-								<Skeleton class="h-4 w-full" />
-								<Skeleton class="h-4 w-full" />
-								<Skeleton class="h-4 w-2/3" />
+								<Skeleton class="h-6 w-3/4" />
+								<Skeleton class="h-4 w-24" />
+								<Skeleton class="h-3 w-32" />
 							</div>
 
-							<div class="mt-auto pt-4">
-								<div class="flex items-center">
-									<Skeleton class="mr-3 h-8 w-8 shrink-0 rounded-full" />
-									<div class="w-full space-y-1">
-										<Skeleton class="h-4 w-24" />
-										<Skeleton class="h-3 w-32" />
-									</div>
-								</div>
+							<!-- Status Badge -->
+							<Skeleton class="h-6 w-28 rounded-full" />
 
-								<div class="mt-4 flex flex-wrap gap-2">
-									<Skeleton class="h-6 w-16 rounded-md" />
-									<Skeleton class="h-6 w-20 rounded-md" />
+							<!-- Service Status Section -->
+							<div class="space-y-2 rounded-lg bg-gray-50 p-3">
+								<Skeleton class="h-3 w-24" />
+
+								<!-- Service Bars -->
+								<div class="flex items-center gap-2">
+									<div class="flex h-3 items-center gap-0.5">
+										{#each { length: 9 } as _}
+											<Skeleton class="h-full w-1 rounded-full" />
+										{/each}
+									</div>
+									<Skeleton class="h-4 w-16" />
 								</div>
 							</div>
 						</div>

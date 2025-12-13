@@ -8,23 +8,29 @@
 		XCircle,
 		Wrench,
 		X,
-		AlertCircle,
-		Edit2,
-		Clock
+		Clock,
+		BadgeAlert
 	} from 'lucide-svelte';
-	import Badge from '$lib/components/ui/badge/badge.svelte';
-	import { differenceInDays, parseISO, formatDistanceToNow } from 'date-fns';
-	import type { Equipment, EquipmentStatus } from '$lib/models/equipment.types';
+	import { differenceInDays, parseISO } from 'date-fns';
+	import type { EquipmentStatus } from '$lib/models/equipment.types';
 	import * as Modal from '$lib/components/ui/modal';
 	import { format } from 'date-fns';
 	import { el } from 'date-fns/locale';
 	import * as Avatar from '$lib/components/ui/avatar';
-	import { ScrollArea } from '$lib/components/ui/scroll-area';
 	import Separator from '$lib/components/ui/separator/separator.svelte';
-	import { User, Calendar, Banknote, ImageIcon, ArrowRight, AlertTriangle } from 'lucide-svelte';
+	import { Calendar, AlertTriangle } from 'lucide-svelte';
 	import { fade, scale } from 'svelte/transition';
-	import { deleteMaintanceLog } from '../data.remote';
+	import { deleteEquipment, deleteMaintanceLog, editEquipment } from '../data.remote';
 	import { toast } from 'svelte-sonner';
+	import * as Dialog from '$lib/components/ui/dialog/index.js';
+	import { Spinner } from '$lib/components/ui/spinner';
+	import * as Select from '$lib/components/ui/select';
+	import Input from '$lib/components/ui/input/input.svelte';
+	import Label from '$lib/components/ui/label/label.svelte';
+	import * as Empty from '$lib/components/ui/empty/index.js';
+	import { ScrollArea } from '$lib/components/ui/scroll-area/index.js';
+	import InputCalendar from '$lib/components/custom/inputCalendar.svelte';
+	import { Cloud } from 'lucide-svelte';
 
 	let previewImage: string | null = $state(null);
 	let { equipment }: { equipment: EquipmentWithLogs } = $props();
@@ -91,12 +97,53 @@
 
 	const StatusIcon = statusIcons[equipment.status];
 
+	// Edit modal states
+	let editModalOpen = $state(false);
+	let isUpdating = $state(false);
+	let editName = $state('');
+	let editModel = $state('');
+	let editSerialNumber = $state('');
+	let editFiles: FileList | undefined = $state();
+	let editPreviewUrl: string | null = $state(null);
+	let editManualUrl = $state('');
+	let editStatus = $state('');
+	let editLastServiceDate = $state('');
+	let editNextServiceDate = $state('');
+
 	function handleEdit() {
-		console.log('Edit equipment:', equipment.id);
+		// Populate form with current equipment data
+		editName = equipment.name;
+		editModel = equipment.model || '';
+		editSerialNumber = equipment.serial_number || '';
+		editManualUrl = equipment.manual_url || '';
+		editStatus = equipment.status;
+		editLastServiceDate = equipment.last_service_date || '';
+		editNextServiceDate = equipment.next_service_date || '';
+		editPreviewUrl = equipment.image_url || null;
+		editModalOpen = true;
 	}
 
+	function handleEditFileChange(e: Event) {
+		const target = e.target as HTMLInputElement;
+		const file = target.files?.[0];
+
+		if (file) {
+			const reader = new FileReader();
+			reader.onload = (e) => {
+				editPreviewUrl = e.target?.result as string;
+			};
+			reader.readAsDataURL(file);
+		} else {
+			editPreviewUrl = equipment.image_url || null;
+		}
+	}
+
+	let openDeleteDialog = $state(false);
+
+	let deleteEquipmentData: EquipmentWithLogs | undefined = $state();
 	function handleDelete() {
-		console.log('Delete equipment:', equipment.id);
+		openDeleteDialog = true;
+		deleteEquipmentData = equipment;
 	}
 
 	function openImagePreview(imageUrl: string) {
@@ -110,6 +157,7 @@
 	}
 
 	let deletingLogId = $state();
+	let isDeleting = $state(false);
 </script>
 
 <div
@@ -450,3 +498,261 @@
 		</button>
 	</div>
 {/if}
+
+<Dialog.Root bind:open={openDeleteDialog}>
+	<Dialog.Content>
+		<Dialog.Header>
+			<Dialog.Title>Διαγραφή Εξοπλισμού</Dialog.Title>
+			<Dialog.Description>
+				Είσαι σίγουρος ότι θέλεις να διαγράψεις αυτόν τον εξοπλισμό;
+			</Dialog.Description>
+		</Dialog.Header>
+
+		<div class="space-y-4 py-4">
+			<div class="rounded-lg bg-red-50 p-4">
+				<div class="flex gap-3">
+					<BadgeAlert class="h-5 w-5 flex-shrink-0 text-red-600" />
+					<div class="space-y-1">
+						<p class="text-sm font-semibold text-red-900">
+							Προσοχή: Αυτή η ενέργεια δεν μπορεί να αναιρεθεί
+						</p>
+						<p class="text-xs text-red-700">
+							Θα διαγραφούν όλα τα δεδομένα και το ιστορικό συντήρησης για:
+						</p>
+					</div>
+				</div>
+			</div>
+
+			{#if deleteEquipmentData}
+				<div class="rounded-lg border bg-gray-50 p-4">
+					<div class="flex items-start gap-4">
+						{#if deleteEquipmentData.image_url}
+							<img
+								src={deleteEquipmentData.image_url}
+								alt={deleteEquipmentData.name}
+								class="h-16 w-16 rounded-lg object-cover"
+							/>
+						{:else}
+							<div class="flex h-16 w-16 items-center justify-center rounded-lg bg-gray-200">
+								<Wrench class="h-8 w-8 text-gray-400" />
+							</div>
+						{/if}
+
+						<div class="flex-1">
+							<h4 class="font-semibold text-gray-900">{deleteEquipmentData.name}</h4>
+							{#if deleteEquipmentData.model}
+								<p class="text-sm text-gray-600">Μοντέλο: {deleteEquipmentData.model}</p>
+							{/if}
+							<p class="text-xs text-gray-500">
+								ID: #{deleteEquipmentData.id.toString().padStart(4, '0')}
+							</p>
+						</div>
+					</div>
+				</div>
+			{/if}
+		</div>
+
+		<form
+			{...deleteEquipment.enhance(async ({ form, submit }) => {
+				isDeleting = true;
+				await submit();
+				if (deleteEquipment.result?.success) {
+					toast.success(deleteEquipment.result.message);
+				} else {
+					toast.error(deleteEquipment.result?.message || 'Σφάλμα κατά την διαγραφή');
+				}
+				deleteEquipmentData = undefined;
+				form.reset();
+				isDeleting = false;
+				openDeleteDialog = false;
+			})}
+		>
+			<input name="equipmentId" type="hidden" value={deleteEquipmentData?.id} />
+
+			<Dialog.Footer class="gap-2">
+				<Button
+					type="button"
+					variant="outline"
+					onclick={() => {
+						openDeleteDialog = false;
+						deleteEquipmentData = undefined;
+					}}
+				>
+					Ακύρωση
+				</Button>
+				<Button type="submit" variant="destructive" class="gap-2">
+					{#if isDeleting}
+						<Spinner /> Διαγραφή...
+					{:else}
+						Διαγραφή Εξοπλισμού
+					{/if}
+				</Button>
+			</Dialog.Footer>
+		</form>
+	</Dialog.Content>
+</Dialog.Root>
+
+<!-- Edit Equipment Modal -->
+<Modal.Root bind:open={editModalOpen}>
+	<Modal.Content class="flex max-h-[95vh] flex-col">
+		<Modal.Header>
+			<Modal.Title>Επεξεργασία εξοπλισμού</Modal.Title>
+			<Modal.Description>
+				Ενημέρωσε τις πληροφορίες για: <span class="font-semibold">{equipment.name}</span>
+			</Modal.Description>
+		</Modal.Header>
+		<form
+			class="flex flex-col gap-2 space-y-2 px-2 py-2"
+			enctype="multipart/form-data"
+			{...editEquipment.enhance(async ({ form, submit }) => {
+				isUpdating = true;
+				await submit();
+				if (editEquipment.result?.success) {
+					toast.success(editEquipment.result.message);
+					editModalOpen = false;
+				} else {
+					toast.error(editEquipment.result?.message || 'Αποτυχία ενημέρωσης προσπάθησε πάλι');
+				}
+				isUpdating = false;
+			})}
+		>
+			<input type="hidden" name="id" value={equipment.id} />
+			<ScrollArea class="h-[20vh] w-full md:h-[60vh]">
+				<div class="w-full space-y-2">
+					<Label class="gap-1">
+						Όνομα εξοπλισμού <span class="text-destructive">*</span>
+					</Label>
+					<Input
+						type="text"
+						name="name"
+						bind:value={editName}
+						placeholder="La marzoco machine"
+						required
+					/>
+
+					<Label class="gap-1">
+						Μοντέλο εξοπλισμού <span class="text-destructive">*</span>
+					</Label>
+					<Input
+						type="text"
+						name="model"
+						bind:value={editModel}
+						placeholder="2-Group AV"
+						required
+					/>
+
+					<Label class="gap-1">Σειριακός αριθμός εξοπλισμού</Label>
+					<Input
+						type="text"
+						name="serial_number"
+						bind:value={editSerialNumber}
+						placeholder="LM-1234-5678"
+					/>
+
+					<input
+						id="edit-image-upload"
+						name="image_url"
+						type="file"
+						accept="image/*"
+						class="hidden"
+						bind:files={editFiles}
+						onchange={handleEditFileChange}
+					/>
+
+					{#if editPreviewUrl}
+						<button
+							type="button"
+							onclick={() => document.getElementById('edit-image-upload')?.click()}
+							class="w-full"
+						>
+							<Empty.Root class="cursor-pointer transition-colors hover:bg-muted/50">
+								<Empty.Header>
+									<Empty.Description>
+										<img
+											src={editPreviewUrl}
+											alt="Preview"
+											class="mx-auto max-h-48 rounded-md object-cover"
+										/>
+									</Empty.Description>
+								</Empty.Header>
+								<Empty.Content>
+									<p class="text-xs text-muted-foreground">Κλικ για αλλαγή εικόνας</p>
+								</Empty.Content>
+							</Empty.Root>
+						</button>
+					{:else}
+						<button
+							type="button"
+							onclick={() => document.getElementById('edit-image-upload')?.click()}
+							class="w-full"
+						>
+							<Empty.Root
+								class="cursor-pointer border border-dashed transition-colors hover:bg-muted/50"
+							>
+								<Empty.Header>
+									<Empty.Media variant="icon">
+										<Cloud />
+									</Empty.Media>
+									<Empty.Title>Ανέβασε εικόνα</Empty.Title>
+									<Empty.Description>
+										Κάνε κλικ για να ανεβάσεις εικόνα του εξοπλισμού
+									</Empty.Description>
+								</Empty.Header>
+							</Empty.Root>
+						</button>
+					{/if}
+
+					<Label class="gap-1">Manual url</Label>
+					<Input
+						name="manual_url"
+						type="text"
+						bind:value={editManualUrl}
+						placeholder="https://lamarzoccousa.com/commercial-products/espresso-machines/kb90/"
+					/>
+
+					<Label>Κατάσταση εξοπλισμού<span class="text-destructive">*</span></Label>
+					<Select.Root type="single" name="status" bind:value={editStatus} required>
+						<Select.Trigger class="w-full">
+							{statusCustom.find((c) => c.value === editStatus)?.label ?? 'Διαλέξε κατάσταση'}
+						</Select.Trigger>
+						<Select.Content>
+							<Select.Group>
+								<Select.Label>Κατάσταση</Select.Label>
+								{#each statusCustom as status (status.value)}
+									<Select.Item value={status.value} label={status.label}>
+										{status.label}
+									</Select.Item>
+								{/each}
+							</Select.Group>
+						</Select.Content>
+					</Select.Root>
+
+					<Label>Τελευταίο servise εξοπλισμού<span class="text-destructive">*</span></Label>
+					<InputCalendar id="edit_last_service_date" bind:value={editLastServiceDate} required />
+					<input type="hidden" name="last_service_date" value={editLastServiceDate} />
+
+					<Label>Έπομενο servise εξοπλισμού<span class="text-destructive">*</span></Label>
+					<InputCalendar id="edit_next_service_date" bind:value={editNextServiceDate} required />
+					<input type="hidden" name="next_service_date" value={editNextServiceDate} />
+				</div>
+			</ScrollArea>
+			<Modal.Footer class="py-2">
+				<Button type="submit" disabled={isUpdating}>
+					{#if isUpdating}
+						<Spinner /> Ενημέρωση...
+					{:else}
+						Ενημέρωση εξοπλισμού
+					{/if}
+				</Button>
+				<Button
+					variant="outline"
+					onclick={() => {
+						editModalOpen = false;
+					}}
+				>
+					Κλείσιμο
+				</Button>
+			</Modal.Footer>
+		</form>
+	</Modal.Content>
+</Modal.Root>
