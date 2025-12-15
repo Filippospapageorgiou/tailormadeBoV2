@@ -1,7 +1,7 @@
 <script lang="ts">
 	import * as Chart from '$lib/components/ui/chart/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
-	import { Arc, PieChart, Text } from 'layerchart';
+	import { PieChart } from 'layerchart';
 	import CustomButton from './customButton/customButton.svelte';
 
 	let { supplierData, currentStartDate, currentEndDate, totalSupplierPayments, countSuppliers } =
@@ -69,11 +69,11 @@
 </script>
 
 <Card.Root class="flex h-full flex-col bg-white">
-	<Card.Header class="items-center">
+	<Card.Header class="items-center pb-2">
 		<Card.Title>Διανομή πληρωμών προμηθευτών</Card.Title>
 		<Card.Description>
 			<div class="flex items-center justify-between gap-2">
-				Ανάλυση πληρωμών ανά προμηθευτή μέτρητα - εμφάνιση των κορυφαίων 10
+				Ανάλυση πληρωμών ανά προμηθευτή μέτρητα
 				<CustomButton href="/app/settings/register_settings/suppliers" />
 			</div>
 			<p class="py-2 text-sm text-neutral-600">
@@ -81,46 +81,56 @@
 			</p>
 		</Card.Description>
 	</Card.Header>
-	<Card.Content>
-		<Chart.Container config={supplierChartConfig} class="mx-auto aspect-square max-w-[250px]">
-			<PieChart
-				data={supplierChartData}
-				key="supplier"
-				value="total"
-				cRange={supplierChartData.map((d) => d.color)}
-				c="color"
-				props={{
-					pie: {
-						motion: 'tween'
-					}
-				}}
-			>
-				{#snippet tooltip()}
-					<Chart.Tooltip hideLabel labelFormatter={(value) => formatCurrency(value)} />
-				{/snippet}
-				{#snippet arc({ props, visibleData, index })}
-					{@const supplier = visibleData?.[index]?.supplier}
-					{#if supplier}
-						<Arc {...props}>
-							{#snippet children({ getArcTextProps })}
-								<Text
-									value={supplier.slice(0, 2).toUpperCase()}
-									{...getArcTextProps('centroid')}
-									class="fill-white text-xs font-semibold capitalize"
-								/>
-							{/snippet}
-						</Arc>
-					{/if}
-				{/snippet}
-			</PieChart>
-		</Chart.Container>
+
+	<Card.Content class="flex-1 pb-0">
+		<div class="flex flex-col gap-6 sm:flex-row sm:items-center">
+			<div class="flex-1">
+				<Chart.Container
+					config={supplierChartConfig}
+					class="mx-auto aspect-square max-h-[250px] w-full max-w-[250px]"
+				>
+					<PieChart
+						data={supplierChartData}
+						key="supplier"
+						value="total"
+						cRange={supplierChartData.map((d) => d.color)}
+						c="color"
+						props={{
+							pie: {
+								motion: 'tween',
+								innerRadius: 60
+							}
+						}}
+					>
+						{#snippet tooltip()}
+							<Chart.Tooltip hideLabel labelFormatter={(value) => formatCurrency(value)} />
+						{/snippet}
+					</PieChart>
+				</Chart.Container>
+			</div>
+
+			<div class="flex-1">
+				<div class="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+					{#each supplierChartData as item}
+						<div class="flex items-center gap-2">
+							<span class="h-3 w-3 shrink-0 rounded-sm" style="background-color: {item.color}"
+							></span>
+							<span class="truncate font-medium text-neutral-700" title={item.supplier}>
+								{item.supplier}
+							</span>
+						</div>
+					{/each}
+				</div>
+			</div>
+		</div>
 	</Card.Content>
-	<Card.Footer class="flex-col gap-2 text-sm">
+
+	<Card.Footer class="flex-col gap-2 pt-6 text-sm">
 		<div class="flex items-center gap-2 leading-none font-medium">
 			Συνολικές πληρωμές: {formatCurrency(totalSupplierPayments! || 0)}
 		</div>
 		<div class="py-2 leading-none text-muted-foreground">
-			{countSuppliers} - προμηθευτές
+			{countSuppliers} - προμηθευτές (Top 10)
 		</div>
 	</Card.Footer>
 </Card.Root>

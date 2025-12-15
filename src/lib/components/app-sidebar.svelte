@@ -17,18 +17,18 @@
 		},
 		navMain: [
 			{
-				title: 'Recipes',
+				title: 'Συνταγές',
 				url: '/app/recipes',
 				icon: Coffee,
 				isActive: true
 			},
 			{
-				title: 'equipment',
+				title: 'Εξοπλισμός',
 				url: '/app/equipment',
 				icon: Wrench
 			},
 			{
-				title: 'Manifesto',
+				title: 'Μανιφέστο',
 				url: '/app/manifesto',
 				icon: BookOpenIcon
 			},
@@ -38,26 +38,26 @@
 				icon: NotebookPen
 			},
 			{
-				title: 'Register',
+				title: 'Ταμείο',
 				url: '/app/register',
 				icon: EuroIcon
 			},
 			{
-				title: 'Schedule',
+				title: 'Πρόγραμμα',
 				url: '/app/schedule',
 				icon: CalendarRange
 			},
 			{
-				title: 'Admin Settings',
+				title: 'Ρυθμίσεις διαχειριστή',
 				url: '/app',
 				icon: Settings2Icon,
 				items: [
 					{
-						title: 'Recipes',
+						title: 'Συνταγές',
 						url: '/app/settings/recipes_settings'
 					},
 					{
-						title: 'Ingridients',
+						title: 'Συστατικά',
 						url: '/app/settings/ingridients_settings'
 					},
 					{
@@ -65,19 +65,19 @@
 						url: '/app/settings/blog_settings'
 					},
 					{
-						title: 'Manage users',
+						title: 'Διαχείριση χρηστών',
 						url: '/app/settings/manage_users'
 					},
 					{
-						title: 'Schedule settings',
+						title: 'Ρυθμίσεις Προγράμματος',
 						url: '/app/settings/schedule_settings'
 					},
 					{
-						title: 'Equipment Settings',
+						title: 'Ρυθμίσεις εξοπλισμού',
 						url: '/app/settings/equipment_settings'
 					},
 					{
-						title: 'Register settings',
+						title: 'Ρυθμίσεις ταμείου',
 						url: '/app/settings/register_settings'
 					}
 				]
@@ -97,7 +97,7 @@
 		],
 		projects: [
 			{
-				name: 'Manage organizations',
+				name: 'Διαχείριση οργανισμών',
 				url: '#',
 				icon: Globe
 			}
