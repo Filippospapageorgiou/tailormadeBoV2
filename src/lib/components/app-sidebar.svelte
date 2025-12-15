@@ -53,18 +53,6 @@
 				icon: Settings2Icon,
 				items: [
 					{
-						title: 'Συνταγές',
-						url: '/app/settings/recipes_settings'
-					},
-					{
-						title: 'Συστατικά',
-						url: '/app/settings/ingridients_settings'
-					},
-					{
-						title: 'Blog',
-						url: '/app/settings/blog_settings'
-					},
-					{
 						title: 'Διαχείριση χρηστών',
 						url: '/app/settings/manage_users'
 					},
@@ -98,8 +86,22 @@
 		projects: [
 			{
 				name: 'Διαχείριση οργανισμών',
-				url: '#',
-				icon: Globe
+				url: '/app/organizations',
+				icon: Globe,
+				items: [
+					{
+						title: 'Συνταγές',
+						url: '/app/settings/recipes_settings'
+					},
+					{
+						title: 'Συστατικά',
+						url: '/app/settings/ingridients_settings'
+					},
+					{
+						title: 'Blog',
+						url: '/app/settings/blog_settings'
+					}
+				]
 			}
 		]
 	};

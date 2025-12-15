@@ -1,11 +1,8 @@
 <script lang="ts">
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
+	import * as Collapsible from '$lib/components/ui/collapsible/index.js';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
+	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
 	import { useSidebar } from '$lib/components/ui/sidebar/index.js';
-	import EllipsisIcon from '@lucide/svelte/icons/ellipsis';
-	import FolderIcon from '@lucide/svelte/icons/folder';
-	import ShareIcon from '@lucide/svelte/icons/share';
-	import Trash2Icon from '@lucide/svelte/icons/trash-2';
 
 	let {
 		projects
@@ -13,9 +10,11 @@
 		projects: {
 			name: string;
 			url: string;
-			// This should be `Component` after @lucide/svelte updates types
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			icon: any;
+			items?: {
+				title: string;
+				url: string;
+			}[];
 		}[];
 	} = $props();
 
@@ -32,17 +31,42 @@
 <Sidebar.Group class="group-data-[collapsible=icon]:hidden">
 	<Sidebar.GroupLabel>Manager Organizations</Sidebar.GroupLabel>
 	<Sidebar.Menu>
-		{#each projects as item (item.name)}
-			<Sidebar.MenuItem>
-				<Sidebar.MenuButton>
-					{#snippet child({ props })}
-						<a href={item.url} {...props} onclick={handleLinkClick}>
-							<item.icon />
-							<span>{item.name}</span>
-						</a>
-					{/snippet}
-				</Sidebar.MenuButton>
-			</Sidebar.MenuItem>
+		{#each projects as project (project.name)}
+			<Collapsible.Root>
+				{#snippet child({ props })}
+					<Sidebar.MenuItem {...props}>
+						<Sidebar.MenuButton tooltipContent={project.name}>
+							{#snippet child({ props })}
+								<a href={project.url} {...props} onclick={handleLinkClick}>
+									<project.icon />
+									<span>{project.name}</span>
+								</a>
+							{/snippet}
+						</Sidebar.MenuButton>
+						{#if project.items?.length}
+							<Collapsible.Trigger>
+								{#snippet child({ props })}
+									<Sidebar.MenuAction {...props} class="data-[state=open]:rotate-90">
+										<ChevronRightIcon />
+										<span class="sr-only">Toggle</span>
+									</Sidebar.MenuAction>
+								{/snippet}
+							</Collapsible.Trigger>
+							<Collapsible.Content>
+								<Sidebar.MenuSub>
+									{#each project.items as subItem (subItem.title)}
+										<Sidebar.MenuSubItem>
+											<Sidebar.MenuSubButton href={subItem.url} onclick={handleLinkClick}>
+												<span>{subItem.title}</span>
+											</Sidebar.MenuSubButton>
+										</Sidebar.MenuSubItem>
+									{/each}
+								</Sidebar.MenuSub>
+							</Collapsible.Content>
+						{/if}
+					</Sidebar.MenuItem>
+				{/snippet}
+			</Collapsible.Root>
 		{/each}
 	</Sidebar.Menu>
 </Sidebar.Group>
