@@ -1,13 +1,34 @@
 <script lang="ts" module>
 	import BookOpenIcon from '@lucide/svelte/icons/book-open';
-	import BotIcon from '@lucide/svelte/icons/bot';
-	import ChartPieIcon from '@lucide/svelte/icons/chart-pie';
-	import FrameIcon from '@lucide/svelte/icons/frame';
 	import LifeBuoyIcon from '@lucide/svelte/icons/life-buoy';
-	import MapIcon from '@lucide/svelte/icons/map';
 	import SendIcon from '@lucide/svelte/icons/send';
 	import Settings2Icon from '@lucide/svelte/icons/settings-2';
-	import { NotebookPen, Coffee, EuroIcon, CalendarRange, Globe, Wrench } from 'lucide-svelte';
+	import {
+		NotebookPen,
+		Coffee,
+		EuroIcon,
+		CalendarRange,
+		Globe,
+		Wrench,
+		Network,
+		Refrigerator,
+		Book,
+
+		Users,
+
+		Calendar,
+
+		Cog,
+
+		Landmark,
+
+		ShieldCheck
+
+
+
+
+
+	} from 'lucide-svelte';
 
 	const data = {
 		user: {
@@ -26,6 +47,11 @@
 				title: 'Εξοπλισμός',
 				url: '/app/equipment',
 				icon: Wrench
+			},
+			{
+				title: 'Καθημερινές Εργασίες',
+				url: '/app/daily_tasks',
+				icon: Network
 			},
 			{
 				title: 'Μανιφέστο',
@@ -53,20 +79,29 @@
 				icon: Settings2Icon,
 				items: [
 					{
-						title: 'Διαχείριση χρηστών',
-						url: '/app/settings/manage_users'
+						title: 'Χρήστες',
+						url: '/app/settings/manage_users',
+						icon: Users
 					},
 					{
-						title: 'Ρυθμίσεις Προγράμματος',
-						url: '/app/settings/schedule_settings'
+						title: 'Πρόγραμμα',
+						url: '/app/settings/schedule_settings',
+						icon: Calendar
 					},
 					{
-						title: 'Ρυθμίσεις εξοπλισμού',
-						url: '/app/settings/equipment_settings'
+						title: 'Εξοπλισμός',
+						url: '/app/settings/equipment_settings',
+						icon: Cog
 					},
 					{
-						title: 'Ρυθμίσεις ταμείου',
-						url: '/app/settings/register_settings'
+						title: 'Ταμείο',
+						url: '/app/settings/register_settings',
+						icon: Landmark
+					},
+					{
+						title: 'Tasks',
+						url: '/app/settings/task_managment',
+						icon: ShieldCheck
 					}
 				]
 			}
@@ -91,15 +126,18 @@
 				items: [
 					{
 						title: 'Συνταγές',
-						url: '/app/settings/recipes_settings'
+						url: '/app/settings/recipes_settings',
+						icon: Coffee
 					},
 					{
 						title: 'Συστατικά',
-						url: '/app/settings/ingridients_settings'
+						url: '/app/settings/ingridients_settings',
+						icon: Refrigerator
 					},
 					{
 						title: 'Blog',
-						url: '/app/settings/blog_settings'
+						url: '/app/settings/blog_settings',
+						icon: Book
 					}
 				]
 			}

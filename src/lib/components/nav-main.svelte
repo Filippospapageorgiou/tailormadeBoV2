@@ -29,6 +29,7 @@
 				title: string;
 				url: string;
 				requiresSuperAdmin?: boolean;
+				icon:any;
 			}[];
 		}[];
 	} = $props();
@@ -85,6 +86,7 @@
 											{#if canAccessSubItem(subItem)}
 												<Sidebar.MenuSubItem>
 													<Sidebar.MenuSubButton href={subItem.url} onclick={handleLinkClick}>
+														<subItem.icon />
 														<span>{subItem.title}</span>
 													</Sidebar.MenuSubButton>
 												</Sidebar.MenuSubItem>

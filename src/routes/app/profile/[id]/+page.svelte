@@ -321,7 +321,7 @@
 						<div class="space-y-4">
 							{#each managers as manager (manager.id)}
 								<div
-									class="group rounded-xl bg-white p-5 shadow-sm ring-1 ring-neutral-900/5 transition-all hover:shadow-md"
+									class="group rounded-xl p-5 shadow-sm ring-1 ring-neutral-900/5 transition-all hover:shadow-md"
 								>
 									<div class="flex gap-5">
 										<!-- Avatar -->

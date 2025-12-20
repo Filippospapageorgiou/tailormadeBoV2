@@ -43,8 +43,7 @@ export const load: PageServerLoad = async ({ locals: { supabase, user } }) => {
 		};
 	}
 
-	const tosFlag = user?.id ? !!tos : false;
-
+	const tosFlag = user?.id ? !(!!tos) : false;
 	return {
 		blog: blog || null,
 		tos: tosFlag

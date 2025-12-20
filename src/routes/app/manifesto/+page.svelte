@@ -3,7 +3,7 @@
 </script>
 
 <div class="h-auto bg-white">
-    <div class="container mx-auto px-4 md:px-6 pt-32 pb-20">
+    <div class="container mx-auto px-4 md:px-6 pt-32 pb-20 animate-fade-in">
         <div class="max-w-3xl mx-auto">
             <h1 class="text-4xl font-mono tracking-wider text-neutral-800 mb-24">
                 PHILOSOPHY

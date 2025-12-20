@@ -45,13 +45,14 @@
                                 </div>
                         </div>
                         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                                {#each filteredBeverages as beverage (beverage.id)}
+                                {#each filteredBeverages as beverage,i (beverage.id)}
                                         <div
+                                                style="animation-delay: {i * 200}ms; animation-fill-mode: backwards;"
                                                 role="button"
                                                 tabindex="0"
                                                 onclick={() => handleBeverageClick(beverage.id)}
                                                 onkeydown={(e) => e.key === 'Enter' && handleBeverageClick(beverage.id)}
-                                                class="group bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 ease-in-out overflow-hidden cursor-pointer"
+                                                class="group bg-white rounded-lg animate-fade-in-right shadow-sm hover:shadow-md transition-all duration-300 ease-in-out overflow-hidden cursor-pointer"
                                         >
                                                 <div class="aspect-square w-full overflow-hidden">
                                                         <img

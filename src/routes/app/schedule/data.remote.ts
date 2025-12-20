@@ -167,8 +167,6 @@ export const getCurrentSchedule = query(
 
 			const hasPrevSchedule = !prevError && prevScheduleExists && prevScheduleExists.length > 0;
 
-			console.log(hasNextSchedule, hasPrevSchedule);
-
 			return {
 				success: true,
 				schedule: schedule,

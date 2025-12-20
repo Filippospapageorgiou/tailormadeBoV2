@@ -14,6 +14,7 @@
 			items?: {
 				title: string;
 				url: string;
+				icon:any;
 			}[];
 		}[];
 	} = $props();
@@ -37,10 +38,10 @@
 					<Sidebar.MenuItem {...props}>
 						<Sidebar.MenuButton tooltipContent={project.name}>
 							{#snippet child({ props })}
-								<a href={project.url} {...props} onclick={handleLinkClick}>
+								<p {...props} onclick={handleLinkClick}>
 									<project.icon />
 									<span>{project.name}</span>
-								</a>
+								</p>
 							{/snippet}
 						</Sidebar.MenuButton>
 						{#if project.items?.length}
@@ -57,6 +58,7 @@
 									{#each project.items as subItem (subItem.title)}
 										<Sidebar.MenuSubItem>
 											<Sidebar.MenuSubButton href={subItem.url} onclick={handleLinkClick}>
+												<subItem.icon />
 												<span>{subItem.title}</span>
 											</Sidebar.MenuSubButton>
 										</Sidebar.MenuSubItem>

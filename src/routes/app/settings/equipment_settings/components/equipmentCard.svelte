@@ -594,7 +594,7 @@
 
 <!-- Edit Equipment Modal -->
 <Modal.Root bind:open={editModalOpen}>
-	<Modal.Content class="flex max-h-[95vh] flex-col">
+	<Modal.Content class="h-[85dvh] sm:h-auto max-h-[95dvh] flex flex-col">
 		<Modal.Header>
 			<Modal.Title>Επεξεργασία εξοπλισμού</Modal.Title>
 			<Modal.Description>
@@ -617,7 +617,7 @@
 			})}
 		>
 			<input type="hidden" name="id" value={equipment.id} />
-			<ScrollArea class="h-[20vh] w-full md:h-[60vh]">
+			<ScrollArea class="h-[50dvh] max-h-[90dvh] w-full md:h-auto md:max-h-[70vh]">
 				<div class="w-full space-y-2">
 					<Label class="gap-1">
 						Όνομα εξοπλισμού <span class="text-destructive">*</span>

@@ -4,6 +4,32 @@ import type { Profile } from '$lib/models/database.types';
 import { error, redirect } from '@sveltejs/kit';
 
 /**
+ * get all users profiles from the same org
+ * @returns Promise profile table same org
+ */
+export async function getAllProfilesSameOrg(org_id: number): Promise<Profile[]> {
+	const supabase = createServerClient();
+	try {
+		const { data: profiles, error: profilesError } = await supabase
+			.from('profiles')
+			.select('*')
+			.eq('org_id', org_id)
+			.order('display_order', { ascending: false })
+			.overrideTypes<Profile[]>();
+
+		if (profilesError) {
+			console.error('[getAllProfilesSameOrg] Error fethcing profiles: ', profilesError);
+			throw error(404, 'Error fethcing profiles');
+		}
+
+		return profiles;
+	} catch (err) {
+		console.error('[getAllProfilesSameOrg] Error fethcing profiles');
+		throw error(404, 'Error fethcing profiles');
+	}
+}
+
+/**
  * Get the current authenticated userd org_id
  * @returns Promise with org_id throws error if not found
  */
