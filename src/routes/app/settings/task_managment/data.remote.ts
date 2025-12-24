@@ -1,7 +1,7 @@
 import { query, command, form, prerender } from '$app/server';
 import { createServerClient, createAdminClient } from '$lib/supabase/server';
 import { requireAuthenticatedUser } from '$lib/supabase/shared';
-import { z } from 'zod/v4';
+import { check, z } from 'zod/v4';
 import { error } from '@sveltejs/kit';
 import { redirect } from '@sveltejs/kit';
 import {
@@ -11,6 +11,7 @@ import {
 	getUserProfileWithRoleCheck
 } from '$lib/supabase/queries';
 import type { TaskTemplate, TaskTemplateWithTasks } from '$lib/models/tasks.types';
+import { DE } from 'country-flag-icons/string/3x2';
 
 // ======================== AUTH ACCESS CHECK ==============
 
@@ -180,7 +181,7 @@ const TaskItemSchema = z.object({
 			const parsed = parseInt(val, 10);
 			return isNaN(parsed) ? 0 : parsed;
 		}),
-
+	scheduled_time: z.string(),
 	estimated_minutes: z
 		.string()
 		.optional()
@@ -282,45 +283,47 @@ export const deleteTaskItem = command(DeleteItemSchema, async (data) => {
 	}
 });
 
+const TaskItemSchemaForTemplate = z.object({
+	id: z.string().optional(),
+	title: z.string().trim().min(1, { message: 'Title is required' }),
+	description: z.string().trim().optional(),
+	position: z
+		.string()
+		.default('0')
+		.transform((val) => {
+			const parsed = parseInt(val, 10);
+			return isNaN(parsed) ? 0 : parsed;
+		}),
+	scheduled_time: z.string(),
+	estimated_minutes: z
+		.string()
+		.optional()
+		.transform((val) => {
+			if (!val || val.trim() === '') return null;
+			const parsed = parseInt(val, 10);
+			return isNaN(parsed) ? null : parsed;
+		}),
+	requires_photo: z.string().optional().transform((val) => val === 'true' || 'false'),
+});
+
 const TaskTemplateSchemaWithTasks = z.object({
+	id: z.string().optional(),
+	template_id: z.string().optional(),
 	name: z.string().trim().min(1, 'Το όνομα είναι υποχρεωτικό'),
 	description: z.string().trim().min(1, 'Η περιγραφή είναι υποχρεωτική'),
-	is_active: z
-		.string()
-		.default('true')
-		.transform((v) => v === 'true' || v === 'on'),
-	task_items: z
-		.record(z.string(), z.object({
-			title: z.string().trim().min(1, 'Ο τίτλος είναι υποχρεωτικός'),
-			estimated_minutes: z
-				.string()
-				.default('0')
-				.transform((v) => parseInt(v) || 0),
-			requires_photo: z
-				.string()
-				.optional()
-				.default('false')
-				.transform((v) => v === 'true' || v === 'on'),
-			position: z
-				.string()
-				.default('0')
-				.transform((v) => parseInt(v) || 0)
-		}))
-		.transform((obj) => Object.values(obj)) 
-		.default([])
+	is_active: z.string().optional().transform((val) => val === 'true' || 'false'),
+	task_items: z.array(TaskItemSchemaForTemplate).default([])
 });
 
 export const addTaskTemplateWithTasks = form(TaskTemplateSchemaWithTasks, async (data) => {
 	const supabase = createServerClient();
 	const profile = await getUserProfile();
-
-	// 1. Insert the Template first
 	const { data: template, error: tError } = await supabase
 		.from('task_templates')
 		.insert({
 			name: data.name,
 			description: data.description,
-			is_active: data.is_active,
+			is_active:data.is_active,
 			org_id: profile.org_id,
 			created_by: profile.id
 		})
@@ -337,7 +340,61 @@ export const addTaskTemplateWithTasks = form(TaskTemplateSchemaWithTasks, async 
 		}));
 
 		const { error: iError } = await supabase.from('task_items').insert(tasksToInsert);
-		if (iError) throw iError;
+		if (iError) {
+			console.error('error isnerting task items: ',tError);
+			throw tError;
+		}
+	}
+
+	return { success: true };
+});
+
+export const updateTemplateWithTasks = form(TaskTemplateSchemaWithTasks, async (data) => {
+	const supabase = createServerClient();
+	if (!data) throw new Error('Template ID is required for updates');
+
+	const { error: tError } = await supabase
+		.from('task_templates')
+		.update({
+			name: data.name,
+			description: data.description,
+			is_active: data.is_active
+		})
+		.eq('id', data.id);
+
+	if (tError){
+		console.error('error: ', tError);
+		throw tError;
+	} 
+
+	//We get the IDs of tasks that should stay/be updated
+	const currentTaskIds = data.task_items.map((item) => item.id).filter((id): id is string => !!id);
+
+	const { error: dError } = await supabase
+		.from('task_items')
+		.delete()
+		.eq('template_id', data.id)
+		.not('id', 'in', `(${currentTaskIds.join(',')})`);
+	if (dError) {
+		console.error('error: ', dError);
+		throw dError
+	};
+
+	// 3. Upsert the tasks (Insert new ones, Update existing ones)
+	if (data.task_items.length > 0) {
+		const tasksToUpsert = data.task_items.map((item) => ({
+			...item,
+			template_id: data.id // Link to parent
+		}));
+
+		const { error: uError } = await supabase
+			.from('task_items')
+			.upsert(tasksToUpsert, { onConflict: 'id' });
+
+		if (uError) {
+			console.error(uError);
+			throw uError
+		};
 	}
 
 	return { success: true };

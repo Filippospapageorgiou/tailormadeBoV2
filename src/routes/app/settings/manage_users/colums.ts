@@ -47,8 +47,8 @@ export const columns: ColumnDef<Profile>[] = [
 			})
 	},
 	{
-		accessorKey: 'org_id',
-		header: 'OrgId'
+		accessorKey: 'phone',
+		header: 'phone'
 	},
 	{
 		accessorKey: 'role_name',

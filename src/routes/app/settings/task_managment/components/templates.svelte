@@ -11,15 +11,11 @@
 		LayoutTemplate,
 		PencilIcon,
 		Trash2,
-		Loader2, // Added for the spinner
+		Loader2,
 		Trash,
 		Trash2Icon,
-
 		Camera,
-
 		X
-
-
 	} from 'lucide-svelte';
 	import { Button } from '$lib/components/ui/button';
 	import {
@@ -29,7 +25,7 @@
 		CardHeader,
 		CardTitle
 	} from '$lib/components/ui/card';
-	import type { TaskTemplateWithTasks } from '$lib/models/tasks.types';
+	import type { TaskItem, TaskTemplateWithTasks } from '$lib/models/tasks.types';
 	import Badge from '$lib/components/ui/badge/badge.svelte';
 	import { deleteTaskTemplate, getAllTemplatesTask } from '../data.remote';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
@@ -41,14 +37,105 @@
 	import { ScrollArea } from '$lib/components/ui/scroll-area/index.js';
 	import Switch from '$lib/components/ui/switch/switch.svelte';
 	import Textarea from '$lib/components/ui/textarea/textarea.svelte';
-	import { addTaskTemplateWithTasks } from '../data.remote';
+	import { addTaskTemplateWithTasks, updateTemplateWithTasks } from '../data.remote';
+	import Checkbox from '$lib/components/ui/checkbox/checkbox.svelte';
+	import { string } from 'zod';
 
 	let { taskTemplatesWithTasks }: { taskTemplatesWithTasks: TaskTemplateWithTasks[] } = $props();
 
 	// State for Dialog and Loading
+	let addIsActive = $state(false);
+	let editIsActive = $state(false);
 	let openDeleteDialogTemplate = $state<boolean>(false);
 	let isDeleting = $state<boolean>(false);
 	let templateToDelete = $state<string | null>(null);
+	let openAddTemplateTask = $state<boolean>(false);
+	let isUpdating = $state(false);
+	let openEditTemplateTask = $state<boolean>(false);
+
+	function toggleAddRequiresPhoto(index: number) {
+		const current = addValues.task_items[index].requires_photo === 'true';
+		addValues.task_items[index].requires_photo = String(!current);
+	}
+
+	// For EDIT form - toggle requires_photo
+	function toggleEditRequiresPhoto(index: number) {
+		const current = editValues.task_items[index].requires_photo === 'true';
+		editValues.task_items[index].requires_photo = String(!current);
+	}
+
+	// SEPARATE state for ADD form
+	let addValues = $state({
+		name: '',
+		description: '',
+		is_active: 'false', // Sync boolean state
+		task_items: [] as any[]
+	});
+
+	// SEPARATE state for EDIT form
+	let editValues = $state({
+		id: '',
+		name: '',
+		description: '',
+		is_active: 'false',
+		task_items: [] as any[]
+	});
+
+	// Sync ADD form
+	$effect(() => {
+		if (addTaskTemplateWithTasks?.fields) {
+			addTaskTemplateWithTasks.fields.set(addValues);
+		}
+	});
+
+	// Sync EDIT form
+	$effect(() => {
+		if (updateTemplateWithTasks?.fields) {
+			updateTemplateWithTasks.fields.set(editValues);
+		}
+	});
+
+	function openEditDialog(templateTask: TaskTemplateWithTasks) {
+		editValues = {
+			id: templateTask.id,
+			name: templateTask.name || '',
+			description: templateTask.description || '',
+			is_active: String(templateTask.is_active),
+			task_items: templateTask.task_items.map((t) => ({
+				id: t.id,
+				title: t.title,
+				description: t.description || '',
+				scheduled_time: t.scheduled_time,
+				estimated_minutes: String(t.estimated_minutes ?? 0),
+				position: String(t.position ?? 0),
+				requires_photo: String(t.requires_photo)
+			}))
+		};
+		editIsActive = templateTask.is_active;
+		openEditTemplateTask = true;
+	}
+
+	function closeEditDialog() {
+		openEditTemplateTask = false;
+		// Reset edit form
+		editValues = {
+			id: '',
+			name: '',
+			description: '',
+			is_active: String(false),
+			task_items: []
+		};
+	}
+
+	function closeAddDialog() {
+		openAddTemplateTask = false;
+		addValues = {
+			name: '',
+			description: '',
+			is_active: String(false),
+			task_items: []
+		};
+	}
 
 	function confirmDelete(id: string) {
 		templateToDelete = id;
@@ -72,33 +159,41 @@
 		}
 	}
 
-	let openAddTemplateTask = $state<boolean>(false);
-	let isUpdating = $state(false);
-	let openEditTemplateTask = $state<boolean>(false);
+	// ADD form: add task
+	function addTaskItemToAdd() {
+		addValues.task_items.push({
+			id: crypto.randomUUID(),
+			title: '',
+			description: '',
+			estimated_minutes: '0',
+			scheduled_time: '00:00:00',
+			position: String(addValues.task_items.length),
+			requires_photo: String(false)
+		});
+	}
 
-	let ItemTasks = [
-		{
-			id:1,
-			title:'Clean machine',
-			description:'Quick',
-			requires_photo:true,
-			estimated_minutes:10
-		},
-		{
-			id:2,
-			title:'Clean machine',
-			description:'Quick',
-			requires_photo:true,
-			estimated_minutes:10
-		},
-		{
-			id:3,
-			title:'Clean machine',
-			description:'Quick',
-			requires_photo:true,
-			estimated_minutes:10
-		}
-	]
+	// ADD form: remove task
+	function removeTaskItemFromAdd(index: number) {
+		addValues.task_items.splice(index, 1);
+	}
+
+	// EDIT form: add task
+	function addTaskItemToEdit() {
+		editValues.task_items.push({
+			id: crypto.randomUUID(),
+			title: '',
+			description: '',
+			estimated_minutes: '0',
+			scheduled_time: '00:00:00',
+			position: String(editValues.task_items.length),
+			requires_photo: String(false)
+		});
+	}
+
+	// EDIT form: remove task
+	function removeTaskItemFromEdit(index: number) {
+		editValues.task_items.splice(index, 1);
+	}
 </script>
 
 <div class="animate-fade-in-left space-y-6">
@@ -165,9 +260,7 @@
 
 					<div class="mt-auto flex gap-2">
 						<Button
-							onclick={() => {
-								openEditTemplateTask = true;
-							}}
+							onclick={() => openEditDialog(template)}
 							variant="secondary"
 							size="sm"
 							class="flex-1 cursor-pointer"
@@ -241,111 +334,141 @@
 	</Dialog.Content>
 </Dialog.Root>
 
+<!-- ADD TEMPLATE MODAL -->
 <Modal.Root bind:open={openAddTemplateTask}>
 	<Modal.Content class="flex h-[85dvh] max-h-[95dvh] flex-col sm:h-auto">
-		<Modal.Header
-			><Modal.Title>Δημιουργία νέου προτύπου</Modal.Title>
+		<Modal.Header>
+			<Modal.Title>Δημιουργία νέου προτύπου</Modal.Title>
 			<Modal.Description>Ορίστε ένα νέο πρότυπο εργασίας</Modal.Description>
 		</Modal.Header>
 		<ScrollArea class="h-[65dvh] w-full">
 			<form
 				class="space-y-6 py-4"
-				{...addTaskTemplateWithTasks.enhance(async ({ form, data, submit }) => {
+				{...addTaskTemplateWithTasks.enhance(async ({ form, submit }) => {
 					isUpdating = true;
 					await submit();
+
 					if (addTaskTemplateWithTasks.result?.success) {
 						toast.success('Επιτυχής δημιουργία');
+						form.reset();
+						closeAddDialog();
 					} else {
 						toast.error('Αποτυχία προσθήκης προσπάθησε πάλι');
 					}
-					form.reset();
 					isUpdating = false;
-					openAddTemplateTask = false;
 				})}
 			>
 				<div class="space-y-4">
 					<div class="space-y-2">
 						<Label for="template-name">Όνομα προτύπου</Label>
-						<Input id="template-name" name="name" placeholder="e.g., Morning Site Inspection" />
+						<Input
+							id="template-name"
+							{...addTaskTemplateWithTasks.fields.name.as('text')}
+							placeholder="e.g., Morning Site Inspection"
+						/>
 					</div>
 
 					<div class="space-y-2">
 						<Label for="template-description">Περιγραφή</Label>
 						<Textarea
-							name="description"
+							{...addTaskTemplateWithTasks.fields.description.as('text')}
 							id="template-description"
 							placeholder="Brief description of this template"
 							rows={2}
 						/>
 					</div>
-
 					<div class="flex items-center justify-between">
 						<Label for="template-active">Ενεργό πρότυπο</Label>
-						<Switch id="template-active" name="is_active" />
+						<Switch id="template-active" bind:checked={addIsActive} class="cursor-pointer" />
+						<input
+							type="hidden"
+							{...addTaskTemplateWithTasks.fields.is_active.as('text')}
+							value={addIsActive.toString()}
+						/>
 					</div>
 				</div>
+
 				<div class="flex items-center justify-between">
-					<Label class="text-base">Εργασίες (1)</Label>
+					<Label class="text-base">Εργασίες ({addValues.task_items.length})</Label>
 				</div>
+
 				<div class="space-y-3">
-					{#each ItemTasks as task, index (task.id)}
-						<div class="flex gap-3 rounded-lg border border-border p-3">
-							<div
-								class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary"
-							>
-								{index + 1}
+					{#each addValues.task_items as _, index}
+						<div class="flex flex-col gap-3 rounded-lg border border-border p-3">
+							<div class="flex items-center justify-between">
+								<div
+									class="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary"
+								>
+									{index + 1}
+								</div>
+								<Button
+									variant="ghost"
+									size="sm"
+									type="button"
+									onclick={() => removeTaskItemFromAdd(index)}
+									class="text-destructive"
+								>
+									<X class="h-4 w-4" />
+								</Button>
 							</div>
-							<div class="min-w-0 flex-1">
-								<h4 class="text-sm font-medium text-foreground">{task.title}</h4>
-								{#if task.description}
-									<p class="mt-1 text-xs text-muted-foreground">{task.description}</p>
-								{/if}
-								<div class="mt-2 flex items-center gap-2">
-									{#if task.requires_photo}
-										<Badge variant="outline" class="text-xs">
-											<Camera class="mr-1 h-3 w-3" />
-											Photo
-										</Badge>
-									{/if}
-									{#if task.estimated_minutes > 0}
-										<Badge variant="secondary" class="text-xs">{task.estimated_minutes}μ</Badge>
-									{/if}
+
+							<div class="space-y-2">
+								<Input
+									{...addTaskTemplateWithTasks.fields.task_items[index].title.as('text')}
+									placeholder="Τίτλος εργασίας"
+								/>
+
+								<Textarea
+									{...addTaskTemplateWithTasks.fields.task_items[index].description.as('text')}
+									placeholder="Περιγραφή (προαιρετικά)"
+									rows={2}
+								/>
+
+								<div class="grid grid-cols-2 gap-2">
+									<div class="space-y-1">
+										<Input
+											{...addTaskTemplateWithTasks.fields.task_items[index].estimated_minutes.as(
+												'text'
+											)}
+											type="number"
+											placeholder="Λεπτά"
+										/>
+									</div>
+									<Input
+										{...addTaskTemplateWithTasks.fields.task_items[index].scheduled_time.as('time')}
+										type="time"
+										step="1"
+									/>
+								</div>
+								<div class="flex items-center justify-between">
+									<Label for="template-active">Απαιτείται φοτωγραφία</Label>
+									<Switch
+										id="add-photo-{index}"
+										checked={addValues.task_items[index].requires_photo === 'true'}
+										onCheckedChange={() => toggleAddRequiresPhoto(index)}
+										class="cursor-pointer"
+									/>
+									<input
+										type="hidden"
+										{...addTaskTemplateWithTasks.fields.task_items[index].requires_photo.as('text')}
+										value={addValues.task_items[index].requires_photo}
+									/>
 								</div>
 							</div>
-							<Button
-								variant="ghost"
-								size="sm"
-								class="shrink-0 text-destructive hover:text-destructive"
-							>
-								<X class="h-4 w-4" />
-							</Button>
 						</div>
 					{/each}
 				</div>
-				<div class="w-full space-y-2">
-					<Card class="border border-dashed border-primary bg-muted/50">
-						<CardContent class="space-y-3 pt-4">
-							<div class="space-y-2">
-								<Input placeholder="Task title" />
-								<Textarea placeholder="Task description (optional)" rows={2} />
-								<div class="grid grid-cols-2 gap-2">
-									<div class="flex items-center space-x-2">
-										<Switch id="requires-photo" />
-										<Label for="requires-photo" class="text-sm">Απαιτειταί φοτωγραφία</Label>
-									</div>
-									<div class="space-y-1">
-										<Label for="estimated-minutes" class="text-sm">Λέπτα</Label>
-										<Input id="estimated-minutes" type="number" min="0" />
-									</div>
-								</div>
-							</div>
-							<Button variant="outline" class="w-full bg-transparent" size="sm">
-								<Plus class="mr-2 h-4 w-4" />
-								Add Task
-							</Button>
-						</CardContent>
-					</Card>
-				</div>
+
+				<Button
+					type="button"
+					variant="outline"
+					class="w-full border-dashed border-primary bg-muted/50"
+					onclick={addTaskItemToAdd}
+				>
+					<Plus class="mr-2 h-4 w-4" />
+					Προσθήκη Εργασίας
+				</Button>
+
 				<Modal.Footer class="py-2">
 					<Button type="submit" disabled={isUpdating}>
 						{#if isUpdating}
@@ -354,82 +477,151 @@
 							Προσθήκη προτύπου
 						{/if}
 					</Button>
-					<Button
-						variant="outline"
-						disabled={isUpdating}
-						onclick={() => {
-							openAddTemplateTask = false;
-						}}
-					>
-						Κλείσιμο
-					</Button>
+					<Button variant="outline" type="button" onclick={closeAddDialog}>Κλείσιμο</Button>
 				</Modal.Footer>
 			</form>
 		</ScrollArea>
 	</Modal.Content>
 </Modal.Root>
 
+<!-- EDIT TEMPLATE MODAL -->
 <Modal.Root bind:open={openEditTemplateTask}>
 	<Modal.Content class="flex h-[85dvh] max-h-[95dvh] flex-col sm:h-auto">
-		<Modal.Header
-			><Modal.Title>Επεξεργασία προτύπου</Modal.Title>
+		<Modal.Header>
+			<Modal.Title>Επεξεργασία προτύπου</Modal.Title>
 			<Modal.Description
-				>Επεξεργασία προτύπου για αλλάγες και ενημέρωση τωβ εργασιών</Modal.Description
+				>Επεξεργασία προτύπου για αλλαγές και ενημέρωση των εργασιών</Modal.Description
 			>
 		</Modal.Header>
-		<form
-			class="space-y-6 py-4"
-			{...addTaskTemplateWithTasks.enhance(async ({ form, data, submit }) => {
-				isUpdating = true;
-				await submit();
-				if (addTaskTemplateWithTasks.result?.success) {
-					toast.success('Επιτυχής δημιουργία');
-				} else {
-					toast.error('Αποτυχία προσθήκης προσπάθησε πάλι');
-				}
-				form.reset();
-				isUpdating = false;
-				openAddTemplateTask = false;
-			})}
-		>
-			<div class="space-y-4">
-				<div class="space-y-2">
-					<Label for="template-name">Όνομα προτύπου</Label>
-					<Input id="template-name" name="name" placeholder="e.g., Morning Site Inspection" />
+		<ScrollArea class="h-[65dvh] w-full">
+			<form
+				class="space-y-6 py-4"
+				{...updateTemplateWithTasks.enhance(async ({ submit }) => {
+					isUpdating = true;
+					await submit().updates(getAllTemplatesTask());
+
+					if (updateTemplateWithTasks.result?.success) {
+						toast.success('Το πρότυπο ενημερώθηκε');
+						closeEditDialog();
+					} else {
+						toast.error('Αποτυχία ενημέρωσης');
+					}
+					isUpdating = false;
+				})}
+			>
+				<input type="hidden" {...updateTemplateWithTasks.fields.id.as('text')} />
+
+				<div class="space-y-4">
+					<div class="space-y-2">
+						<Label for="edit-name">Όνομα προτύπου</Label>
+						<Input id="edit-name" {...updateTemplateWithTasks.fields.name.as('text')} />
+					</div>
+
+					<div class="space-y-2">
+						<Label for="edit-desc">Περιγραφή</Label>
+						<Textarea
+							id="edit-desc"
+							{...updateTemplateWithTasks.fields.description.as('text')}
+							rows={2}
+						/>
+					</div>
+					<div class="flex items-center justify-between">
+						<Label for="template-active">Ενεργό πρότυπο</Label>
+						<Switch id="template-active" bind:checked={editIsActive} class="cursor-pointer" />
+						<input
+							type="hidden"
+							{...updateTemplateWithTasks.fields.is_active.as('text')}
+							value={editIsActive.toString()}
+						/>
+					</div>
 				</div>
 
-				<div class="space-y-2">
-					<Label for="template-description">Περιγραφή</Label>
-					<Textarea
-						name="description"
-						id="template-description"
-						placeholder="Brief description of this template"
-						rows={2}
-					/>
+				<Label class="text-base">Εργασίες ({editValues.task_items.length})</Label>
+
+				<div class="space-y-3">
+					{#each editValues.task_items as _, index}
+						<div class="flex flex-col gap-3 rounded-lg border border-border p-3">
+							<input
+								type="hidden"
+								{...updateTemplateWithTasks.fields.task_items[index].id.as('text')}
+							/>
+
+							<div class="flex items-center justify-between">
+								<div
+									class="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary"
+								>
+									{index + 1}
+								</div>
+								<Button
+									variant="ghost"
+									size="sm"
+									type="button"
+									onclick={() => removeTaskItemFromEdit(index)}
+									class="text-destructive"
+								>
+									<X class="h-4 w-4" />
+								</Button>
+							</div>
+
+							<div class="space-y-2">
+								<Input {...updateTemplateWithTasks.fields.task_items[index].title.as('text')} />
+								<Textarea
+									{...updateTemplateWithTasks.fields.task_items[index].description.as('text')}
+									rows={2}
+								/>
+								<div class="grid grid-cols-2 gap-2">
+									<Input
+										{...updateTemplateWithTasks.fields.task_items[index].estimated_minutes.as(
+											'text'
+										)}
+										type="number"
+										placeholder="Λεπτά"
+									/>
+									<Input
+										{...updateTemplateWithTasks.fields.task_items[index].scheduled_time.as('time')}
+										type="time"
+										step="1"
+									/>
+								</div>
+							</div>
+							<div class="flex items-center justify-between">
+								<Label for="edit-photo-{index}">Απαιτείται φωτογραφία</Label>
+								<Switch
+									id="edit-photo-{index}"
+									checked={editValues.task_items[index].requires_photo === 'true'}
+									onCheckedChange={() => toggleEditRequiresPhoto(index)}
+									class="cursor-pointer"
+								/>
+								<input
+									type="hidden"
+									{...updateTemplateWithTasks.fields.task_items[index].requires_photo.as('text')}
+									value={editValues.task_items[index].requires_photo}
+								/>
+							</div>
+						</div>
+					{/each}
 				</div>
 
-				<div class="flex items-center justify-between">
-					<Label for="template-active">Ενεργό πρότυπο</Label>
-					<Switch id="template-active" name="is_active" />
-				</div>
-			</div>
-			<Modal.Footer class="py-2">
-				<Button type="submit" disabled={isUpdating}>
-					{#if isUpdating}
-						<Spinner /> Προσθήκη...
-					{:else}
-						Προσθήκη προτύπου
-					{/if}
-				</Button>
 				<Button
+					type="button"
 					variant="outline"
-					onclick={() => {
-						openEditTemplateTask = false;
-					}}
+					class="w-full border-dashed border-primary bg-muted/50"
+					onclick={addTaskItemToEdit}
 				>
-					Κλείσιμο
+					<Plus class="mr-2 h-4 w-4" /> Προσθήκη Εργασίας
 				</Button>
-			</Modal.Footer>
-		</form>
+
+				<Modal.Footer class="py-2">
+					<Button type="submit" disabled={isUpdating}>
+						{#if isUpdating}
+							<Spinner /> Ενημέρωση...
+						{:else}
+							Αποθήκευση αλλαγών
+						{/if}
+					</Button>
+					<Button variant="outline" type="button" onclick={closeEditDialog}>Κλείσιμο</Button>
+				</Modal.Footer>
+			</form>
+		</ScrollArea>
 	</Modal.Content>
 </Modal.Root>

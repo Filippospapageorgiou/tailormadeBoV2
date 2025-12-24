@@ -19,6 +19,7 @@ export interface TaskItem {
 	estimated_minutes: number | null;
 	created_at: string; // ISO timestamp
 	updated_at: string; // ISO timestamp
+	scheduled_time: string;
 }
 
 export interface UserDailyTask {
