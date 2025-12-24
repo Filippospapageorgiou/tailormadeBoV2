@@ -357,6 +357,7 @@ export const dailyRegisterForm = form(dailyRegisterSchema, async (data) => {
 	const supabase = createServerClient();
 	const user = await requireAuthenticatedUser();
 	try {
+		console.log(data);
 		const registerData = JSON.parse(data.dailyRegister || '{}');
 		// Get user's org_id
 

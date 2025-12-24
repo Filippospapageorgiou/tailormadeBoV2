@@ -176,7 +176,7 @@
 			<!-- Hidden input with JSON data -->
 			<input
 				type="hidden"
-				{...dailyRegisterForm.fields.dailyRegister}
+				{...dailyRegisterForm.fields.dailyRegister.as('text')}
 				value={JSON.stringify(prepareSubmissionData())}
 			/>
 

@@ -117,7 +117,7 @@
 				<Label for="title">Title *</Label>
 				<Input
 					id="title"
-					name={addBlog.field('title')}
+					{...addBlog.fields.title.as('text')}
 					bind:value={formData.title}
 					placeholder="Enter blog post title..."
 					required
@@ -129,7 +129,7 @@
 				<Label for="description">Short Description</Label>
 				<Textarea
 					id="description"
-					name={addBlog.field('description')}
+					{...addBlog.fields.description.as('text')}
 					bind:value={formData.description}
 					placeholder="Brief description of the blog post..."
 					rows={2}
@@ -142,7 +142,7 @@
 				<Label for="content">Content *</Label>
 				<Textarea
 					id="content"
-					name={addBlog.field('content')}
+					{...addBlog.fields.content.as('text')}
 					bind:value={formData.content}
 					placeholder="Write your blog content here... You can use HTML formatting."
 					rows={10}
@@ -156,7 +156,7 @@
 				<Label for="tags">Tags</Label>
 				<Input
 					id="tags"
-					name={addBlog.field('tags')}
+					{...addBlog.fields.tags.as('text')}
 					bind:value={formData.tags}
 					placeholder="Comma-separated tags: coffee, latte, tutorial"
 				/>
@@ -249,7 +249,7 @@
 				<Label for="published" class="cursor-pointer">Publish immediately</Label>
 				<input
 					type="hidden"
-					name={addBlog.field('published')}
+					{...addBlog.fields.published.as('text')}
 					value={formData.published.toString()}
 				/>
 			</div>
