@@ -8,7 +8,11 @@
 		Plus,
 		ListChecks,
 		Users,
-		LayoutTemplate
+		LayoutTemplate,
+		Image,
+
+		Camera
+
 	} from 'lucide-svelte';
 	import { Button } from '$lib/components/ui/button';
 	import {
@@ -28,6 +32,8 @@
 	import AuthBlock from '$lib/components/custom/AuthBlock/authBlock.svelte';
 	import { Spinner } from '$lib/components/ui/spinner';
 	import Templates from './components/templates.svelte';
+	import Separator from '$lib/components/ui/separator/separator.svelte';
+	import CardFooter from '$lib/components/ui/card/card-footer.svelte';
 
 	let auth = authenticatedAccess();
 
@@ -57,15 +63,14 @@
 	let currentView = $state<'assign' | 'templates' | 'assigned'>('assign');
 
 	let selectedUser = $state<string>('');
-	let selectedTemplate = $state<string>('');
+	let selectedTemplateId = $state<string>('');
+	let selectedTemplated = $derived(taskTemplatesWithTasks.find((f) => f.id === selectedTemplateId));
 	let selectedDate = $state<string>(new Date().toISOString().split('T')[0]);
 	let searchQuery = $state<string>('');
 	let isAssigning = $state<boolean>(false);
 
 	const selectedUserData = $derived(users.find((u) => u.id === selectedUser));
 	const totalMinutes = $derived(0);
-
-	let taskTemplates = ['1'];
 </script>
 
 {#if auth.loading}
@@ -198,7 +203,7 @@
 								<div class="grid gap-4 sm:grid-cols-2">
 									<div class="space-y-2">
 										<Label for="task-template">Task Template</Label>
-										<TemplateSelect {taskTemplates} bind:value={selectedTemplate} />
+										<TemplateSelect {taskTemplatesWithTasks} bind:value={selectedTemplateId} />
 									</div>
 
 									<div class="space-y-2">
@@ -229,49 +234,85 @@
 						</Card>
 
 						<!-- Template Preview -->
-						{#if true}
-							<Card class="bg-transparent">
-								<CardHeader>
-									<div class="flex items-start justify-between">
-										<div>
-											<CardTitle class="text-lg"></CardTitle>
-											<CardDescription></CardDescription>
-										</div>
-										<div class="flex items-center gap-2 text-sm text-muted-foreground">
-											<Clock class="h-4 w-4" />
-											<span>{totalMinutes} min</span>
-										</div>
+					{#if selectedTemplated}
+						<Card class="bg-transparent">
+							<CardHeader>
+								<div class="flex items-start justify-between">
+									<div>
+										<CardTitle class="text-lg">{selectedTemplated.name}</CardTitle>
+										<CardDescription>{selectedTemplated.description}</CardDescription>
 									</div>
-								</CardHeader>
-								<CardContent>
-									<div class="space-y-3"></div>
-
-									<div class="mt-6 flex items-center justify-between gap-4">
-										<div class="text-sm text-muted-foreground">
-											<!--{selectedTemplateData.tasks.length} tasks • Est. {totalMinutes} minutes-->
-										</div>
-										<Button
-											disabled={!selectedUser || !selectedTemplate || isAssigning}
-											class="min-w-[140px]"
+									<div class="flex items-center gap-2 text-sm text-muted-foreground">
+										<Clock class="h-4 w-4" />
+										<span>{totalMinutes} min</span>
+									</div>
+								</div>
+							</CardHeader>
+							<CardContent>
+								<div class="space-y-3">
+									{#each selectedTemplated.task_items as task, index (task.id)}
+										<div
+											class="flex gap-3 rounded-lg border border-border bg-card p-4 transition-colors hover:bg-accent/50"
 										>
-											{isAssigning ? 'Assigning...' : 'Assign Tasks'}
-										</Button>
+											<div
+												class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary"
+											>
+												{index + 1}
+											</div>
+											<div class="flex-1 min-w-0">
+												<div class="flex items-start justify-between gap-2">
+													<h4 class="font-medium text-sm text-foreground">{task.title}</h4>
+													<div class="flex items-center gap-2 shrink-0">
+														{#if task.requires_photo}
+															<Badge variant="outline" class="text-xs">
+																<Camera class="mr-1 h-3 w-3" />
+																Photo
+															</Badge>
+														{/if}
+														{#if task.estimated_minutes! > 0}
+															<span class="text-xs text-muted-foreground whitespace-nowrap">
+																{task.estimated_minutes}m
+															</span>
+														{/if}
+													</div>
+												</div>
+												{#if task.description}
+													<p class="mt-1 text-xs text-muted-foreground leading-relaxed">
+														{task.description}
+													</p>
+												{/if}
+											</div>
+										</div>
+									{/each}
+								</div>
+
+								<div class="mt-6 flex items-center justify-between gap-4">
+									<div class="text-sm text-muted-foreground">
+										{selectedTemplated.task_items.length} tasks • Est. {totalMinutes} minutes
 									</div>
-								</CardContent>
-							</Card>
-						{:else}
-							<Card class="border-dashed bg-white">
-								<CardContent class="flex flex-col items-center justify-center py-12">
-									<div class="mb-4 rounded-full bg-muted p-3">
-										<Calendar class="h-6 w-6 text-muted-foreground" />
-									</div>
-									<h3 class="mb-1 font-medium text-foreground">No Template Selected</h3>
-									<p class="text-center text-sm text-muted-foreground">
-										Select a task template to preview and assign tasks
-									</p>
-								</CardContent>
-							</Card>
-						{/if}
+									<Button
+										
+										disabled={!selectedUser || !selectedTemplated || isAssigning}
+										class="min-w-[140px]"
+									>
+										{isAssigning ? 'Assigning...' : 'Assign Tasks'}
+									</Button>
+								</div>
+							</CardContent>
+						</Card>
+					{:else}
+						<Card class="border-dashed">
+							<CardContent class="flex flex-col items-center justify-center py-12">
+								<div class="rounded-full bg-muted p-3 mb-4">
+									<Calendar class="h-6 w-6 text-muted-foreground" />
+								</div>
+								<h3 class="font-medium text-foreground mb-1">No Template Selected</h3>
+								<p class="text-sm text-muted-foreground text-center">
+									Select a task template to preview and assign tasks
+								</p>
+							</CardContent>
+						</Card>
+					{/if}
 					</div>
 				</div>
 			{:else if currentView === 'templates'}
