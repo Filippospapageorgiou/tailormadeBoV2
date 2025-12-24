@@ -99,7 +99,7 @@
 					<Label for="supplier-name">Όνομα Προμηθευτή *</Label>
 					<Input
 						id="supplier-name"
-						name={createSupplierForm.field('name')}
+						{...createSupplierForm.fields.name.as('text')}
 						bind:value={formData.name}
 						placeholder="π.χ. Καφές Λουμίδης"
 						required
@@ -111,7 +111,7 @@
 					<Label for="supplier-afm">ΑΦΜ *</Label>
 					<Input
 						id="supplier-afm"
-						name={createSupplierForm.field('afm')}
+						{...createSupplierForm.fields.afm.as('text')}
 						bind:value={formData.afm}
 						placeholder="π.χ. 123456789"
 						required
@@ -123,7 +123,7 @@
 					<Label for="supplier-phone">Τηλέφωνο</Label>
 					<Input
 						id="supplier-phone"
-						name={createSupplierForm.field('phone')}
+						{...createSupplierForm.fields.phone.as('text')}
 						bind:value={formData.phone}
 						placeholder="π.χ. 210 1234567"
 					/>
@@ -135,7 +135,7 @@
 					<Input
 						id="supplier-email"
 						type="email"
-						name={createSupplierForm.field('email')}
+						{...createSupplierForm.fields.email.as('text')}
 						bind:value={formData.email}
 						placeholder="π.χ. info@supplier.gr"
 					/>
@@ -146,7 +146,7 @@
 					<Label for="supplier-address">Διεύθυνση</Label>
 					<Input
 						id="supplier-address"
-						name={createSupplierForm.field('address')}
+						{...createSupplierForm.fields.address.as('text')}
 						bind:value={formData.address}
 						placeholder="π.χ. Οδός 123, Αθήνα"
 					/>
@@ -157,7 +157,7 @@
 					<Label for="supplier-contact">Υπεύθυνος Επικοινωνίας</Label>
 					<Input
 						id="supplier-contact"
-						name={createSupplierForm.field('contact_person')}
+						{...createSupplierForm.fields.contact_person.as('text')}
 						bind:value={formData.contact_person}
 						placeholder="π.χ. Γιάννης Παπαδόπουλος"
 					/>
@@ -168,7 +168,7 @@
 					<Label for="supplier-payment">Όροι Πληρωμής</Label>
 					<Input
 						id="supplier-payment"
-						name={createSupplierForm.field('payment_terms')}
+						{...createSupplierForm.fields.payment_terms.as('text')}
 						bind:value={formData.payment_terms}
 						placeholder="π.χ. 30 ημέρες"
 					/>
@@ -179,7 +179,7 @@
 					<Label for="supplier-notes">Σημειώσεις</Label>
 					<Textarea
 						id="supplier-notes"
-						name={createSupplierForm.field('notes')}
+						{...createSupplierForm.fields.notes.as('text')}
 						bind:value={formData.notes}
 						placeholder="Πρόσθετες πληροφορίες..."
 						rows={3}
