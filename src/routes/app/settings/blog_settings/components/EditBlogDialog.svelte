@@ -132,12 +132,12 @@
 			})}
 		>
 			<!-- Hidden ID field -->
-			<input type="hidden" name={editBlog.field('id')} value={blog.id.toString()} />
+			<input type="hidden" {...editBlog.fields.id.as('text')} value={blog.id.toString()} />
 
 			<!-- Hidden field for existing images -->
 			<input 
 				type="hidden" 
-				name={editBlog.field('existingImages')} 
+				{...editBlog.fields.existingImages.as('text')}
 				value={JSON.stringify(existingImages)} 
 			/>
 
@@ -146,7 +146,7 @@
 				<Label for="edit-title">Title *</Label>
 				<Input
 					id="edit-title"
-					name={editBlog.field('title')}
+					{...editBlog.fields.title.as('text')}
 					bind:value={formData.title}
 					placeholder="Enter blog post title..."
 					required
@@ -158,7 +158,7 @@
 				<Label for="edit-description">Short Description</Label>
 				<Textarea
 					id="edit-description"
-					name={editBlog.field('description')}
+					{...editBlog.fields.description.as('text')}
 					bind:value={formData.description}
 					placeholder="Brief description of the blog post..."
 					rows={2}
@@ -171,7 +171,7 @@
 				<Label for="edit-content">Content *</Label>
 				<Textarea
 					id="edit-content"
-					name={editBlog.field('content')}
+					{...editBlog.fields.content.as('text')}
 					bind:value={formData.content}
 					placeholder="Write your blog content here... You can use HTML formatting."
 					rows={10}
@@ -185,7 +185,7 @@
 				<Label for="edit-tags">Tags</Label>
 				<Input
 					id="edit-tags"
-					name={editBlog.field('tags')}
+					{...editBlog.fields.tags.as('text')}
 					bind:value={formData.tags}
 					placeholder="Comma-separated tags: coffee, latte, tutorial"
 				/>
@@ -281,7 +281,7 @@
 				<Label for="edit-published" class="cursor-pointer">Published</Label>
 				<input
 					type="hidden"
-					name={editBlog.field('published')}
+					{...editBlog.fields.published.as('text')}
 					value={formData.published.toString()}
 				/>
 			</div>

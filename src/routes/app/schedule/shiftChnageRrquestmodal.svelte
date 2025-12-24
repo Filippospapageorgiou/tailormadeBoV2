@@ -94,14 +94,7 @@
 					await submit();
 					if(createShiftChangeRequest.result?.success === true){
 						showSuccessToast('Επιτυχία','Το αιτήμα σας υποβλήθηκε με επυτιχία');
-					}
-
-					if (createShiftChangeRequest.issues) {
-						const firstError = Object.values(createShiftChangeRequest.issues)[0];
-						if (firstError && Array.isArray(firstError) && firstError[0]?.message) {
-							handleError(firstError[0].message);
-						}
-					} else {
+					}else {
 						handleError(createShiftChangeRequest.result?.message || 'Αποτυχία υποβολής αιτήματος');
 					}
 					refreshForm();
@@ -113,7 +106,7 @@
 				<!-- Hidden shift_id field -->
 				<input
 					type="hidden"
-					name={createShiftChangeRequest.field('shift_id')}
+					{...createShiftChangeRequest.fields.shift_id.as('text')}
 					value={shiftData.id}
 				/>
 
@@ -153,7 +146,7 @@
 					</Select.Root>
 					<input
 						type="hidden"
-						name={createShiftChangeRequest.field('request_type')}
+						{...createShiftChangeRequest.fields.request_type.as('text')}
 						value={requestType}
 					/>
 					<p class="text-xs text-muted-foreground">
@@ -179,12 +172,12 @@
 						<div class="space-y-2">
 							<Label for="proposed-date">Νέα Ημερομηνία</Label>
 							<InputCalendar id="proposed-date" bind:value={proposedDate} />
-							<Input
+							<input
 								bind:value={proposedDate}
 								class="hidden"
 								type="date"
 								id="proposed-date"
-								name={createShiftChangeRequest.field('proposed_date')}
+								{...createShiftChangeRequest.fields.proposed_date.as('text')}
 							/>
 						</div>
 
@@ -195,7 +188,7 @@
 								<Input
 									id="proposed-start"
 									type="time"
-									name={createShiftChangeRequest.field('proposed_start_time')}
+									{...createShiftChangeRequest.fields.proposed_start_time.as('text')}
 									bind:value={proposedStartTime}
 									class="w-full"
 								/>
@@ -205,7 +198,7 @@
 								<Input
 									id="proposed-end"
 									type="time"
-									name={createShiftChangeRequest.field('proposed_end_time')}
+									{...createShiftChangeRequest.fields.proposed_end_time.as('text')}
 									bind:value={proposedEndTime}
 									class="w-full"
 								/>
@@ -219,7 +212,7 @@
 					<Label for="reason">Αιτιολογία *</Label>
 					<Textarea
 						id="reason"
-						name={createShiftChangeRequest.field('reason')}
+						{...createShiftChangeRequest.fields.reason.as('text')}
 						bind:value={reason}
 						placeholder="Εξηγήστε τον λόγο του αιτήματός σας (τουλάχιστον 10 χαρακτήρες)"
 						rows={4}

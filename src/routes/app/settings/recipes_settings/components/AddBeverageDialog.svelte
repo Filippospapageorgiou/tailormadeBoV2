@@ -66,17 +66,6 @@
 		toast.title = 'Error';
 		toast.text = text;
 	}
-
-    function refreshInputFields(){
-        files = undefined;
-        previewUrl = '';
-        addFormData = {
-		    name: '',
-		    description: '',
-		    image_url: '',
-		    execution: ''
-	    };
-    }
 </script>
 
 <Dialog.Root bind:open>
@@ -98,15 +87,13 @@
 				} else {
 					handleEditError(addBeverage.result?.message || 'An unexpected error occurred.');
 				}
-                refreshInputFields();
 				hideProgress();
 				form.reset();
 			})}
 		>
 			<Input
 				id="file-upload"
-				type="file"
-				name={addBeverage.field('image_url')}
+				{...addBeverage.fields.image_url.as('file')}
 				accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
 				bind:files
                 bind:this={fileInput}
@@ -117,7 +104,7 @@
 				<Label for="edit-name">Name *</Label>
 				<Input
 					id="edit-name"
-					name={addBeverage.field('name')}
+					{...addBeverage.fields.name.as('text')}
 					bind:value={addFormData.name}
 					placeholder="e.g., Espresso"
 				/>
@@ -128,7 +115,7 @@
 				<Label for="edit-description">Description</Label>
 				<Textarea
 					id="edit-description"
-					name={addBeverage.field('description')}
+					{...addBeverage.fields.description.as('text')}
 					bind:value={addFormData.description}
 					placeholder="Brief description of the beverage..."
 					rows={3}
@@ -177,7 +164,7 @@
 				<Label for="edit-execution">Execution Instructions *</Label>
 				<Textarea
 					id="edit-execution"
-					name={addBeverage.field('execution')}
+					{...addBeverage.fields.execution.as('text')}
 					bind:value={addFormData.execution}
 					placeholder="Step-by-step instructions... Use '- ' for bullet points"
 					rows={8}

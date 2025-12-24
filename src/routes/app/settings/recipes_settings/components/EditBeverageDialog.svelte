@@ -107,15 +107,15 @@
 			})}
 		>
 			<!-- Hidden ID field -->
-			<input type="hidden" name={editBeverage.field('id')} value={beverage.id} />
-			<input type="hidden" name={editBeverage.field('image_cleared')} value={imageCleared} />
+			<input type="hidden" {...editBeverage.fields.id.as('text')} value={beverage.id} />
+			<input type="hidden" value={imageCleared} />
 
 			<!-- Name -->
 			<div class="space-y-2">
 				<Label for="edit-name">Name *</Label>
 				<Input
 					id="edit-name"
-					name={editBeverage.field('name')}
+					{...editBeverage.fields.name.as('text')}
 					bind:value={editFormData.name}
 					placeholder="e.g., Espresso"
 				/>
@@ -126,7 +126,7 @@
 				<Label for="edit-description">Description</Label>
 				<Textarea
 					id="edit-description"
-					name={editBeverage.field('description')}
+					{...editBeverage.fields.description.as('text')}
 					bind:value={editFormData.description}
 					placeholder="Brief description of the beverage..."
 					rows={3}
@@ -139,8 +139,7 @@
 				<Label>Beverage Image</Label>
 				<Input
 					id="file-upload"
-					type="file"
-					name={editBeverage.field('image_url')}
+					{...editBeverage.fields.image_url.as('file')}
 					accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
 					bind:files
 					class="hidden"
@@ -177,7 +176,7 @@
 				<Label for="edit-execution">Execution Instructions *</Label>
 				<Textarea
 					id="edit-execution"
-					name={editBeverage.field('execution')}
+					{...editBeverage.fields.execution.as('text')}
 					bind:value={editFormData.execution}
 					placeholder="Step-by-step instructions... Use '- ' for bullet points"
 					rows={8}

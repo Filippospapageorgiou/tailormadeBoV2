@@ -178,10 +178,9 @@
 											</div>
 											<Input
 												id="avatar-input"
-												bind:files
-												type="file"
 												accept="image/png,image/jpeg"
-												name={updateProfile.field('avatar')}
+												{...updateProfile.fields.avatar.as('file')}
+												bind:files
 												class="hidden"
 												disabled={isUpdating}
 											/>
@@ -190,7 +189,7 @@
 											<Label for="username">Username</Label>
 											<Input
 												id="username"
-												name={updateProfile.field('username')}
+												{...updateProfile.fields.username.as('text')}
 												bind:value={username}
 												placeholder={profile.username}
 												disabled={isUpdating}
@@ -200,7 +199,7 @@
 											<Label for="phone">Phone</Label>
 											<PhoneInput
 												country="GR"
-												name={updateProfile.field('phone')}
+												{...updateProfile.fields.phone.as('text')}
 												bind:value={phone}
 												placeholder={profile.phone ?? 'πρόσθεσε κίνητο'}
 												disabled={isUpdating}

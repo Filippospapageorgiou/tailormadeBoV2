@@ -103,7 +103,7 @@
 								<Lock class="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
 								<Input
 									id="password"
-									name={setPassword.field('password')}
+									{...setPassword.fields.password.as('password')}
 									type={showPassword ? 'text' : 'password'}
 									placeholder="Enter your password"
 									bind:value={password}
@@ -146,7 +146,7 @@
 								<Lock class="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
 								<Input
 									id="confirmPassword"
-									name={setPassword.field('confirmPassword')}
+									{...setPassword.fields.confirmPassword.as('password')}
 									type={showConfirmPassword ? 'text' : 'password'}
 									placeholder="Confirm your password"
 									bind:value={confirmPassword}
