@@ -10,8 +10,8 @@ import {
 	getUserProfile,
 	getUserProfileWithRoleCheck
 } from '$lib/supabase/queries';
-import type { TaskTemplate, TaskTemplateWithTasks } from '$lib/models/tasks.types';
-import { DE } from 'country-flag-icons/string/3x2';
+import type { TaskTemplate, TaskTemplateWithTasks, UserDailyTask } from '$lib/models/tasks.types';
+
 
 // ======================== AUTH ACCESS CHECK ==============
 
@@ -23,12 +23,56 @@ export const authenticatedAccess = query(async () => {
 	};
 });
 
-export const getAllUsers = query(async () => {
+export const getAllUsers = query(z.string(),async (selectedDate) => {
+	const supabase = createServerClient();
 	try {
 		const org_id = await getUserOrgId();
 		const users = await getAllProfilesSameOrg(org_id);
+
+		//fetch all dayli tasks
+		const { data: dailyTasks, error } = await supabase
+			.from('user_daily_tasks')
+			.select('*')
+			.eq('task_date', selectedDate)
+			.in(
+				'user_id',
+				users.map((u) => u.id)
+			);
+
+		if (error) {
+			console.error('[getAllUsers] Error fecthing all users from same org: ', error);
+			return {
+				users: [],
+				success: false,
+				message: 'Σφάλμα κάτα την ανάκτηση δεδομένων'
+			};
+		}
+
+		//create map of user_id to their tasks
+
+		const userWithTasks  = new Map<string, UserDailyTask[]>();
+
+		//initialize with empty array for all users
+		users.forEach(user => {
+			userWithTasks.set(user.id, [])
+		});
+
+		//populate the map with the tasks
+		dailyTasks?.forEach(task => {
+			const userTasks = userWithTasks.get(task.user_id) || [];
+			userTasks.push(task);
+			userWithTasks.set(task.user_id, userTasks);
+		})
+
+		// Convert map to array format if needed
+		const usersWithTasksArray = users.map(user => ({
+			...user,
+			dailyTasks: userWithTasks.get(user.id) || []
+		}));
+
+
 		return {
-			users: users ?? [],
+			users: usersWithTasksArray ?? [],
 			success: true,
 			message: 'Επιτυχία'
 		};
@@ -303,7 +347,10 @@ const TaskItemSchemaForTemplate = z.object({
 			const parsed = parseInt(val, 10);
 			return isNaN(parsed) ? null : parsed;
 		}),
-	requires_photo: z.string().optional().transform((val) => val === 'true' || 'false'),
+	requires_photo: z
+		.string()
+		.optional()
+		.transform((val) => val === 'true' || 'false')
 });
 
 const TaskTemplateSchemaWithTasks = z.object({
@@ -311,7 +358,10 @@ const TaskTemplateSchemaWithTasks = z.object({
 	template_id: z.string().optional(),
 	name: z.string().trim().min(1, 'Το όνομα είναι υποχρεωτικό'),
 	description: z.string().trim().min(1, 'Η περιγραφή είναι υποχρεωτική'),
-	is_active: z.string().optional().transform((val) => val === 'true' || 'false'),
+	is_active: z
+		.string()
+		.optional()
+		.transform((val) => val === 'true' || 'false'),
 	task_items: z.array(TaskItemSchemaForTemplate).default([])
 });
 
@@ -323,7 +373,7 @@ export const addTaskTemplateWithTasks = form(TaskTemplateSchemaWithTasks, async 
 		.insert({
 			name: data.name,
 			description: data.description,
-			is_active:data.is_active,
+			is_active: data.is_active,
 			org_id: profile.org_id,
 			created_by: profile.id
 		})
@@ -341,7 +391,7 @@ export const addTaskTemplateWithTasks = form(TaskTemplateSchemaWithTasks, async 
 
 		const { error: iError } = await supabase.from('task_items').insert(tasksToInsert);
 		if (iError) {
-			console.error('error isnerting task items: ',tError);
+			console.error('error isnerting task items: ', tError);
 			throw tError;
 		}
 	}
@@ -362,10 +412,10 @@ export const updateTemplateWithTasks = form(TaskTemplateSchemaWithTasks, async (
 		})
 		.eq('id', data.id);
 
-	if (tError){
+	if (tError) {
 		console.error('error: ', tError);
 		throw tError;
-	} 
+	}
 
 	//We get the IDs of tasks that should stay/be updated
 	const currentTaskIds = data.task_items.map((item) => item.id).filter((id): id is string => !!id);
@@ -377,8 +427,8 @@ export const updateTemplateWithTasks = form(TaskTemplateSchemaWithTasks, async (
 		.not('id', 'in', `(${currentTaskIds.join(',')})`);
 	if (dError) {
 		console.error('error: ', dError);
-		throw dError
-	};
+		throw dError;
+	}
 
 	// 3. Upsert the tasks (Insert new ones, Update existing ones)
 	if (data.task_items.length > 0) {
@@ -393,9 +443,56 @@ export const updateTemplateWithTasks = form(TaskTemplateSchemaWithTasks, async (
 
 		if (uError) {
 			console.error(uError);
-			throw uError
-		};
+			throw uError;
+		}
 	}
 
 	return { success: true };
+});
+
+const addUserDailyTasksSchema = z.object({
+	id: z.string().optional(),
+	user_id: z.string(),
+	task_item_ids: z.array(z.string()).default([]),
+	task_date: z.string(),
+	assigned_by: z.string(),
+	notes: z.string()
+});
+
+export const addUserDailyTasks = command(addUserDailyTasksSchema, async (data) => {
+	const supabase = createServerClient();
+	try {
+		// 1. Transform the array of IDs into an array of database rows
+		const rowsToInsert = data.task_item_ids.map((task_id) => ({
+			user_id: data.user_id,
+			task_item_id: task_id, // Ensure this column name matches your DB
+			task_date: data.task_date,
+			assigned_by: data.assigned_by,
+			notes: data.notes
+		}));
+
+		// 2. Perform a single batch insert
+		const { data: insertData, error: insertError } = await supabase
+			.from('user_daily_tasks')
+			.insert(rowsToInsert);
+
+		if (insertError) {
+			console.error('[addUserDailyTasks] Error while adding user tasks: ', insertError);
+			return {
+				success: false,
+				message: 'Σφάλμα κατά την δημιουργία tasks'
+			};
+		}
+
+		return {
+			success: true, // Fixed typo: suceess -> success
+			message: 'Επιτυχία στην πρόσθεση εργασίων'
+		};
+	} catch (error) {
+		console.error('[addUserDailyTasks] Error while adding user tasks: ', error);
+		return {
+			success: false,
+			message: 'Σφάλμα κατά την δημιουργία tasks'
+		};
+	}
 });

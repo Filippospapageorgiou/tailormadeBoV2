@@ -4,15 +4,16 @@
 
 	let {
 		taskTemplatesWithTasks,
-		value = $bindable()
-	}: { taskTemplatesWithTasks: TaskTemplateWithTasks[]; value: string } = $props();
+		value = $bindable(),
+		userHasExistingTasks
+	}: { taskTemplatesWithTasks: TaskTemplateWithTasks[]; value: string, userHasExistingTasks:boolean } = $props();
 
 	const triggerContent = $derived(
 		taskTemplatesWithTasks.find((f) => f.name === value)?.name ?? 'Διαλέξε ένα σετ εργασιών'
 	);
 </script>
 
-<Select.Root type="single" name="templateTasks" bind:value>
+<Select.Root type="single" name="templateTasks" bind:value disabled={userHasExistingTasks}>
 	<Select.Trigger class="w-[240px]">
 		{triggerContent}
 	</Select.Trigger>
