@@ -13,15 +13,9 @@
 		Camera,
 		CheckCircle2,
 		AlertCircle,
-
 		CheckCheck,
-
 		AlertCircleIcon,
-
 		PinIcon
-
-
-
 	} from 'lucide-svelte';
 	import { Button } from '$lib/components/ui/button';
 	import {
@@ -40,15 +34,22 @@
 		authenticatedAccess,
 		getAllTemplatesTask,
 		getAllUsers,
-		addUserDailyTasks
+		addUserDailyTasks,
+		addCustomDayliTask
 	} from './data.remote';
 	import { toast } from 'svelte-sonner';
 	import AuthBlock from '$lib/components/custom/AuthBlock/authBlock.svelte';
 	import { Spinner } from '$lib/components/ui/spinner';
 	import Templates from './components/templates.svelte';
-	import Separator from '$lib/components/ui/separator/separator.svelte';
-	import CardFooter from '$lib/components/ui/card/card-footer.svelte';
 	import InputCalendar from '$lib/components/custom/inputCalendar.svelte';
+	import type { TaskItem, TaskTemplateWithTasks } from '$lib/models/tasks.types';
+	import * as Dialog from '$lib/components/ui/dialog/index.js';
+	import * as Modal from '$lib/components/ui/modal';
+	import { ScrollArea } from '$lib/components/ui/scroll-area/index.js';
+	import Switch from '$lib/components/ui/switch/switch.svelte';
+	import Textarea from '$lib/components/ui/textarea/textarea.svelte';
+	import Separator from '$lib/components/ui/separator/separator.svelte';
+	import AssignedTasks from './components/assigned-tasks.svelte';
 
 	let selectedDate = $state<string>(new Date().toISOString().split('T')[0]);
 
@@ -82,51 +83,18 @@
 	let selectedUserId = $state<string>('');
 	let selectedTemplateId = $state<string>('');
 	let selectedTemplated = $derived(taskTemplatesWithTasks.find((f) => f.id === selectedTemplateId));
+	let openAddNewTask = $state(false);
 	let searchQuery = $state<string>('');
 	let isAssigning = $state<boolean>(false);
 	let taskItemIds = $derived<string[]>((selectedTemplated?.task_items ?? []).map((v) => v.id));
 
 	const selectedUserIdData = $derived(users.find((u) => u.id === selectedUserId));
-	
+
 	// Check if selected user already has tasks for the selected date
 	const userHasExistingTasks = $derived(
 		selectedUserIdData && selectedUserIdData.dailyTasks && selectedUserIdData.dailyTasks.length > 0
 	);
 
-	// Group existing tasks by template
-	const groupedExistingTasks = $derived(() => {
-		if (!selectedUserIdData || !selectedUserIdData.dailyTasks) return [];
-		
-		const tasksByTemplate = new Map();
-		
-		selectedUserIdData.dailyTasks.forEach(task => {
-			// Find the task item to get template info
-			const taskItem = taskTemplatesWithTasks
-				.flatMap(t => t.task_items)
-				.find(item => item.id === task.task_item_id);
-			
-			if (taskItem) {
-				const template = taskTemplatesWithTasks.find(t => t.id === taskItem.template_id);
-				if (template) {
-					if (!tasksByTemplate.has(template.id)) {
-						tasksByTemplate.set(template.id, {
-							templateName: template.name,
-							templateDescription: template.description,
-							tasks: []
-						});
-					}
-					tasksByTemplate.get(template.id).tasks.push({
-						dailyTask: task,
-						taskItem: taskItem
-					});
-				}
-			}
-		});
-		
-		return Array.from(tasksByTemplate.values());
-	});
-
-	// ✅ Corrected version
 	const totalMinutes = $derived(
 		(selectedTemplated?.task_items ?? []).reduce((sum, t) => sum + t.estimated_minutes!, 0)
 	);
@@ -147,13 +115,56 @@
 		if (result.success) {
 			selectedTemplateId = '';
 			selectedUserId = '';
-			usersQuery?.refresh();
-			taskQuery?.refresh();
+			refresh();
 			toast.success(result.message);
 		} else {
 			toast.error(result.message);
 		}
 		isAssigning = false;
+	}
+
+	let customTitle = $state('');
+	let customDesc = $state('');
+	let customEstimatedMin = $state(0);
+	let customTime = $state('');
+	let customRequiresPhoto = $state(false);
+
+	function handleCloseCustomTask() {
+		openAddNewTask = false;
+		customTitle = '';
+		customDesc = '';
+		customEstimatedMin = 0;
+		customTime = '';
+		customRequiresPhoto = false;
+	}
+
+	async function handleAddCustomTask() {
+		if (!selectedUserId || !selectedDate) return;
+
+		let result;
+		isAssigning = true;
+		result = await addCustomDayliTask({
+			user_id: selectedUserId,
+			task_date: selectedDate,
+			title: customTitle,
+			description: customDesc,
+			scheduled_time: customTime,
+			estimated_minutes: customEstimatedMin,
+			requires_photo: customRequiresPhoto
+		});
+		if (result.success) {
+			refresh();
+			toast.success(result.message);
+		} else {
+			toast.error(result.message);
+		}
+		isAssigning = false;
+		handleCloseCustomTask();
+	}
+
+	function refresh(){
+		usersQuery?.refresh();
+		taskQuery?.refresh();
 	}
 </script>
 
@@ -265,13 +276,13 @@
 													{/if}
 												</div>
 												<p class="truncate text-xs text-muted-foreground">{user.email}</p>
-												<div class="mt-1 py-0.5 flex items-center gap-2">
+												<div class="mt-1 flex items-center gap-2 py-0.5">
 													{#if user.dailyTasks && user.dailyTasks.length > 0}
 														{@const lentgh = user.dailyTasks.length}
 														{@const dailyTasks = user.dailyTasks}
 														<Badge
 															variant="outline"
-															class="rounded-sm border-green-600 text-green-600 dark:border-green-400 dark:text-green-400 [a&]:hover:bg-green-600/10 [a&]:hover:text-green-600/90 dark:[a&]:hover:bg-green-400/10 dark:[a&]:hover:text-green-400/90 h-6 rounded-2"
+															class="rounded-2 h-6 rounded-sm border-green-600 text-green-600 dark:border-green-400 dark:text-green-400 [a&]:hover:bg-green-600/10 [a&]:hover:text-green-600/90 dark:[a&]:hover:bg-green-400/10 dark:[a&]:hover:text-green-400/90"
 														>
 															<CheckCheck className="size-3" />
 															{lentgh} εργασίες
@@ -356,69 +367,83 @@
 								</CardHeader>
 								<CardContent>
 									<div class="space-y-3">
-										{#each groupedExistingTasks() as group, index}
-											<div
-												style="animation-delay: {index * 200}ms; animation-fill-mode: backwards;"
-												class="flex animate-fade-in-down gap-3 rounded-lg border border-border bg-card p-4 transition-colors hover:bg-accent/50"
-											>
-												<div
-													class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary"
-												>
-													<CheckCircle2 class="h-4 w-4" />
-												</div>
-												<div class="min-w-0 flex-1">
-													<div class="flex items-start justify-between gap-2">
-														<h4 class="text-sm font-medium text-foreground">
-															{group.templateName}
-														</h4>
-														<Badge variant="secondary" class="text-xs">
-															{group.tasks.length} tasks
-														</Badge>
-													</div>
-												</div>
-											</div>
+										{#each selectedUserIdData?.dailyTasks as taskItem, index}
 											<!-- Tasks List -->
 											<div class="space-y-2">
-												{#each group.tasks as { dailyTask, taskItem }, taskIndex}
+												<div
+													style="animation-delay: {index *
+														selectedUserIdData?.dailyTasks.length! *
+														100}ms; animation-fill-mode: backwards;"
+													class="flex animate-fade-in-down gap-3 rounded-lg px-4"
+												>
 													<div
-														style="animation-delay: {(index * group.tasks.length + taskIndex) * 100}ms; animation-fill-mode: backwards;"
-														class="flex animate-fade-in-down gap-3 rounded-lg px-4"
+														class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary"
 													>
-														<div
-															class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary"
-														>
-															<PinIcon class="h-4 w-4" />
-														</div>
-														<div class="min-w-0 flex-1">
-															<div class="flex items-start justify-between gap-2">
-																<h4 class="text-sm font-medium text-foreground">{taskItem?.title}</h4>
-																<div class="flex shrink-0 items-center gap-2">
-																	{#if taskItem?.requires_photo}
-																		<Badge variant="outline" class="text-xs">
-																			<Camera class="mr-1 h-3 w-3" />
-																			Photo
-																		</Badge>
-																	{/if}
-																	{#if taskItem?.estimated_minutes != null && taskItem.estimated_minutes > 0}
-																		<span class="text-xs whitespace-nowrap text-muted-foreground">
-																			{taskItem.estimated_minutes}m
-																		</span>
-																	{/if}
-																</div>
-															</div>
-															{#if taskItem?.description}
-																<p class="mt-1 text-xs leading-relaxed text-muted-foreground">
-																	{taskItem.description}
-																</p>
-															{/if}
-														</div>
+														<PinIcon class="h-4 w-4" />
 													</div>
-												{/each}
+													<div class="min-w-0 flex-1">
+														<div class="flex items-start justify-between gap-2">
+															<div class="flex-column flex gap-2">
+																<h4 class="text-sm font-medium text-foreground">
+																	{taskItem?.task_items?.title}
+																	<!-- Changed from task_item to task_items -->
+																</h4>
+																{#if taskItem?.task_items?.template_id === null}
+																	<Badge
+																		variant="outline"
+																		class="rounded-sm border-amber-600 text-amber-600 dark:border-amber-400 dark:text-amber-400 [a&]:hover:bg-amber-600/10 [a&]:hover:text-amber-600/90 dark:[a&]:hover:bg-amber-400/10 dark:[a&]:hover:text-amber-400/90"
+																	>
+																		<AlertCircleIcon className="size-3" />
+																		Προσαρμοσμένο
+																	</Badge>
+																{/if}
+															</div>
+
+															<div class="flex shrink-0 items-center gap-2">
+																{#if taskItem?.task_items?.requires_photo}
+																	<!-- Changed -->
+																	<Badge variant="outline" class="text-xs">
+																		<Camera class="mr-1 h-3 w-3" />
+																		Photo
+																	</Badge>
+																{/if}
+																{#if taskItem?.task_items?.estimated_minutes != null && taskItem?.task_items.estimated_minutes > 0}
+																	<!-- Changed -->
+																	<span class="text-xs whitespace-nowrap text-muted-foreground">
+																		{taskItem.task_items.estimated_minutes}m
+																	</span>
+																{/if}
+															</div>
+														</div>
+
+														{#if taskItem?.task_items?.description}
+															<!-- Changed -->
+															<p class="mt-1 text-xs leading-relaxed text-muted-foreground">
+																{taskItem?.task_items?.description}
+															</p>
+														{/if}
+													</div>
+												</div>
 											</div>
 										{/each}
 									</div>
-									<div class="mt-6 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
-										<p>Για να αναθέσετε νέες εργασίες, επιλέξτε διαφορετική ημερομηνία ή χρήστη.</p>
+									<div class="mt-6 flex flex-col gap-3">
+										<Button
+											variant="outline"
+											class="w-75"
+											onclick={() => {
+												openAddNewTask = true;
+											}}
+										>
+											<Plus class="mr-2 h-4 w-4" />
+											Προσθήκη Προσαρμοσμένης Εργασίας
+										</Button>
+										<div class="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
+											<p>
+												Για να αναθέσετε νέες εργασίες από πρότυπα, επιλέξτε διαφορετική ημερομηνία
+												ή χρήστη.
+											</p>
+										</div>
 									</div>
 								</CardContent>
 							</Card>
@@ -520,7 +545,72 @@
 				</div>
 			{:else if currentView === 'templates'}
 				<Templates {taskTemplatesWithTasks} />
-			{:else if currentView === 'assigned'}{/if}
+			{:else if currentView === 'assigned'}
+				{#if currentView === 'assigned'}
+					<AssignedTasks {users} bind:selectedDate isLoading={usersQuery.loading} onDelete={refresh}/>
+				{/if}
+			{/if}
 		</main>
 	</div>
 {/if}
+
+<!-- ADD TEMPLATE MODAL -->
+<Modal.Root bind:open={openAddNewTask}>
+	<Modal.Content class="flex h-[45dvh] max-h-[45dvh] flex-col sm:h-auto">
+		<Modal.Header>
+			<Modal.Title>Δημιουργία νέας εργασίας</Modal.Title>
+			<Modal.Description>Δημιουργήστε μια Προσαρμοσμένη εργασία εκτός προτύπου</Modal.Description>
+		</Modal.Header>
+		<ScrollArea class="h-[40dvh] w-full">
+			<form class="space-y-6 py-4">
+				<div class="space-y-2">
+					<Input placeholder="Τίτλος εργασίας" bind:value={customTitle} disabled={isAssigning} />
+
+					<Textarea
+						placeholder="Περιγραφή (προαιρετικά)"
+						rows={2}
+						bind:value={customDesc}
+						disabled={isAssigning}
+					/>
+
+					<div class="grid grid-cols-2 gap-2">
+						<div class="space-y-1">
+							<Input
+								type="number"
+								placeholder="Λεπτά"
+								bind:value={customEstimatedMin}
+								disabled={isAssigning}
+							/>
+						</div>
+						<Input type="time" step="1" bind:value={customTime} disabled={isAssigning} />
+					</div>
+					<div class="flex items-center justify-between">
+						<Label for="template-active">Απαιτείται φοτωγραφία</Label>
+						<Switch
+							class="cursor-pointer"
+							bind:checked={customRequiresPhoto}
+							disabled={isAssigning}
+						/>
+						<input type="hidden" />
+					</div>
+				</div>
+
+				<Modal.Footer class="py-2">
+					<Button type="button" onclick={handleAddCustomTask} disabled={isAssigning}>
+						{#if isAssigning}
+							<Spinner /> Προσθήκη...
+						{:else}
+							Προσθήκη εργασίας
+						{/if}
+					</Button>
+					<Button
+						variant="outline"
+						type="button"
+						disabled={isAssigning}
+						onclick={handleCloseCustomTask}>Κλείσιμο</Button
+					>
+				</Modal.Footer>
+			</form>
+		</ScrollArea>
+	</Modal.Content>
+</Modal.Root>

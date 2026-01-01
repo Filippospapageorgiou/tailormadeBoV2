@@ -38,8 +38,6 @@
 	import Switch from '$lib/components/ui/switch/switch.svelte';
 	import Textarea from '$lib/components/ui/textarea/textarea.svelte';
 	import { addTaskTemplateWithTasks, updateTemplateWithTasks } from '../data.remote';
-	import Checkbox from '$lib/components/ui/checkbox/checkbox.svelte';
-	import { string } from 'zod';
 
 	let { taskTemplatesWithTasks }: { taskTemplatesWithTasks: TaskTemplateWithTasks[] } = $props();
 
@@ -231,12 +229,12 @@
 							<Badge
 								class="flex items-center justify-center gap-2 border-none bg-green-600/10 text-green-600"
 							>
-								<span class="size-1.5 rounded-full bg-green-600" aria-hidden="true"></span>
+								<span class="size-1.5 rounded-full bg-green-600 animate-pulse repeat-infinite" aria-hidden="true"></span>
 								Ενεργό
 							</Badge>
 						{:else}
 							<Badge
-								class="flex items-center justify-center gap-2 border-none bg-destructive/10 text-destructive"
+								class="flex items-center justify-center gap-2 border-none bg-destructive/10 text-destructive animate-pulse repeat-infinite"
 							>
 								<!-- svelte-ignore element_invalid_self_closing_tag -->
 								<span class="size-1.5 rounded-full bg-destructive" aria-hidden="true" />

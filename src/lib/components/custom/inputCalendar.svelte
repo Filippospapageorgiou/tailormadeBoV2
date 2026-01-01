@@ -35,7 +35,7 @@
 				<Button
 					{...props}
 					variant="outline"
-					class="w-full justify-between font-normal"
+					class="w-full justify-between font-normal cursor-pointer"
 					aria-required={required}
 				>
 					{calendarValue

@@ -46,7 +46,7 @@
 			{
 				title: 'Εξοπλισμός',
 				url: '/app/equipment',
-				icon: Wrench
+				icon: Cog
 			},
 			{
 				title: 'Καθημερινές Εργασίες',

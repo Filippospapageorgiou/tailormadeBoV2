@@ -33,6 +33,7 @@ export interface UserDailyTask {
 	notes: string | null;
 	photo_url: string | null;
 	created_at: string; // ISO timestamp
+	task_items:TaskItem
 }
 
 export interface TaskTemplateWithTasks extends TaskTemplate {

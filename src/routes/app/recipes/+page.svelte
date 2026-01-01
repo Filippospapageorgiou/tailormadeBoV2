@@ -47,7 +47,7 @@
                         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                                 {#each filteredBeverages as beverage,i (beverage.id)}
                                         <div
-                                                style="animation-delay: {i * 200}ms; animation-fill-mode: backwards;"
+                                                style="animation-delay: {i * 325}ms; animation-fill-mode: backwards;"
                                                 role="button"
                                                 tabindex="0"
                                                 onclick={() => handleBeverageClick(beverage.id)}

@@ -10,9 +10,12 @@ import {
 	getUserProfile,
 	getUserProfileWithRoleCheck
 } from '$lib/supabase/queries';
-import type { TaskTemplate, TaskTemplateWithTasks, UserDailyTask } from '$lib/models/tasks.types';
-
-
+import {
+	type TaskItem,
+	type TaskTemplate,
+	type TaskTemplateWithTasks,
+	type UserDailyTask
+} from '$lib/models/tasks.types';
 // ======================== AUTH ACCESS CHECK ==============
 
 export const authenticatedAccess = query(async () => {
@@ -23,16 +26,20 @@ export const authenticatedAccess = query(async () => {
 	};
 });
 
-export const getAllUsers = query(z.string(),async (selectedDate) => {
+export const getAllUsers = query(z.string(), async (selectedDate) => {
 	const supabase = createServerClient();
 	try {
 		const org_id = await getUserOrgId();
 		const users = await getAllProfilesSameOrg(org_id);
 
-		//fetch all dayli tasks
 		const { data: dailyTasks, error } = await supabase
 			.from('user_daily_tasks')
-			.select('*')
+			.select(
+				`
+				*,
+				task_items (*)
+			`
+			)
 			.eq('task_date', selectedDate)
 			.in(
 				'user_id',
@@ -50,26 +57,27 @@ export const getAllUsers = query(z.string(),async (selectedDate) => {
 
 		//create map of user_id to their tasks
 
-		const userWithTasks  = new Map<string, UserDailyTask[]>();
+		const userWithTasks = new Map<string, UserDailyTask[]>();
 
 		//initialize with empty array for all users
-		users.forEach(user => {
-			userWithTasks.set(user.id, [])
+		users.forEach((user) => {
+			userWithTasks.set(user.id, []);
 		});
 
 		//populate the map with the tasks
-		dailyTasks?.forEach(task => {
+		dailyTasks?.forEach((task) => {
 			const userTasks = userWithTasks.get(task.user_id) || [];
 			userTasks.push(task);
 			userWithTasks.set(task.user_id, userTasks);
-		})
+		});
 
 		// Convert map to array format if needed
-		const usersWithTasksArray = users.map(user => ({
+		const usersWithTasksArray = users.map((user) => ({
 			...user,
 			dailyTasks: userWithTasks.get(user.id) || []
 		}));
 
+		
 
 		return {
 			users: usersWithTasksArray ?? [],
@@ -495,4 +503,103 @@ export const addUserDailyTasks = command(addUserDailyTasksSchema, async (data) =
 			message: 'Σφάλμα κατά την δημιουργία tasks'
 		};
 	}
+});
+
+const addCustomDayliTaskSchema = z.object({
+	user_id: z.string(),
+	task_date: z.string(),
+	title: z.string(),
+	description: z.string(),
+	scheduled_time: z.string(),
+	estimated_minutes: z.number(),
+	requires_photo: z.boolean()
+});
+
+export const addCustomDayliTask = command(addCustomDayliTaskSchema, async (data) => {
+	const supabase = createAdminClient();
+	const user = await getUserProfile();
+	try {
+		const { data: task, error: insertError } = await supabase
+			.from('task_items')
+			.insert({
+				title: data.title,
+				description: data.description,
+				requires_photo: data.requires_photo,
+				estimated_minutes: data.estimated_minutes,
+				scheduled_time: data.scheduled_time
+			})
+			.select()
+			.single();
+
+		if (insertError) {
+			console.error('[addCustomDayliTask] Error trying to add custom task to user: ', insertError);
+			return {
+				success: false,
+				message: 'Σφάλμα κάτα την πρόσθεση εργασίας'
+			};
+		}
+
+		if (task) {
+			const { data: insertData, error: insertErrorUser } = await supabase
+				.from('user_daily_tasks')
+				.insert({
+					user_id: data.user_id,
+					task_item_id: task.id,
+					task_date: data.task_date,
+					assigned_by: user.id
+				});
+
+			if (insertErrorUser) {
+				console.error(
+					'[addCustomDayliTask] Error trying to add custom task to user: ',
+					insertErrorUser
+				);
+				return {
+					success: false,
+					message: 'Σφάλμα κάτα την πρόσθεση εργασίας'
+				};
+			}
+		}
+
+		return {
+			success: true,
+			message: 'Η εργασία προσθέθηκε με επιτυχία.'
+		};
+	} catch (err) {
+		console.error('[addCustomDayliTask] Error trying to add custom task to user: ', err);
+		return {
+			success: false,
+			message: 'Σφάλμα κάτα την πρόσθεση εργασίας'
+		};
+	}
+});
+
+
+export const deleteDailyTask = command(DeleteItemSchema, async (data) => {
+    const supabase = createServerClient();
+    try {
+        // Use .select() or check the count to see if something happened
+        const { error, count } = await supabase
+            .from('user_daily_tasks')
+            .delete({ count: 'exact' }) // Add this to get the count
+            .eq('id', data.id);
+
+        if (error) {
+            console.error('[deleteDailyTask] DB Error:', error);
+            return { success: false, message: 'Σφάλμα βάσης δεδομένων' };
+        }
+
+        // If count is 0, nothing was deleted (likely RLS or wrong ID)
+        if (count === 0) {
+            console.warn('[deleteDailyTask] No rows deleted. Check RLS or ID:', data.id);
+            return { 
+                success: false, 
+                message: 'Η εργασία δεν βρέθηκε ή δεν έχετε δικαίωμα διαγραφής' 
+            };
+        }
+
+        return { success: true, message: 'Επιτυχής διαγραφή εργασίας' };
+    } catch (err) {
+        return { success: false, message: 'Σφάλμα κατά την επικοινωνία' };
+    }
 });
