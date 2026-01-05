@@ -33,7 +33,7 @@
                 <RecipesLoading />
         {/snippet}
 
-        <div class="min-h-screen bg-white">
+        <div class="min-h-screen">
                 <main class="container mx-auto px-4 md:px-6 pt-8 pb-20">
                         <div class="mb-12 flex flex-col md:flex-row items-start md:items-end justify-between gap-4 md:gap-8">
                                 <div class="flex flex-col gap-1">
@@ -52,7 +52,7 @@
                                                 tabindex="0"
                                                 onclick={() => handleBeverageClick(beverage.id)}
                                                 onkeydown={(e) => e.key === 'Enter' && handleBeverageClick(beverage.id)}
-                                                class="group bg-white rounded-lg animate-fade-in-right shadow-sm hover:shadow-md transition-all duration-300 ease-in-out overflow-hidden cursor-pointer"
+                                                class="group rounded-lg animate-fade-in-right shadow-sm hover:shadow-md transition-all duration-300 ease-in-out overflow-hidden cursor-pointer"
                                         >
                                                 <div class="aspect-square w-full overflow-hidden">
                                                         <img

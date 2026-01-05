@@ -67,7 +67,7 @@
                 </div>
                 
                 <p class="text-[10px] uppercase text-right font-semibold text-muted-foreground tracking-widest">
-                    {progressPercentage === 100 ? "✨ Quest Complete!" : "Keep brewing to level up"}
+                    {progressPercentage === 100 ? "✨ Quest Complete!" : "Keep brewing"}
                 </p>
             </div>
         </div>

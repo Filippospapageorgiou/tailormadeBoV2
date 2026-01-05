@@ -327,7 +327,7 @@
 					/>
 				{:else}
 					<div
-						class="flex items-center justify-center rounded-lg border border-neutral-200 bg-white p-6"
+						class="flex items-center justify-center rounded-lg border border-neutral-200 p-6"
 					>
 						<div class="flex flex-col items-center justify-center gap-4 py-12">
 							<Spinner class="size-4" />

@@ -68,7 +68,7 @@
 	}) satisfies Chart.ChartConfig;
 </script>
 
-<Card.Root class="flex h-full flex-col bg-white">
+<Card.Root class="flex h-full flex-col">
 	<Card.Header class="items-center pb-2">
 		<Card.Title>Διανομή πληρωμών προμηθευτών</Card.Title>
 		<Card.Description>

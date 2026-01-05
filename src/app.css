@@ -75,61 +75,46 @@
 }
 
 .dark {
-  /* Coffee Shop Dark Theme - Evening café vibes */
+  --background: oklch(0.14 0 0);
+  --foreground: oklch(0.99 0 0);
+  --card: oklch(0.20 0 0);
+  --card-foreground: oklch(0.99 0 0);
+  --popover: oklch(0.20 0 0);
+  --popover-foreground: oklch(0.99 0 0);
+  --primary: oklch(0.92 0 0);
+  --primary-foreground: oklch(0.20 0 0);
+  --secondary: oklch(0.27 0 0);
+  --secondary-foreground: oklch(0.99 0 0);
+  --muted: oklch(0.27 0 0);
+  --muted-foreground: oklch(0.71 0 0);
+  --accent: oklch(0.27 0 0);
+  --accent-foreground: oklch(0.99 0 0);
+  --destructive: oklch(0.70 0.19 22.23);
+  --border: oklch(1.00 0 0 / 10%);
+  --input: oklch(1.00 0 0 / 15%);
+  --ring: oklch(0.56 0 0);
+  --chart-1: oklch(0.49 0.24 264.40);
+  --chart-2: oklch(0.70 0.16 160.43);
+  --chart-3: oklch(0.77 0.17 65.36);
+  --chart-4: oklch(0.62 0.26 305.32);
+  --chart-5: oklch(0.64 0.25 16.51);
+  --sidebar: oklch(0.20 0 0);
+  --sidebar-foreground: oklch(0.99 0 0);
+  --sidebar-primary: oklch(0.49 0.24 264.40);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.27 0 0);
+  --sidebar-accent-foreground: oklch(0.99 0 0);
+  --sidebar-border: oklch(1.00 0 0 / 10%);
+  --sidebar-ring: oklch(0.56 0 0);
   
-  /* Backgrounds - Rich coffee and espresso tones */
-  --background: oklch(0.15 0.02 45); /* Deep coffee background */
-  --foreground: oklch(0.92 0.015 75); /* Warm cream text */
-  
-  /* Cards */
-  --card: oklch(0.18 0.025 45); /* Slightly lighter coffee */
-  --card-foreground: oklch(0.92 0.015 75);
-  
-  /* Popovers */
-  --popover: oklch(0.18 0.025 45);
-  --popover-foreground: oklch(0.92 0.015 75);
-  
-  /* Primary - Brighter gold for dark backgrounds */
-  --primary: oklch(0.75 0.15 75); /* Brighter gold for contrast */
-  --primary-foreground: oklch(0.15 0.02 45); /* Dark coffee text on gold */
-  
-  /* Secondary */
-  --secondary: oklch(0.25 0.03 45); /* Dark wood tone */
-  --secondary-foreground: oklch(0.9 0.02 75); /* Light cream text */
-  
-  /* Muted */
-  --muted: oklch(0.22 0.025 45); /* Darker muted coffee tone */
-  --muted-foreground: oklch(0.7 0.08 75); /* Medium cream */
-  
-  /* Accent */
-  --accent: oklch(0.3 0.04 55); /* Darker coffee accent */
-  --accent-foreground: oklch(0.9 0.02 75); /* Light cream text */
-  
-  /* Destructive */
-  --destructive: oklch(0.65 0.18 25); /* Brighter warm red for dark mode */
-  --destructive-foreground: oklch(0.95 0.01 75);
-  
-  /* Borders and inputs */
-  --border: oklch(0.3 0.03 45); /* Subtle coffee border */
-  --input: oklch(0.25 0.03 45); /* Input background */
-  --ring: oklch(0.75 0.15 75); /* Bright gold focus ring */
-  
-  /* Chart colors - Dark mode coffee palette */
-  --chart-1: oklch(0.75 0.15 75); /* Bright gold */
-  --chart-2: oklch(0.6 0.1 85); /* Light wood */
-  --chart-3: oklch(0.8 0.12 65); /* Cream */
-  --chart-4: oklch(0.5 0.08 95); /* Medium wood */
-  --chart-5: oklch(0.35 0.05 45); /* Dark roast */
-  
-  /* Sidebar */
-  --sidebar: oklch(0.18 0.025 45);
-  --sidebar-foreground: oklch(0.9 0.02 75);
-  --sidebar-primary: oklch(0.75 0.15 75);
-  --sidebar-primary-foreground: oklch(0.15 0.02 45);
-  --sidebar-accent: oklch(0.25 0.03 45);
-  --sidebar-accent-foreground: oklch(0.9 0.02 75);
-  --sidebar-border: oklch(0.3 0.03 45);
-  --sidebar-ring: oklch(0.75 0.15 75);
+  --shadow-2xs: 0 1px 3px 0px oklch(0.00 0 0 / 0.05);
+  --shadow-xs: 0 1px 3px 0px oklch(0.00 0 0 / 0.05);
+  --shadow-sm: 0 1px 3px 0px oklch(0.00 0 0 / 0.10), 0 1px 2px -1px oklch(0.00 0 0 / 0.10);
+  --shadow: 0 1px 3px 0px oklch(0.00 0 0 / 0.10), 0 1px 2px -1px oklch(0.00 0 0 / 0.10);
+  --shadow-md: 0 1px 3px 0px oklch(0.00 0 0 / 0.10), 0 2px 4px -1px oklch(0.00 0 0 / 0.10);
+  --shadow-lg: 0 1px 3px 0px oklch(0.00 0 0 / 0.10), 0 4px 6px -1px oklch(0.00 0 0 / 0.10);
+  --shadow-xl: 0 1px 3px 0px oklch(0.00 0 0 / 0.10), 0 8px 10px -1px oklch(0.00 0 0 / 0.10);
+  --shadow-2xl: 0 1px 3px 0px oklch(0.00 0 0 / 0.25);
 }
 
 @theme inline {

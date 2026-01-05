@@ -5,9 +5,10 @@
 	import * as Chart from '$lib/components/ui/chart/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { LineChart } from 'layerchart';
+	import Badge from '$lib/components/ui/badge/badge.svelte';
 
-    let { registerData, percentageChange,selectedPeriodLabel } = $props();
-    // Format currency
+	let { registerData, percentageChange, selectedPeriodLabel } = $props();
+	// Format currency
 	function formatCurrency(amount: number): string {
 		return new Intl.NumberFormat('el-GR', {
 			style: 'currency',
@@ -35,13 +36,15 @@
 	let chartData = $derived.by(() => {
 		if (!registerData?.currentPeriod) return [];
 
-		const data = registerData.currentPeriod.map((closing: { closing_date: string; total_sales?: number | null }) => {
-			const salesValue = Number(((closing.total_sales ?? 0)).toFixed(1));
-			return {
-				date: new Date(closing.closing_date),
-				sales: salesValue
-			};
-		});
+		const data = registerData.currentPeriod.map(
+			(closing: { closing_date: string; total_sales?: number | null }) => {
+				const salesValue = Number((closing.total_sales ?? 0).toFixed(1));
+				return {
+					date: new Date(closing.closing_date),
+					sales: salesValue
+				};
+			}
+		);
 
 		// Filter out dates with no sales data (only show dates that have actual sales)
 		return data.filter((item: any) => item.sales > 0);
@@ -50,7 +53,10 @@
 	// Calculate metrics for card
 	let totalSales = $derived.by(() => {
 		if (!registerData?.currentPeriod) return 0;
-		return registerData.currentPeriod.reduce((sum: any, closing: { total_sales: any; }) => sum + (closing.total_sales || 0), 0);
+		return registerData.currentPeriod.reduce(
+			(sum: any, closing: { total_sales: any }) => sum + (closing.total_sales || 0),
+			0
+		);
 	});
 
 	let averageSales = $derived.by(() => {
@@ -60,27 +66,28 @@
 
 	let highestSales = $derived.by(() => {
 		if (!registerData?.currentPeriod) return 0;
-		return Math.max(...registerData.currentPeriod.map((c: { total_sales: any; }) => c.total_sales || 0));
+		return Math.max(
+			...registerData.currentPeriod.map((c: { total_sales: any }) => c.total_sales || 0)
+		);
 	});
 
 	let lowestSales = $derived.by(() => {
 		if (!registerData?.currentPeriod) return 0;
-		return Math.min(...registerData.currentPeriod.map((c: { total_sales: any; }) => c.total_sales || 0));
+		return Math.min(
+			...registerData.currentPeriod.map((c: { total_sales: any }) => c.total_sales || 0)
+		);
 	});
 </script>
 
 <!-- Chart Card -->
 <div>
-	<Card.Root class="bg-white">
+	<Card.Root>
 		<Card.Header>
 			<Card.Title>Απόδοση πωλήσεων</Card.Title>
 			<Card.Description>
 				{selectedPeriodLabel} • {registerData?.currentPeriod?.length || 0} ημέρες παρακολούθησης
 				<p class="py-2 text-sm text-neutral-600">
-					{formatDateRange(
-						registerData?.currentStartDate!,
-						registerData?.currentEndDate!
-					)}
+					{formatDateRange(registerData?.currentStartDate!, registerData?.currentEndDate!)}
 				</p>
 			</Card.Description>
 		</Card.Header>
@@ -135,36 +142,36 @@
 				</LineChart>
 			</Chart.Container>
 		</Card.Content>
-		<Card.Footer class="flex flex-col bg-white pt-6 pb-6">
+		<Card.Footer class="flex flex-col pt-6 pb-6">
 			<div
 				class="flex flex-col gap-4 px-1 font-mono sm:flex-row sm:items-center sm:justify-between"
 			>
 				<!-- Left: Key Metrics (compact) -->
 				<div class="grid grid-cols-2 gap-4 sm:flex sm:items-baseline sm:gap-8">
 					<div class="space-y-0.5">
-						<p class="text-xs font-medium text-neutral-400">Συνολίκες Πωλήσεις</p>
-						<p class="text-base font-semibold text-neutral-900 sm:text-lg">
+						<p class="text-xs font-medium">Συνολίκες Πωλήσεις</p>
+						<p class="text-base font-semibold sm:text-lg">
 							{formatCurrency(totalSales)}
 						</p>
 					</div>
 
 					<div class="space-y-0.5">
-						<p class="text-xs font-medium text-neutral-400">Μέσο όρο Ημέρας</p>
-						<p class="text-base font-semibold text-neutral-900 sm:text-lg">
+						<p class="text-xs font-medium">Μέσο όρο Ημέρας</p>
+						<p class="text-base font-semibold sm:text-lg">
 							{formatCurrency(averageSales)}
 						</p>
 					</div>
 
 					<div class="space-y-0.5">
-						<p class="text-xs font-medium text-neutral-400">Μέγιστο</p>
-						<p class="text-base font-semibold text-neutral-900 sm:text-lg">
+						<p class="text-xs font-medium">Μέγιστο</p>
+						<p class="text-base font-semibold sm:text-lg">
 							{formatCurrency(highestSales)}
 						</p>
 					</div>
 
 					<div class="space-y-0.5">
-						<p class="text-xs font-medium text-neutral-400">Χαμηλότερο</p>
-						<p class="text-base font-semibold text-neutral-900 sm:text-lg">
+						<p class="text-xs font-medium">Χαμηλότερο</p>
+						<p class="text-base font-semibold sm:text-lg">
 							{formatCurrency(lowestSales)}
 						</p>
 					</div>
@@ -175,37 +182,26 @@
 
 				<!-- Right: Trend Badge (minimal) -->
 				<div class="flex flex-col gap-2 text-sm sm:flex-row sm:items-center sm:gap-2">
-					<span class="text-neutral-400">Period:</span>
-					<div
-						class={`flex w-fit items-center gap-1.5 rounded-lg px-3 py-1.5 ${
-							percentageChange! > 0
-								? 'bg-neutral-50 text-neutral-700'
-								: percentageChange! < 0
-									? 'bg-neutral-50 text-neutral-700'
-									: 'bg-neutral-50 text-neutral-700'
-						}`}
-					>
+					<span class=" ">Period:</span>
+					<Badge variant="secondary" class="flex w-fit items-center gap-1.5">
 						{#if percentageChange! > 0}
-							<TrendingUp class="h-5 w-5 text-green-600" />
+							<TrendingUp class="h-4 w-4 text-green-600" />
 							<span class="text-sm font-semibold text-green-600">
 								+{percentageChange!}%
 							</span>
 						{:else if percentageChange! < 0}
-							<TrendingDown class="h-5 w-5 text-red-600" />
+							<TrendingDown class="h-4 w-4 text-red-600" />
 							<span class="text-sm font-semibold text-red-600">
 								{percentageChange!}%
 							</span>
 						{:else}
-							<Minus class="h-5 w-5 text-neutral-500" />
+							<Minus class="h-4 w-4 text-neutral-500" />
 							<span class="text-sm font-semibold text-neutral-500">No change</span>
 						{/if}
-					</div>
-					<p class="text-xs font-medium tracking-wide text-neutral-400 uppercase">Comparing to</p>
+					</Badge>
+					<p class="text-xs font-medium tracking-wide uppercase">Comparing to</p>
 					<p class="text-sm text-neutral-600">
-						{formatDateRange(
-							registerData?.previousStartDate!,
-							registerData?.previousEndDate!
-						)}
+						{formatDateRange(registerData?.previousStartDate!, registerData?.previousEndDate!)}
 					</p>
 				</div>
 			</div>

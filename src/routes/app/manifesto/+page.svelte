@@ -2,14 +2,14 @@
     let image = "/TM BLACK LOGO_page-0001.jpg";
 </script>
 
-<div class="h-auto bg-white">
+<div class="h-auto">
     <div class="container mx-auto px-4 md:px-6 pt-32 pb-20 animate-fade-in">
         <div class="max-w-3xl mx-auto">
-            <h1 class="text-4xl font-mono tracking-wider text-neutral-800 mb-24">
+            <h1 class="text-4xl font-mono tracking-wider mb-24">
                 PHILOSOPHY
             </h1>
             <div class="flex flex-col gap-8">
-                <div class="flex flex-col gap-6 text-neutral-700 leading-relaxed text-base">
+                <div class="flex flex-col gap-6 leading-relaxed text-base">
                     <p class="font-medium">
                         Δήλωση Αποστολής
                     </p>
@@ -105,7 +105,7 @@
 
 
                 <div class="mt-12 flex flex-col items-center gap-4">
-                    <p class="text-sm tracking-wider text-neutral-700">
+                    <p class="text-sm tracking-wider">
                         SEE THE WORLD THROUGH COFFEE
                     </p>
                     <img 
@@ -116,8 +116,8 @@
                 </div>
 
                 <div class="mt-8 text-right">
-                     <p class="text-sm text-neutral-600">Built with passion by our dedicated team</p>
-                     <p class="text-sm font-medium text-neutral-700">ⓒ 2025 TAILORMADE TEAM</p>
+                     <p class="text-sm">Built with passion by our dedicated team</p>
+                     <p class="text-sm font-medium">ⓒ 2025 TAILORMADE TEAM</p>
                 </div>
             </div>
         </div>

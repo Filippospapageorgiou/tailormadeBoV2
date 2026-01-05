@@ -1,12 +1,34 @@
 import { query, form } from '$app/server';
 import { createServerClient } from '$lib/supabase/server';
-import { getAuthenticatedUser, requireAuthenticatedUser } from '$lib/supabase/shared';
 import { z } from 'zod/v4';
-import { error } from '@sveltejs/kit';
-import { redirect } from '@sveltejs/kit';
 import { getUserOrgId, getUserProfile, getUserProfileWithRoleCheck } from '$lib/supabase/queries';
 import { type MaintenanceLog, type EquipmentWithLogs } from '$lib/models/equipment.types';
-import { Trophy } from 'lucide-svelte';
+
+/**
+ * HELPER: sanitizePath
+ * Converts Greek characters to Latin and cleans strings for Supabase Storage paths.
+ */
+const sanitizePath = (str: string) => {
+	const greekMap: Record<string, string> = {
+		'Α': 'A', 'Β': 'B', 'Γ': 'G', 'Δ': 'D', 'Ε': 'E', 'Ζ': 'Z', 'Η': 'H', 'Θ': 'TH',
+		'Ι': 'I', 'Κ': 'K', 'Λ': 'L', 'Μ': 'M', 'Ν': 'N', 'Ξ': 'X', 'Ο': 'O', 'Π': 'P',
+		'Ρ': 'R', 'Σ': 'S', 'Τ': 'T', 'Υ': 'Y', 'Φ': 'F', 'Χ': 'CH', 'Ψ': 'PS', 'Ω': 'O',
+		'α': 'a', 'β': 'b', 'γ': 'g', 'δ': 'd', 'ε': 'e', 'ζ': 'z', 'η': 'h', 'θ': 'th',
+		'ι': 'i', 'κ': 'k', 'λ': 'l', 'μ': 'm', 'ν': 'n', 'ξ': 'x', 'ο': 'o', 'π': 'p',
+		'ρ': 'r', 'σ': 's', 'τ': 't', 'υ': 'y', 'φ': 'f', 'χ': 'ch', 'ψ': 'ps', 'ω': 'o',
+		'ς': 's', 'ϊ': 'i', 'ϋ': 'y', 'ό': 'o', 'ύ': 'u', 'ώ': 'w', 'ή': 'h', 'έ': 'e', 'ί': 'i'
+	};
+
+	return str
+		.split('')
+		.map(char => greekMap[char] || char)
+		.join('')
+		.normalize('NFD')
+		.replace(/[\u0300-\u036f]/g, '')
+		.replace(/\s+/g, '-') 
+		.replace(/[^a-zA-Z0-9\-_]/g, '')
+		.toLowerCase();
+};
 
 export const authenticatedAccess = query(async () => {
 	const profile = await getUserProfileWithRoleCheck([1, 2]);
@@ -55,8 +77,8 @@ export const getAllEquipments = query(async () => {
 			total: equipments.length || 0,
 			message: 'Επιτυχής ανάκτηση μηχανημάτων'
 		};
-	} catch (error: any) {
-		console.error('[getAllEquipments] Error fetching all equipments: ', error);
+	} catch (err: any) {
+		console.error('[getAllEquipments] Error fetching all equipments: ', err);
 		return {
 			success: false,
 			equipments: [],
@@ -93,9 +115,10 @@ export const addEquipment = form(EquipmentSchema, async (data) => {
 	let imageUrl = '';
 	try {
 		if (data.image_url && data.image_url instanceof File) {
+			const sanitizedName = sanitizePath(data.name);
 			const fileExt = data.image_url.name.split('.').pop();
 			const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-			const filePath = `private/${data.name}/${fileName}`;
+			const filePath = `private/${sanitizedName}/${fileName}`;
 
 			const { data: uploadData, error: uploadError } = await supabase.storage
 				.from('equipment')
@@ -113,7 +136,6 @@ export const addEquipment = form(EquipmentSchema, async (data) => {
 			}
 
 			const { data: urlData } = supabase.storage.from('equipment').getPublicUrl(uploadData.path);
-
 			imageUrl = urlData.publicUrl;
 		}
 
@@ -141,8 +163,8 @@ export const addEquipment = form(EquipmentSchema, async (data) => {
 			success: true,
 			message: 'Eξοπλισμός προστέθηκε επιτυχώς'
 		};
-	} catch (error) {
-		console.error('[addEquipment] Error adding equipment: ', error);
+	} catch (err) {
+		console.error('[addEquipment] Error adding equipment: ', err);
 		return {
 			success: false,
 			message: 'Ένα σφάλμα παρασουσιάστηκε κάτα την πρόσθεση του μηχανήματος'
@@ -155,23 +177,24 @@ export const editEquipment = form(EquipmentSchema, async (data) => {
 	try {
 		let imageUrl = undefined;
 
-		if (data.image_url && data.image_url instanceof File) {
-			const { data: currentEquipment } = await supabase
-				.from('equipment')
-				.select('image_url')
-				.eq('id', data.id)
-				.single();
+		const { data: currentEquipment } = await supabase
+			.from('equipment')
+			.select('image_url')
+			.eq('id', data.id)
+			.single();
 
+		if (data.image_url && data.image_url instanceof File) {
 			if (currentEquipment?.image_url && currentEquipment.image_url.includes('equipment')) {
-				const oldPath = currentEquipment.image_url.split('/equipment/')[1];
+				const oldPath = currentEquipment.image_url.split('/equipment/')[1]?.split('?')[0];
 				if (oldPath) {
 					await supabase.storage.from('equipment').remove([oldPath]);
 				}
 			}
 
+			const sanitizedName = sanitizePath(data.name);
 			const fileExt = data.image_url.name.split('.').pop();
 			const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-			const filePath = `private/${data.name}/${fileName}`;
+			const filePath = `private/${sanitizedName}/${fileName}`;
 
 			const { data: uploadData, error: uploadError } = await supabase.storage
 				.from('equipment')
@@ -181,15 +204,14 @@ export const editEquipment = form(EquipmentSchema, async (data) => {
 				});
 
 			if (uploadError) {
-				console.error('[addEquipment] Error adding equipment: ', uploadError);
+				console.error('[editEquipment] Upload error: ', uploadError);
 				return {
 					success: false,
-					message: 'Ένα σφάλμα παρασουσιάστηκε κάτα την πρόσθεση του μηχανήματος'
+					message: 'Σφάλμα κατά το ανέβασμα της εικόνας'
 				};
 			}
 
 			const { data: urlData } = supabase.storage.from('equipment').getPublicUrl(uploadData.path);
-
 			imageUrl = urlData.publicUrl;
 		}
 
@@ -197,7 +219,6 @@ export const editEquipment = form(EquipmentSchema, async (data) => {
 			name: data.name,
 			model: data.model,
 			serial_number: data.serial_number,
-			image_url: imageUrl,
 			manual_url: data.manual_url,
 			status: data.status,
 			last_service_date: data.last_service_date,
@@ -222,8 +243,8 @@ export const editEquipment = form(EquipmentSchema, async (data) => {
 			success: true,
 			message: 'Eξοπλισμός ενημερώθηκε επιτυχώς'
 		};
-	} catch (error) {
-		console.error('[editEquipment] error editing equipment: ', error);
+	} catch (err) {
+		console.error('[editEquipment] error editing equipment: ', err);
 		return {
 			success: false,
 			message: 'Σφάλμα παρουσιαστήκε κάτα την ενημέρωση εξοπλισμού'
@@ -269,8 +290,8 @@ export const deleteEquipment = form(deleteEquipmentSchema, async ({ equipmentId 
 			success: true,
 			message: 'Επιτυχώς διαγραφή μηχανήματος.'
 		};
-	} catch (error: any) {
-		console.error('[deleteEquipment] Error deleting equipment: ', error);
+	} catch (err: any) {
+		console.error('[deleteEquipment] Error deleting equipment: ', err);
 		return {
 			success: false,
 			message: 'Σφάλμα κάτα την διαγραφή του μηχανήματος'
@@ -304,7 +325,6 @@ export const deleteMaintanceLog = form(deleteLog, async ({ maintanceLogId }) => 
 				})
 				.filter(Boolean);
 
-			// Delete files from storage
 			if (filePaths.length > 0) {
 				const { error: deleteStorageError } = await supabase.storage
 					.from('equipment-images')
@@ -317,7 +337,6 @@ export const deleteMaintanceLog = form(deleteLog, async ({ maintanceLogId }) => 
 			}
 		}
 
-		// Delete the maintenance log record from database
 		const { error: deleteDbError } = await supabase
 			.from('maintenance_logs')
 			.delete()
@@ -329,8 +348,8 @@ export const deleteMaintanceLog = form(deleteLog, async ({ maintanceLogId }) => 
 			success: true,
 			message: 'Το αρχείο καταγραφής συντήρησης διαγράφηκε με επιτυχία'
 		};
-	} catch (error: any) {
-		console.error('[deleteMaintanceLog] Error deleting maintance log: ', error);
+	} catch (err: any) {
+		console.error('[deleteMaintanceLog] Error deleting maintance log: ', err);
 		return {
 			success: false,
 			message: 'Σφάλμα κάτα την διαγραφή του αρχείου καταγραφής συντήρησης'

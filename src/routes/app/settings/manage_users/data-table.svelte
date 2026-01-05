@@ -8,8 +8,8 @@
 		getPaginationRowModel,
 		getSortedRowModel,
 		getFilteredRowModel,
-		getFacetedRowModel,        // ADD THIS
-		getFacetedUniqueValues     // ADD THIS
+		getFacetedRowModel, // ADD THIS
+		getFacetedUniqueValues // ADD THIS
 	} from '@tanstack/table-core';
 	import { createSvelteTable, FlexRender } from '$lib/components/ui/data-table/index.js';
 	import * as Table from '$lib/components/ui/table/index.js';
@@ -17,11 +17,11 @@
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { roles } from './data';
 	import DataTableFacetedFilter from './data-table-faceted-filter.svelte';
-    import ChevronRightIcon from "@lucide/svelte/icons/chevron-right"; 
-	import ChevronLeftIcon from "@lucide/svelte/icons/chevron-left";       
-	import ChevronsLeftIcon from "@lucide/svelte/icons/chevrons-left";     
-	import ChevronsRightIcon from "@lucide/svelte/icons/chevrons-right";
-    import * as Select from '$lib/components/ui/select';  
+	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
+	import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left';
+	import ChevronsLeftIcon from '@lucide/svelte/icons/chevrons-left';
+	import ChevronsRightIcon from '@lucide/svelte/icons/chevrons-right';
+	import * as Select from '$lib/components/ui/select';
 	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
 
 	type DataTableProps<TData, TValue> = {
@@ -30,8 +30,6 @@
 	};
 
 	let { columns, data }: DataTableProps<TData, TValue> = $props();
-
-	
 
 	let pagination = $state<PaginationState>({ pageIndex: 0, pageSize: 10 });
 	let sorting = $state<SortingState>([]);
@@ -46,8 +44,8 @@
 		getPaginationRowModel: getPaginationRowModel(),
 		getSortedRowModel: getSortedRowModel(),
 		getFilteredRowModel: getFilteredRowModel(),
-		getFacetedRowModel: getFacetedRowModel(),              // ADD THIS
-		getFacetedUniqueValues: getFacetedUniqueValues(),      // ADD THIS
+		getFacetedRowModel: getFacetedRowModel(), // ADD THIS
+		getFacetedUniqueValues: getFacetedUniqueValues(), // ADD THIS
 		onSortingChange: (updater) => {
 			if (typeof updater === 'function') {
 				sorting = updater(sorting);
@@ -83,26 +81,22 @@
 	});
 </script>
 
-<div class="flex items-center py-4 gap-2">
+<div class="flex items-center gap-2 py-4">
 	<Input
 		placeholder="Filter emails..."
-		value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
+		value={(table.getColumn('email')?.getFilterValue() as string) ?? ''}
 		onchange={(e) => {
-			table.getColumn("email")?.setFilterValue(e.currentTarget.value);
+			table.getColumn('email')?.setFilterValue(e.currentTarget.value);
 		}}
 		oninput={(e) => {
-			table.getColumn("email")?.setFilterValue(e.currentTarget.value);
+			table.getColumn('email')?.setFilterValue(e.currentTarget.value);
 		}}
 		class="max-w-sm"
 	/>
-	
+
 	<!-- ADD THIS: Role Filter -->
-	{#if table.getColumn("role_name")}
-		<DataTableFacetedFilter
-			column={table.getColumn("role_name")!}
-			title="Role"
-			options={roles}
-		/>
+	{#if table.getColumn('role_name')}
+		<DataTableFacetedFilter column={table.getColumn('role_name')!} title="Role" options={roles} />
 	{/if}
 </div>
 
@@ -135,8 +129,12 @@
 			{/each}
 		</Table.Header>
 		<Table.Body>
-			{#each table.getRowModel().rows as row (row.id)}
-				<Table.Row data-state={row.getIsSelected() && 'selected'}>
+			{#each table.getRowModel().rows as row, index (row.id)}
+				<Table.Row
+					class="animate-fade-in-down"
+					style="animation-delay: {index * 200}ms;"
+					data-state={row.getIsSelected() && 'selected'}
+				>
 					{#each row.getVisibleCells() as cell (cell.id)}
 						<Table.Cell>
 							<FlexRender content={cell.column.columnDef.cell} context={cell.getContext()} />
@@ -158,10 +156,10 @@
 <!-- REPLACE YOUR OLD PAGINATION WITH THIS NEW ONE -->
 <div class="flex items-center justify-between px-2 py-4">
 	<!-- Left side: Selected rows info (optional, you can remove if not using row selection) -->
-	<div class="text-muted-foreground flex-1 text-sm">
+	<div class="flex-1 text-sm text-muted-foreground">
 		Showing {table.getRowModel().rows.length} of {table.getFilteredRowModel().rows.length} row(s).
 	</div>
-	
+
 	<!-- Right side: Pagination controls -->
 	<div class="flex items-center space-x-6 lg:space-x-8">
 		<!-- Rows per page selector -->
@@ -187,12 +185,12 @@
 				</Select.Content>
 			</Select.Root>
 		</div>
-		
+
 		<!-- Page number display -->
 		<div class="flex w-[100px] items-center justify-center text-sm font-medium">
 			Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
 		</div>
-		
+
 		<!-- Navigation buttons -->
 		<div class="flex items-center space-x-2">
 			<!-- First page -->
@@ -205,7 +203,7 @@
 				<span class="sr-only">Go to first page</span>
 				<ChevronsLeftIcon />
 			</Button>
-			
+
 			<!-- Previous page -->
 			<Button
 				variant="outline"
@@ -216,7 +214,7 @@
 				<span class="sr-only">Go to previous page</span>
 				<ChevronLeftIcon />
 			</Button>
-			
+
 			<!-- Next page -->
 			<Button
 				variant="outline"
@@ -227,7 +225,7 @@
 				<span class="sr-only">Go to next page</span>
 				<ChevronRightIcon />
 			</Button>
-			
+
 			<!-- Last page -->
 			<Button
 				variant="outline"

@@ -617,7 +617,7 @@
 			})}
 		>
 			<input type="hidden" name="id" value={equipment.id} />
-			<ScrollArea class="h-[50dvh] max-h-[90dvh] w-full md:h-auto md:max-h-[70vh]">
+			<ScrollArea class="h-[50dvh] max-h-[90dvh] w-full">
 				<div class="w-full space-y-2">
 					<Label class="gap-1">
 						Όνομα εξοπλισμού <span class="text-destructive">*</span>

@@ -556,12 +556,12 @@
 
 <!-- ADD TEMPLATE MODAL -->
 <Modal.Root bind:open={openAddNewTask}>
-	<Modal.Content class="flex h-[45dvh] max-h-[45dvh] flex-col sm:h-auto">
+	<Modal.Content class="flex h-full max-h-[80dvh] flex-col sm:h-auto">
 		<Modal.Header>
 			<Modal.Title>Δημιουργία νέας εργασίας</Modal.Title>
 			<Modal.Description>Δημιουργήστε μια Προσαρμοσμένη εργασία εκτός προτύπου</Modal.Description>
 		</Modal.Header>
-		<ScrollArea class="h-[40dvh] w-full">
+		<ScrollArea class="h-[70dvh] w-full">
 			<form class="space-y-6 py-4">
 				<div class="space-y-2">
 					<Input placeholder="Τίτλος εργασίας" bind:value={customTitle} disabled={isAssigning} />

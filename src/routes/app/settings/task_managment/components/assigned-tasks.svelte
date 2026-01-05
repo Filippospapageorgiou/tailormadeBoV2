@@ -22,6 +22,7 @@
 	import ImagePreviewModal from '$lib/components/custom/ImagePreviewModal.svelte';
 	import { deleteDailyTask } from '../data.remote';
 	import { toast } from 'svelte-sonner';
+	import { formatDate } from '$lib/utils';
 
 	let { users = [], selectedDate = $bindable(), isLoading = false, onDelete } = $props();
 
@@ -181,8 +182,11 @@
 											<div
 												class="group relative rounded-lg border border-border bg-card p-4 transition-all"
 												class:animate-fade-out={deletingTaskId === task.id}
-												style="animation-delay: {deletingTaskId === task.id ? '0ms' : i * 150 + 'ms'};
-														animation-fill-mode: {deletingTaskId === task.id ? 'forwards' : 'backwards'};">
+												style="animation-delay: {deletingTaskId === task.id
+													? '0ms'
+													: i * 150 + 'ms'};
+														animation-fill-mode: {deletingTaskId === task.id ? 'forwards' : 'backwards'};"
+											>
 												<Button
 													variant="ghost"
 													size="icon"
@@ -237,6 +241,11 @@
 																<Badge variant="default" class="h-5 bg-green-500 px-2 py-0 text-xs">
 																	✓ Ολοκληρώθηκε
 																</Badge>
+																{#if task?.completed_at}
+																	<span class="text-xs text-muted-foreground">
+																		{formatDate(task.completed_at)}
+																	</span>
+																{/if}
 															{/if}
 															{#if task.photo_url}
 																<div class="flex -space-x-2">

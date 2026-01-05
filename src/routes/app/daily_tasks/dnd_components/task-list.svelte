@@ -36,7 +36,6 @@
 		});
 		if (result.success) {
 			await onUpdate();
-			toast.success(result.message);
 		} else {
 			toast.error(result.message);
 		}
@@ -51,7 +50,8 @@
 	}}
 	onDragEnd={handleDragEnd}
 >
-	<div class="grid gap-4 font-game md:grid-cols-2">
+	<div class="grid gap-4 font-game md:grid-cols-2 animate-fade-in-down"
+			style="animation-delay: {400}ms;">
 		{@render taskList('in-progress', 'In Progress', groupedTasks['in-progress'])}
 		{@render taskList('done', 'Done', groupedTasks['done'])}
 	</div>

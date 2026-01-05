@@ -32,7 +32,7 @@
 	} satisfies Chart.ChartConfig;
 </script>
 
-<Card.Root class="flex h-full flex-col bg-white">
+<Card.Root class="flex h-full flex-col">
 	<Card.Header class="items-center">
 		<Card.Title>Συνολίκα Εξοδα</Card.Title>
 		<Card.Description>

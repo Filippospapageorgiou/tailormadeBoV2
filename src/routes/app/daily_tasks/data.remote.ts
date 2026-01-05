@@ -35,8 +35,6 @@ export const getDayliTaskForUser = query(async () => {
 			.eq('user_id', profile.id)
 			.overrideTypes<UserDailyTask[]>();
 
-		console.log(dailyTasks);
-
 		return {
 			success: true,
 			message: 'Επιτυχία',
