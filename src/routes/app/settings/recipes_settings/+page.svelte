@@ -54,20 +54,21 @@
 {#if auth.loading}
 	<AuthBlock />
 {:else}
-	<div class="min-h-screen">
+	<div class="min-h-screen bg-background">
 		<main class="container mx-auto px-4 pt-4 pb-10 md:px-6">
 			<!-- Header Section -->
 			<div class="mb-8 space-y-4">
 				<div class="flex flex-col gap-2">
-					<h1 class="font-mono text-3xl tracking-wider text-neutral-800 md:text-4xl">
+					<h1 class="font-mono text-3xl tracking-wider text-foreground md:text-4xl">
 						Our Beverages
 					</h1>
-					<p class="text-xs text-[#8B6B4A] md:text-sm">
+					<p class="text-xs text-primary md:text-sm">
 						Πρόσθεσε, διάγραψε, ενήμερωσε τις συνταγές καθώς και τα υλικά τους.
 					</p>
 					<div class="flex items-center gap-2">
-						<p class="text-xs text-[#8B6B4A] md:text-sm">
-							Διαθέσιμα Ροφήματα: <span class="font-semibold">{filteredBeverages().length}</span>
+						<p class="text-xs text-muted-foreground md:text-sm">
+							Διαθέσιμα Ροφήματα: 
+							<span class="font-semibold text-foreground">{filteredBeverages().length}</span>
 							/ {totalBeverages}
 						</p>
 						{#if searchQuery}
@@ -156,7 +157,7 @@
 				<!-- Loading Skeletons -->
 				<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 					{#each Array(20) as _}
-						<div class="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
+						<div class="rounded-xl border border-border/50 dark:border-white/10 bg-card p-4 shadow-sm">
 							<div class="mb-3 flex items-start justify-between">
 								<div class="flex items-center gap-2">
 									<Skeleton class="h-4 w-8" />
@@ -167,24 +168,27 @@
 									<Skeleton class="h-7 w-7 rounded" />
 								</div>
 							</div>
-							<Skeleton class="mb-3 h-48 w-full rounded" />
+							<Skeleton class="mb-3 h-48 w-full rounded-lg" />
 							<Skeleton class="mb-2 h-4 w-full" />
 							<Skeleton class="h-4 w-3/4" />
-							<Skeleton class="mt-3 h-10 w-full rounded" />
+							<Skeleton class="mt-3 h-10 w-full rounded-lg" />
 						</div>
 					{/each}
 				</div>
 			{:else if filteredBeverages().length === 0}
 				<!-- Empty State -->
 				<div class="flex flex-col items-center justify-center py-16 text-center">
-					<p class="mb-2 text-lg font-medium text-neutral-600">No beverages found</p>
+					<div class="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+						<Plus class="h-8 w-8 text-muted-foreground" />
+					</div>
+					<p class="mb-2 text-lg font-medium text-foreground">No beverages found</p>
 					{#if searchQuery}
-						<p class="text-sm text-neutral-400">Try adjusting your search</p>
-						<Button variant="outline" onclick={clearSearch} class="mt-4 cursor-pointer"
-							>Clear search</Button
-						>
+						<p class="text-sm text-muted-foreground">Try adjusting your search</p>
+						<Button variant="outline" onclick={clearSearch} class="mt-4 cursor-pointer">
+							Clear search
+						</Button>
 					{:else}
-						<p class="text-sm text-neutral-400">Start by adding your first beverage</p>
+						<p class="text-sm text-muted-foreground">Start by adding your first beverage</p>
 						<Button
 							variant="default"
 							onclick={() => (addingBeverage = true)}

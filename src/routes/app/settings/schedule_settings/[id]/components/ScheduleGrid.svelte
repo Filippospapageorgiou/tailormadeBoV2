@@ -115,7 +115,7 @@
 							<p class="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
 								{day.dayName}
 							</p>
-							<p class="mt-1 text-lg font-bold text-black">{day.dayNum}</p>
+							<p class="mt-1 text-lg font-bold">{day.dayNum}</p>
 						</div>
 					{/each}
 				</div>

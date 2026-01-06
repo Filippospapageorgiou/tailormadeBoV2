@@ -58,7 +58,7 @@
 		<div class="flex items-center gap-3">
 			<div class="relative">
 				<Avatar.Root
-					class="h-10 w-10 flex-shrink-0 ring-2 ring-offset-2"
+					class="h-10 w-10 flex-shrink-0 ring-2 ring-offset-2 dark:bg-white"
 					style="--tw-ring-color: {badgeColor}20;"
 				>
 					<Avatar.Image src={employee.image_url} alt={employee.username} />

@@ -1,11 +1,10 @@
 <script lang="ts">
 	import type { Beverage } from '$lib/models/database.types';
 	import { Button } from '$lib/components/ui/button';
-	import { Pencil, Trash2, ChevronDown, ChevronUp } from 'lucide-svelte';
+	import { Pencil, Trash2, ImageOff } from 'lucide-svelte';
 	import * as Accordion from '$lib/components/ui/accordion';
 	import IngredientsList from './IngredientsList.svelte';
-    import EditBeverageDialog from './EditBeverageDialog.svelte';
-	import AddBeverageDialog from './AddBeverageDialog.svelte';
+	import EditBeverageDialog from './EditBeverageDialog.svelte';
 	import DeleteBeverageDialog from './DeleteBeverageDialog.svelte';
 
 	let {
@@ -30,14 +29,16 @@
 </script>
 
 <div
-	class="group rounded-lg border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:border-[#8B6B4A]/20 hover:shadow-md"
+	class="group rounded-xl border border-border/50 dark:border-white/10 bg-card 
+		   shadow-sm transition-all duration-300 
+		   hover:border-primary/30 hover:shadow-md"
 >
 	<!-- Card Header: ID, Name, Actions -->
-	<div class="border-b border-gray-100 p-4">
-		<div class="mb-2 flex items-start justify-between gap-2">
+	<div class="border-b border-border/50 dark:border-white/10 p-4">
+		<div class="flex items-start justify-between gap-2">
 			<div class="flex min-w-0 flex-1 items-center gap-2">
-				<span class="flex-shrink-0 text-xs text-[#8B6B4A]">#{beverage.id}</span>
-				<h3 class="truncate text-base font-semibold text-neutral-800 sm:text-lg">
+				<span class="flex-shrink-0 text-xs font-medium text-primary">#{beverage.id}</span>
+				<h3 class="truncate text-base font-semibold text-foreground sm:text-lg">
 					{beverage.name}
 				</h3>
 			</div>
@@ -47,7 +48,7 @@
 				<Button
 					variant="ghost"
 					size="icon"
-					class="h-8 w-8 cursor-pointer hover:bg-[#8B6B4A]/10 hover:text-[#8B6B4A]"
+					class="h-8 w-8 cursor-pointer hover:bg-primary/10 hover:text-primary"
 					onclick={openEditDialog}
 				>
 					<Pencil class="h-4 w-4" />
@@ -55,7 +56,7 @@
 				<Button
 					variant="ghost"
 					size="icon"
-					class="h-8 w-8 cursor-pointer hover:bg-red-50 hover:text-red-600"
+					class="h-8 w-8 cursor-pointer hover:bg-red-500/10 hover:text-red-500"
 					onclick={openDeleteDialog}
 				>
 					<Trash2 class="h-4 w-4" />
@@ -68,7 +69,7 @@
 	<div class="p-4">
 		<!-- Beverage Image -->
 		{#if beverage.image_url}
-			<div class="mb-3 overflow-hidden rounded-lg">
+			<div class="mb-3 overflow-hidden rounded-xl bg-muted">
 				<img
 					src={beverage.image_url}
 					alt={beverage.name}
@@ -77,26 +78,30 @@
 			</div>
 		{:else}
 			<div
-				class="mb-3 flex h-48 items-center justify-center rounded-lg bg-gray-100 text-gray-400"
+				class="mb-3 flex h-48 items-center justify-center rounded-xl 
+					   bg-muted text-muted-foreground"
 			>
-				<span class="text-sm">No image</span>
+				<div class="flex flex-col items-center gap-2">
+					<ImageOff class="h-8 w-8" />
+					<span class="text-xs">No image</span>
+				</div>
 			</div>
 		{/if}
 
 		<!-- Description -->
 		{#if beverage.description}
-			<p class="mb-3 line-clamp-1 text-sm text-neutral-600">
+			<p class="mb-3 line-clamp-2 text-sm text-muted-foreground">
 				{beverage.description}
 			</p>
 		{:else}
-			<p class="mb-3 text-sm italic text-neutral-400">No description available</p>
+			<p class="mb-3 text-sm italic text-muted-foreground/60">No description available</p>
 		{/if}
 
-		
+		<!-- Execution Preview -->
 		{#if beverage.execution}
-			<div class="mb-3 rounded-md bg-gray-50 p-2">
-				<p class="text-xs font-medium text-neutral-700">Execution:</p>
-				<p class="line-clamp-2 text-xs text-neutral-600">
+			<div class="mb-3 rounded-lg bg-muted/50 dark:bg-muted/30 p-3">
+				<p class="text-xs font-medium text-foreground mb-1">Execution:</p>
+				<p class="line-clamp-2 text-xs text-muted-foreground">
 					{beverage.execution}
 				</p>
 			</div>
@@ -104,10 +109,12 @@
 	</div>
 
 	<!-- Accordion: Ingredients -->
-	<Accordion.Root type="multiple" bind:value={accordionValue} class="border-t border-gray-100">
-		<Accordion.Item value="ingredients">
+	<Accordion.Root type="multiple" bind:value={accordionValue} class="border-t border-border/50 dark:border-white/10">
+		<Accordion.Item value="ingredients" class="border-b-0">
 			<Accordion.Trigger
-				class="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-neutral-800 hover:bg-gray-50"
+				class="flex w-full items-center justify-between px-4 py-3 
+					   text-sm font-medium text-foreground 
+					   hover:bg-muted/50 transition-colors"
 			>
 				<span>Υλικά</span>
 			</Accordion.Trigger>

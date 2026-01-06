@@ -7,9 +7,8 @@
 	import * as Select from '$lib/components/ui/select';
 	import * as Pagination from '$lib/components/ui/pagination';
 	import * as Tooltip from '$lib/components/ui/tooltip';
-	import { X, RefreshCcw, Plus, Search } from 'lucide-svelte';
+	import { X, RefreshCcw, Plus, Search, FileText } from 'lucide-svelte';
 	import * as Empty from '$lib/components/ui/empty/index.js';
-	import RefreshCcwIcon from '@lucide/svelte/icons/refresh-ccw';
 	import BlogCard from './components/BlogCard.svelte';
 	import AddBlogDialog from './components/AddBlogDialog.svelte';
 	import AuthBlock from '$lib/components/custom/AuthBlock/authBlock.svelte';
@@ -29,7 +28,7 @@
 	// Filter states
 	let searchQuery = $state('');
 	let categoryFilter = $state('');
-	let publishedFilter = $state<string>(''); // 'all', 'published', 'draft'
+	let publishedFilter = $state<string>('');
 
 	let page = $state(1);
 	const perPage = 10;
@@ -45,7 +44,6 @@
 	let filteredBlogs = $derived(() => {
 		let blogs = allBlogs;
 
-		// Filter by category
 		if (categoryFilter) {
 			blogs = blogs.filter((b) => b.category === categoryFilter);
 		}
@@ -99,35 +97,50 @@
 		publishedFilter = '';
 		page = 1;
 	}
+
+	let hasActiveFilters = $derived(searchQuery || categoryFilter || publishedFilter);
 </script>
 
 {#if auth.loading}
 	<AuthBlock />
 {:else}
-	<div class="min-h-screen">
+	<div class="min-h-screen bg-background">
 		<main class="container mx-auto px-4 pt-4 pb-10 md:px-6">
 			<!-- Header Section -->
 			<div class="mb-8 space-y-4">
 				<div class="flex flex-col gap-2">
-					<h1 class="font-mono text-3xl tracking-wider text-neutral-800 md:text-4xl">
+					<h1 class="font-mono text-3xl tracking-wider text-foreground md:text-4xl">
 						Blog Management
 					</h1>
-					<p class="text-xs text-[#8B6B4A] md:text-sm">
+					<p class="text-xs text-primary md:text-sm">
 						Create, edit, and manage all blog posts from this dashboard
 					</p>
 					<div class="flex items-center gap-2">
-						<p class="text-xs text-[#8B6B4A] md:text-sm">
-							Showing: <span class="font-semibold">{filteredBlogs().length}</span> / {totalBlogs}
-							posts
+						<p class="text-xs text-muted-foreground md:text-sm">
+							Showing: 
+							<span class="font-semibold text-foreground">{filteredBlogs().length}</span> 
+							/ {totalBlogs} posts
 						</p>
+						{#if hasActiveFilters}
+							<Button
+								variant="secondary"
+								size="sm"
+								onclick={clearAllFilters}
+								class="h-6 cursor-pointer px-2 text-xs"
+							>
+								<X class="mr-1 h-3 w-3" />
+								Clear filters
+							</Button>
+						{/if}
 					</div>
 				</div>
+
 				<!-- Filters & Actions Section -->
-				<div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+				<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 					<div class="flex flex-col gap-2 sm:flex-row sm:items-center">
 						<!-- Published Status Filter -->
 						<Select.Root type="single" bind:value={publishedFilter}>
-							<Select.Trigger class="w-full sm:w-[180px]">
+							<Select.Trigger class="w-full sm:w-[150px]">
 								{publishedFilter === 'published'
 									? 'Published'
 									: publishedFilter === 'draft'
@@ -147,7 +160,7 @@
 						<!-- Category Filter -->
 						{#if categories.length > 0}
 							<Select.Root type="single" bind:value={categoryFilter}>
-								<Select.Trigger class="w-full sm:w-[180px]">
+								<Select.Trigger class="w-full sm:w-[160px]">
 									{categoryFilter || 'All Categories'}
 								</Select.Trigger>
 								<Select.Content>
@@ -166,7 +179,7 @@
 					</div>
 
 					<!-- Search Input & Actions -->
-					<div class="relative flex items-center gap-2">
+					<div class="flex items-center gap-2">
 						<!-- Add Button -->
 						<Tooltip.Provider>
 							<Tooltip.Root>
@@ -196,10 +209,10 @@
 										size="sm"
 										onclick={refresh}
 										disabled={refreshAction}
-										class="h-6 cursor-pointer px-2 text-xs"
+										class="h-8 cursor-pointer px-3"
 									>
 										<RefreshCcw
-											class={`mr-2 h-4 w-4 ${refreshAction ? 'animate-spin-clockwise' : ''}`}
+											class={`h-4 w-4 ${refreshAction ? 'animate-spin-clockwise' : ''}`}
 										/>
 									</Button>
 								</Tooltip.Trigger>
@@ -210,33 +223,36 @@
 						</Tooltip.Provider>
 
 						<!-- Search Input -->
-						<Input
-							bind:value={searchQuery}
-							class="w-full py-1 pr-8 sm:w-72"
-							placeholder="Filter posts..."
-						/>
-						{#if searchQuery}
-							<Button
-								variant="ghost"
-								size="icon"
-								onclick={clearSearch}
-								class="absolute right-1 h-7 w-7 cursor-pointer"
-							>
-								<X class="h-3 w-3" />
-							</Button>
-						{/if}
+						<div class="relative">
+							<Input
+								bind:value={searchQuery}
+								class="w-full py-1 pr-8 sm:w-64"
+								placeholder="Search posts..."
+							/>
+							{#if searchQuery}
+								<Button
+									variant="ghost"
+									size="icon"
+									onclick={clearSearch}
+									class="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 cursor-pointer"
+								>
+									<X class="h-3 w-3" />
+								</Button>
+							{/if}
+						</div>
 					</div>
 				</div>
 			</div>
 
+			<!-- Content -->
 			{#if query.loading}
 				<div class="space-y-3">
 					{#each Array(5) as _}
-						<div class="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
-							<div class="flex items-start justify-between gap-1">
+						<div class="rounded-xl border border-border/50 dark:border-white/10 bg-card p-4 shadow-sm">
+							<div class="flex items-start justify-between gap-4">
 								<div class="flex-1 space-y-3">
-									<div class="flex items-start gap-3">
-										<Skeleton class="h-20 w-32 flex-shrink-0 rounded" />
+									<div class="flex items-start gap-4">
+										<Skeleton class="h-20 w-32 flex-shrink-0 rounded-lg" />
 										<div class="flex-1 space-y-2">
 											<Skeleton class="h-5 w-3/4" />
 											<Skeleton class="h-4 w-full" />
@@ -249,31 +265,40 @@
 										<Skeleton class="h-4 w-32" />
 									</div>
 								</div>
-								<div class="flex flex-col gap-1 md:flex-row">
-									<Skeleton class="h-8 w-8 rounded" />
-									<Skeleton class="h-8 w-8 rounded" />
-									<Skeleton class="h-8 w-8 rounded" />
+								<div class="flex gap-1">
+									<Skeleton class="h-8 w-8 rounded-lg" />
+									<Skeleton class="h-8 w-8 rounded-lg" />
+									<Skeleton class="h-8 w-8 rounded-lg" />
 								</div>
 							</div>
 						</div>
 					{/each}
 				</div>
 			{:else if filteredBlogs().length === 0}
-				<Empty.Root class=" h-48 bg-gradient-to-b from-muted/50 from-30% to-background pb-4">
-					<Empty.Header>
-						<Empty.Media variant="icon">
-							<Search />
-						</Empty.Media>
-						<Empty.Title>No Blogs Found</Empty.Title>
-						<Empty.Description>You're all caught up, Adjust your filters.</Empty.Description>
-					</Empty.Header>
-					<Empty.Content>
-						<Button variant="outline" onclick={clearAllFilters} size="sm" class="cursor-pointer">
+				<!-- Empty State -->
+				<div class="flex flex-col items-center justify-center py-16 text-center">
+					<div class="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+						<FileText class="h-8 w-8 text-muted-foreground" />
+					</div>
+					<p class="mb-2 text-lg font-medium text-foreground">No blogs found</p>
+					{#if hasActiveFilters}
+						<p class="text-sm text-muted-foreground mb-4">Try adjusting your filters</p>
+						<Button variant="outline" onclick={clearAllFilters} class="cursor-pointer gap-2">
+							<RefreshCcw class="h-4 w-4" />
 							Clear Filters
-							<RefreshCcwIcon />
 						</Button>
-					</Empty.Content>
-				</Empty.Root>
+					{:else}
+						<p class="text-sm text-muted-foreground mb-4">Start by creating your first blog post</p>
+						<Button
+							variant="default"
+							onclick={() => (creatingBlog = true)}
+							class="cursor-pointer gap-2"
+						>
+							<Plus class="h-4 w-4" />
+							Create Blog
+						</Button>
+					{/if}
+				</div>
 			{:else}
 				<!-- Blogs List -->
 				<div class="space-y-3">

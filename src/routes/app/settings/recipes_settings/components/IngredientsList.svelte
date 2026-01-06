@@ -166,7 +166,7 @@
 		<!-- Loading State -->
 		<div class="space-y-2">
 			{#each Array(3) as _}
-				<div class="flex items-center justify-between rounded-md border border-gray-200 p-3">
+				<div class="flex items-center justify-between rounded-md p-3">
 					<div class="flex-1 space-y-2">
 						<Skeleton class="h-4 w-32" />
 						<Skeleton class="h-3 w-24" />
@@ -177,9 +177,9 @@
 		</div>
 	{:else if ingredients.length === 0}
 		<!-- Empty State -->
-		<div class="rounded-md border border-dashed border-gray-300 p-6 text-center">
-			<p class="mb-2 text-sm text-neutral-600">No ingredients added yet</p>
-			<p class="mb-3 text-xs text-neutral-400">Start building your recipe</p>
+		<div class="rounded-md border border-dashed p-6 text-center">
+			<p class="mb-2 text-sm text-muted-foreground">No ingredients added yet</p>
+			<p class="mb-3 text-xs text-muted-foreground/15">Start building your recipe</p>
 			<Button
 				variant="default"
 				size="sm"
@@ -193,9 +193,10 @@
 	{:else}
 		<!-- Ingredients List -->
 		<div class="space-y-2">
-			{#each ingredients as ingredient (ingredient.id)}
+			{#each ingredients as ingredient,index (ingredient.id)}
 				<div
-					class="rounded-md border border-gray-200 bg-white p-3 transition-colors hover:bg-gray-50"
+					style="animation-delay:{index * 200}ms"
+					class="rounded-md borderp-3 transition-colors animate-fade-in-down hover:bg-accent-foreground/20"
 				>
 					{#if editingIngredientId === ingredient.id}
 						<!-- Edit Mode -->
@@ -245,10 +246,10 @@
 						<div class="flex items-start justify-between gap-3">
 							<div class="flex-1">
 								<div class="flex items-baseline gap-2">
-									<span class="font-medium text-neutral-800">
+									<span class="font-medium">
 										{ingredient.ingredients.name}
 									</span>
-									<span class="text-sm text-[#8B6B4A]">
+									<span class="text-sm text-primary">
 										{ingredient.quantity} {ingredient.ingredients.measurement_unit}
 									</span>
 								</div>

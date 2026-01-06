@@ -76,7 +76,7 @@
 						{timeRange}
 					</span>
 				{:else}
-					<span class="text-sm font-semibold whitespace-nowrap" style="color: {badgeColor};">
+					<span class="text-sm font-semibold whitespace-nowrap">
 						{getShiftTypeLabel(shift.shift_type)}
 					</span>
 				{/if}

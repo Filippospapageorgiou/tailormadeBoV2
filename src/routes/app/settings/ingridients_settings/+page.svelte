@@ -25,7 +25,7 @@
 		{ value: 'κιλά (kg)', label: 'κιλά (kg)' },
 		{ value: 'μιλιλίτρα (ml)', label: 'μιλιλίτρα (ml)' },
 		{ value: 'λίτρα (l)', label: 'λίτρα (l)' },
-		{ value: 'κουταλιά της σούπας (tbsp)', label: 'κουταλιά της σούπas (tbsp)' }
+		{ value: 'κουταλιά της σούπας (tbsp)', label: 'κουταλιά της σούπας (tbsp)' }
 	];
 
 	let auth = authenticatedAccess();
@@ -88,7 +88,6 @@
 		description: ''
 	});
 
-	// Delete dialog state
 	let deletingIngredient = $state<Ingredient | null>(null);
 
 	function clearSearch() {
@@ -153,11 +152,9 @@
 				addFormData = { name: '', category: '', measurement_unit: '', description: '' };
 			} else {
 				showFailToast('Σφάλμα', result.message);
-				showFailToast;
 			}
 		} catch (error: any) {
 			showFailToast('Σφάλμα', error.message);
-			showFailToast;
 		} finally {
 			hideProgress();
 		}
@@ -191,21 +188,21 @@
 {#if auth.loading}
 	<AuthBlock />
 {:else}
-	<div class="min-h-screen">
+	<div class="min-h-screen bg-background">
 		<main class="container mx-auto px-4 pt-4 pb-10 md:px-6">
 			<!-- Header Section -->
 			<div class="mb-8 space-y-4">
 				<div class="flex flex-col gap-2">
-					<h1 class="font-mono text-3xl tracking-wider text-neutral-800 md:text-4xl">
+					<h1 class="font-mono text-3xl tracking-wider text-foreground md:text-4xl">
 						Our ingredients
 					</h1>
-					<p class="text-xs text-[#8B6B4A] md:text-sm">
+					<p class="text-xs text-primary md:text-sm">
 						Πρόσθεσε, διάγραψε, ενήμερωσε τα υλίκα για να φτιαξούμε τις συντάγες μας
 					</p>
 					<div class="flex items-center gap-2">
-						<p class="text-xs text-[#8B6B4A] md:text-sm">
-							Διαθέσιμα Συστατικά: <span class="font-semibold">{filteredIngridients()?.length}</span
-							>
+						<p class="text-xs text-muted-foreground md:text-sm">
+							Διαθέσιμα Συστατικά: 
+							<span class="font-semibold text-foreground">{filteredIngridients()?.length}</span>
 							/ {allIngridients.length}
 						</p>
 						{#if value || searchQuery}
@@ -249,25 +246,25 @@
 					<div class="relative flex items-center gap-2">
 						<Tooltip.Provider>
 							<Tooltip.Root>
-								<Tooltip.Trigger
-									><Button
+								<Tooltip.Trigger>
+									<Button
 										variant="default"
 										size="sm"
 										class="h-6 cursor-pointer px-2 text-xs"
 										onclick={() => (addingIngredient = true)}
 									>
 										<Plus class="mr-1 h-3 w-3" />
-									</Button></Tooltip.Trigger
-								>
+									</Button>
+								</Tooltip.Trigger>
 								<Tooltip.Content>
-									<p>Add Ingridient</p>
+									<p>Add Ingredient</p>
 								</Tooltip.Content>
 							</Tooltip.Root>
 						</Tooltip.Provider>
 						<Tooltip.Provider>
 							<Tooltip.Root>
-								<Tooltip.Trigger
-									><Button
+								<Tooltip.Trigger>
+									<Button
 										variant="secondary"
 										size="sm"
 										onclick={refresh}
@@ -280,7 +277,7 @@
 									</Button>
 								</Tooltip.Trigger>
 								<Tooltip.Content>
-									<p>Refresh ingridients</p>
+									<p>Refresh ingredients</p>
 								</Tooltip.Content>
 							</Tooltip.Root>
 						</Tooltip.Provider>
@@ -308,7 +305,8 @@
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
 					{#each Array(20) as _}
 						<div
-							class="group relative rounded-lg border border-gray-100 bg-white p-3 shadow-sm transition-all duration-300"
+							class="group relative rounded-xl border border-border/50 dark:border-white/10 
+								   bg-card p-3 shadow-sm"
 						>
 							<div class="mb-2 flex items-start justify-between">
 								<div class="flex items-center">
@@ -334,23 +332,23 @@
 				</div>
 			{:else if filteredIngridients().length === 0}
 				<div class="flex flex-col items-center justify-center py-16 text-center">
-					<p class="mb-2 text-lg font-medium text-neutral-600">No ingredients found</p>
-					<p class="text-sm text-neutral-400">Try adjusting your filters</p>
-					<Button variant="outline" onclick={clearAllFilters} class="mt-4">Clear all filters</Button
-					>
+					<p class="mb-2 text-lg font-medium text-foreground">No ingredients found</p>
+					<p class="text-sm text-muted-foreground">Try adjusting your filters</p>
+					<Button variant="outline" onclick={clearAllFilters} class="mt-4">Clear all filters</Button>
 				</div>
 			{:else}
 				<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
 					{#each filteredIngridients() as ingredient (ingredient.id)}
 						<div
-							class="group relative rounded-lg border border-gray-100 bg-white p-3 shadow-sm
-                    transition-all duration-300 hover:border-[#8B6B4A]/20 hover:shadow-md"
+							class="group relative rounded-xl border border-border/50 dark:border-white/10 
+								   bg-card p-3 shadow-sm transition-all duration-300 
+								   hover:border-primary/30 hover:shadow-md"
 						>
 							<!-- Header with ID, Name and Action Buttons -->
 							<div class="mb-2 flex items-start justify-between gap-2">
 								<div class="flex min-w-0 flex-1 items-center">
-									<span class="mr-1 flex-shrink-0 text-xs text-[#8B6B4A]">#{ingredient.id}</span>
-									<h3 class="truncate pl-1 text-sm font-medium text-neutral-800 sm:text-base">
+									<span class="mr-1 flex-shrink-0 text-xs text-primary">#{ingredient.id}</span>
+									<h3 class="truncate pl-1 text-sm font-medium text-foreground sm:text-base">
 										{ingredient.name}
 									</h3>
 								</div>
@@ -360,7 +358,7 @@
 									<Button
 										variant="ghost"
 										size="icon"
-										class="h-7 w-7 hover:bg-[#8B6B4A]/10 hover:text-[#8B6B4A]"
+										class="h-7 w-7 hover:bg-primary/10 hover:text-primary"
 										onclick={() => openEditDialog(ingredient)}
 									>
 										<Pencil class="h-3.5 w-3.5" />
@@ -368,7 +366,7 @@
 									<Button
 										variant="ghost"
 										size="icon"
-										class="h-7 w-7 hover:bg-red-50 hover:text-red-600"
+										class="h-7 w-7 hover:bg-red-500/10 hover:text-red-500"
 										onclick={() => openDeleteDialog(ingredient)}
 									>
 										<Trash2 class="h-3.5 w-3.5" />
@@ -378,19 +376,19 @@
 
 							<div class="grid grid-cols-1 gap-1">
 								<div class="flex items-center justify-between">
-									<span class="rounded-full bg-[#8B6B4A]/10 px-1.5 py-0.5 text-xs text-[#8B6B4A]">
+									<span class="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
 										{ingredient.category || 'Χωρίς κατηγορία'}
 									</span>
-									<span class="text-xs text-neutral-700">
+									<span class="text-xs text-muted-foreground">
 										{ingredient.measurement_unit || '-'}
 									</span>
 								</div>
 								{#if ingredient.description}
-									<p class="line-clamp-2 text-xs text-neutral-600">{ingredient.description}</p>
+									<p class="line-clamp-2 text-xs text-muted-foreground">{ingredient.description}</p>
 								{/if}
 
 								<div class="text-right">
-									<span class="text-xs text-neutral-400">
+									<span class="text-xs text-muted-foreground/70">
 										{new Date(ingredient.updated_at).toLocaleDateString('el-GR')}
 									</span>
 								</div>
@@ -445,11 +443,11 @@
 				<div class="col-span-3">
 					<Select.Root type="single" bind:value={editFormData.measurement_unit}>
 						<Select.Trigger class="w-full">
-							{editFormData.measurement_unit || 'Select a category'}
+							{editFormData.measurement_unit || 'Select a unit'}
 						</Select.Trigger>
 						<Select.Content>
 							<Select.Group>
-								<Select.Label>Measurment unit</Select.Label>
+								<Select.Label>Measurement unit</Select.Label>
 								{#each unitItems as unitItem}
 									<Select.Item value={unitItem.value ?? ''} label={unitItem.label}>
 										{unitItem.label}
@@ -541,38 +539,34 @@
 	open={deletingIngredient !== null}
 	onOpenChange={(open) => !open && (deletingIngredient = null)}
 >
-	<Dialog.Content class="rounded-2xl p-6 shadow-lg sm:max-w-[425px]">
-		<Dialog.Header class="space-y-3">
-			<Dialog.Title class="text-xl font-semibold">Delete Ingredient</Dialog.Title>
-			<Dialog.Description class="text-sm leading-relaxed text-gray-600">
-				Are you sure you want to delete
-				<span class="font-medium text-gray-900">
-					"{deletingIngredient?.name}"
+	<Dialog.Content class="sm:max-w-[425px]">
+		<Dialog.Header>
+			<Dialog.Title>Delete Ingredient</Dialog.Title>
+			<Dialog.Description class="space-y-2">
+				<span>
+					Are you sure you want to delete
+					<span class="font-medium text-foreground">
+						"{deletingIngredient?.name}"
+					</span>? 
 				</span>
-				? This action
-				<span class="font-semibold text-red-500">cannot</span> be undone.
-				<br />
-				<span class="mt-2 block font-semibold text-gray-800">
-					Used in
-					<span class="font-semiblod"
-						>{deletingIngredient?.recipe_ingredients?.[0]?.count ?? 0}</span
-					>
-					recipe(s).
+				<span class="block text-red-500 dark:text-red-400">
+					This action cannot be undone.
+				</span>
+				<span class="block font-medium text-foreground">
+					Used in {deletingIngredient?.recipe_ingredients?.[0]?.count ?? 0} recipe(s).
 				</span>
 			</Dialog.Description>
 		</Dialog.Header>
 
-		<Dialog.Footer class="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+		<Dialog.Footer class="mt-4">
 			<Button
 				variant="outline"
-				class="cursor-pointer border-gray-300 text-gray-700 hover:bg-gray-100"
 				onclick={() => (deletingIngredient = null)}
 			>
 				Cancel
 			</Button>
 			<Button
 				variant="destructive"
-				class="cursor-pointer bg-red-600 font-medium text-white shadow-md hover:bg-red-700"
 				onclick={() => deletingIngredient?.id !== undefined && handleDelete(deletingIngredient.id)}
 			>
 				Delete

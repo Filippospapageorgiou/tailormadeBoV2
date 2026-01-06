@@ -58,7 +58,7 @@
 		<div class="py-4">
 			<p class="text-sm">
 				You are about to permanently delete the beverage:
-				<span class="font-semibold text-neutral-800">{beverage.name}</span>
+				<span class="font-semibold">{beverage.name}</span>
 				(ID: {beverage.id}).
 			</p>
 		</div>

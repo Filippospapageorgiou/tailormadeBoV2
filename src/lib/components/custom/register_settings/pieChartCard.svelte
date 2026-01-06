@@ -68,7 +68,14 @@
 	}) satisfies Chart.ChartConfig;
 </script>
 
-<Card.Root class="flex h-full flex-col">
+<Card.Root class="relative flex h-full flex-col glass-card rounded-2xl p-6 overflow-hidden backdrop-blur-xl">
+	<!-- Glassy gradient background -->
+	<div class="absolute inset-0 bg-gradient-to-br from-primary/20 via-card/80 to-secondary/30 -z-10"></div>
+	
+	<!-- Ambient glow effect - positioned differently for visual variety -->
+	<div class="absolute -top-24 -left-24 w-48 h-48 bg-chart-3/25 rounded-full blur-3xl -z-10"></div>
+	<div class="absolute -bottom-16 -right-16 w-36 h-36 bg-chart-1/20 rounded-full blur-3xl -z-10"></div>
+
 	<Card.Header class="items-center pb-2">
 		<Card.Title>Διανομή πληρωμών προμηθευτών</Card.Title>
 		<Card.Description>
@@ -113,8 +120,7 @@
 				<div class="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
 					{#each supplierChartData as item}
 						<div class="flex items-center gap-2">
-							<span class="h-3 w-3 shrink-0 rounded-sm" style="background-color: {item.color}"
-							></span>
+							<span class="h-3 w-3 shrink-0 rounded-sm" style="background-color: {item.color}"></span>
 							<span class="truncate font-medium text-neutral-700" title={item.supplier}>
 								{item.supplier}
 							</span>

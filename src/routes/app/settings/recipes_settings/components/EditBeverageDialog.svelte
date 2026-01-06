@@ -184,7 +184,7 @@
 				/>
 			</div>
 
-			<div class="rounded-md bg-neutral-50 p-3 text-xs text-neutral-600">
+			<div class="rounded-md p-3 text-xstext-muted-foreground">
 				<p class="font-medium">Tips:</p>
 				<ul class="mt-1 list-disc space-y-1 pl-4">
 					<li>* Required fields</li>
