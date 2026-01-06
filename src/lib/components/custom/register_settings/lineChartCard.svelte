@@ -81,7 +81,14 @@
 
 <!-- Chart Card -->
 <div>
-	<Card.Root>
+	<Card.Root class="relative  glass-card rounded-2xl p-6 overflow-hidden backdrop-blur-xl">
+		<!-- Glassy gradient background -->
+        <div class="absolute inset-0 bg-gradient-to-br from-primary/20 via-card/80 to-secondary/30 -z-10"></div>
+        
+        <!-- Ambient glow effect -->
+        <div class="absolute -top-20 -right-20 w-40 h-40 bg-primary/30 rounded-full blur-3xl -z-10"></div>
+        <div class="absolute -bottom-20 -left-20 w-40 h-40 bg-chart-2/20 rounded-full blur-3xl -z-10"></div>
+
 		<Card.Header>
 			<Card.Title>Απόδοση πωλήσεων</Card.Title>
 			<Card.Description>

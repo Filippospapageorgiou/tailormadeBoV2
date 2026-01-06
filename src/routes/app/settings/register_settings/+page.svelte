@@ -253,7 +253,7 @@
 		<main class="container mx-auto space-y-6 px-4 py-6 md:px-6">
 			<!-- Header -->
 			<div class="space-y-2">
-				<h1 class="font-mono text-3xl tracking-wider text-neutral-800 md:text-4xl">
+				<h1 class="font-mono text-3xl tracking-wider md:text-4xl">
 					Εγγραφή Αναλυτικά στοιχεία
 				</h1>
 				<p class="text-sm text-muted-foreground">

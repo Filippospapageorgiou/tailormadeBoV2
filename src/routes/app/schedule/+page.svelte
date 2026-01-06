@@ -141,8 +141,8 @@
 		{:then result}
 			{#if result.success && schedule}
 				<div class="mb-12">
-					<h1 class="font-mono text-4xl tracking-wider text-neutral-800">Weekly schedule</h1>
-					<p class="py-1 text-lg text-[#8B6B4A]">
+					<h1 class="font-mono text-4xl tracking-wider">Weekly schedule</h1>
+					<p class="py-1 text-lg text-muted-foreground">
 						{formatWeekRange(schedule.week_start_date, schedule.week_end_date)}
 					</p>
 				</div>

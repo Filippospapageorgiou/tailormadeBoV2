@@ -22,17 +22,17 @@
 	});
 </script>
 
-<div class="min-h-screen bg-white">
+<div class="min-h-screen">
 	<main class="container mx-auto px-4 pt-8 pb-20 md:px-6">
 		<div class="mb-12">
-			<h1 class="font-mono text-4xl tracking-wider text-neutral-800">Our Blog</h1>
-			<p class="text-sm text-[#8B6B4A]">Stay updated with our latest news and stories.</p>
+			<h1 class="font-mono text-4xl tracking-wider">Our Blog</h1>
+			<p class="text-sm text-primary">Stay updated with our latest news and stories.</p>
 		</div>
 
 		{#if query.loading}
 			<div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
 				{#each Array(2) as _}
-					<div class="flex flex-col overflow-hidden rounded-lg bg-white shadow-sm">
+					<div class="flex flex-col overflow-hidden rounded-lgshadow-sm">
 						<Skeleton class="aspect-video w-full" />
 
 						<div class="flex flex-grow flex-col p-4">

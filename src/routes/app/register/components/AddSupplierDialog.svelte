@@ -188,7 +188,7 @@
 				</div>
 			</div>
 
-			<div class="rounded-md bg-neutral-50 p-3 text-xs text-neutral-600">
+			<div class="rounded-md p-3 text-xs text-muted-foreground">
 				<p class="font-medium">Σημείωση:</p>
 				<ul class="mt-1 list-disc space-y-1 pl-4">
 					<li>* Υποχρεωτικά πεδία</li>

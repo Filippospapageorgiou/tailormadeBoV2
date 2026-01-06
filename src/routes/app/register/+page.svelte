@@ -143,7 +143,7 @@
 {#if auth.loading}
 	<AuthBlock />
 {:else}
-	<div class="min-h-screen bg-gradient-to-br from-neutral-50 to-neutral-100">
+	<div class="min-h-screen">
 		{#if hasAccess === false}
 			<NoAccess />
 		{:else if hasAccess && checkRegister}
@@ -183,10 +183,10 @@
 			<main class="container mx-auto px-4 py-8 md:px-6">
 				<!-- Header -->
 				<div class="mb-12">
-					<h1 class="font-mono text-4xl tracking-wider text-neutral-800">
+					<h1 class="font-mono text-4xl tracking-wider">
 						ΗΜΕΡΗΣΙΟ ΚΛΕΙΣΙΜΟ ΤΑΜΕΙΟΥ
 					</h1>
-					<p class="mt-2 text-sm text-[#8B6B4A]">
+					<p class="mt-2 text-sm text-muted-foreground">
 						Καταγραφή ημερήσιας χρηματικής διακίνησης {date || ''}
 					</p>
 				</div>
@@ -222,7 +222,7 @@
 						disabled={currentStep === 1}
 						variant="outline"
 						size="lg"
-						class="gap-2 transition-all duration-300"
+						class="gap-2"
 					>
 						<ChevronLeft class="h-5 w-5" />
 						Προηγούμενο
@@ -230,7 +230,7 @@
 
 					<div class="text-center">
 						<p class="text-sm text-neutral-600">
-							Βήμα <span class="font-semibold text-[#8B6B4A]">{currentStep}</span> από
+							Βήμα <span class="font-semibold text-muted-foreground">{currentStep}</span> από
 							<span class="font-semibold">{totalSteps}</span>
 						</p>
 					</div>
@@ -239,7 +239,7 @@
 						<Button
 							type="submit"
 							size="lg"
-							class="transform gap-2 bg-[#8B6B4A] px-8 transition-all duration-300 hover:scale-105 hover:bg-[#6B5239]"
+							class="gap-2"
 						>
 							<CheckCheck class="h-5 w-5" />
 							Υποβολή Κλεισίματος
@@ -249,7 +249,7 @@
 							type="button"
 							onclick={handleNextStep}
 							size="lg"
-							class="transform gap-2 bg-[#8B6B4A] transition-all duration-300 hover:scale-105 hover:bg-[#6B5239]"
+							class="gap-2"
 						>
 							Επόμενο
 							<ChevronRight class="h-5 w-5" />

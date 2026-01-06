@@ -22,17 +22,16 @@
 		}
 	})
 </script>
-
 <div class="space-y-6">
 	<!-- Summary Overview Card -->
-	<Card.Root class="border-neutral-200 shadow-sm">
+	<Card.Root class="border-border shadow-sm">
 		<Card.Header>
 			<div class="flex items-center gap-2">
-				<div class="rounded-full bg-[#8B6B4A]/10 p-2">
-					<DollarSign class="h-5 w-5 text-[#8B6B4A]" />
+				<div class="rounded-full bg-primary/10 p-2">
+					<DollarSign class="h-5 w-5 text-primary" />
 				</div>
 				<div>
-					<Card.Title class="text-xl text-neutral-800">Συνοπτική Επισκόπηση</Card.Title>
+					<Card.Title class="text-xl text-foreground">Συνοπτική Επισκόπηση</Card.Title>
 					<Card.Description>Έλεγχος όλων των στοιχείων πριν την υποβολή</Card.Description>
 				</div>
 			</div>
@@ -40,34 +39,34 @@
         <Card.Content class="py-2 px-10">
         <div class="space-y-3">
 			<div class="flex justify-between text-sm">
-				<span class="text-neutral-600">Συνολικές Πωλήσεις:</span>
+				<span class="text-muted-foreground">Συνολικές Πωλήσεις:</span>
 				<span class="font-medium">{formatCurrency(sales.totalSales)}</span>
 			</div>
 
 			<div class="flex justify-between text-sm">
-				<span class="text-neutral-600">Ψηφιακές Πληρωμές:</span>
+				<span class="text-muted-foreground">Ψηφιακές Πληρωμές:</span>
 				<span class="font-medium">{formatCurrency(sales.digital)}</span>
 			</div>
 
 			<div class="flex justify-between text-sm">
-				<span class="text-neutral-600">Πληρωμές Προμηθευτών (μετρητά):</span>
+				<span class="text-muted-foreground">Πληρωμές Προμηθευτών (μετρητά):</span>
 				<span class="font-medium">{formatCurrency(sales.totalSupplierPayments)}</span>
 			</div>
 
 			<div class="flex justify-between text-sm">
-				<span class="text-neutral-600">Έξοδα:</span>
+				<span class="text-muted-foreground">Έξοδα:</span>
 				<span class="font-medium">{formatCurrency(sales.totalExpenses)}</span>
 			</div>
 
 			<Separator />
             <div class="flex justify-between text-sm">
-				<span class="text-neutral-600">Πάγιο Σήμερα:</span>
+				<span class="text-muted-foreground">Πάγιο Σήμερα:</span>
 				<span class="font-medium">{formatCurrency(sales.openingFloat)}</span>
 			</div>
 
 			<div class="flex justify-between">
-				<span class="font-semibold text-neutral-800">Αναμενόμενα Μετρητά:</span>
-				<span class="text-lg font-semibold text-[#8B6B4A]">
+				<span class="font-semibold text-foreground">Αναμενόμενα Μετρητά:</span>
+				<span class="text-lg font-semibold text-primary">
 					{formatCurrency(sales.expectedFinal)}
 				</span>
 			</div>
@@ -77,7 +76,7 @@
 
 		<!-- Actual Cash Counted -->
 		<div class="space-y-2">
-			<Label for="actual_cash" class="text-base font-semibold text-neutral-800">
+			<Label for="actual_cash" class="text-base font-semibold text-foreground">
 				Πραγματικά Μετρητά που Μέτρησες *
 			</Label>
 			<Input
@@ -89,17 +88,17 @@
 				class="text-lg"
 				required
 			/>
-			<p class="text-xs text-neutral-500">Μέτρησε τα μετρητά στο ταμείο και καταχώρησε το ποσό</p>
+			<p class="text-xs text-muted-foreground">Μέτρησε τα μετρητά στο ταμείο και καταχώρησε το ποσό</p>
 		</div>
 
 		<Separator class="my-6" />
 
 		<!-- Tomorrow's Float & Deposit -->
 		<div class="space-y-4">
-			<h3 class="font-semibold text-neutral-800">Διαχείριση Μετρητών</h3>
+			<h3 class="font-semibold text-foreground">Διαχείριση Μετρητών</h3>
 
 			<div class="space-y-2">
-				<Label for="tomorrow_float" class="text-sm text-neutral-700">
+				<Label for="tomorrow_float" class="text-sm text-foreground">
 					Πάγιο Αυριανής *
 				</Label>
 				<Input
@@ -110,11 +109,11 @@
 					step="0.01"
 					required
 				/>
-				<p class="text-xs text-neutral-500">Το ποσό που θα παραμείνει στο ταμείο</p>
+				<p class="text-xs text-muted-foreground">Το ποσό που θα παραμείνει στο ταμείο</p>
 			</div>
 
 			<div class="space-y-2">
-				<Label for="cash_deposit" class="text-sm text-neutral-700">
+				<Label for="cash_deposit" class="text-sm text-foreground">
 					Κατάθεση Τράπεζας *
 				</Label>
 				<Input
@@ -126,7 +125,7 @@
 					step="0.01"
 					required
 				/>
-				<p class="text-xs text-neutral-500">Το ποσό που θα κατατεθεί</p>
+				<p class="text-xs text-muted-foreground">Το ποσό που θα κατατεθεί</p>
 			</div>
         </div>
         </Card.Content>

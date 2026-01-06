@@ -22,7 +22,6 @@
 	import { fade, scale } from 'svelte/transition';
 	import { deleteEquipment, deleteMaintanceLog, editEquipment } from '../data.remote';
 	import { toast } from 'svelte-sonner';
-	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import { Spinner } from '$lib/components/ui/spinner';
 	import * as Select from '$lib/components/ui/select';
 	import Input from '$lib/components/ui/input/input.svelte';
@@ -31,9 +30,10 @@
 	import { ScrollArea } from '$lib/components/ui/scroll-area/index.js';
 	import InputCalendar from '$lib/components/custom/inputCalendar.svelte';
 	import { Cloud } from 'lucide-svelte';
+	
 
 	let previewImage: string | null = $state(null);
-	let { equipment }: { equipment: EquipmentWithLogs } = $props();
+	let { equipment,index }: { equipment: EquipmentWithLogs,index:number } = $props();
 
 	// Add this helper for initials
 	const getInitials = (name: string) => {
@@ -161,26 +161,36 @@
 </script>
 
 <div
-	class="group relative cursor-pointer overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:border-[#8B6B4A]/30 hover:shadow-lg"
+	style="animation-delay: {index * 325}ms; animation-fill-mode: backwards;"
+	class="group relative animate-fade-in-right cursor-pointer overflow-hidden rounded-xl border-1 bg-card text-card-foreground shadow-sm transition-all duration-300 hover:shadow-lg {serviceStatus ===
+	'overdue'
+		? 'border-red-400'
+		: serviceStatus === 'warning'
+			? 'border-orange-200'
+			: 'border-border/60'}"
+	role="button"
+	tabindex="0"
 >
 	<!-- Top Bar with Actions and Badge -->
 	<div class="absolute top-3 right-3 left-3 z-10 flex items-center justify-between">
 		<!-- Edit & Delete Buttons -->
 		<div class="flex gap-1">
-			<button
+			<Button
 				onclick={handleEdit}
-				class="inline-flex h-7 w-7 items-center justify-center rounded-md bg-white/80 text-gray-700 shadow-sm backdrop-blur-sm transition-colors hover:bg-white hover:text-[#8B6B4A]"
+				variant="secondary"
+				class="inline-flex h-7 w-7 items-center justify-center rounded-md"
 				title="Edit equipment"
 			>
 				<Pencil class="h-3.5 w-3.5" />
-			</button>
-			<button
+			</Button>
+			<Button
 				onclick={handleDelete}
-				class="inline-flex h-7 w-7 items-center justify-center rounded-md bg-white/80 text-gray-700 shadow-sm backdrop-blur-sm transition-colors hover:bg-red-50 hover:text-red-600"
+				variant="secondary"
+				class="rounded-mdhover:text-red-600 inline-flex h-7 w-7 items-center justify-center"
 				title="Delete equipment"
 			>
 				<Trash2 class="h-3.5 w-3.5" />
-			</button>
+			</Button>
 		</div>
 
 		<!-- Maintenance Log Badge -->
@@ -202,95 +212,88 @@
 		{/if}
 	</div>
 
+	
 	<!-- Hero Image Section -->
-	<div class="relative h-40 w-full overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300">
-		{#if equipment.image_url}
-			<img
-				src={equipment.image_url}
-				alt={equipment.name}
-				class="h-full w-full object-cover transition-transform ease-in-out group-hover:animate-scale"
-			/>
-		{:else}
-			<div class="flex h-full items-center justify-center">
-				<Wrench class="h-12 w-12 text-gray-400 opacity-30" />
-			</div>
-		{/if}
+	<div class="relative h-52 w-full overflow-hidden bg-muted">
+		<img
+			src={equipment.image_url || '/placeholder.svg'}
+			alt={equipment.name}
+			class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+		/>
 	</div>
-
 	<!-- Content Section -->
-	<div class="space-y-4 p-4">
-		<!-- Equipment Name & ID -->
-		<div>
-			<h3 class="line-clamp-2 font-serif text-lg font-medium tracking-wide text-gray-900">
-				{equipment.name}
-			</h3>
-			<p class="mt-1 text-xs font-medium tracking-wider text-gray-600 uppercase">
-				ID: #{equipment.id.toString().padStart(4, '0')}
-			</p>
-			{#if equipment.model}
-				<p class="truncate text-xs text-gray-500">
-					Model: {equipment.model}
+	<div class="space-y-6 p-6">
+		<div class="flex items-start justify-between">
+			<div>
+				<h3 class="font-serif text-xl font-medium tracking-wide text-foreground">
+					{equipment.name}
+				</h3>
+				<p class="mt-1 text-xs font-medium tracking-wider text-muted-foreground uppercase">
+					ID: #{equipment.id.toString().padStart(4, '0')}
 				</p>
-			{/if}
+				{#if equipment.model}
+					<p class="text-xs text-muted-foreground">
+						{equipment.model}
+					</p>
+				{/if}
+			</div>
 		</div>
 
-		<!-- Status Badge -->
-		<div class="flex items-center gap-2">
-			<span
-				class={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold tracking-widest uppercase shadow-sm ${statusColors[equipment.status]}`}
-			>
-				<StatusIcon class="h-3 w-3" />
-				{statusCustom.find((s) => s.value === equipment.status)?.label || equipment.status}
-			</span>
-		</div>
-
-		<!-- Service Status Section -->
+		<!-- Service Health Section -->
 		{#if equipment.next_service_date}
-			<div class="space-y-2 rounded-lg bg-gray-50 p-3">
-				<div class="flex items-center justify-between">
-					<span
-						class="flex items-center gap-1 text-[10px] font-bold tracking-widest text-gray-600 uppercase"
-					>
-						<Clock class="h-3 w-3" />
-						Service Status
-					</span>
-				</div>
+			<div class="space-y-3">
+				<span class="text-[10px] font-bold tracking-widest text-muted-foreground uppercase"
+					>Service Status</span
+				>
 
-				<!-- Service Bars -->
-				<div class="flex items-center gap-2">
-					<div class="flex h-3 items-center gap-0.5">
-						{#each { length: 9 } as _, i}
-							<div
-								class={`w-1 rounded-full transition-all duration-500 ${
-									i < serviceBars.count ? serviceBars.color : 'bg-gray-200'
-								}`}
-								style="height: 100%"
-							></div>
-						{/each}
+				<!-- Bars and Text Layout -->
+				<div class="flex w-full items-center justify-between">
+					<!-- Left Group: Bars & Text -->
+					<div class="flex items-center gap-4">
+						<!-- Futuristic Vertical Bars -->
+						<div class="flex h-4 items-center gap-1">
+							{#each { length: 9 } as _, i}
+								<div
+									class={`w-1 rounded-full transition-all duration-500 ${
+										i < serviceBars.count ? serviceBars.color : 'bg-muted/30'
+									}`}
+									style="height: 100%"
+								></div>
+							{/each}
+						</div>
+
+						<!-- Days Text -->
+						<p
+							class={`text-xs font-medium tracking-wide ${
+								serviceStatus === 'overdue'
+									? 'text-red-600'
+									: serviceStatus === 'warning'
+										? 'text-orange-600'
+										: 'text-emerald-600'
+							}`}
+						>
+							{daysUntilService === null
+								? 'No service date'
+								: daysUntilService < 0
+									? `OVERDUE ${Math.abs(daysUntilService)} DAYS`
+									: `${daysUntilService} DAYS REMAINING`}
+						</p>
 					</div>
 
-					<p
-						class={`text-xs font-medium tracking-wide whitespace-nowrap ${
-							serviceStatus === 'overdue'
-								? 'text-red-600'
-								: serviceStatus === 'warning'
-									? 'text-orange-600'
-									: serviceStatus === 'unknown'
-										? 'text-gray-600'
-										: 'text-emerald-600'
-						}`}
+					<span
+						class={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-bold tracking-widest uppercase shadow-sm transition-colors ${statusColors[equipment.status]}`}
 					>
-						{daysUntilService === null
-							? 'No date'
-							: daysUntilService < 0
-								? `OVERDUE ${Math.abs(daysUntilService)}D`
-								: `${daysUntilService}D LEFT`}
-					</p>
+						<StatusIcon class="h-3 w-3" />
+						{statusCustom.find((s) => s.value === equipment.status)?.label || equipment.status}
+					</span>
 				</div>
 			</div>
 		{:else}
-			<div class="rounded-lg bg-gray-50 p-3">
-				<p class="text-xs text-gray-600">No service date scheduled</p>
+			<div class="space-y-3">
+				<span class="text-[10px] font-bold tracking-widest text-muted-foreground uppercase"
+					>Service Status</span
+				>
+				<p class="text-xs text-muted-foreground">No service date scheduled</p>
 			</div>
 		{/if}
 	</div>
@@ -298,31 +301,31 @@
 
 <Modal.Root bind:open={modalOpen}>
 	<Modal.Content class="flex max-h-[90vh] max-w-4xl flex-col overflow-hidden p-0">
-		<Modal.Header class="z-20 bg-gray-50/50 px-6 py-4 backdrop-blur-sm">
+		<Modal.Header class="z-20 px-6 py-4 backdrop-blur-sm">
 			<div class="flex items-center gap-3">
-				<div class="rounded-full bg-red-100 p-2 text-red-600">
+				<div class="rounded-full p-2 text-red-600">
 					<Wrench class="h-5 w-5" />
 				</div>
 				<div>
 					<Modal.Title class="font-serif text-xl tracking-wide">Ιστορικό Συντήρησης</Modal.Title>
 					<Modal.Description class="mt-1">
-						Αρχείο καταγραφής για: <span class="font-semibold text-gray-900">{equipment.name}</span>
+						Αρχείο καταγραφής για: <span class="font-semibold">{equipment.name}</span>
 					</Modal.Description>
 				</div>
 			</div>
 		</Modal.Header>
 
-		<div class="flex-1 overflow-y-auto bg-white/50 p-6">
+		<div class="flex-1 overflow-y-auto p-6">
 			{#if sortedLogs.length === 0}
 				<div
-					class="flex animate-in flex-col items-center justify-center py-12 text-gray-400 duration-500 fade-in zoom-in"
+					class="flex animate-in flex-col items-center justify-center py-12 text-muted-foreground duration-500 fade-in zoom-in"
 				>
 					<CheckCircle2 class="mb-3 h-12 w-12 opacity-20" />
 					<p class="text-sm">Δεν υπάρχουν καταγραφές συντήρησης.</p>
 				</div>
 			{:else}
 				<div
-					class="relative space-y-8 before:absolute before:top-2 before:left-5 before:h-full before:w-0.5 before:bg-gray-200 before:content-['']"
+					class="relative space-y-8 before:absolute before:top-2 before:left-5 before:h-full before:w-0.5"
 				>
 					{#each sortedLogs as log, i (log.id)}
 						{#if deletingLogId !== log.id}
@@ -332,32 +335,32 @@
 								transition:fade={{ duration: 300 }}
 							>
 								<div
-									class="absolute top-2 left-3 -ml-[5px] h-5 w-5 rounded-full border-4 border-white bg-white shadow-sm ring-1 ring-gray-200"
+									class="absolute top-2 left-3 -ml-[5px] h-5 w-5 rounded-full border-4shadow-sm ring-1 ring-gray-200"
 								>
-									<div class="h-full w-full rounded-full bg-[#8B6B4A]"></div>
+									<div class="h-full w-full rounded-full bg-primary"></div>
 								</div>
 
-								<div class="group rounded-xl bg-white p-6 shadow-sm transition-all hover:shadow-md">
+								<div class="group rounded-xl p-6 shadow-sm transition-all hover:shadow-md">
 									<div class="mb-4 flex items-start justify-between">
 										<div class="flex items-center gap-3">
-											<Avatar.Root class="h-10 w-10 border-2 border-white shadow-sm">
+											<Avatar.Root class="h-10 w-10 shadow-sm">
 												<Avatar.Image src={log.profiles?.image_url} alt={log.profiles?.username} />
-												<Avatar.Fallback class="bg-gray-100 text-xs font-bold text-[#8B6B4A]">
+												<Avatar.Fallback class="text-xs font-bold text-primary">
 													{getInitials(log.profiles?.username || 'Unknown')}
 												</Avatar.Fallback>
 											</Avatar.Root>
 											<div>
-												<p class="text-sm font-semibold text-gray-900">
+												<p class="text-sm font-semibold">
 													{log.profiles?.username || 'Άγνωστος Χρήστης'}
 												</p>
-												<p class="text-xs font-medium tracking-wide text-gray-500 uppercase">
+												<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
 													{log.profiles?.role || 'Staff'}
 												</p>
 											</div>
 										</div>
 
 										<div
-											class="flex items-center gap-1.5 rounded-md border border-gray-100 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-500"
+											class="flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium"
 										>
 											<Calendar class="h-3.5 w-3.5" />
 											{format(new Date(log.created_at), 'dd MMM yyyy, HH:mm', { locale: el })}
@@ -369,12 +372,12 @@
 									<div class="space-y-4">
 										<div class="space-y-2">
 											<h4
-												class="flex items-center gap-2 text-xs font-bold tracking-wider text-gray-500 uppercase"
+												class="flex items-center gap-2 text-xs font-bold tracking-wider text-muted-foreground uppercase"
 											>
 												<AlertTriangle class="h-3.5 w-3.5" />
 												Περιγραφη Βλαβης
 											</h4>
-											<p class="rounded-lg bg-gray-50 p-3 text-sm leading-relaxed text-gray-800">
+											<p class="rounded-lg p-3 text-sm leading-relaxed">
 												{log.issue_description}
 											</p>
 										</div>
@@ -382,12 +385,12 @@
 										{#if log.action_taken}
 											<div class="space-y-2">
 												<h4
-													class="flex items-center gap-2 text-xs font-bold tracking-wider text-gray-500 uppercase"
+													class="flex items-center gap-2 text-xs font-bold tracking-wideruppercase"
 												>
 													<Wrench class="h-3.5 w-3.5" />
 													Ενεργειες που εγιναν
 												</h4>
-												<p class="rounded-lg bg-gray-50 p-3 text-sm leading-relaxed text-gray-700">
+												<p class="rounded-lgp-3 text-sm leading-relaxed">
 													{log.action_taken}
 												</p>
 											</div>
@@ -430,7 +433,7 @@
 												{/each}
 												{#if log.images.length > 3}
 													<div
-														class="relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-gray-100 text-[10px] font-bold text-gray-600 ring-1 ring-gray-200"
+														class="relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white text-[10px] font-bold text-gray-600 ring-1 ring-gray-200"
 													>
 														+{log.images.length - 3}
 													</div>
@@ -446,8 +449,8 @@
 			{/if}
 		</div>
 
-		<Modal.Footer class="z-20 flex items-center justify-between bg-gray-50 p-4">
-			<p class="text-xs text-gray-500 italic">
+		<Modal.Footer class="z-20 flex items-center justify-betweenp-4">
+			<p class="text-xs italic">
 				Σύνολο: {sortedLogs.length} καταγραφές
 			</p>
 			<Button variant="outline" onclick={() => (modalOpen = false)}>Κλείσιμο</Button>
@@ -499,17 +502,17 @@
 	</div>
 {/if}
 
-<Dialog.Root bind:open={openDeleteDialog}>
-	<Dialog.Content>
-		<Dialog.Header>
-			<Dialog.Title>Διαγραφή Εξοπλισμού</Dialog.Title>
-			<Dialog.Description>
+<Modal.Root bind:open={openDeleteDialog}>
+	<Modal.Content>
+		<Modal.Header>
+			<Modal.Title>Διαγραφή Εξοπλισμού</Modal.Title>
+			<Modal.Description>
 				Είσαι σίγουρος ότι θέλεις να διαγράψεις αυτόν τον εξοπλισμό;
-			</Dialog.Description>
-		</Dialog.Header>
+			</Modal.Description>
+		</Modal.Header>
 
 		<div class="space-y-4 py-4">
-			<div class="rounded-lg bg-red-50 p-4">
+			<div class="rounded-lg p-4">
 				<div class="flex gap-3">
 					<BadgeAlert class="h-5 w-5 flex-shrink-0 text-red-600" />
 					<div class="space-y-1">
@@ -524,7 +527,7 @@
 			</div>
 
 			{#if deleteEquipmentData}
-				<div class="rounded-lg border bg-gray-50 p-4">
+				<div class="rounded-lg borderp-4">
 					<div class="flex items-start gap-4">
 						{#if deleteEquipmentData.image_url}
 							<img
@@ -533,17 +536,17 @@
 								class="h-16 w-16 rounded-lg object-cover"
 							/>
 						{:else}
-							<div class="flex h-16 w-16 items-center justify-center rounded-lg bg-gray-200">
-								<Wrench class="h-8 w-8 text-gray-400" />
+							<div class="flex h-16 w-16 items-center justify-center rounded-lg">
+								<Wrench class="h-8 w-8" />
 							</div>
 						{/if}
 
 						<div class="flex-1">
-							<h4 class="font-semibold text-gray-900">{deleteEquipmentData.name}</h4>
+							<h4 class="font-semibold">{deleteEquipmentData.name}</h4>
 							{#if deleteEquipmentData.model}
-								<p class="text-sm text-gray-600">Μοντέλο: {deleteEquipmentData.model}</p>
+								<p class="text-sm text-muted-foreground">Μοντέλο: {deleteEquipmentData.model}</p>
 							{/if}
-							<p class="text-xs text-gray-500">
+							<p class="text-xs text-muted-foreground/50">
 								ID: #{deleteEquipmentData.id.toString().padStart(4, '0')}
 							</p>
 						</div>
@@ -569,7 +572,7 @@
 		>
 			<input name="equipmentId" type="hidden" value={deleteEquipmentData?.id} />
 
-			<Dialog.Footer class="gap-2">
+			<Modal.Footer class="gap-2">
 				<Button
 					type="button"
 					variant="outline"
@@ -587,14 +590,14 @@
 						Διαγραφή Εξοπλισμού
 					{/if}
 				</Button>
-			</Dialog.Footer>
+			</Modal.Footer>
 		</form>
-	</Dialog.Content>
-</Dialog.Root>
+	</Modal.Content>
+</Modal.Root>
 
 <!-- Edit Equipment Modal -->
 <Modal.Root bind:open={editModalOpen}>
-	<Modal.Content class="h-[85dvh] sm:h-auto max-h-[95dvh] flex flex-col">
+	<Modal.Content class="flex h-[85dvh] max-h-[95dvh] flex-col sm:h-auto">
 		<Modal.Header>
 			<Modal.Title>Επεξεργασία εξοπλισμού</Modal.Title>
 			<Modal.Description>

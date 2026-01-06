@@ -216,7 +216,7 @@
 				(acc, task) => acc + (task.estimated_minutes || 0),
 				0
 			)}
-			<Card class="flex h-full flex-col rounded-2xl bg-white hover:shadow-md">
+			<Card class="flex h-full flex-col rounded-2xl hover:shadow-md">
 				<CardHeader>
 					<div class="flex items-start justify-between gap-2">
 						<div class="min-w-0 flex-1">

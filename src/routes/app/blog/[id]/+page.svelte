@@ -29,13 +29,13 @@
 </script>
 
 {#if blog}
-	<div class="min-h-screen bg-white">
+	<div class="min-h-screen">
 		<main class="container mx-auto px-4 pt-8 pb-20 md:px-6">
 			<div class="mx-auto max-w-4xl">
 				<div class="mb-8">
-					<h1 class="font-mono text-4xl tracking-wider text-neutral-800">{blog.title}</h1>
+					<h1 class="font-mono text-4xl tracking-wider font-semibold">{blog.title}</h1>
 					{#if blog.description}
-						<p class="mt-2 text-lg text-neutral-600">{blog.description}</p>
+						<p class="mt-2 text-lg">{blog.description}</p>
 					{/if}
 					<div class="mt-4 flex items-center">
 						<img
@@ -44,8 +44,8 @@
 							class="mr-4 h-10 w-10 rounded-full object-cover"
 						/>
 						<div>
-							<p class="text-base font-medium text-neutral-800">{blog.profile.username}</p>
-							<p class="text-sm text-neutral-600">{formatDate(blog.created_at)}</p>
+							<p class="text-base font-medium">{blog.profile.username}</p>
+							<p class="text-sm text-muted-foreground">{formatDate(blog.created_at)}</p>
 						</div>
 					</div>
 				</div>
@@ -70,7 +70,7 @@
           </Carousel.Root>
         {/if}
 
-				<div class="prose lg:prose-xl max-w-none">
+				<div class="prose lg:prose-xl max-w-none text-muted-foreground">
 					{@html blog.content}
 				</div>
 

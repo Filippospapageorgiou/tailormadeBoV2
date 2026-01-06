@@ -37,8 +37,8 @@
                 <main class="container mx-auto px-4 md:px-6 pt-8 pb-20">
                         <div class="mb-12 flex flex-col md:flex-row items-start md:items-end justify-between gap-4 md:gap-8">
                                 <div class="flex flex-col gap-1">
-                                        <h1 class="text-4xl font-mono tracking-wider text-neutral-800">BEVERAGES</h1>
-                                        <p class="text-sm text-[#8B6B4A]">Available Products: {beverages.length}</p>
+                                        <h1 class="text-4xl font-mono tracking-wider">BEVERAGES</h1>
+                                        <p class="text-sm text-primary">Available Products: {beverages.length}</p>
                                 </div>
                                 <div class="w-full md:w-auto flex flex-col items-end">
                                         <Input bind:value={searchQuery} class="w-full md:w-72 py-1" placeholder='Filter beverages...' />
@@ -62,10 +62,10 @@
                                                         />
                                                 </div>
                                                 <div class="p-3">
-                                                        <p class="text-xs text-[#8B6B4A] mb-1">#{beverage.id}</p>
-                                                        <h2 class="text-base font-medium text-neutral-800 tracking-wide mb-1">{beverage.name}</h2>
+                                                        <p class="text-xs text-primary mb-1">#{beverage.id}</p>
+                                                        <h2 class="text-base font-medium tracking-wide mb-1">{beverage.name}</h2>
                                                         {#if beverage.description}
-                                                                <p class="text-xs text-neutral-600 line-clamp-2">{beverage.description}</p>
+                                                                <p class="text-xs text-dark line-clamp-2">{beverage.description}</p>
                                                         {/if}
                                                 </div>
                                         </div>

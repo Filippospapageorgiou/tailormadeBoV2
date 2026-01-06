@@ -52,15 +52,15 @@
 	}
 </script>
 
-<div class="min-h-screen bg-white">
+<div class="min-h-screen">
 	<main class="container mx-auto px-4 pt-8 pb-20 md:px-6">
 		<div class="mb-4">
-			<h1 class="font-mono text-4xl tracking-wider text-neutral-800">Κατάσταση εξοπλισμού</h1>
-			<p class="text-sm text-[#8B6B4A]">
+			<h1 class="font-mono text-4xl tracking-wider">Κατάσταση εξοπλισμού</h1>
+			<p class="text-sm text-primary">
 				Επισκόπηση των μηχανημάτων του καταστήματος και των προγραμμάτων συντήρησης.
 			</p>
 			<div class="flex items-center gap-2">
-				<p class="text-xs text-[#8B6B4A] md:text-sm">
+				<p class="text-xs text-primary md:text-sm">
 					Διαθέσιμα εξοπλισμοί: <span class="font-semibold">{equipmentList?.length ?? 0}</span>
 					/ {total}
 				</p>
@@ -117,7 +117,7 @@
 			<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 				{#each Array(6) as _, i}
 					<div
-						class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
+						class="overflow-hidden rounded-xl border shadow-sm"
 						style="animation-delay: {i * 100}ms;"
 					>
 						<!-- Top Bar with Action Buttons -->
@@ -145,7 +145,7 @@
 							<Skeleton class="h-6 w-28 rounded-full" />
 
 							<!-- Service Status Section -->
-							<div class="space-y-2 rounded-lg bg-gray-50 p-3">
+							<div class="space-y-2 rounded-lg p-3">
 								<Skeleton class="h-3 w-24" />
 
 								<!-- Service Bars -->
@@ -164,8 +164,8 @@
 			</div>
 		{:else}
 			<div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-				{#each filterEquipments as equipment (equipment.id)}
-					<EquipmentCard {equipment} />
+				{#each filterEquipments as equipment,index (equipment.id)}
+					<EquipmentCard {equipment} {index} />
 				{/each}
 			</div>
 		{/if}

@@ -24,33 +24,42 @@
 </script>
 
 <button
-	type="button"
-	onclick={onClick}
-	class="group flex w-full items-center gap-3 border-r border-border/50 px-4 py-3 transition-all duration-200 hover:bg-muted/30"
-	style="border-left: 4px solid {badgeColor};"
-	aria-pressed={isSelected}
-	aria-label={`Select ${employee.username}`}
+    type="button"
+    onclick={onClick}
+    class="group flex w-full items-center gap-3 border-r border-border px-4 py-3 transition-all duration-200 
+           {isSelected ? 'bg-muted/60' : 'bg-transparent'} 
+           hover:bg-muted/40"
+    style="border-left: 4px solid {badgeColor};"
+    aria-pressed={isSelected}
+    aria-label={`Select ${employee.username}`}
 >
-	<!-- Avatar -->
-	<Avatar.Root class="h-10 w-10 flex-shrink-0" style="border: 2px solid {badgeColor};">
-		<Avatar.Image src={employee.image_url} alt={employee.username} />
-		<Avatar.Fallback class="text-xs font-bold text-white" style="background-color: {badgeColor};">
-			{initials}
-		</Avatar.Fallback>
-	</Avatar.Root>
+    <Avatar.Root 
+        class="h-10 w-10 flex-shrink-0 ring-offset-background transition-all group-hover:ring-2" 
+        style="border: 2px solid {badgeColor};"
+    >
+        <Avatar.Image src={employee.image_url} alt={employee.username} />
+        <Avatar.Fallback 
+            class="text-xs font-bold text-white shadow-inner" 
+            style="background-color: {badgeColor};"
+        >
+            {initials}
+        </Avatar.Fallback>
+    </Avatar.Root>
 
-	<!-- Employee Info -->
-	<div class="flex-1 text-left">
-		<p class="text-sm leading-tight font-semibold">{employee.username}</p>
-		<p class="text-xs text-muted-foreground">{employee.email.split('@')[0]}</p>
-	</div>
+    <div class="flex-1 text-left">
+        <p class="text-sm leading-tight font-semibold text-foreground">
+            {employee.username}
+        </p>
+        <p class="text-xs text-muted-foreground group-hover:text-foreground/70 transition-colors">
+            {employee.email.split('@')[0]}
+        </p>
+    </div>
 
-	<!-- Selection Indicator -->
-	{#if isSelected}
-		<div
-			class="h-2 w-2 rounded-full"
-			style="background-color: {badgeColor};"
-			aria-hidden="true"
-		></div>
-	{/if}
+    {#if isSelected}
+        <div
+            class="h-2 w-2 rounded-full animate-in fade-in zoom-in duration-300"
+            style="background-color: {badgeColor}; box-shadow: 0 0 10px {badgeColor}40;" 
+            aria-hidden="true"
+        ></div>
+    {/if}
 </button>

@@ -27,7 +27,7 @@ export const columns: ColumnDef<Profile>[] = [
 				const { imageUrl } = getImageUrl();
 				return {
 					render: () =>
-						`<img src="${imageUrl}" alt="Avatar" class="w-12 h-12 rounded-full object-cover" />`
+						`<img src="${imageUrl}" alt="Avatar" class="w-12 h-12 rounded-full object-cover dark:bg-white" />`
 				};
 			});
 			return renderSnippet(avatarSnippet, {

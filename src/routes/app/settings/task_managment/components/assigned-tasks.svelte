@@ -117,11 +117,11 @@
 				{@const s = getUserStats(user)}
 				<Card.Root
 					style="animation-delay: {index * 250}ms; animation-fill-mode: backwards;"
-					class="animate-fade-in-down rounded-xl bg-white shadow-lg"
+					class="animate-fade-in-down rounded-xl shadow-lg"
 				>
 					<Card.Header>
 						<Card.Title class="flex items-center gap-4">
-							<Avatar.Root class="h-12 w-12">
+							<Avatar.Root class="h-12 w-12 dark:bg-white">
 								<Avatar.Image src={user.image_url} alt={user.username} />
 								<Avatar.Fallback>{user.username.slice(0, 2).toUpperCase()}</Avatar.Fallback>
 							</Avatar.Root>

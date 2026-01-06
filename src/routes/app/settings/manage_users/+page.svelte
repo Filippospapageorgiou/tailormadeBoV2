@@ -68,14 +68,14 @@
 			<!-- Header Section -->
 			<div class="mb-8 space-y-4">
 				<div class="flex flex-col gap-2">
-					<h1 class="font-mono text-3xl tracking-wider text-neutral-800 md:text-4xl">
+					<h1 class="font-mono text-3xl tracking-wider md:text-4xl">
 						User Management
 					</h1>
-					<p class="text-xs text-[#8B6B4A] md:text-sm">
+					<p class="text-xs text-muted-foreground md:text-sm">
 						Manage your organization members, roles, and permissions
 					</p>
 					<div class="flex items-center gap-2">
-						<p class="text-xs text-[#8B6B4A] md:text-sm">
+						<p class="text-xs text-muted-foreground md:text-sm">
 							Showing: <span class="font-semibold">{profiles?.length}</span>
 							users
 						</p>

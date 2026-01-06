@@ -64,15 +64,17 @@
 			</div>
 
 			<div class="flex items-center gap-4">
-				<Button variant="ghost" size="icon" class="relative">
-					<BellIcon />
+				<div class="relative inline-flex">
+					<Button variant="ghost" size="icon">
+						<BellIcon />
+					</Button>
 					<Badge
 						variant="destructive"
-						class="absolute -top-0.5 -right-0.5 h-5 min-w-5 px-1 tabular-nums"
+						class="pointer-events-none absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center px-1 tabular-nums"
 					>
 						8
 					</Badge>
-				</Button>
+				</div>
 
 				<ThemeSelector />
 			</div>

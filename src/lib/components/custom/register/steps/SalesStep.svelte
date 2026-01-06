@@ -10,14 +10,14 @@
 	
 </script>
 
-<Card.Root class="border-neutral-200 shadow-sm">
+<Card.Root class="border-border shadow-sm">
 	<Card.Header>
 		<div class="flex items-center gap-2">
-			<div class="rounded-full bg-[#8B6B4A]/10 p-2">
-				<DollarSign class="h-5 w-5 text-[#8B6B4A]" />
+			<div class="rounded-full bg-primary/10 p-2">
+				<DollarSign class="h-5 w-5 text-primary" />
 			</div>
 			<div>
-				<Card.Title class="text-xl text-neutral-800">Πωλήσεις Ημέρας</Card.Title>
+				<Card.Title class="text-xl text-foreground">Πωλήσεις Ημέρας</Card.Title>
 				<Card.Description>Καταχωρήστε τις πωλήσεις της ημέρας</Card.Description>
 			</div>
 		</div>
@@ -25,7 +25,7 @@
 	<Card.Content class="space-y-6">
 		<!-- Total Sales -->
 		<div class="space-y-2">
-			<Label for="total_sales" class="text-sm font-semibold text-neutral-700"
+			<Label for="total_sales" class="text-sm font-semibold text-foreground"
 				>Συνολικές Πωλήσεις *</Label
 			>
 			<div class="relative">
@@ -41,21 +41,21 @@
 					required
 				/>
 			</div>
-			<p class="text-xs text-neutral-500">Συνολικό ποσό πωλήσεων (μετρητά + ψηφιακά)</p>
+			<p class="text-xs text-muted-foreground">Συνολικό ποσό πωλήσεων (μετρητά + ψηφιακά)</p>
 		</div>
 
 		<!-- Digital Sales Breakdown -->
-		<div class="space-y-4 rounded-lg bg-neutral-50 p-4">
-			<h3 class="flex items-center gap-2 text-sm font-semibold text-neutral-700">
+		<div class="space-y-4 rounded-lg bg-muted p-4">
+			<h3 class="flex items-center gap-2 text-sm font-semibold text-foreground">
 				<CreditCard class="h-4 w-4" />
 				Ψηφιακές Πληρωμές
 			</h3>
 
 			<!-- Card Sales -->
 			<div class="space-y-2">
-				<Label for="card_sales" class="text-sm text-neutral-600">Κάρτες (POS)</Label>
+				<Label for="card_sales" class="text-sm text-muted-foreground">Κάρτες (POS)</Label>
 				<div class="relative">
-					<CreditCard class="absolute left-3 top-3 h-4 w-4 text-neutral-400" />
+					<CreditCard class="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
 					<Input
 						id="card_sales"
 						type="number"
@@ -70,7 +70,7 @@
 
 			<!-- Wolt Sales -->
 			<div class="space-y-2">
-				<Label for="wolt_sales" class="text-sm text-neutral-600">Wolt</Label>
+				<Label for="wolt_sales" class="text-sm text-muted-foreground">Wolt</Label>
 				<div class="relative">
 					<Bike class="absolute left-3 top-3 h-4 w-4 text-blue-400" />
 					<Input
@@ -87,7 +87,7 @@
 
 			<!-- eFoodgr Sales -->
 			<div class="space-y-2">
-				<Label for="efood_sales" class="text-sm text-neutral-600">e-Food</Label>
+				<Label for="efood_sales" class="text-sm text-muted-foreground">e-Food</Label>
 				<div class="relative">
 					<UtensilsCrossed class="absolute left-3 top-3 h-4 w-4 text-red-400" />
 					<Input
@@ -104,9 +104,9 @@
 
 			<!-- Other Digital Sales -->
 			<div class="space-y-2">
-				<Label for="other_digital_sales" class="text-sm text-neutral-600">Άλλες Ψηφιακές</Label>
+				<Label for="other_digital_sales" class="text-sm text-muted-foreground">Άλλες Ψηφιακές</Label>
 				<div class="relative">
-					<Smartphone class="absolute left-3 top-3 h-4 w-4 text-neutral-400" />
+					<Smartphone class="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
 					<Input
 						id="other_digital_sales"
 						type="number"
@@ -123,14 +123,14 @@
 		</div>
 
 		<!-- Expected Cash Calculation -->
-		<div class="rounded-lg bg-[#8B6B4A]/5 p-4">
+		<div class="rounded-lg bg-primary/5 p-4">
 			<div class="flex items-center justify-between">
 				<div>
-					<p class="text-sm font-semibold text-neutral-700">Αναμενόμενα Μετρητά</p>
-					<p class="text-xs text-neutral-500">Συνολικές πωλήσεις - Ψηφιακές πληρωμές</p>
+					<p class="text-sm font-semibold text-foreground">Αναμενόμενα Μετρητά</p>
+					<p class="text-xs text-muted-foreground">Συνολικές πωλήσεις - Ψηφιακές πληρωμές</p>
 				</div>
 				<div class="text-right">
-					<p class="text-2xl font-bold text-[#8B6B4A]">€{sales.expectedCash.toFixed(2)}</p>
+					<p class="text-2xl font-bold text-primary">€{sales.expectedCash.toFixed(2)}</p>
 					{#if sales.expectedCash < 0}
 						<Badge variant="destructive" class="mt-1 text-xs">Αρνητικό υπόλοιπο</Badge>
 					{/if}

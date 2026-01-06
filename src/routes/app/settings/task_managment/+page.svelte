@@ -254,7 +254,7 @@
 												? 'border-primary bg-accent'
 												: 'border-border'}"
 										>
-											<Avatar class="h-10 w-10">
+											<Avatar class="h-10 w-10 dark:bg-white">
 												<AvatarImage
 													src={user.image_url || '/placeholder.svg'}
 													alt={user.username}
@@ -325,9 +325,6 @@
 									<div class="space-y-2">
 										<Label for="task-date">Task Date</Label>
 										<div class="relative">
-											<Calendar
-												class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-											/>
 											<InputCalendar id="week_start_date" bind:value={selectedDate} required />
 										</div>
 									</div>

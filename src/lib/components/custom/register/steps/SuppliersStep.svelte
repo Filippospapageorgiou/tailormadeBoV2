@@ -61,15 +61,15 @@
 	];
 </script>
 
-<Card.Root class="border-neutral-200 px-4 shadow-sm sm:px-6 lg:px-8">
+<Card.Root class="border-border px-4 shadow-sm sm:px-6 lg:px-8">
 	<Card.Header>
 		<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 			<div class="flex items-center gap-2">
-				<div class="rounded-full bg-[#8B6B4A]/10 p-2">
-					<Package class="h-5 w-5 text-[#8B6B4A]" />
+				<div class="rounded-full bg-primary/10 p-2">
+					<Package class="h-5 w-5 text-primary" />
 				</div>
 				<div>
-					<Card.Title class="text-lg text-neutral-800 sm:text-xl">Πληρωμές Προμηθευτών</Card.Title>
+					<Card.Title class="text-lg text-foreground sm:text-xl">Πληρωμές Προμηθευτών</Card.Title>
 					<Card.Description class="text-sm sm:text-base">
 						Καταχωρήστε τις πληρωμές προς προμηθευτές
 					</Card.Description>
@@ -86,9 +86,9 @@
 	<Card.Content class="space-y-5">
 		{#if sales.supplierPayments.length > 0}
 			{#each sales.supplierPayments as payment, index}
-				<div class="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm sm:p-5">
+				<div class="rounded-lg border border-border bg-card p-4 shadow-sm sm:p-5">
 					<div class="mb-3 flex items-center justify-between">
-						<h4 class="text-sm font-semibold text-neutral-700">Πληρωμή #{index + 1}</h4>
+						<h4 class="text-sm font-semibold text-foreground">Πληρωμή #{index + 1}</h4>
 						<Button
 							variant="ghost"
 							size="sm"
@@ -104,7 +104,7 @@
 						<!-- Supplier Name -->
 						<div class="space-y-2">
 							<div class="flex items-center justify-between">
-								<Label class="text-sm text-neutral-600">Όνομα Προμηθευτή *</Label>
+								<Label class="text-sm text-muted-foreground">Όνομα Προμηθευτή *</Label>
 							</div>
 							{#if suppliersLoading}
 								<Skeleton class="h-10 w-full rounded-md" />
@@ -133,7 +133,7 @@
 											<Button
 												variant="ghost"
 												size="sm"
-												class="h-6 w-6 p-0 text-[#8B6B4A] hover:bg-[#8B6B4A]/10 hover:text-[#8B6B4A]"
+												class="h-6 w-6 p-0 text-primary hover:bg-primary/10 hover:text-primary"
 												onclick={() => (addSupplierDialogOpen = true)}
 											>
 												<Plus class="h-4 w-4" />
@@ -150,7 +150,7 @@
 
 						<!-- Amount -->
 						<div class="space-y-2">
-							<Label class="text-sm text-neutral-600">Ποσό *</Label>
+							<Label class="text-sm text-muted-foreground">Ποσό *</Label>
 							<Input
 								type="number"
 								bind:value={payment.amount}
@@ -163,7 +163,7 @@
 
 						<!-- Payment Method -->
 						<div class="space-y-2 sm:col-span-2 md:col-span-1">
-							<Label class="text-sm text-neutral-600">Τρόπος Πληρωμής</Label>
+							<Label class="text-sm text-muted-foreground">Τρόπος Πληρωμής</Label>
 							<Select.Root type="single" name="paymentMethods" bind:value={payment.payment_method}>
 							<Select.Trigger class="w-[240px]">
 								{paymentMethods.find((f) => f.value === payment.payment_method)?.label ??
@@ -184,9 +184,9 @@
 
 						<!-- Invoice Number -->
 						<div class="space-y-2">
-							<Label class="text-sm text-neutral-600">Αριθμός Παραστατικού</Label>
+							<Label class="text-sm text-muted-foreground">Αριθμός Παραστατικού</Label>
 							<div class="relative">
-								<FileText class="absolute top-3 left-3 h-4 w-4 text-neutral-400" />
+								<FileText class="absolute top-3 left-3 h-4 w-4 text-muted-foreground" />
 								<Input
 									type="text"
 									bind:value={payment.invoice_number}
@@ -198,7 +198,7 @@
 
 						<!-- Notes (full width) -->
 						<div class="space-y-2 sm:col-span-2">
-							<Label class="text-sm text-neutral-600">Σημειώσεις</Label>
+							<Label class="text-sm text-muted-foreground">Σημειώσεις</Label>
 							<Input
 								type="text"
 								bind:value={payment.notes}
@@ -214,7 +214,7 @@
 		<Button
 			onclick={addPayment}
 			variant="outline"
-			class="w-full border-dashed border-[#8B6B4A] text-[#8B6B4A] hover:bg-[#8B6B4A]/10"
+			class="w-full border-dashed border-primary text-primary hover:bg-primary/10"
 		>
 			<Plus class="mr-2 h-4 w-4" />
 			Προσθήκη Πληρωμής

@@ -38,14 +38,16 @@
 					class="w-full justify-between font-normal cursor-pointer"
 					aria-required={required}
 				>
-					{calendarValue
+					<span class="">
+						{calendarValue
 						? calendarValue.toDate(getLocalTimeZone()).toLocaleDateString()
 						: 'Διαλέξε ημερομηνία'}
+					</span>
 					<ChevronDownIcon />
 				</Button>
 			{/snippet}
 		</Popover.Trigger>
-		<Popover.Content class="w-auto overflow-hidden p-0" align="start">
+		<Popover.Content class="w-auto overflow-hidden" align="start">
 			<Calendar
 				type="single"
 				bind:value={calendarValue}

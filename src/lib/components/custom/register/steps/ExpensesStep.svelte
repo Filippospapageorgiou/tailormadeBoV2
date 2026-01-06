@@ -39,15 +39,15 @@
 	];
 </script>
 
-<Card.Root class="border-neutral-200 shadow-sm">
+<Card.Root class="border-border shadow-sm">
 	<Card.Header>
 		<div class="flex items-center justify-between">
 			<div class="flex items-center gap-2">
-				<div class="rounded-full bg-[#8B6B4A]/10 p-2">
-					<Receipt class="h-5 w-5 text-[#8B6B4A]" />
+				<div class="rounded-full bg-primary/10 p-2">
+					<Receipt class="h-5 w-5 text-primary" />
 				</div>
 				<div>
-					<Card.Title class="text-xl text-neutral-800">Έξοδα Ημέρας</Card.Title>
+					<Card.Title class="text-xl text-foreground">Έξοδα Ημέρας</Card.Title>
 					<Card.Description>Καταχωρήστε τα έξοδα της ημέρας</Card.Description>
 				</div>
 			</div>
@@ -60,9 +60,9 @@
 	<Card.Content class="space-y-4">
 		{#if sales.expenses.length > 0}
 			{#each sales.expenses as expense, index}
-				<div class="rounded-lg border border-neutral-200 bg-white p-4 shadow-sm">
+				<div class="rounded-lg border border-border bg-card p-4 shadow-sm">
 					<div class="mb-3 flex items-center justify-between">
-						<h4 class="text-sm font-semibold text-neutral-700">Έξοδο #{index + 1}</h4>
+						<h4 class="text-sm font-semibold text-foreground">Έξοδο #{index + 1}</h4>
 						<Button
 							variant="ghost"
 							size="sm"
@@ -76,7 +76,7 @@
 					<div class="grid gap-4 md:grid-cols-2">
 						<!-- Category -->
 						<div class="space-y-2">
-							<Label for="category_{index}" class="text-sm text-neutral-600">Κατηγορία *</Label>
+							<Label for="category_{index}" class="text-sm text-muted-foreground">Κατηγορία *</Label>
 							<Select.Root
 								type="single"
 								name="paymentMethods"
@@ -101,7 +101,7 @@
 
 						<!-- Amount -->
 						<div class="space-y-2">
-							<Label for="expense_amount_{index}" class="text-sm text-neutral-600">Ποσό *</Label>
+							<Label for="expense_amount_{index}" class="text-sm text-muted-foreground">Ποσό *</Label>
 							<Input
 								id="expense_amount_{index}"
 								type="number"
@@ -115,7 +115,7 @@
 
 						<!-- Description (full width) -->
 						<div class="space-y-2 md:col-span-2">
-							<Label for="description_{index}" class="text-sm text-neutral-600">Περιγραφή *</Label>
+							<Label for="description_{index}" class="text-sm text-muted-foreground">Περιγραφή *</Label>
 							<Input
 								id="description_{index}"
 								type="text"
@@ -133,7 +133,7 @@
 		<Button
 			onclick={addExpense}
 			variant="outline"
-			class="w-full border-dashed border-[#8B6B4A] text-[#8B6B4A] hover:bg-[#8B6B4A]/5"
+			class="w-full border-dashed border-primary text-primary hover:bg-primary/5"
 		>
 			<Plus class="mr-2 h-4 w-4" />
 			Προσθήκη Εξόδου

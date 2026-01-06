@@ -5,7 +5,7 @@
 	import CustomButton from '../../../../lib/components/custom/register_settings/customButton/customButton.svelte';
 	import MaintanceModal from './MaintanceModal.svelte';
 
-	let { equipment }: { equipment: Equipment } = $props();
+	let { equipment,index }: { equipment: Equipment,index:number } = $props();
 	let modalOpen = $state(false);
 	// Derived state for service calculations
 	let daysUntilService = $derived(
@@ -50,7 +50,8 @@
 </script>
 
 <div
-	class="group relative cursor-pointer overflow-hidden rounded-xl border-1 bg-card text-card-foreground shadow-sm transition-all duration-300 hover:shadow-lg {serviceStatus ===
+	style="animation-delay: {index * 325}ms; animation-fill-mode: backwards;"
+	class="group animate-fade-in-right relative cursor-pointer overflow-hidden rounded-xl border-1 bg-card text-card-foreground shadow-sm transition-all duration-300 hover:shadow-lg {serviceStatus ===
 	'overdue'
 		? 'border-red-400'
 		: serviceStatus === 'warning'

@@ -3,6 +3,7 @@
     import type { PageData } from './$types';
     import type { Beverage, RecipeIngredient } from '$lib/models/database.types';
     import { goto } from '$app/navigation';
+	import Button from '$lib/components/ui/button/button.svelte';
     
     let { data }: { data: PageData } = $props();
     const { beverage, recipeIngredients } = $derived(data) as {
@@ -13,15 +14,15 @@
 </script>
 
 {#if beverage}
-<div class="min-h-screen bg-white">
+<div class="min-h-screen">
     <main class="container mx-auto px-4 md:px-6 pt-8 pb-20">
         <div class="max-w-4xl mx-auto">
             <!-- Header με ID και Όνομα -->
             <div class="mb-8">
-                <p class="text-sm text-[#8B6B4A] mb-1">#{beverage.id}</p>
-                <h1 class="text-3xl font-mono tracking-wider text-neutral-800">{beverage.name}</h1>
+                <p class="text-sm text-primary mb-1">#{beverage.id}</p>
+                <h1 class="text-3xl font-mono tracking-wider">{beverage.name}</h1>
                 {#if beverage.description}
-                    <p class="text-neutral-600 mt-2">{beverage.description}</p>
+                    <p class="mt-2">{beverage.description}</p>
                 {/if}
             </div>
 
@@ -40,7 +41,7 @@
 
                 <!-- Οδηγίες -->
                 <div class="w-full md:w-1/2">
-                    <h2 class="text-2xl font-mono tracking-wider text-neutral-800 mb-6">
+                    <h2 class="text-2xl font-mono tracking-wider mb-6">
                         ΣΥΣΤΑΤΙΚΑ & ΟΔΗΓΙΕΣ
                     </h2>
                     
@@ -49,27 +50,27 @@
                             {#each recipeIngredients as { quantity, notes, ingredients }}
                                 <div class="flex flex-col gap-1">
                                     <div class="flex items-baseline justify-between">
-                                        <span class="text-[#8B6B4A]">
+                                        <span class="text-primary]">
                                             {ingredients.name}
                                         </span>
-                                        <span class="text-neutral-800">
+                                        <span>
                                             {quantity} {ingredients.measurement_unit}
                                         </span>
                                     </div>
                                     {#if notes}
-                                        <p class="text-sm text-neutral-600">{notes}</p>
+                                        <p class="text-sm">{notes}</p>
                                     {/if}
                                 </div>
                             {/each}
                         </div>
                     {:else}
-                        <p class="text-neutral-600">Δεν υπάρχουν διαθέσιμες πληροφορίες συνταγής.</p>
+                        <p>Δεν υπάρχουν διαθέσιμες πληροφορίες συνταγής.</p>
                     {/if}
                 </div>
             </div>
 
             <div class="mt-12 max-w-4xl mx-auto">
-                <h2 class="text-2xl font-mono tracking-wider text-neutral-800 mb-6">
+                <h2 class="text-2xl font-mono tracking-wider mb-6">
                     ΕΚΤΕΛΕΣΗ
                 </h2>
                 
@@ -83,7 +84,7 @@
                                             <div class="flex-shrink-0 bg-[#8B6B4A] text-white rounded-full w-7 h-7 flex items-center justify-center mr-3 mt-0.5">
                                                 <span class="text-sm font-semibold">{i}</span>
                                             </div>
-                                            <div class="text-neutral-700 leading-relaxed">
+                                            <div class="leading-relaxed">
                                                 {step.trim()}
                                             </div>
                                         </li>
@@ -91,24 +92,24 @@
                                 {/each}
                             </ol>
                         {:else}
-                            <p class="text-neutral-700 leading-relaxed">{beverage.execution}</p>
+                            <p class="leading-relaxed">{beverage.execution}</p>
                         {/if}
                     </div>
                 {:else}
-                    <p class="text-neutral-600">Δεν υπάρχουν διαθέσιμες οδηγίες εκτέλεσης.</p>
+                    <p class="">Δεν υπάρχουν διαθέσιμες οδηγίες εκτέλεσης.</p>
                 {/if}
             </div>
 
             <!-- Back Button -->
             <div class="flex justify-center mt-12">
-                <button 
+                <Button 
                     onclick={() => goto('/app/recipes')}
                     class="inline-flex items-center px-6 py-2 text-sm font-medium text-[#8B6B4A] bg-white cursor-pointer
                            border border-[#8B6B4A] rounded-lg hover:bg-[#8B6B4A] hover:text-white 
                            transition-colors duration-300"
                 >
                     Πίσω στα Ροφήματα
-                </button>
+                </Button>
             </div>
         </div>
     </main>
