@@ -7,7 +7,7 @@ import { getUserOrgId, getUserProfileWithRoleCheck } from '$lib/supabase/queries
 import { z } from 'zod/v4';
 
 export const authenticatedAccess = query(async () => {
-	const profile = await getUserProfileWithRoleCheck([1, 2]);
+	const profile = await getUserProfileWithRoleCheck([1]);
 
 	return {
 		profile,

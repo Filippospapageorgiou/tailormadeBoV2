@@ -58,6 +58,7 @@
 									<div class="grid gap-3">
 										<Label for="email">Email</Label>
 										<Input
+											disabled={loading}
 											id="email"
 											name="email"
 											type="email"
@@ -76,6 +77,7 @@
 											</a>
 										</div>
 										<Input
+											disabled={loading}
 											id="password"
 											placeholder="********"
 											name="password"

@@ -22,7 +22,10 @@
 
 		Landmark,
 
-		ShieldCheck
+		ShieldCheck,
+
+		Building
+
 
 
 
@@ -121,9 +124,14 @@
 		projects: [
 			{
 				name: 'Διαχείριση οργανισμών',
-				url: '/app/organizations',
+				url: '/app/manage_organizations',
 				icon: Globe,
 				items: [
+					{
+						title:'Πίνακας Ελένχου',
+						url:'/app/organization_managment',
+						icon:Building
+					},
 					{
 						title: 'Συνταγές',
 						url: '/app/settings/recipes_settings',
@@ -154,6 +162,7 @@
 	import CommandIcon from '@lucide/svelte/icons/command';
 	import type { ComponentProps } from 'svelte';
 	import { getProfileContext } from '$lib/stores/profile.svelte';
+	import type { title } from 'process';
 
 	let { ref = $bindable(null), ...restProps }: ComponentProps<typeof Sidebar.Root> = $props();
 
