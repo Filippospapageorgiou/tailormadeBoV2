@@ -4,7 +4,6 @@
     import { toast } from "svelte-sonner";
     import * as Tooltip from '$lib/components/ui/tooltip';
     import Button from "$lib/components/ui/button/button.svelte";
-	import { BuildEnvironment } from "vite";
 	import { TextWrapIcon } from "lucide-svelte";
 
 
