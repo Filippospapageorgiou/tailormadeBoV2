@@ -236,9 +236,9 @@
 	<Dialog.Content class="rounded-2xl p-6 shadow-lg sm:max-w-[425px]">
 		<Dialog.Header class="space-y-3">
 			<Dialog.Title class="text-xl font-semibold">Delete User</Dialog.Title>
-			<Dialog.Description class="text-sm leading-relaxed text-gray-600">
+			<Dialog.Description class="text-sm leading-relaxed">
 				Are you sure you want to delete user
-				<span class="font-medium text-gray-900">"{username}"</span>?
+				<span class="font-medium">"{username}"</span>?
 				<br />
 				<br />
 				This action <span class="font-semibold text-red-500">cannot</span> be undone. The user will be
@@ -249,7 +249,7 @@
 		<Dialog.Footer class="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
 			<Button
 				variant="outline"
-				class="cursor-pointer border-gray-300 text-gray-700 hover:bg-gray-100"
+				class="cursor-pointer border-gray-300 hover:bg-gray-100"
 				onclick={() => (deleteDialogOpen = false)}
 			>
 				Cancel

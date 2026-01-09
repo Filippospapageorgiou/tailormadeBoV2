@@ -18,7 +18,7 @@
 
     let { data, form } = $props();
     let blog = $derived(data.blog as Blog);
-    let tosFlag = $derived(data?.tos ?? false); // Μετατροπή σε boolean για το Dialog
+    let tosFlag = $derived(data?.tos ?? false); 
 	
     function getFirstImage(images: any) {
         if (images && Array.isArray(images) && images.length > 0) {
@@ -98,11 +98,11 @@
 
 <Dialog.Root open={tosFlag}>
     <Dialog.Content class="max-w-[500px] p-0 overflow-hidden">
-        <Dialog.Header class="px-6 py-4">
+        <Dialog.Header class="px-6 py-4 bg-muted/50">
             <Dialog.Title class="text-xl">Όροι και Προϋποθέσεις</Dialog.Title>
         </Dialog.Header>
         
-        <div class="p-6 space-y-4 max-h-[400px] overflow-y-auto bg-slate-50/50">
+        <div class="p-6 space-y-4 max-h-[400px] overflow-y-auto">
             <div class="space-y-4 text-sm leading-relaxed text-muted-foreground">
                 <div class="flex gap-2">
                     <span class="font-bold text-primary">1.</span>
@@ -137,7 +137,7 @@
             </div>
         </div>
 
-        <Dialog.Footer class="px-6 py-4 bg-slate-50 flex items-center justify-between sm:justify-between">
+        <Dialog.Footer class="px-6 py-4 flex items-center justify-between sm:justify-between">
             <a href="/app/legal" class="text-xs text-sky-600 hover:underline">Αναλυτικοί Όροι</a>
             
             <form

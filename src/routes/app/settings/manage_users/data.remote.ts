@@ -5,7 +5,16 @@ import type { Profile } from '$lib/models/database.types';
 import { z } from 'zod/v4';
 import { error } from '@sveltejs/kit';
 import { redirect } from '@sveltejs/kit';
-import { getUserOrgId, getUserProfileWithRoleCheck } from '$lib/supabase/queries';
+import { getUserOrgId, getUserProfile, getUserProfileWithRoleCheck } from '$lib/supabase/queries';
+import crypto from 'crypto';
+import { sendOrganizationInvitation } from '$lib/emails/organization-invitations';
+
+/**
+ * Generate a secure random token for invitations
+ */
+function generateSecureToken(): string {
+	return crypto.randomBytes(32).toString('hex');
+}
 
 export const authenticatedAccess = query(async () => {
 	const supabase = createServerClient();
@@ -120,41 +129,79 @@ export const updateUserRole = command(
 );
 
 const inviteUserEmailschema = z.object({
-	email: z.email({ error: 'invalid email cannog ' }).trim()
+	email: z.email({ error: 'invalid email cannog ' }).trim(),
+	expirationDays: z.number().int().min(1).max(30).default(7) // Default 7 days expiration
 });
 
-export const inviteUser = query(inviteUserEmailschema, async ({ email }) => {
+export const inviteUser = query(inviteUserEmailschema, async ({ email, expirationDays }) => {
 	const supabase = createServerClient();
 	const adminClient = createAdminClient();
-	const user = await requireAuthenticatedUser();
 
 	try {
-		const { data: inviterProfile, error: profileError } = await supabase
-			.from('profiles')
-			.select('org_id')
-			.eq('id', user.id)
+		const profile = await getUserProfile();
+
+		// Check if there's already a pending invitation for this email + org
+		const { data: existingInvitation } = await supabase
+			.from('organization_invitations')
+			.select('id, status, expires_at')
+			.eq('email', email)
+			.eq('org_id', profile.org_id)
+			.eq('status', 'pending')
+			.maybeSingle();
+
+		if (existingInvitation) {
+			const isExpired = new Date(existingInvitation.expires_at) < new Date();
+			if (!isExpired) {
+				return {
+					success: false,
+					message: 'A pending invitation already exists for this email. You can resend it instead.'
+				};
+			}
+		}
+
+		const token = generateSecureToken();
+
+		const expiresAt = new Date();
+		expiresAt.setDate(expiresAt.getDate() + expirationDays);
+
+		// Create invitation record
+		const { data: invitation, error: insertError } = await supabase
+			.from('organization_invitations')
+			.insert({
+				org_id: profile.org_id,
+				email: email,
+				role_id: 5,
+				token: token,
+				invited_by: profile.id,
+				status: 'pending',
+				expires_at: expiresAt.toISOString()
+			})
+			.select()
 			.single();
 
-		if (profileError || !inviterProfile) {
-			console.error('Error fetching inviter profile: ', profileError);
+		if (insertError) {
+			console.error('[inviteUserToOrg] Error creating invitation:', insertError);
 			return {
 				success: false,
-				message: 'Failed to get organization information'
+				message: 'Failed to create invitation'
 			};
 		}
 
-		const { data, error } = await adminClient.auth.admin.inviteUserByEmail(email, {
-			data: {
-				invited_at: new Date().toISOString(),
-				org_id: inviterProfile.org_id
-			}
+		// Send invitation email via Resend
+		const emailResult = await sendOrganizationInvitation({
+			recipientEmail: email,
+			organizationName: 'Tailor Made coffee roasters',
+			roleName: 'employee',
+			inviterName: profile.username || profile.email,
+			inviteToken: token,
+			expiresAt: expiresAt
 		});
 
-		if (error) {
-			console.error('Error inviting user: ', error);
+		if (!emailResult.success) {
+			await supabase.from('organization_invitations').delete().eq('id', invitation.id);
 			return {
 				success: false,
-				message: error.message || 'Failed to invite user'
+				message: emailResult.message || 'Failed to send invitation email'
 			};
 		}
 
