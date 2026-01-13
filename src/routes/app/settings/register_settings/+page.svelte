@@ -341,7 +341,7 @@
 			<!-- Register Data Table Section -->
 			<div class="space-y-4">
 				<div class="space-y-2">
-					<h2 class="text-2xl font-semibold text-neutral-800">Κλείσιμο ταμείων</h2>
+					<h2 class="text-2xl font-semibold">Κλείσιμο ταμείων</h2>
 					<p class="text-sm text-muted-foreground">
 						Όλα τα αρχεία κλεισίματος για την επιλεγμένη περίοδο
 					</p>

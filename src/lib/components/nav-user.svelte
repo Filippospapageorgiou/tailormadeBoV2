@@ -100,12 +100,6 @@
 					</div>
 				</DropdownMenu.Label>
 				<DropdownMenu.Separator />
-				<DropdownMenu.Group>
-					<DropdownMenu.Item>
-						<SparklesIcon />
-						Play memory game
-					</DropdownMenu.Item>
-				</DropdownMenu.Group>
 				<DropdownMenu.Item>
 					<BadgeCheckIcon />
 					<button
@@ -115,7 +109,6 @@
 						}}>Account</button
 					>
 				</DropdownMenu.Item>
-				<DropdownMenu.Separator />
 				<DropdownMenu.Item>
 					<LogOutIcon />
 					<button

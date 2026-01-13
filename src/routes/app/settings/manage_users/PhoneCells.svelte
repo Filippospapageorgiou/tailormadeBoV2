@@ -40,6 +40,7 @@
 	} from './data.remote';
 	import type { importantPhoneCalls } from '$lib/models/database.types';
 	import ScrollAreaScrollbar from '$lib/components/ui/scroll-area/scroll-area-scrollbar.svelte';
+	import PhoneInput from '$lib/components/ui/phone-input/phone-input.svelte';
 
 	// Query
 	let contactsQuery = getAllPhoneContacts();
@@ -241,7 +242,9 @@
 								class="h-6 cursor-pointer px-2 text-xs"
 							>
 								<RefreshCw
-									class="mr-2 h-4 w-4 {refreshAction ? 'animate-spin-clockwise repeat-infinite' : ''}"
+									class="mr-2 h-4 w-4 {refreshAction
+										? 'animate-spin-clockwise repeat-infinite'
+										: ''}"
 								/>
 							</Button>
 						</Tooltip.Trigger>
@@ -296,157 +299,159 @@
 			{/if}
 		</div>
 	{:else}
-    <ScrollArea class="h-135">
-        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-			{#each filteredContacts as contact, index (contact.id)}
-                <div
-					style="animation-delay: {index * 100}ms; animation-fill-mode: backwards;"
-					class="group relative animate-fade-in-right cursor-pointer overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm transition-all duration-300 hover:shadow-lg
+		<ScrollArea class="h-135">
+			<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+				{#each filteredContacts as contact, index (contact.id)}
+					<div
+						style="animation-delay: {index * 100}ms; animation-fill-mode: backwards;"
+						class="group relative animate-fade-in-right cursor-pointer overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm transition-all duration-300 hover:shadow-lg
 					{!contact.is_active ? 'border-border/40 opacity-70' : 'border-border/60'}"
-				>
-					<!-- Top Actions Bar -->
-					<div class="absolute top-3 right-3 left-3 z-10 flex items-center justify-between">
-						<div class="flex gap-1">
-							<Button
-								onclick={() => openEditModal(contact)}
-								variant="secondary"
-								class="inline-flex h-7 w-7 items-center justify-center rounded-md"
-								title="Επεξεργασία"
-							>
-								<Pencil class="h-3.5 w-3.5" />
-							</Button>
-							<Button
-								onclick={() => openDeleteModal(contact)}
-								variant="secondary"
-								class="inline-flex h-7 w-7 items-center justify-center rounded-md hover:text-red-600"
-								title="Διαγραφή"
-							>
-								<Trash2 class="h-3.5 w-3.5" />
-							</Button>
-						</div>
+					>
+						<!-- Top Actions Bar -->
+						<div class="absolute top-3 right-3 left-3 z-10 flex items-center justify-between">
+							<div class="flex gap-1">
+								<Button
+									onclick={() => openEditModal(contact)}
+									variant="secondary"
+									class="inline-flex h-7 w-7 items-center justify-center rounded-md"
+									title="Επεξεργασία"
+								>
+									<Pencil class="h-3.5 w-3.5" />
+								</Button>
+								<Button
+									onclick={() => openDeleteModal(contact)}
+									variant="secondary"
+									class="inline-flex h-7 w-7 items-center justify-center rounded-md hover:text-red-600"
+									title="Διαγραφή"
+								>
+									<Trash2 class="h-3.5 w-3.5" />
+								</Button>
+							</div>
 
-						<!-- Status Badge -->
-						{#if contact.is_active}
-							<Badge
-								class="flex items-center justify-center gap-2 border-none bg-green-600/10 text-green-600"
-							>
-								<span
-									class="size-1.5 animate-pulse rounded-full bg-green-600 repeat-infinite"
-									aria-hidden="true"
-								></span>
-								Ενεργή
-							</Badge>
-						{:else}
-							<Badge
-								class="flex items-center justify-center gap-2 border-none bg-destructive/10 text-destructive"
-							>
-								<span class="size-1.5 rounded-full bg-destructive" aria-hidden="true"></span>
-								Ανενεργή
-							</Badge>
-						{/if}
-					</div>
-
-					<!-- Content -->
-					<div class="space-y-4 p-6 pt-14">
-						<!-- Company & Manager -->
-						<div>
-							<h3 class="font-serif text-lg font-medium tracking-wide text-foreground">
-								{contact.associated_company}
-							</h3>
-							<p class="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
-								<User class="h-3.5 w-3.5" />
-								{contact.manager_full_name}
-							</p>
-							{#if contact.department}
-								<p class="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-									<Briefcase class="h-3 w-3" />
-									{contact.department}
-								</p>
+							<!-- Status Badge -->
+							{#if contact.is_active}
+								<Badge
+									class="flex items-center justify-center gap-2 border-none bg-green-600/10 text-green-600"
+								>
+									<span
+										class="size-1.5 animate-pulse rounded-full bg-green-600 repeat-infinite"
+										aria-hidden="true"
+									></span>
+									Ενεργή
+								</Badge>
+							{:else}
+								<Badge
+									class="flex items-center justify-center gap-2 border-none bg-destructive/10 text-destructive"
+								>
+									<span class="size-1.5 rounded-full bg-destructive" aria-hidden="true"></span>
+									Ανενεργή
+								</Badge>
 							{/if}
 						</div>
 
-						<!-- Contact Info -->
-						<div class="space-y-2">
-							<!-- Phone -->
-							<div
-								class="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 transition-colors hover:bg-muted"
-							>
-								<button
-									class="flex flex-1 items-center gap-2 text-left"
-									onclick={() => callPhone(contact.phone)}
-								>
-									<Phone class="h-4 w-4 text-primary" />
-									<span class="font-mono text-sm font-medium">{contact.phone}</span>
-								</button>
-								<button
-									class="rounded p-1 transition-colors hover:bg-background"
-									onclick={() => copyToClipboard(contact.phone, `phone-${contact.id}`)}
-									title="Αντιγραφή"
-								>
-									{#if copiedField === `phone-${contact.id}`}
-										<Check class="h-3.5 w-3.5 text-green-500" />
-									{:else}
-										<Copy class="h-3.5 w-3.5 text-muted-foreground" />
-									{/if}
-								</button>
-							</div>
-
-							<!-- Email -->
-							<div
-								class="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 transition-colors hover:bg-muted"
-							>
-								<button
-									class="flex flex-1 items-center gap-2 text-left"
-									onclick={() => sendEmail(contact.email)}
-								>
-									<Mail class="h-4 w-4 text-primary" />
-									<span class="truncate text-sm">{contact.email}</span>
-								</button>
-								<button
-									class="rounded p-1 transition-colors hover:bg-background"
-									onclick={() => copyToClipboard(contact.email, `email-${contact.id}`)}
-									title="Αντιγραφή"
-								>
-									{#if copiedField === `email-${contact.id}`}
-										<Check class="h-3.5 w-3.5 text-green-500" />
-									{:else}
-										<Copy class="h-3.5 w-3.5 text-muted-foreground" />
-									{/if}
-								</button>
-							</div>
-						</div>
-
-						<!-- Notes -->
-						{#if contact.notes}
-							<div class="rounded-lg border border-dashed bg-muted/30 p-3">
-								<p class="flex items-start gap-2 text-xs text-muted-foreground">
-									<StickyNote class="mt-0.5 h-3 w-3 shrink-0" />
-									<span class="line-clamp-2">{contact.notes}</span>
+						<!-- Content -->
+						<div class="space-y-4 p-6 pt-14">
+							<!-- Company & Manager -->
+							<div>
+								<h3 class="font-serif text-lg font-medium tracking-wide text-foreground">
+									{contact.associated_company}
+								</h3>
+								<p class="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
+									<User class="h-3.5 w-3.5" />
+									{contact.manager_full_name}
 								</p>
+								{#if contact.department}
+									<p class="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+										<Briefcase class="h-3 w-3" />
+										{contact.department}
+									</p>
+								{/if}
 							</div>
-						{/if}
 
-						<!-- Footer with Toggle -->
-						<div class="flex items-center justify-between border-t pt-4">
-							<div class="flex items-center gap-2">
-								<Switch
-									checked={contact.is_active}
-									onCheckedChange={() => handleToggleActive(contact)}
-									class="cursor-pointer"
-								/>
-								<span class="text-xs text-muted-foreground">
-									{contact.is_active ? 'Ενεργή' : 'Ανενεργή'}
+							<!-- Contact Info -->
+							<div class="space-y-2">
+								<!-- Phone -->
+								<div
+									class="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 transition-colors hover:bg-muted"
+								>
+									<button
+										class="flex flex-1 items-center gap-2 text-left"
+										onclick={() => callPhone(contact.phone)}
+									>
+										<Phone class="h-4 w-4 text-primary" />
+										<span class="font-mono text-sm font-medium">{contact.phone}</span>
+									</button>
+									<button
+										class="rounded p-1 transition-colors hover:bg-background"
+										onclick={() => copyToClipboard(contact.phone, `phone-${contact.id}`)}
+										title="Αντιγραφή"
+									>
+										{#if copiedField === `phone-${contact.id}`}
+											<Check class="h-3.5 w-3.5 text-green-500" />
+										{:else}
+											<Copy class="h-3.5 w-3.5 text-muted-foreground" />
+										{/if}
+									</button>
+								</div>
+
+								<!-- Email -->
+								<div
+									class="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 transition-colors hover:bg-muted"
+								>
+									<button
+										class="flex flex-1 items-center gap-2 text-left"
+										onclick={() => sendEmail(contact.email)}
+									>
+										<Mail class="h-4 w-4 text-primary" />
+										<span class="truncate text-sm">{contact.email}</span>
+									</button>
+									<button
+										class="rounded p-1 transition-colors hover:bg-background"
+										onclick={() => copyToClipboard(contact.email, `email-${contact.id}`)}
+										title="Αντιγραφή"
+									>
+										{#if copiedField === `email-${contact.id}`}
+											<Check class="h-3.5 w-3.5 text-green-500" />
+										{:else}
+											<Copy class="h-3.5 w-3.5 text-muted-foreground" />
+										{/if}
+									</button>
+								</div>
+							</div>
+
+							<!-- Notes -->
+							{#if contact.notes}
+								<div class="rounded-lg border border-dashed bg-muted/30 p-3">
+									<p class="flex items-start gap-2 text-xs text-muted-foreground">
+										<StickyNote class="mt-0.5 h-3 w-3 shrink-0" />
+										<span class="line-clamp-2">{contact.notes}</span>
+									</p>
+								</div>
+							{/if}
+
+							<!-- Footer with Toggle -->
+							<div class="flex items-center justify-between border-t pt-4">
+								<div class="flex items-center gap-2">
+									<Switch
+										checked={contact.is_active}
+										onCheckedChange={() => handleToggleActive(contact)}
+										class="cursor-pointer"
+									/>
+									<span class="text-xs text-muted-foreground">
+										{contact.is_active ? 'Ενεργή' : 'Ανενεργή'}
+									</span>
+								</div>
+								<span
+									class="text-[10px] font-medium tracking-wider text-muted-foreground uppercase"
+								>
+									ID: #{contact.id.toString().padStart(4, '0')}
 								</span>
 							</div>
-							<span class="text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
-								ID: #{contact.id.toString().padStart(4, '0')}
-							</span>
 						</div>
 					</div>
-				</div>
-			{/each}
-		</div>
-    </ScrollArea>
+				{/each}
+			</div>
+		</ScrollArea>
 	{/if}
 </main>
 
@@ -491,9 +496,7 @@
 						</div>
 
 						<div class="space-y-2">
-							<Label for="add-manager">
-								Υπεύθυνος
-							</Label>
+							<Label for="add-manager">Υπεύθυνος</Label>
 							<Input
 								id="add-manager"
 								name="manager_full_name"
@@ -503,34 +506,26 @@
 					</div>
 
 					<div class="space-y-2">
-						<Label for="add-department">Τμήμα</Label>
-						<Input id="add-department" name="department" placeholder="π.χ. Πωλήσεις" />
+						<Label for="add-phone">
+							Τηλέφωνο <span class="text-destructive">*</span>
+						</Label>
+						<PhoneInput
+							country="GR"
+							name="phone"
+							placeholder={'πρόσθεσε κίνητο'}
+							disabled={isUpdating}
+						/>
 					</div>
 
 					<div class="grid gap-4 sm:grid-cols-2">
 						<div class="space-y-2">
-							<Label for="add-phone">
-								Τηλέφωνο <span class="text-destructive">*</span>
-							</Label>
-							<Input
-								id="add-phone"
-								name="phone"
-								type="tel"
-								placeholder="π.χ. 210 1234567"
-								required
-							/>
+							<Label for="add-department">Τμήμα</Label>
+							<Input id="add-department" name="department" placeholder="π.χ. Πωλήσεις" />
 						</div>
 
 						<div class="space-y-2">
-							<Label for="add-email">
-								Email
-							</Label>
-							<Input
-								id="add-email"
-								name="email"
-								type="email"
-								placeholder="π.χ. info@company.gr"
-							/>
+							<Label for="add-email">Email</Label>
+							<Input id="add-email" name="email" type="email" placeholder="π.χ. info@company.gr" />
 						</div>
 					</div>
 
@@ -586,7 +581,7 @@
 						toast.success(updatePhoneContact.result.message);
 						closeEditModal();
 						await refresh();
-                        form.reset();
+						form.reset();
 					} else {
 						toast.error(updatePhoneContact.result?.message || 'Σφάλμα κατά την ενημέρωση');
 					}
@@ -611,9 +606,7 @@
 							</div>
 
 							<div class="space-y-2">
-								<Label for="edit-manager">
-									Υπεύθυνος
-								</Label>
+								<Label for="edit-manager">Υπεύθυνος</Label>
 								<Input
 									id="edit-manager"
 									name="manager_full_name"
@@ -623,28 +616,30 @@
 						</div>
 
 						<div class="space-y-2">
-							<Label for="edit-department">Τμήμα</Label>
-							<Input id="edit-department" name="department" value={editContact.department || ''} />
+							<Label for="add-phone">
+								Τηλέφωνο <span class="text-destructive">*</span>
+							</Label>
+							<PhoneInput
+								country="GR"
+								name="phone"
+								value={editContact.phone || ''}
+								disabled={isUpdating}
+							/>
 						</div>
 
 						<div class="grid gap-4 sm:grid-cols-2">
 							<div class="space-y-2">
-								<Label for="edit-phone">
-									Τηλέφωνο <span class="text-destructive">*</span>
-								</Label>
-								<Input id="edit-phone" name="phone" type="tel" value={editContact.phone} required />
+								<Label for="edit-department">Τμήμα</Label>
+								<Input
+									id="edit-department"
+									name="department"
+									value={editContact.department || ''}
+								/>
 							</div>
 
 							<div class="space-y-2">
-								<Label for="edit-email">
-									Email
-								</Label>
-								<Input
-									id="edit-email"
-									name="email"
-									type="email"
-									value={editContact.email}
-								/>
+								<Label for="edit-email">Email</Label>
+								<Input id="edit-email" name="email" type="email" value={editContact.email} />
 							</div>
 						</div>
 

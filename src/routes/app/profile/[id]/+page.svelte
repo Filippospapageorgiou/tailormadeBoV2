@@ -13,9 +13,7 @@
 		User2,
 		UserCheck,
 		PhoneIcon,
-
 		Building2
-
 	} from 'lucide-svelte';
 	import * as Avatar from '$lib/components/ui/avatar/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
@@ -30,6 +28,9 @@
 	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import Separator from '$lib/components/ui/separator/separator.svelte';
+	import { getAllPhoneContacts } from '../../settings/manage_users/data.remote.js';
+	import EmergencyContactCard from '$lib/components/custom/EmergencyContactCard.svelte';
+	import { ScrollArea } from '$lib/components/ui/scroll-area';
 
 	let { data } = $props();
 
@@ -40,6 +41,9 @@
 	let profile = $derived(data.profile);
 	let organization = $derived(data.organization);
 	let managers = $derived(data.managers);
+
+	let contactsQuery = getAllPhoneContacts();
+	let contacts = $derived(contactsQuery.current?.contacts ?? []);
 
 	function getInitials(name: string) {
 		return name
@@ -101,11 +105,11 @@
 			<Separator class="mb-6 md:mb-8" />
 
 			<!-- Improved Tabs Layout with Original Design -->
-			<div class="w-full max-w-full py-8">
+			<div class="w-full py-8">
 				<Tabs.Root value="users" class="flex flex-col gap-6 md:flex-row">
 					<aside class="-mx-4 mb-8 lg:mb-0 lg:w-1/5">
 						<Tabs.List
-							class="flex h-auto w-full justify-start space-y-1 bg-transparent lg:flex-col"
+							class="flex h-auto w-full flex-col space-y-1 bg-transparent lg:justify-start"
 						>
 							<Tabs.Trigger
 								value="users"
@@ -120,6 +124,13 @@
 							>
 								<Building2 class="mr-2 h-5 w-5" />
 								<span class="hover:underline">Οργανισμός</span>
+							</Tabs.Trigger>
+							<Tabs.Trigger
+								value="phone_calls"
+								class="w-full cursor-pointer justify-start rounded-md border-0 bg-transparent px-4 py-3 text-base font-medium text-muted-foreground shadow-none transition-colors hover:text-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground"
+							>
+								<Phone class="mr-2 h-5 w-5" />
+								<span class="hover:underline">Τηλέφωνα & Τεχνικοί</span>
 							</Tabs.Trigger>
 						</Tabs.List>
 					</aside>
@@ -325,9 +336,7 @@
 						<!-- 2 Column Grid for Organization & Team -->
 						<div class="grid grid-cols-1 gap-6 md:gap-8">
 							<!-- Organization Info Card -->
-							<div
-								class="h-fit md:p-6 lg:p-8"
-							>
+							<div class="h-fit md:p-6 lg:p-8">
 								<div
 									class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
 								>
@@ -474,6 +483,52 @@
 									</div>
 								{/if}
 							</section>
+						</div>
+					</Tabs.Content>
+					<Tabs.Content value="phone_calls" class="flex-1 animate-fade-in-up">
+						<div class="space-y-4">
+							<div>
+								<h2 class="text-lg font-bold text-foreground md:text-xl">
+									Σημαντικά Τηλέφωνα & Τεχνικοί
+								</h2>
+								<p class="mt-2 text-sm text-muted-foreground md:text-base">
+									Διαθέσιμες επαφές έκτακτης ανάγκης για επικοινωνία
+								</p>
+							</div>
+
+							{#if contactsQuery.loading}
+								<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+									{#each Array(4) as _}
+										<div class="animate-pulse rounded-lg border bg-card p-4">
+											<div class="mb-3 space-y-2">
+												<div class="h-4 w-32 rounded bg-muted"></div>
+												<div class="h-3 w-24 rounded bg-muted"></div>
+											</div>
+											<div class="space-y-2">
+												<div class="h-8 w-full rounded bg-muted"></div>
+												<div class="h-8 w-full rounded bg-muted"></div>
+											</div>
+										</div>
+									{/each}
+								</div>
+							{:else if contacts.length === 0}
+								<div
+									class="flex flex-col items-center justify-center rounded-xl border border-dashed py-12"
+								>
+									<div class="mb-3 rounded-full bg-muted p-3">
+										<Phone class="h-6 w-6 text-muted-foreground" />
+									</div>
+									<p class="text-sm text-muted-foreground">Δεν υπάρχουν διαθέσιμες επαφές</p>
+								</div>
+							{:else}
+								<ScrollArea class="h-[500px] pr-4">
+									<div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+										{#each contacts as contact, index (contact.id)}
+											<EmergencyContactCard {contact} {index} />
+										{/each}
+									</div>
+								</ScrollArea>
+							{/if}
 						</div>
 					</Tabs.Content>
 				</Tabs.Root>

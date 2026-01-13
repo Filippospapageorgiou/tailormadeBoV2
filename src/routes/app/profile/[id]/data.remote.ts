@@ -4,6 +4,8 @@ import { createAdminClient, createServerClient } from '$lib/supabase/server';
 import type { Provider } from '@supabase/supabase-js';
 import { requireAuthenticatedUser } from '$lib/supabase/shared';
 import { z } from 'zod/v4';
+import type { importantPhoneCalls } from '$lib/models/database.types';
+import { getUserOrgId } from '$lib/supabase/queries';
 
 const updateProfileSchema = z.object({
 	username: z
