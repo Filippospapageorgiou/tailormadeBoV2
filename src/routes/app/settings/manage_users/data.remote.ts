@@ -1,7 +1,7 @@
 import { query, command, form, prerender } from '$app/server';
 import { createServerClient, createAdminClient } from '$lib/supabase/server';
 import { requireAuthenticatedUser } from '$lib/supabase/shared';
-import type { Profile } from '$lib/models/database.types';
+import type { Profile, importantPhoneCalls } from '$lib/models/database.types';
 import { z } from 'zod/v4';
 import { error } from '@sveltejs/kit';
 import { redirect } from '@sveltejs/kit';
@@ -285,6 +285,235 @@ export const updateBadgeColor = command(updateBadgeColorSchema, async ({ userId,
 		return {
 			success: false,
 			message: 'An unexpected error occurred while updating badge color'
+		};
+	}
+});
+
+
+// ======================== GET ALL PHONE CONTACTS ==============
+export const getAllPhoneContacts = query(async () => {
+	const supabase = createServerClient();
+
+	try {
+		const org_id = await getUserOrgId();
+
+		const { data: contacts, error } = await supabase
+			.from('important_phone_calls')
+			.select('*')
+			.eq('org_id', org_id)
+			.order('associated_company', { ascending: true });
+
+		if (error) {
+			console.error('[getAllPhoneContacts] Error fetching contacts:', error);
+			return {
+				success: false,
+				contacts: [],
+				message: 'Σφάλμα κατά την ανάκτηση επαφών'
+			};
+		}
+
+		return {
+			success: true,
+			contacts: (contacts as importantPhoneCalls[]) || [],
+			message: 'Επιτυχής ανάκτηση επαφών'
+		};
+	} catch (err) {
+		console.error('[getAllPhoneContacts] Error:', err);
+		return {
+			success: false,
+			contacts: [],
+			message: 'Σφάλμα κατά την ανάκτηση επαφών'
+		};
+	}
+});
+
+// ======================== SCHEMAS ==============
+const PhoneContactSchema = z.object({
+	id: z
+		.string()
+		.optional()
+		.transform((val) => (val ? parseInt(val, 10) : undefined)),
+	associated_company: z.string().min(1, 'Το όνομα εταιρείας είναι υποχρεωτικό'),
+	manager_full_name: z.string(),
+	department: z.string().optional(),
+	notes: z.string().optional(),
+	is_active: z
+		.string()
+		.optional()
+		.default('true')
+		.transform((val) => val === 'true'),
+	email: z.string('Μη έγκυρο email').optional(),
+	phone: z.string().min(1, 'Το τηλέφωνο είναι υποχρεωτικό')
+});
+
+const DeleteContactSchema = z.object({
+	id: z
+		.string()
+		.transform((val) => parseInt(val, 10))
+		.pipe(z.number().int().positive())
+});
+
+const ToggleActiveSchema = z.object({
+	id: z.number().int().positive(),
+	is_active: z.boolean()
+});
+
+// ======================== ADD PHONE CONTACT ==============
+export const addPhoneContact = form(PhoneContactSchema, async (data) => {
+	const supabase = createServerClient();
+
+	try {
+		const org_id = await getUserOrgId();
+
+		const { error } = await supabase.from('important_phone_calls').insert({
+			org_id,
+			associated_company: data.associated_company,
+			manager_full_name: data.manager_full_name,
+			department: data.department || null,
+			notes: data.notes || null,
+			is_active: data.is_active,
+			email: data.email,
+			phone: data.phone
+		});
+
+		if (error) {
+			console.error('[addPhoneContact] Error:', error);
+			return {
+				success: false,
+				message: 'Σφάλμα κατά την προσθήκη επαφής'
+			};
+		}
+
+		return {
+			success: true,
+			message: 'Η επαφή προστέθηκε με επιτυχία'
+		};
+	} catch (err) {
+		console.error('[addPhoneContact] Error:', err);
+		return {
+			success: false,
+			message: 'Σφάλμα κατά την προσθήκη επαφής'
+		};
+	}
+});
+
+// ======================== UPDATE PHONE CONTACT ==============
+export const updatePhoneContact = form(PhoneContactSchema, async (data) => {
+	const supabase = createServerClient();
+
+	if (!data.id) {
+		return {
+			success: false,
+			message: 'Λείπει το ID επαφής'
+		};
+	}
+
+	try {
+		const org_id = await getUserOrgId();
+
+		const { error } = await supabase
+			.from('important_phone_calls')
+			.update({
+				associated_company: data.associated_company,
+				manager_full_name: data.manager_full_name,
+				department: data.department || null,
+				notes: data.notes || null,
+				is_active: data.is_active,
+				email: data.email,
+				phone: data.phone,
+				updated_at: new Date().toISOString()
+			})
+			.eq('id', data.id)
+			.eq('org_id', org_id);
+
+		if (error) {
+			console.error('[updatePhoneContact] Error:', error);
+			return {
+				success: false,
+				message: 'Σφάλμα κατά την ενημέρωση επαφής'
+			};
+		}
+
+		return {
+			success: true,
+			message: 'Η επαφή ενημερώθηκε με επιτυχία'
+		};
+	} catch (err) {
+		console.error('[updatePhoneContact] Error:', err);
+		return {
+			success: false,
+			message: 'Σφάλμα κατά την ενημέρωση επαφής'
+		};
+	}
+});
+
+// ======================== DELETE PHONE CONTACT ==============
+export const deletePhoneContact = command(DeleteContactSchema, async ({ id }) => {
+	const supabase = createServerClient();
+
+	try {
+		const org_id = await getUserOrgId();
+
+		const { error } = await supabase
+			.from('important_phone_calls')
+			.delete()
+			.eq('id', id)
+			.eq('org_id', org_id);
+
+		if (error) {
+			console.error('[deletePhoneContact] Error:', error);
+			return {
+				success: false,
+				message: 'Σφάλμα κατά την διαγραφή επαφής'
+			};
+		}
+
+		return {
+			success: true,
+			message: 'Η επαφή διαγράφηκε με επιτυχία'
+		};
+	} catch (err) {
+		console.error('[deletePhoneContact] Error:', err);
+		return {
+			success: false,
+			message: 'Σφάλμα κατά την διαγραφή επαφής'
+		};
+	}
+});
+
+// ======================== TOGGLE ACTIVE STATUS ==============
+export const toggleContactActive = command(ToggleActiveSchema, async ({ id, is_active }) => {
+	const supabase = createServerClient();
+
+	try {
+		const org_id = await getUserOrgId();
+
+		const { error } = await supabase
+			.from('important_phone_calls')
+			.update({
+				is_active,
+				updated_at: new Date().toISOString()
+			})
+			.eq('id', id)
+			.eq('org_id', org_id);
+
+		if (error) {
+			console.error('[toggleContactActive] Error:', error);
+			return {
+				success: false,
+				message: 'Σφάλμα κατά την αλλαγή κατάστασης'
+			};
+		}
+
+		return {
+			success: true,
+			message: is_active ? 'Η επαφή ενεργοποιήθηκε' : 'Η επαφή απενεργοποιήθηκε'
+		};
+	} catch (err) {
+		console.error('[toggleContactActive] Error:', err);
+		return {
+			success: false,
+			message: 'Σφάλμα κατά την αλλαγή κατάστασης'
 		};
 	}
 });

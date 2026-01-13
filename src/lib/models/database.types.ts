@@ -92,3 +92,17 @@ export interface verification_codes {
 	expires_at: string;
 	is_used: boolean;
 }
+
+export interface importantPhoneCalls{
+	id:number;
+	org_id:number;
+	associated_company:string;
+	manager_full_name:string;
+	department:string | null;
+	notes:string | null;
+	is_active:boolean;
+	email: string;
+	phone: string;
+	created_at: string;
+	updated_at: string;
+}

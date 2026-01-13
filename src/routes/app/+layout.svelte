@@ -10,6 +10,8 @@
 	import { BellIcon } from 'lucide-svelte';
 	import Badge from '$lib/components/ui/badge/badge.svelte';
 	import { ThemeSelector } from '$lib/components/ui/theme-selector';
+	import Command from '$lib/components/command/command.svelte';
+	
 
 	let { data, children } = $props();
 
@@ -36,12 +38,13 @@
 <Sidebar.Provider>
 	<AppSidebar />
 	<Sidebar.Inset>
-		<header class="flex h-16 shrink-0 items-center justify-between px-4">
+		<header
+			class="sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between bg-background px-4">
 			<div class="flex items-center gap-2">
 				<Sidebar.Trigger class="-ml-1" />
 				<Separator orientation="vertical" class="mr-2 h-4" />
 
-				<Breadcrumb.Root>
+				<Breadcrumb.Root class="hidden sm:flex items-center gap-2">
 					<Breadcrumb.List>
 						{#if breadcrumbs().length > 0}
 							<Breadcrumb.Separator />
@@ -64,6 +67,7 @@
 			</div>
 
 			<div class="flex items-center gap-4">
+				<Command />
 				<div class="relative inline-flex">
 					<Button variant="ghost" size="icon">
 						<BellIcon />

@@ -212,12 +212,13 @@
 						</Select.Content>
 					</Select.Root>
 				</div>
-				<div class="col-span-3 flex flex-row gap-8">
-					<Label class="text-right">Authorize to close register</Label>
+				<div class="col-span-3 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+					<Label class="sm:text-right">Authorize to close register</Label>
 					<Switch bind:checked={can_close_register} />
 				</div>
-				<div class="col-span-3 flex flex-row gap-8">
-					<Label class="text-right">Is Manager</Label>
+
+				<div class="col-span-3 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+					<Label class="sm:text-right">Is Manager</Label>
 					<Switch bind:checked={is_manager} />
 				</div>
 			</div>

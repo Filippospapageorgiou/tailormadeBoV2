@@ -24,7 +24,10 @@
 
 		ShieldCheck,
 
-		Building
+		Building,
+
+		Building2
+
 
 
 
@@ -82,7 +85,7 @@
 				icon: Settings2Icon,
 				items: [
 					{
-						title: 'Χρήστες',
+						title: 'Χρήστες & Οργανισμός',
 						url: '/app/settings/manage_users',
 						icon: Users
 					},
