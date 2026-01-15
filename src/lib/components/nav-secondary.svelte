@@ -1,6 +1,7 @@
 <script lang="ts">
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 	import type { Component, ComponentProps } from 'svelte';
+	import { openModal } from '$lib/stores/feedback.svelte';
 
 	const sidebar = Sidebar.useSidebar();
 
@@ -22,6 +23,13 @@
 			sidebar.setOpenMobile(false);
 		}
 	}
+
+	function handleOpenFeedbackModal(){
+		if (sidebar.isMobile) {
+			sidebar.setOpenMobile(false);
+		}
+		openModal()
+	}
 </script>
 
 <Sidebar.Group bind:ref {...restProps}>
@@ -31,10 +39,17 @@
 				<Sidebar.MenuItem>
 					<Sidebar.MenuButton size="sm">
 						{#snippet child({ props })}
-							<a href={item.url} {...props} onclick={handleLinkClick}>
-								<item.icon />
-								<span>{item.title}</span>
-							</a>
+							{#if item.title === 'Feedback'}
+								<button {...props} onclick={handleOpenFeedbackModal}>
+									<item.icon />
+									<span>{item.title}</span>
+								</button>
+							{:else}
+								<a href={item.url} {...props} onclick={handleLinkClick}>
+									<item.icon />
+									<span>{item.title}</span>
+								</a>
+							{/if}
 						{/snippet}
 					</Sidebar.MenuButton>
 				</Sidebar.MenuItem>

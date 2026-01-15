@@ -5,6 +5,7 @@
 	import { Toaster } from 'svelte-sonner';
 	import CustomAlert from '$lib/components/custom/customAlert.svelte';
 	import CustomProgressBar from '$lib/components/custom/customProgressBar.svelte';
+	import Feedbackmodal from '$lib/components/custom/Feedbackmodal.svelte';
 	import { ModeWatcher } from 'mode-watcher';
 	let { data, children } = $props();
 	let { session, supabase } = $derived(data);
@@ -25,6 +26,7 @@
 	<link rel="icon" href={favicon} />
 </svelte:head>
 
+<Feedbackmodal />
 <ModeWatcher />
 <Toaster />
 <CustomAlert />
