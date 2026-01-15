@@ -34,12 +34,12 @@
 	let isRefreshing = $state(false);
 
 	$effect(() => {
-		if(isRefreshing){
+		if (isRefreshing) {
 			notifications = query.current?.notifications ?? [];
 			unreadCount = query.current?.unreadCount ?? 0;
 			isLoading = query.loading;
 		}
-	})
+	});
 
 	// Icon mapping for notification types
 	const typeIcons: Record<NotificationType, typeof Coffee> = {
@@ -50,7 +50,6 @@
 		daily_tasks: ClipboardList,
 		shift_request_update: RefreshCw
 	};
-
 
 	// Group notifications by date
 	function groupNotifications(items: Notification[]) {
@@ -143,7 +142,15 @@
 		</div>
 	</Popover.Trigger>
 
-	<Popover.Content class="w-80 p-0 animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200" align="end">
+	<Popover.Content
+		class="w-80 animate-fade-in overflow-hidden rounded-2xl border border-border/50 bg-card/50 p-0
+		   shadow-sm backdrop-blur-sm
+		   transition-all duration-200 duration-300
+		   ease-out zoom-in-95 slide-in-from-top-2
+			hover:shadow-xl dark:border-white/10
+		   dark:shadow-black/20"
+		align="end"
+	>
 		<div class="flex items-center justify-between border-b px-4 py-3">
 			<h3 class="text-sm font-semibold">Ειδοποιήσεις</h3>
 			<div class="flex items-center gap-1">
@@ -157,12 +164,7 @@
 					<RefreshCw class="h-4 w-4 {isRefreshing ? 'animate-spin-clockwise' : ''}" />
 				</Button>
 				{#if unreadCount > 0}
-					<Button
-						variant="ghost"
-						size="icon"
-						class="h-7 w-7"
-						onclick={handleMarkAllAsRead}
-					>
+					<Button variant="ghost" size="icon" class="h-7 w-7" onclick={handleMarkAllAsRead}>
 						<CheckCheck class="h-4 w-4" />
 					</Button>
 				{/if}
@@ -172,11 +174,11 @@
 		<ScrollArea class="h-[400px]">
 			{#if isLoading}
 				<div class="flex items-center justify-center py-8">
-					<RefreshCw class="h-5 w-5 animate-spin text-muted-foreground" />
+					<RefreshCw class="animate-spin h-5 w-5 text-muted-foreground" />
 				</div>
 			{:else if notifications.length === 0}
 				<div class="flex flex-col items-center justify-center py-8 text-center">
-					<BellIcon class="h-8 w-8 text-muted-foreground mb-2" />
+					<BellIcon class="mb-2 h-8 w-8 text-muted-foreground" />
 					<p class="text-sm text-muted-foreground">No notifications</p>
 				</div>
 			{:else}
@@ -192,24 +194,24 @@
 										{@const Icon = typeIcons[notification.type]}
 										<button
 											onclick={() => handleNotificationClick(notification)}
-											class="w-full rounded-md p-2 text-left transition-colors hover:bg-accent group relative overflow-hidden"
+											class="group relative w-full overflow-hidden rounded-md p-2 text-left transition-colors hover:bg-accent"
 										>
 											<div class="flex gap-3">
-												<div class="flex-shrink-0 mt-0.5">
+												<div class="mt-0.5 flex-shrink-0">
 													<div class="rounded-full bg-muted p-1.5">
 														<Icon class="h-4 w-4" />
 													</div>
 												</div>
-												<div class="flex-1 space-y-1 min-w-0">
+												<div class="min-w-0 flex-1 space-y-1">
 													<div class="flex items-start justify-between gap-2">
-														<p class="text-sm font-medium leading-tight">
+														<p class="text-sm leading-tight font-medium">
 															{notification.title}
 														</p>
 														{#if !notification.is_read}
-															<div class="flex-shrink-0 h-2 w-2 rounded-full bg-primary mt-1"></div>
+															<div class="mt-1 h-2 w-2 flex-shrink-0 rounded-full bg-primary"></div>
 														{/if}
 													</div>
-													<p class="text-xs text-muted-foreground line-clamp-2">
+													<p class="line-clamp-2 text-xs text-muted-foreground">
 														{notification.message}
 													</p>
 													<p class="text-xs text-muted-foreground">
