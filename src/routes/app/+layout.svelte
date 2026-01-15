@@ -11,6 +11,7 @@
 	import Badge from '$lib/components/ui/badge/badge.svelte';
 	import { ThemeSelector } from '$lib/components/ui/theme-selector';
 	import Command from '$lib/components/command/command.svelte';
+	import Notifications from '$lib/components/custom/Notifications.svelte';
 	
 
 	let { data, children } = $props();
@@ -68,18 +69,7 @@
 
 			<div class="flex items-center gap-4">
 				<Command />
-				<div class="relative inline-flex">
-					<Button variant="ghost" size="icon">
-						<BellIcon />
-					</Button>
-					<Badge
-						variant="destructive"
-						class="pointer-events-none absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center px-1 tabular-nums"
-					>
-						8
-					</Badge>
-				</div>
-
+				<Notifications />
 				<ThemeSelector />
 			</div>
 		</header>
