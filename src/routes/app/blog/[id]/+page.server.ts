@@ -1,6 +1,5 @@
 import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
-import { redirect } from '@sveltejs/kit';
 import { z } from "zod/v4";
 
 const blogIdSchema = z.coerce

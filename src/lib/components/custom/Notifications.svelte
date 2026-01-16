@@ -24,6 +24,7 @@
 	import { goto } from '$app/navigation';
 	import type { Notification, NotificationType } from '../../models/notifications.types';
 	import Separator from '../ui/separator/separator.svelte';
+	import Spinner from '../ui/spinner/spinner.svelte';
 
 	let query = getNotifications();
 
@@ -145,7 +146,7 @@
 	<Popover.Content
 		class="w-80 animate-fade-in overflow-hidden rounded-2xl border border-border/50 bg-card/50 p-0
 		   shadow-sm backdrop-blur-sm
-		   transition-all duration-200 duration-300
+		   transition-all duration-200
 		   ease-out zoom-in-95 slide-in-from-top-2
 			hover:shadow-xl dark:border-white/10
 		   dark:shadow-black/20"
@@ -173,8 +174,10 @@
 
 		<ScrollArea class="h-[400px]">
 			{#if isLoading}
-				<div class="flex items-center justify-center py-8">
-					<RefreshCw class="animate-spin h-5 w-5 text-muted-foreground" />
+				<div class="flex justify-center pt-40">
+					<div class="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+						<Spinner />
+					</div>
 				</div>
 			{:else if notifications.length === 0}
 				<div class="flex flex-col items-center justify-center py-8 text-center">

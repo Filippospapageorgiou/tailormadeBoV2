@@ -4,13 +4,11 @@
 	import { Button } from '$lib/components/ui/button';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import * as Avatar from '$lib/components/ui/avatar';
-	import { Plus, UserPlus, X } from 'lucide-svelte';
+	import { UserPlus, X } from 'lucide-svelte';
 	import ScheduleDayCell from './ScheduleDayCell.svelte';
 	import SortableEmployeeRow from './SortableEmployeeRow.svelte';
 	import { DragDropProvider, DragOverlay } from '@dnd-kit-svelte/svelte';
 	import { sensors } from '$lib';
-	import { updateDisplayOrder } from '../data.remote';
-	import { invalidateAll } from '$app/navigation';
 
 	interface Props {
 		schedule: WeeklySchedule;

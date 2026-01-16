@@ -1,6 +1,4 @@
-import { Resend } from 'resend';
-import { command, form } from '$app/server';
-import { createServerClient } from '$lib/supabase/server';
+import { form } from '$app/server';
 import z from 'zod';
 import { sendVerificationCode, verifyEmail, verifyCode } from '$lib/supabase/verification';
 

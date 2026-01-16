@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { progress } from '$lib/stores/progress.svelte';
 	import { Progress } from '$lib/components/ui/progress';
-	import { Loader2 } from 'lucide-svelte';
 	import Spinner from '../ui/spinner/spinner.svelte';
 </script>
 

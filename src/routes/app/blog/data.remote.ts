@@ -1,11 +1,7 @@
 // src/routes/posts/posts.remote.ts
 import { query } from '$app/server';
-import { error } from '@sveltejs/kit';
-import { createAdminClient, createServerClient } from '$lib/supabase/server';
-import type { Provider } from '@supabase/supabase-js';
-import { redirect } from '@sveltejs/kit';
+import { createServerClient } from '$lib/supabase/server';
 import type { Blog } from '$lib/models/database.types';
-import { getRequestEvent } from '$app/server';
 import { requireAuthenticatedUser } from '$lib/supabase/shared';
 import { z } from "zod/v4";
 

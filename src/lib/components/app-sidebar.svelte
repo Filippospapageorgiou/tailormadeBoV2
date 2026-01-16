@@ -165,7 +165,6 @@
 	import CommandIcon from '@lucide/svelte/icons/command';
 	import type { ComponentProps } from 'svelte';
 	import { getProfileContext } from '$lib/stores/profile.svelte';
-	import type { title } from 'process';
 
 	let { ref = $bindable(null), ...restProps }: ComponentProps<typeof Sidebar.Root> = $props();
 

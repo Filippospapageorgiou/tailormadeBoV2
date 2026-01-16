@@ -10,7 +10,6 @@
 	import { toast } from '$lib/stores/toast.svelte';
 	import { X, CloudIcon, ImagePlus } from 'lucide-svelte';
 	import * as Empty from '$lib/components/ui/empty/index.js';
-	import { file } from 'zod';
 
 	let {
 		open = $bindable(),

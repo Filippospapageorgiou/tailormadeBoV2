@@ -6,7 +6,6 @@
 	import { CollisionPriority } from '@dnd-kit/abstract';
 	import { sensors } from '$lib';
 	import { updateDayliTaskForUser } from '../data.remote';
-	import Separator from '$lib/components/ui/separator/separator.svelte';
 	import { toast } from 'svelte-sonner';
 
 	let { tasks, onUpdate } = $props();
