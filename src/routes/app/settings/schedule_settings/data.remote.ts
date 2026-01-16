@@ -1,12 +1,9 @@
-import { query, command, form, prerender } from '$app/server';
-import { createServerClient, createAdminClient } from '$lib/supabase/server';
+import { query, command } from '$app/server';
+import { createServerClient } from '$lib/supabase/server';
 import { requireAuthenticatedUser } from '$lib/supabase/shared';
-import type { Profile } from '$lib/models/database.types';
 import type { WeeklySchedule } from '$lib/models/schedule.types';
 import { SCHEDULE_STATUS } from '$lib/models/schedule.types';
 import { z } from 'zod/v4';
-import { error } from '@sveltejs/kit';
-import { redirect } from '@sveltejs/kit';
 import { getUserProfileWithRoleCheck } from '$lib/supabase/queries';
 
 // ======================== AUTH ACCESS CHECK ==============

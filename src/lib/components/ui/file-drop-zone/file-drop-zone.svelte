@@ -19,6 +19,7 @@
 		...rest
 	}: FileDropZoneProps = $props();
 
+	// svelte-ignore state_referenced_locally
 	if (maxFiles !== undefined && fileCount === undefined) {
 		console.warn(
 			'Make sure to provide FileDropZone with `fileCount` when using the `maxFiles` prompt'

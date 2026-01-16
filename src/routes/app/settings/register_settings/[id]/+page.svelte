@@ -18,16 +18,24 @@
 
 	let { data }: PageProps = $props();
 
-	const { closing, closedByProfile, supplierPayments, expenses } = data;
+	let closing = $derived(data.closing);
+	let closedByProfile = $derived(data.closedByProfile);
+	let supplierPayments = $derived(data.supplierPayments);
+	let expenses = $derived(data.expenses);
 
 	// Helper to sum arrays for headers
-	const totalPayments = supplierPayments.reduce((acc, curr) => acc + Number(curr.amount), 0);
-	const totalExpenses = expenses.reduce((acc, curr) => acc + Number(curr.amount), 0);
+	let totalPayments = $derived(
+		supplierPayments.reduce((acc, curr) => acc + Number(curr.amount), 0)
+	);
+
+	let totalExpenses = $derived(expenses.reduce((acc, curr) => acc + Number(curr.amount), 0));
 
 	// Add this in your script section
-	const totalDigital =
-		closing.card_sales + closing.wolt_sales + closing.efood_sales + closing.other_digital_sales;
-	const cashSales = closing.total_sales - totalDigital;
+	let totalDigital = $derived(
+		closing.card_sales + closing.wolt_sales + closing.efood_sales + closing.other_digital_sales
+	);
+
+	let cashSales = $derived(closing.total_sales - totalDigital);
 
 	function handleBack() {
 		goto('/app/settings/register_settings');

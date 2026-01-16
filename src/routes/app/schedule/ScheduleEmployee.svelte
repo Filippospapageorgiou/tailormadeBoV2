@@ -10,7 +10,7 @@
 
 	const { employee, isSelected = false, onClick }: Props = $props();
 
-	const badgeColor = employee.badge_color || '#3b82f6';
+	let badgeColor = $derived(employee.badge_color || '#3b82f6');
 
 	function getInitials(name: string): string {
 		const parts = name.split(' ');
@@ -20,7 +20,7 @@
 		return name.substring(0, 2).toUpperCase();
 	}
 
-	const initials = getInitials(employee.username);
+	let initials = $derived(getInitials(employee.username));
 </script>
 
 <button

@@ -35,14 +35,14 @@
 	let roleTypes = $derived(query.current?.roleTypes ?? []);
 	// Edit dialog state
 	let editDialogOpen = $state(false);
-	let selectedRoleId = $state(String(role_id));
+	let selectedRoleId = $derived(String(role_id));
 
 	// Delete dialog state
 	let deleteDialogOpen = $state(false);
 
 	// Badge color dialog state
 	let badgeColorDialogOpen = $state(false);
-	let selectedBadgeColor = $state(badge_color || '#3b82f6');
+	let selectedBadgeColor = $derived(badge_color || '#3b82f6');
 
 	function handleEditClick() {
 		selectedRoleId = String(role_id);

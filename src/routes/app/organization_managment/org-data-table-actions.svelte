@@ -47,7 +47,7 @@
 	let openEdit = $state(false);
 
 	// Local status state for the switch
-	let editStatus = $state(status ?? true);
+	let editStatus = $derived(status ?? true);
 
 	// Set form values when modal opens
 	function handleEditClick() {

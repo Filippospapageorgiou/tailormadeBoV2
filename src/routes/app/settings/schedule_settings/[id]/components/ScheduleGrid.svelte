@@ -35,7 +35,7 @@
 	const EMPLOYEE_COL_WIDTH = 'w-56';
 	const DAY_COL_WIDTH = 'w-40';
 
-	let localEmployees = $state(employees);
+	let localEmployees = $derived(employees);
 	$effect(() => {
 		localEmployees = employees;
 	});

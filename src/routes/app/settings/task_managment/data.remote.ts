@@ -1,9 +1,6 @@
-import { query, command, form, prerender } from '$app/server';
+import { query, command, form } from '$app/server';
 import { createServerClient, createAdminClient } from '$lib/supabase/server';
-import { requireAuthenticatedUser } from '$lib/supabase/shared';
-import { check, z } from 'zod/v4';
-import { error } from '@sveltejs/kit';
-import { redirect } from '@sveltejs/kit';
+import { z } from 'zod/v4';
 import {
 	getAllProfilesSameOrg,
 	getUserOrgId,
@@ -11,8 +8,6 @@ import {
 	getUserProfileWithRoleCheck
 } from '$lib/supabase/queries';
 import {
-	type TaskItem,
-	type TaskTemplate,
 	type TaskTemplateWithTasks,
 	type UserDailyTask
 } from '$lib/models/tasks.types';

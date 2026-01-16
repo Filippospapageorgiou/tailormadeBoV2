@@ -18,7 +18,7 @@
 
 	let query = $derived(getCurrentSchedule({ weekStartDate, next, prev }));
 	let { data } = $props();
-	let { user } = data;
+	let user = $derived(data.user);
 
 	let isDetailsModalOpen = $state(false);
 	let isRequestModalOpen = $state(false);

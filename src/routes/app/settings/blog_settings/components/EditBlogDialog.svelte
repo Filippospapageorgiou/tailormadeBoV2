@@ -22,7 +22,7 @@
 		onSuccess: () => Promise<void>;
 	} = $props();
 
-	let formData = $state({
+	let formData = $derived({
 		title: blog.title,
 		description: blog.description || '',
 		content: blog.content,
@@ -31,7 +31,7 @@
 	});
 
 	// Track existing images (URLs to keep)
-	let existingImages = $state<string[]>([...blog.images]);
+	let existingImages = $derived<string[]>([...blog.images]);
 	
 	// Track new files to upload
 	let newFiles: FileList | undefined = $state();

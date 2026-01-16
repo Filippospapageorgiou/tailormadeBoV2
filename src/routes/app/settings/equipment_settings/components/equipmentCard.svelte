@@ -95,7 +95,7 @@
 		broken: XCircle
 	};
 
-	const StatusIcon = statusIcons[equipment.status];
+	let StatusIcon = $derived(statusIcons[equipment.status]);
 
 	// Edit modal states
 	let editModalOpen = $state(false);

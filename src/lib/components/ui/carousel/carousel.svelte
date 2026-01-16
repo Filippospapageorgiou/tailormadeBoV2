@@ -1,4 +1,5 @@
 <script lang="ts">
+	
 	import {
 		type CarouselAPI,
 		type CarouselProps,
@@ -22,12 +23,15 @@
 		api: undefined,
 		scrollPrev,
 		scrollNext,
-		orientation,
+		// svelte-ignore state_referenced_locally
+				orientation,
 		canScrollNext: false,
 		canScrollPrev: false,
 		handleKeyDown,
-		options: opts,
-		plugins,
+		// svelte-ignore state_referenced_locally
+				options: opts,
+		// svelte-ignore state_referenced_locally
+				plugins,
 		onInit,
 		scrollSnaps: [],
 		selectedIndex: 0,

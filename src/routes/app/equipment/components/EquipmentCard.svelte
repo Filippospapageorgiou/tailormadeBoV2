@@ -46,7 +46,7 @@
 		broken: XCircle
 	};
 
-	const StatusIcon = statusIcons[equipment.status];
+	const StatusIcon = $derived(statusIcons[equipment.status]);
 </script>
 
 <div

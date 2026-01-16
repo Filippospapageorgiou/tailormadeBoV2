@@ -16,6 +16,7 @@
 	let { beverageId }: { beverageId: number } = $props();
 
 	
+	// svelte-ignore state_referenced_locally
 	let query = getBeverageIngredients({ beverageId: beverageId.toString() });
 	let ingredients = $derived(query.current?.ingredients ?? []);
 

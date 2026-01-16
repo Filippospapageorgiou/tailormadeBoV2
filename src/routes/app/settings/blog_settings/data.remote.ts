@@ -1,6 +1,6 @@
-import { query, command, form, prerender } from '$app/server';
+import { query, command, form } from '$app/server';
 import { createServerClient } from '$lib/supabase/server';
-import { getAuthenticatedUser, requireAuthenticatedUser } from '$lib/supabase/shared';
+import { requireAuthenticatedUser } from '$lib/supabase/shared';
 import { type Profile, type Blog } from '$lib/models/database.types';
 import { z } from 'zod/v4';
 import { error } from '@sveltejs/kit';

@@ -22,7 +22,9 @@
 	// 1. Pass 'index' to useSortable
 	// We use 'handleRef' for the drag handle and 'ref' for the row
 	const { ref, handleRef, isDragging } = useSortable({
+		// svelte-ignore state_referenced_locally
 		id: employee.id,
+		// svelte-ignore state_referenced_locally
 		index: index
 	});
 

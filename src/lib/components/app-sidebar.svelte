@@ -162,7 +162,6 @@
 	import NavSecondary from './nav-secondary.svelte';
 	import NavUser from './nav-user.svelte';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
-	import CommandIcon from '@lucide/svelte/icons/command';
 	import type { ComponentProps } from 'svelte';
 	import { getProfileContext } from '$lib/stores/profile.svelte';
 
@@ -177,7 +176,7 @@
 			<Sidebar.MenuItem>
 				<Sidebar.MenuButton size="lg">
 					{#snippet child({ props })}
-						<a href="/" {...props}>
+						<a href="/app/" {...props}>
 							<div
 								class="flex aspect-square size-8 items-center justify-center rounded-lg bg-transparent text-sidebar-primary-foreground"
 							>

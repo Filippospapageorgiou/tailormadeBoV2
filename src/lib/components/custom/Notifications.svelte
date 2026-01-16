@@ -197,7 +197,7 @@
 										{@const Icon = typeIcons[notification.type]}
 										<button
 											onclick={() => handleNotificationClick(notification)}
-											class="group relative w-full overflow-hidden rounded-md p-2 text-left transition-colors hover:bg-accent"
+											class="group relative w-full overflow-hidden rounded-md p-2 text-left transition-colors hover:bg-accent cursor-pointer"
 										>
 											<div class="flex gap-3">
 												<div class="mt-0.5 flex-shrink-0">

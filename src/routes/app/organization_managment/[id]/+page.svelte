@@ -31,7 +31,11 @@
 
 	let { data }: PageProps = $props();
 
-	const { organization, employees, equipment, roleTypes, stats } = data;
+	let organization = $derived(data.organization);
+	let employees = $derived(data.employees);
+	let equipment = $derived(data.equipment);
+	let roleTypes = $derived(data.roleTypes);
+	let stats = $derived(data.stats);
 
 	// Invite modal state
 	let inviteDialogOpen = $state(false);
@@ -126,10 +130,10 @@
 							</Badge>
 						{:else}
 							<Badge
-								class="bg-destructive/10 [a&]:hover:bg-destructive/5 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 text-destructive border-none focus-visible:outline-none"
+								class="border-none bg-destructive/10 text-destructive focus-visible:ring-destructive/20 focus-visible:outline-none dark:focus-visible:ring-destructive/40 [a&]:hover:bg-destructive/5"
 							>
 								<!-- svelte-ignore element_invalid_self_closing_tag -->
-								<span class="bg-destructive size-1.5 rounded-full" aria-hidden="true" />
+								<span class="size-1.5 rounded-full bg-destructive" aria-hidden="true" />
 								inactive
 							</Badge>
 						{/if}

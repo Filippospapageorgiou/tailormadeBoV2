@@ -5,6 +5,7 @@
 	let { task, isOverlay = false, id, index, ...rest } = $props();
 
 	// The magic hook that makes this draggable
+	// svelte-ignore state_referenced_locally
 	const { ref, isDragging } = useSortable({ id, index, ...rest });
 </script>
 

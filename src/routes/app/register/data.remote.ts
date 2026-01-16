@@ -1,12 +1,10 @@
 import { query, form } from '$app/server';
 import { createServerClient } from '$lib/supabase/server';
 import { requireAuthenticatedUser } from '$lib/supabase/shared';
-import type { Profile, Organization } from '$lib/models/database.types';
+import type { Profile } from '$lib/models/database.types';
 import type {
 	Supplier,
 	DailyRegisterClosing,
-	RegisterSupplierPayment,
-	RegisterExpense
 } from '$lib/models/register.types';
 import z from 'zod/v4';
 import { error } from '@sveltejs/kit';

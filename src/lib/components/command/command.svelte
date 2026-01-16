@@ -130,22 +130,22 @@
 			</Command.Item>
 			<Command.Item onSelect={() => gotohref('/app/settings/schedule_settings')}>
 				<CalendarRange class="me-2 size-4" />
-				<span>Πρόγραμμα</span>
+				<span>Διαχειρήση Πρόγραμμα</span>
                 <ArrowRightIcon class="ml-auto size-3.5 text-muted-foreground" />
 			</Command.Item>
 			<Command.Item onSelect={() => gotohref('/app/settings/equipment_settings')}>
 				<Cog class="me-2 size-4" />
-				<span>Εξοπλισμός</span>
+				<span>Διαχειρήση Εξοπλισμός</span>
                 <ArrowRightIcon class="ml-auto size-3.5 text-muted-foreground" />
 			</Command.Item>
 			<Command.Item onSelect={() => gotohref('/app/settings/register_settings')}>
 				<Euro class="me-2 size-4" />
-				<span>Ταμείο</span>
+				<span>Διαχειρήση Ταμείο</span>
                 <ArrowRightIcon class="ml-auto size-3.5 text-muted-foreground" />
 			</Command.Item>
 			<Command.Item onSelect={() => gotohref('/app/settings/task_managment')}>
 				<Network class="me-2 size-4" />
-				<span>Tasks</span>
+				<span>Διαχειρήση Tasks</span>
                 <ArrowRightIcon class="ml-auto size-3.5 text-muted-foreground" />
 			</Command.Item>
 		</Command.Group>
