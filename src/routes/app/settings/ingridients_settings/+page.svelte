@@ -19,6 +19,7 @@
 	import AuthBlock from '$lib/components/custom/AuthBlock/authBlock.svelte';
 	import { toast } from 'svelte-sonner';
 	import { showFailToast, showSuccessToast } from '$lib/stores/toast.svelte';
+	import DeleteConfirmDialog from '$lib/components/Reusable/DeleteConfirmDialog.svelte';
 
 	const unitItems = [
 		{ value: 'γραμμάρια (g)', label: 'γραμμάρια (g)' },
@@ -88,7 +89,10 @@
 		description: ''
 	});
 
+	
 	let deletingIngredient = $state<Ingredient | null>(null);
+	let deleteDialogOpen = $state(false);
+	let isDeleting = $state(false);
 
 	function clearSearch() {
 		searchQuery = '';
@@ -109,8 +113,10 @@
 		};
 	}
 
+	// ✅ Fixed: Proper function to open delete dialog
 	function openDeleteDialog(ingredient: Ingredient) {
 		deletingIngredient = ingredient;
+		deleteDialogOpen = true;
 	}
 
 	async function handleEdit() {
@@ -160,28 +166,31 @@
 		}
 	}
 
-	let returnMessage = $state('');
-	async function handleDelete(id: number) {
-		if (!id) return;
-
-		showProgress('Deleting ingredient...');
-		deletingIngredient = null;
-
+	async function handleDelete() {
+		if (!deletingIngredient) return;
+		
+		isDeleting = true;
 		try {
-			const result = await deleteIngredient({ ingridientId: id.toString() });
-			returnMessage = result.message;
+			const result = await deleteIngredient({ ingridientId: deletingIngredient.id.toString() });
 			if (result.success) {
-				showSuccessToast('Επιτυχία', result.message);
+				toast.success(result.message);
 				await query.refresh();
+				deleteDialogOpen = false;
+				deletingIngredient = null;
 			} else {
-				showFailToast('Σφάλμα', result.message);
+				toast.error(result.message);
 			}
 		} catch (error: any) {
 			console.error('Error deleting ingredient:', error);
-			showFailToast('Σφάλμα', error.message);
+			toast.error(error.message);
 		} finally {
-			hideProgress();
+			isDeleting = false;
 		}
+	}
+
+	function cancelDelete() {
+		deleteDialogOpen = false;
+		deletingIngredient = null;
 	}
 </script>
 
@@ -534,43 +543,34 @@
 	</Dialog.Content>
 </Dialog.Root>
 
-<!-- Delete Confirmation Dialog -->
-<Dialog.Root
-	open={deletingIngredient !== null}
-	onOpenChange={(open) => !open && (deletingIngredient = null)}
+<!-- ✅ Fixed: Proper usage of DeleteConfirmDialog -->
+<DeleteConfirmDialog
+	bind:open={deleteDialogOpen}
+	title="Διαγραφή συστατικού"
+	description="Είστε σίγουροι ότι θέλετε να διαγράψετε αυτό το συστατικό;"
+	warningText="Αυτή η ενέργεια δεν μπορεί να αναιρεθεί"
+	itemName={deletingIngredient ? `${deletingIngredient.name} (ID: ${deletingIngredient.id})` : ''}
+	{isDeleting}
+	onConfirm={handleDelete}
+	onCancel={cancelDelete}
 >
-	<Dialog.Content class="sm:max-w-[425px]">
-		<Dialog.Header>
-			<Dialog.Title>Delete Ingredient</Dialog.Title>
-			<Dialog.Description class="space-y-2">
-				<span>
-					Are you sure you want to delete
-					<span class="font-medium text-foreground">
-						"{deletingIngredient?.name}"
-					</span>? 
-				</span>
-				<span class="block text-red-500 dark:text-red-400">
-					This action cannot be undone.
-				</span>
-				<span class="block font-medium text-foreground">
-					Used in {deletingIngredient?.recipe_ingredients?.[0]?.count ?? 0} recipe(s).
-				</span>
-			</Dialog.Description>
-		</Dialog.Header>
-
-		<Dialog.Footer class="mt-4">
-			<Button
-				variant="outline"
-				onclick={() => (deletingIngredient = null)}
-			>
-				Cancel
-			</Button>
-			<Button
-				variant="destructive"
-				onclick={() => deletingIngredient?.id !== undefined && handleDelete(deletingIngredient.id)}
-			>
-				Delete
-			</Button>
-		</Dialog.Footer>
-	</Dialog.Content>
-</Dialog.Root>
+	{#snippet children()}
+		{#if deletingIngredient}
+			<div class="rounded-lg p-4">
+				<div class="flex items-center gap-3">
+					<div>
+						<p class="font-semibold">{deletingIngredient.name}</p>
+						<p class="text-xs text-muted-foreground">
+							{deletingIngredient.category || 'Χωρίς κατηγορία'} • {deletingIngredient.measurement_unit || '-'}
+						</p>
+						{#if deletingIngredient.recipe_ingredients?.[0]?.count}
+							<p class="mt-1 text-xs font-medium text-orange-600">
+								⚠️ Χρησιμοποιείται σε {deletingIngredient.recipe_ingredients[0].count} συνταγές
+							</p>
+						{/if}
+					</div>
+				</div>
+			</div>
+		{/if}
+	{/snippet}
+</DeleteConfirmDialog>

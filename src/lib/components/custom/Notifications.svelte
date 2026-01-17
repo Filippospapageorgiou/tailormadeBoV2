@@ -144,7 +144,7 @@
 	</Popover.Trigger>
 
 	<Popover.Content
-		class="w-80 animate-fade-in overflow-hidden rounded-2xl border border-border/50 bg-card/50 p-0
+		class="w-80 animate-fade-in overflow-hidden rounded-2xl border border-border/50 bg-card p-0
 		   shadow-sm backdrop-blur-sm
 		   transition-all duration-200
 		   ease-out zoom-in-95 slide-in-from-top-2

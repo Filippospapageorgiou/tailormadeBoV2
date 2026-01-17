@@ -15,11 +15,13 @@ export const load: PageServerLoad = async ({ url, locals: { supabase } }) => {
 		// Fetch the invitation with organization and role details
 		const { data: invitation, error: fetchError } = await supabase
 			.from('organization_invitations')
-			.select(`
+			.select(
+				`
 				*,
 				core_organizations (id, store_name),
 				role_types (id, role_name)
-			`)
+			`
+			)
 			.eq('token', token)
 			.single();
 
@@ -29,18 +31,27 @@ export const load: PageServerLoad = async ({ url, locals: { supabase } }) => {
 
 		// Check if already accepted
 		if (invitation.status === 'accepted') {
-			throw error(400, 'This invitation has already been accepted. Please login to access your account.');
+			throw error(
+				400,
+				'This invitation has already been accepted. Please login to access your account.'
+			);
 		}
 
 		// Check if cancelled
 		if (invitation.status === 'cancelled') {
-			throw error(400, 'This invitation has been cancelled. Please contact the organization administrator.');
+			throw error(
+				400,
+				'This invitation has been cancelled. Please contact the organization administrator.'
+			);
 		}
 
 		// Check if expired
 		const isExpired = new Date(invitation.expires_at) < new Date();
 		if (isExpired || invitation.status === 'expired') {
-			throw error(400, 'This invitation has expired. Please request a new invitation from the organization administrator.');
+			throw error(
+				400,
+				'This invitation has expired. Please request a new invitation from the organization administrator.'
+			);
 		}
 
 		// Check if user already exists with this email
@@ -122,13 +133,13 @@ export const actions: Actions = {
 					.from('organization_invitations')
 					.update({ status: 'expired' })
 					.eq('id', invitation.id);
-				
+
 				return { success: false, message: 'This invitation has expired' };
 			}
 
 			// Create user with Supabase Admin
 			const adminClient = createAdminClient();
-			
+
 			const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
 				email: invitation.email,
 				password: password,
@@ -142,12 +153,15 @@ export const actions: Actions = {
 
 			if (createError) {
 				console.error('[AcceptInvitation] Error creating user:', createError);
-				
+
 				// Check if user already exists
 				if (createError.message?.includes('already been registered')) {
-					return { success: false, message: 'An account with this email already exists. Please login instead.' };
+					return {
+						success: false,
+						message: 'An account with this email already exists. Please login instead.'
+					};
 				}
-				
+
 				return { success: false, message: createError.message || 'Failed to create account' };
 			}
 
@@ -156,17 +170,15 @@ export const actions: Actions = {
 			}
 
 			// Create profile for the user
-			const { error: profileError } = await adminClient
-				.from('profiles')
-				.insert({
-					id: newUser.user.id,
-					email: invitation.email,
-					username: username.trim(),
-					org_id: invitation.org_id,
-					role_id: invitation.role_id,
-					image_url: `https://uhrpdmoknmrbosqenotk.supabase.co/storage/v1/object/public/avatars_url/default.png`,
-					badge_color: '#3b82f6'
-				});
+			const { error: profileError } = await adminClient.from('profiles').insert({
+				id: newUser.user.id,
+				email: invitation.email,
+				username: username.trim(),
+				org_id: invitation.org_id,
+				role_id: invitation.role_id,
+				image_url: `https://uhrpdmoknmrbosqenotk.supabase.co/storage/v1/object/public/avatars_url/default.png`,
+				badge_color: '#3b82f6'
+			});
 
 			if (profileError) {
 				console.error('[AcceptInvitation] Error creating profile:', profileError);
@@ -176,13 +188,19 @@ export const actions: Actions = {
 			}
 
 			// Mark invitation as accepted
-			await supabase
+			const { data, error } = await supabase
 				.from('organization_invitations')
 				.update({
 					status: 'accepted',
 					accepted_at: new Date().toISOString()
 				})
 				.eq('id', invitation.id);
+
+			console.log('Invitation update result:', { data, error });
+
+			if (error) {
+				console.error('Failed to update invitation:', error);
+			}
 
 			return {
 				success: true,

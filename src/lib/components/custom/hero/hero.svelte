@@ -3,7 +3,7 @@
 	import { Card } from '$lib/components/ui/card';
 </script>
 
-<Card class="relative col-span-full overflow-hidden rounded-2xl border-0 bg-gradient-to-br">
+<Card class="relative col-span-full overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-br from-muted via-secondary to-accent/50">
 	
 	<div
 		class="relative z-20 flex flex-col items-center justify-center p-4 py-16 text-foreground transition-transform duration-200 ease-out sm:p-6 sm:py-20 lg:py-28"
@@ -11,12 +11,12 @@
 		<div class="mx-auto max-w-4xl text-center">
 			<BlurIn
 				word="TAILOR MADE COFFEE ROASTERS"
-				class="scroll-m-20 text-4xl font-extrabold tracking-tight text-primary lg:text-5xl"
+				class="scroll-m-20 text-4xl font-extrabold tracking-tight text-primary lg:text-5xl drop-shadow-sm"
 			/>
 			<div
 				class="font-display mt-5 mb-8 overflow-hidden text-xl font-light tracking-wide sm:mb-10 sm:text-2xl lg:mb-12"
 			>
-				<p>SEE THE WORLD THROUGH COFFEE</p>
+				<p class="text-foreground/80">SEE THE WORLD THROUGH COFFEE</p>
 			</div>
 
 			<div class="mx-auto max-w-3xl">
@@ -31,10 +31,10 @@
 	</div>
 
 	<div
-		class="absolute bottom-7 left-1/2 z-20 w-full -translate-x-1/2 translate-y-5 transform px-4 text-center text-foreground sm:bottom-6 lg:bottom-8"
+		class="absolute bottom-7 left-1/2 z-20 w-full -translate-x-1/2 translate-y-5 transform px-4 text-center sm:bottom-6 lg:bottom-8"
 	>
-		<p class="text-xs font-light tracking-wide sm:text-sm lg:text-base">ⓒ TAILORMADE</p>
-		<p class="text-xs font-light tracking-wide sm:text-sm lg:text-base">
+		<p class="text-xs font-light tracking-wide text-primary/70 sm:text-sm lg:text-base">ⓒ TAILORMADE</p>
+		<p class="text-xs font-light tracking-wide text-muted-foreground sm:text-sm lg:text-base">
 			CRAFTING EXCEPTIONAL COFFEE EXPERIENCES
 		</p>
 	</div>

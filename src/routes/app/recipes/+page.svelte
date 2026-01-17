@@ -38,7 +38,7 @@
 		<RecipesLoading />
 	{/snippet}
 
-	<div class="min-h-screen">
+	<div class="min-h-screen bg-background">
 		<main class="container mx-auto px-4 pt-8 pb-20 md:px-6">
 			<div
 				class="mb-12 flex flex-col items-start justify-between gap-4 md:flex-row md:items-end md:gap-8"

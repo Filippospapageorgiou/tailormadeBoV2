@@ -40,14 +40,14 @@
 
 	let value: DateValue[] | undefined = $state([today(getLocalTimeZone())]);
 	let loading = $state(false);
-	let termsAccepted = $state(false); // Για το checkbox
+	let termsAccepted = $state(false);
 </script>
 
-<div class="flex flex-1 flex-col gap-4 p-4 pt-2">
+<div class="flex flex-1 flex-col gap-4 p-4 pt-6 bg-background">
 	<div class="grid auto-rows-min gap-4 pt-0 md:grid-cols-3 md:pt-1">
 		<Hero />
 
-		<a href="/app/recipes/" class="aspect-video rounded-2xl bg-muted/50">
+		<a href="/app/recipes/" class="aspect-video rounded-2xl bg-muted border border-border/50 overflow-hidden hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10">
 			<CardImg1>
 				<CardBodyImg
 					class="absolute inset-x-0 bottom-2 flex size-full flex-col justify-end px-4 pb-0.5 md:pb-10"
@@ -57,7 +57,7 @@
 
 		<a
 			href="/app/schedule/"
-			class="group relative flex aspect-video cursor-pointer flex-col justify-end overflow-hidden rounded-2xl bg-gradient-to-t from-slate-500 to-orange-50 dark:from-slate-800 dark:to-slate-900"
+			class="group relative flex aspect-video cursor-pointer flex-col justify-end overflow-hidden rounded-2xl bg-gradient-to-t from-accent to-secondary border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10"
 		>
 			<Calendar
 				type="multiple"
@@ -65,14 +65,14 @@
 				class="absolute top-4 right-0 origin-top rounded-md [mask-image:linear-gradient(to_top,transparent_40%,#000_100%)] transition-all duration-300 ease-out group-hover:scale-105"
 			/>
 			<div
-				class="relative z-10 px-3 py-3 pt-10 text-left text-white [text-shadow:0_2px_4px_rgba(0,0,0,0.5)] dark:[text-shadow:0_2px_8px_rgba(0,0,0,0.8)]"
+				class="px-3 [text-shadow:0_2px_4px_rgb(0_0_0_/_0.5)] sm:px-4 lg:px-6 text-gray-200 py-3 sm:py-4 lg:py-6 text-left"
 			>
 				<h3 class="mb-3 text-lg font-bold tracking-tighter sm:text-xl lg:text-2xl">
 					Το Πρόγραμμά μου
 				</h3>
-				<div class="flex flex-col gap-1">
-					<p class="text-sm opacity-90 sm:text-base">Δες τις βάρδιές σου για αυτή την εβδομάδα</p>
-					<p class="text-sm opacity-90 sm:text-base">
+				<div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 sm:gap-6">
+					<p class="text-sm sm:text-base lg:text-lg leading-relaxed sm:leading-6 lg:leading-7 flex-1 max-w-none sm:max-w-md lg:max-w-lg">Δες τις βάρδιές σου για αυτή την εβδομάδα</p>
+					<p class="text-sm sm:text-base lg:text-lg leading-relaxed sm:leading-6 lg:leading-7 flex-1 max-w-none sm:max-w-md lg:max-w-lg">
 						Ενημερώσου για άδειες και συντονίσου με τον υπεύθυνο
 					</p>
 				</div>
@@ -80,7 +80,7 @@
 		</a>
 
 		{#if blog}
-			<a href="/app/blog/{blog.id}" class="group relative aspect-video overflow-hidden rounded-2xl">
+			<a href="/app/blog/{blog.id}" class="group relative aspect-video overflow-hidden rounded-2xl border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10">
 				<div class="absolute inset-0">
 					<img
 						src={getFirstImage(blog.images)}
@@ -88,21 +88,21 @@
 						class="h-full w-full object-cover transition-all duration-500 group-hover:scale-110"
 					/>
 					<div
-						class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"
+						class="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent"
 					></div>
 				</div>
-				<div class="relative z-10 flex h-full flex-col justify-end p-4 text-white">
-					<span class="mb-2 text-xs font-light text-gray-300">{formatDate(blog.created_at)}</span>
-					<h3 class="mb-2 line-clamp-2 text-lg font-bold sm:text-xl">{blog.title}</h3>
-					<p class="line-clamp-2 text-sm text-gray-200 opacity-90">{truncateText(blog.content)}</p>
+				<div class="relative z-10 flex h-full flex-col justify-end p-4">
+					<span class="mb-2 text-xs font-light text-muted-foreground">{formatDate(blog.created_at)}</span>
+					<h3 class="mb-2 line-clamp-2 text-lg font-bold text-foreground sm:text-xl">{blog.title}</h3>
+					<p class="line-clamp-2 text-sm text-muted-foreground opacity-90">{truncateText(blog.content)}</p>
 				</div>
 			</a>
 		{:else}
-			<Empty.Root class="h-full bg-muted/20">
+			<Empty.Root class="h-full bg-muted border border-border/50 rounded-2xl">
 				<Empty.Header>
-					<Empty.Media variant="icon"><Search /></Empty.Media>
-					<Empty.Title>Δεν υπάρχουν νέα</Empty.Title>
-					<Empty.Description>Μείνετε συντονισμένοι για μελλοντικές αναρτήσεις.</Empty.Description>
+					<Empty.Media variant="icon"><Search class="text-primary" /></Empty.Media>
+					<Empty.Title class="text-foreground">Δεν υπάρχουν νέα</Empty.Title>
+					<Empty.Description class="text-muted-foreground">Μείνετε συντονισμένοι για μελλοντικές αναρτήσεις.</Empty.Description>
 				</Empty.Header>
 			</Empty.Root>
 		{/if}
@@ -110,12 +110,12 @@
 </div>
 
 <Dialog.Root open={tosFlag}>
-	<Dialog.Content class="max-w-[500px] overflow-hidden p-0">
-		<Dialog.Header class="bg-muted/50 px-6 py-4">
-			<Dialog.Title class="text-xl">Όροι και Προϋποθέσεις</Dialog.Title>
+	<Dialog.Content class="max-w-[500px] overflow-hidden p-0 border-border/50">
+		<Dialog.Header class="bg-muted px-6 py-4 border-b border-border/50">
+			<Dialog.Title class="text-xl text-foreground">Όροι και Προϋποθέσεις</Dialog.Title>
 		</Dialog.Header>
 
-		<div class="max-h-[400px] space-y-4 overflow-y-auto p-6">
+		<div class="max-h-[400px] space-y-4 overflow-y-auto p-6 bg-card">
 			<div class="space-y-4 text-sm leading-relaxed text-muted-foreground">
 				<div class="flex gap-2">
 					<span class="font-bold text-primary">1.</span>
@@ -151,10 +151,10 @@
 				</div>
 			</div>
 
-			<div class="flex items-start gap-3 p-4">
-				<Checkbox id="terms" bind:checked={termsAccepted} />
+			<div class="flex items-start gap-3 p-4 bg-muted/50 rounded-lg border border-border/30">
+				<Checkbox id="terms" bind:checked={termsAccepted} class="border-primary data-[state=checked]:bg-primary" />
 				<div class="grid gap-1.5 leading-none">
-					<Label for="terms" class="text-sm font-semibold">Αποδοχή όρων και προϋποθέσεων</Label>
+					<Label for="terms" class="text-sm font-semibold text-foreground">Αποδοχή όρων και προϋποθέσεων</Label>
 					<p class="text-xs text-muted-foreground italic">
 						Επιλέγοντας αυτό το πλαίσιο, δηλώνετε ότι συμφωνείτε με τους παραπάνω όρους.
 					</p>
@@ -162,8 +162,8 @@
 			</div>
 		</div>
 
-		<Dialog.Footer class="flex items-center justify-between px-6 py-4 sm:justify-between">
-			<a href="/app/legal" class="text-xs text-sky-600 hover:underline">Αναλυτικοί Όροι</a>
+		<Dialog.Footer class="flex items-center justify-between bg-muted/30 border-t border-border/50 px-6 py-4 sm:justify-between">
+			<a href="/app/legal" class="text-xs text-primary hover:text-primary/80 hover:underline transition-colors">Αναλυτικοί Όροι</a>
 
 			<form
 				method="POST"
@@ -177,7 +177,7 @@
 				}}
 			>
 				<input type="hidden" name="accept" value="accept" />
-				<Button type="submit" disabled={!termsAccepted || loading} class="min-w-[100px]">
+				<Button type="submit" disabled={!termsAccepted || loading} class="min-w-[100px] bg-primary hover:bg-primary/90 text-primary-foreground">
 					{#if loading}
 						<Spinner class="mr-2 h-4 w-4" />
 						Φόρτωση...

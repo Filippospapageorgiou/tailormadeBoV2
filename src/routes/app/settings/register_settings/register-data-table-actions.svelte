@@ -10,6 +10,8 @@
 	import { goto } from '$app/navigation';
 	import { Row } from '$lib/components/ui/table';
 	import { setDeleteAction } from './index.svelte';
+	import DeleteConfirmDialog from '$lib/components/Reusable/DeleteConfirmDialog.svelte';
+	import { toast, Toaster } from 'svelte-sonner';
 
 	let {
 		id,
@@ -30,25 +32,23 @@
 		deleteDialogOpen = true;
 	}
 
+	let isDeleting = $state(false);
 	async function handleDeleteSubmit() {
 		setDeleteAction(true);
-		deleteDialogOpen = false;
-		showProgress('Deleting register closing...');
-
+		isDeleting = true;
 		try {
 			const result = await deleteRegisterClosing({ closingId: id });
-
 			if (result.success) {
-				showSuccessToast('Success', result?.message);
-				// Refresh the table - you might need to adjust this based on your state management
+				toast.success(result?.message);
 			} else {
-				showFailToast('Error', result?.message || 'Failed to delete register closing');
+				toast.error(result?.message || 'Failed to delete register closing');
 			}
 		} catch (error: any) {
 			console.error('Error deleting register closing:', error);
-			showFailToast('Error', 'An unexpected error occurred');
+			toast.error(error || 'Failed to delete register closing');
 		} finally {
-			hideProgress();
+			isDeleting = false;
+			deleteDialogOpen = false;
 		}
 	}
 
@@ -60,6 +60,10 @@
 			day: 'numeric'
 		})
 	);
+
+	function cancelDelete() {
+		deleteDialogOpen = false;
+	}
 
 	// Format currency
 	let formattedSales = $derived(
@@ -104,37 +108,19 @@
 	</DropdownMenu.Content>
 </DropdownMenu.Root>
 
-<!-- Delete Dialog -->
-<Dialog.Root bind:open={deleteDialogOpen}>
-	<Dialog.Content class="rounded-2xl p-6 shadow-lg sm:max-w-[425px]">
-		<Dialog.Header class="space-y-3">
-			<Dialog.Title class="text-xl font-semibold">Delete Register Closing</Dialog.Title>
-			<Dialog.Description class="text-sm leading-relaxed text-gray-600">
-				Are you sure you want to delete the register closing for
-				<span class="font-medium text-gray-900">"{formattedDate}"</span>
-				with total sales of <span class="font-medium">{formattedSales}</span>?
-				<br />
-				<br />
-				This action <span class="font-semibold text-red-500">cannot</span> be undone. The closing record
-				will be permanently removed from the database.
-			</Dialog.Description>
-		</Dialog.Header>
-
-		<Dialog.Footer class="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
-			<Button
-				variant="outline"
-				class="cursor-pointer border-gray-300 text-gray-700 hover:bg-gray-100"
-				onclick={() => (deleteDialogOpen = false)}
-			>
-				Cancel
-			</Button>
-			<Button
-				variant="destructive"
-				class="cursor-pointer bg-red-600 font-medium text-white shadow-md hover:bg-red-700"
-				onclick={handleDeleteSubmit}
-			>
-				Delete Closing
-			</Button>
-		</Dialog.Footer>
-	</Dialog.Content>
-</Dialog.Root>
+<DeleteConfirmDialog
+	bind:open={deleteDialogOpen}
+	title="Διαγραφή Κλεισήματος"
+	description="Είστε σίγουροι ότι θέλετε να διαγράψετε αυτό το κλείσημο ταμείου"
+	warningText="Αυτή η ενέργεια δεν μπορεί να αναιρεθεί"
+	itemName={`${closingDate} (ID:${id})`}
+	{isDeleting}
+	onConfirm={handleDeleteSubmit}
+	onCancel={cancelDelete}
+>
+	{#snippet children()}
+		Είστε σίγουροι ότι θέλετε να διαγράψετε αυτό το κλείσημο με
+		ημερομηνία <span class="font-medium">{closingDate}</span>
+		και συνολίκο ταμείο <span class="font-medium">{totalSales}</span>
+	{/snippet}
+</DeleteConfirmDialog>

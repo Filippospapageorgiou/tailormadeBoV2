@@ -8,10 +8,11 @@
 	import { Pencil, Trash, Palette } from 'lucide-svelte';
 	import { deleteUser, getAllUserFromOrg, updateUserRole, updateBadgeColor } from './data.remote';
 	import { showProgress, hideProgress } from '$lib/stores/progress.svelte';
-	import { showFailToast, showSuccessToast, toast } from '$lib/stores/toast.svelte';
 	import type { RoleTypes } from '$lib/models/database.types';
 	import BadgeColorPicker from '$lib/components/custom/badge-color-picker.svelte';
 	import { Switch } from '$lib/components/ui/switch/index.js';
+	import { toast } from 'svelte-sonner';
+	import DeleteConfirmDialog from '$lib/components/Reusable/DeleteConfirmDialog.svelte';
 
 	let {
 		id,
@@ -37,9 +38,6 @@
 	let editDialogOpen = $state(false);
 	let selectedRoleId = $derived(String(role_id));
 
-	// Delete dialog state
-	let deleteDialogOpen = $state(false);
-
 	// Badge color dialog state
 	let badgeColorDialogOpen = $state(false);
 	let selectedBadgeColor = $derived(badge_color || '#3b82f6');
@@ -49,6 +47,8 @@
 		editDialogOpen = true;
 	}
 
+	let deleteDialogOpen = $state(false);
+	let isDeleting = $state(false);
 	function handleDeleteClick() {
 		deleteDialogOpen = true;
 	}
@@ -72,12 +72,12 @@
 
 			if (result.success) {
 				await query.refresh();
-				showSuccessToast('Success', result?.message);
+				toast.success(result?.message);
 			} else {
-				showFailToast('Error', result?.message || 'Failed to update the user');
+				toast.error(result?.message || 'Failed to update the user');
 			}
 		} catch (error: any) {
-			showFailToast('Error', 'An unexpected error occured');
+			toast.error(error);
 		} finally {
 			hideProgress();
 		}
@@ -85,21 +85,20 @@
 
 	async function handleDeleteSubmit() {
 		deleteDialogOpen = false;
-		showProgress('Deleting user...');
-
+		isDeleting = true;
 		try {
 			const result = await deleteUser({ userId: id });
-
 			if (result.success) {
+				toast.success(result.message);
 				await query.refresh();
-				showSuccessToast('Success', result?.message);
+				deleteDialogOpen = false;
 			} else {
-				showFailToast('Error', result?.message || 'Failed to update the user');
+				toast.error(result.message);
 			}
 		} catch (error: any) {
-			showFailToast('Error', 'An unexpected error occured');
+			toast(error);
 		} finally {
-			hideProgress();
+			isDeleting = false;
 		}
 	}
 
@@ -115,15 +114,19 @@
 
 			if (result.success) {
 				await query.refresh();
-				showSuccessToast('Success', result?.message);
+				toast.success(result?.message);
 			} else {
-				showFailToast('Error', result?.message || 'Failed to update the user');
+				toast.error(result?.message || 'Failed to update the user');
 			}
 		} catch (error: any) {
-			showFailToast('Error', 'An unexpected error occured');
+			toast.error(error || 'Failed to update the user');
 		} finally {
 			hideProgress();
 		}
+	}
+
+	function cancelDelete() {
+		deleteDialogOpen = false;
 	}
 
 	// Compute selected role name for display
@@ -232,39 +235,24 @@
 	</Dialog.Content>
 </Dialog.Root>
 
-<!-- Delete User Dialog -->
-<Dialog.Root bind:open={deleteDialogOpen}>
-	<Dialog.Content class="rounded-2xl p-6 shadow-lg sm:max-w-[425px]">
-		<Dialog.Header class="space-y-3">
-			<Dialog.Title class="text-xl font-semibold">Delete User</Dialog.Title>
-			<Dialog.Description class="text-sm leading-relaxed">
-				Are you sure you want to delete user
-				<span class="font-medium">"{username}"</span>?
-				<br />
-				<br />
-				This action <span class="font-semibold text-red-500">cannot</span> be undone. The user will be
-				permanently removed from the authentication system and the database.
-			</Dialog.Description>
-		</Dialog.Header>
-
-		<Dialog.Footer class="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
-			<Button
-				variant="outline"
-				class="cursor-pointer border-gray-300 hover:bg-gray-100"
-				onclick={() => (deleteDialogOpen = false)}
-			>
-				Cancel
-			</Button>
-			<Button
-				variant="destructive"
-				class="cursor-pointer bg-red-600 font-medium text-white shadow-md hover:bg-red-700"
-				onclick={handleDeleteSubmit}
-			>
-				Delete User
-			</Button>
-		</Dialog.Footer>
-	</Dialog.Content>
-</Dialog.Root>
+<DeleteConfirmDialog
+	bind:open={deleteDialogOpen}
+	title="Διαγραφή συστατικού"
+	description="Είστε σίγουροι ότι θέλετε να διαγράψετε αυτό τον χρήστη;"
+	warningText="Αυτή η ενέργεια δεν μπορεί να αναιρεθεί"
+	itemName={`${username} (ID: ${id})`}
+	{isDeleting}
+	onConfirm={handleDeleteSubmit}
+	onCancel={cancelDelete}
+>
+	{#snippet children()}
+		Είστε σίγουροι ότι θέλετε να διαγράψετε τον χρήστη
+        <span class="font-medium">«{username}»</span>?
+		<br />
+		<br /> Ο χρήστης θα διαγραφεί μόνιμα
+        από το σύστημα πιστοποίησης και τη βάση δεδομένων.
+	{/snippet}
+</DeleteConfirmDialog>
 
 <!-- Badge Color Dialog -->
 <Dialog.Root bind:open={badgeColorDialogOpen}>

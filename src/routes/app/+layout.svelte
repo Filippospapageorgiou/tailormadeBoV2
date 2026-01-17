@@ -6,9 +6,6 @@
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 	import { setProfileContext } from '$lib/stores/profile.svelte.js';
-	import Button from '$lib/components/ui/button/button.svelte';
-	import { BellIcon } from 'lucide-svelte';
-	import Badge from '$lib/components/ui/badge/badge.svelte';
 	import { ThemeSelector } from '$lib/components/ui/theme-selector';
 	import Command from '$lib/components/command/command.svelte';
 	import Notifications from '$lib/components/custom/Notifications.svelte';
@@ -40,7 +37,7 @@
 	<AppSidebar />
 	<Sidebar.Inset>
 		<header
-			class="sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between bg-background px-4">
+			class="sticky top-4 z-40 flex h-16 shrink-0 items-center justify-between bg-muted border border-border/50 rounded-lg mx-2 mt-2 px-4 py-2">
 			<div class="flex items-center gap-2">
 				<Sidebar.Trigger class="-ml-1" />
 				<Separator orientation="vertical" class="mr-2 h-4" />
