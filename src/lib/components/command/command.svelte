@@ -43,7 +43,7 @@
 <button
 	type="button"
 	onclick={() => (open = true)}
-	class="inline-flex h-10 md:w-75 bg-muted w-full cursor-pointer items-center justify-between gap-1.5 rounded-lg border border-input bg-background px-4 py-3 text-sm text-muted-foreground ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+	class="inline-flex h-10 md:w-75 bg-muted w-full cursor-pointer items-center justify-between gap-1.5 rounded-lg border border-input px-4 py-3 text-sm text-muted-foreground ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
 >
 	<div class="flex items-center gap-3">
 		<SearchIcon class="h-5 w-5" />

@@ -187,8 +187,8 @@ export const actions: Actions = {
 				return { success: false, message: 'Failed to create user profile' };
 			}
 
-			// Mark invitation as accepted
-			const { data, error } = await supabase
+			// Mark invitation as accepted - USE adminClient instead of supabase
+			const { data, error } = await adminClient
 				.from('organization_invitations')
 				.update({
 					status: 'accepted',

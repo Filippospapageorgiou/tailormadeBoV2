@@ -16,11 +16,17 @@
 	}
 
 	let actual_cash_counted = $state(0);
+	let deposit = $derived(sales.actualCashCounted - sales.tommorow_opening_float)
 	$effect(() => {
 		if(actual_cash_counted){
 			sales.actualCashCounted = actual_cash_counted;
 		}
+		if(deposit){
+			sales.cash_deposit = deposit;
+		}
 	})
+
+
 </script>
 <div class="space-y-6">
 	<!-- Summary Overview Card -->

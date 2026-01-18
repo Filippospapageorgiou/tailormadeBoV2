@@ -380,7 +380,7 @@
 				<Card.Content class="p-0">
 					<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
 						{#each employees as employee}
-							<div class="flex items-center gap-3 rounded-lg border bg-card/50 p-3">
+							<div class="flex items-center gap-3 rounded-lg border border-border/50 bg-card/50 p-3">
 								<img
 									src={employee.image_url || '/default-avatar.png'}
 									alt={employee.username}
