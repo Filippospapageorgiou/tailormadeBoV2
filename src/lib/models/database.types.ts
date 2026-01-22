@@ -82,6 +82,8 @@ export interface Organization {
 	created_at: string;
 	updated_at: string | null;
 	location: string | null;
+	latitude:number | null,
+	longitude:number | null;
 }
 
 export interface verification_codes {

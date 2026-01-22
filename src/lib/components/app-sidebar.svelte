@@ -23,17 +23,8 @@
 		Landmark,
 
 		ShieldCheck,
-
+		Award,
 		Building,
-
-		Building2
-
-
-
-
-
-
-
 	} from 'lucide-svelte';
 
 	const data = {
@@ -134,6 +125,11 @@
 						title:'Πίνακας Ελένχου',
 						url:'/app/organization_managment',
 						icon:Building
+					},
+					{
+						title:'Διαχείρηση bonus',
+						url:'/app/bonus_managment',
+						icon:Award
 					},
 					{
 						title: 'Συνταγές',

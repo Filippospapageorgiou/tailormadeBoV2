@@ -3,6 +3,7 @@ import { createServerClient } from '$lib/supabase/server';
 import type { Organization } from '$lib/models/database.types';
 import { getUserProfileWithRoleCheck } from '$lib/supabase/queries';
 import { z } from 'zod/v4';
+import { geocodeAddress } from '$lib/utils';
 
 export interface OrganizationWithCounts extends Organization {
 	employee_count: number;
@@ -33,6 +34,26 @@ export const createOrganization = form(createOrganizationSchema, async (data) =>
 	const supabase = createServerClient();
 
 	try {
+
+		// Geocode μόνο αν υπάρχει location
+		let latitude: number | null = null;
+		let longitude: number | null = null;
+
+		if (data.location) {
+			const geoResult = await geocodeAddress(data.location);
+			
+			if (geoResult) {
+				latitude = geoResult.lat;
+				longitude = geoResult.lon;
+			} else {
+				console.warn('[createOrganization] Geocoding failed for:', data.location);
+				return {
+					success: false,
+					message: 'Δεν βρέθηκε η διεύθυνση. Δοκιμάστε διαφορετική μορφή.'
+				};
+			}
+		}
+
 		const { data: newOrg, error: insertError } = await supabase
 			.from('core_organizations')
 			.insert({
@@ -41,7 +62,9 @@ export const createOrganization = form(createOrganizationSchema, async (data) =>
 				phone: data.phone || null,
 				country: data.country || null,
 				location: data.location || null,
-				status: data.status
+				status: data.status,
+				latitude,
+				longitude
 			})
 			.select()
 			.single();
@@ -81,6 +104,21 @@ const updateOrganizationSchema = z.object({
 export const updateOrganization = form(updateOrganizationSchema, async (data) => {
 	const supabase = createServerClient();
 	try {
+
+		// Geocode μόνο αν υπάρχει location
+		let latitude: number | null = null;
+		let longitude: number | null = null;
+
+		if (data.location) {
+			const geoResult = await geocodeAddress(data.location);
+			
+			if (geoResult) {
+				latitude = geoResult.lat;
+				longitude = geoResult.lon;
+			} else {
+				console.warn('[updateOrganization] Geocoding failed for:', data.location);
+			}
+		}
 		const { data: updatedOrg, error: updateError } = await supabase
 			.from('core_organizations')
 			.update({
@@ -89,7 +127,9 @@ export const updateOrganization = form(updateOrganizationSchema, async (data) =>
 				phone: data.phone || null,
 				country: data.country || null,
 				location: data.location || null,
-				status: data.status
+				status: data.status,
+				latitude,
+				longitude
 			})
 			.eq('id', data.id)
 			.select()

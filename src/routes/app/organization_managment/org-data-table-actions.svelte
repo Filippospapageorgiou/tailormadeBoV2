@@ -3,7 +3,7 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
-	import { Eye, PenIcon, Trash, Save } from 'lucide-svelte';
+	import { Eye, PenIcon, Trash, Save, Info } from 'lucide-svelte';
 	import { goto } from '$app/navigation';
 	import { deleteOrganization, getAllOrganizations, updateOrganization } from './data.remote';
 	import { showProgress, hideProgress } from '$lib/stores/progress.svelte';
@@ -15,6 +15,7 @@
 	import { Label } from '$lib/components/ui/label/index.js';
 	import { Switch } from '$lib/components/ui/switch/index.js';
 	import ScrollArea from '$lib/components/ui/scroll-area/scroll-area.svelte';
+	import PhoneInput from '$lib/components/ui/phone-input/phone-input.svelte';
 
 	let {
 		id,
@@ -37,7 +38,6 @@
 	// Get query for refresh
 	let query = getAllOrganizations();
 
-
 	// Delete dialog state
 	let deleteDialogOpen = $state(false);
 	let isDeleting = $state(false);
@@ -53,7 +53,7 @@
 	function handleEditClick() {
 		// Reset status
 		editStatus = status ?? true;
-		
+
 		// Set all form field values
 		updateOrganization.fields.set({
 			id: id.toString(),
@@ -64,7 +64,7 @@
 			location: location ?? '',
 			status: String(status ?? true)
 		});
-		
+
 		openEdit = true;
 	}
 
@@ -203,7 +203,7 @@
 		<ScrollArea class="h-[65dvh] w-full sm:h-auto sm:max-h-[60dvh]">
 			<form
 				class="space-y-6 px-1 py-4"
-				{...updateOrganization.enhance(async ({ form,submit }) => {
+				{...updateOrganization.enhance(async ({ form, submit }) => {
 					isSubmitting = true;
 					await submit();
 
@@ -225,11 +225,14 @@
 				<div class="space-y-4">
 					<!-- Store Name -->
 					<div class="space-y-2">
-						<Label for="edit-store-name">Όνομα καταστήματος *</Label>
+						<Label for="edit-store-name"
+							>Όνομα καταστήματος<span class="text-destructive">*</span></Label
+						>
 						<Input
 							id="edit-store-name"
 							{...updateOrganization.fields.store_name.as('text')}
 							placeholder="π.χ. Coffee roasters Athens"
+							disabled={isSubmitting}
 						/>
 					</div>
 
@@ -241,16 +244,19 @@
 							type="email"
 							{...updateOrganization.fields.email.as('text')}
 							placeholder="info@example.com"
+							disabled={isSubmitting}
 						/>
 					</div>
 
 					<!-- Phone -->
 					<div class="space-y-2">
 						<Label for="edit-org-phone">Τηλέφωνο</Label>
-						<Input
-							id="edit-org-phone"
+						<PhoneInput
+							country="GR"
+							placeholder={'+30 210 5671 123'}
+							disabled={isSubmitting}
 							{...updateOrganization.fields.phone.as('text')}
-							placeholder="+30 210 1234567"
+							bind:value={phone}
 						/>
 					</div>
 
@@ -261,16 +267,21 @@
 							id="edit-org-country"
 							{...updateOrganization.fields.country.as('text')}
 							placeholder="Greece"
+							disabled={isSubmitting}
 						/>
 					</div>
 
 					<!-- Location -->
 					<div class="space-y-2">
-						<Label for="edit-org-location">Τοποθεσία / Διεύθυνση</Label>
+						<Label for="edit-org-location"
+							>Τοποθεσία / Διεύθυνση<span class="text-destructive">*</span></Label
+						>
 						<Input
 							id="edit-org-location"
 							{...updateOrganization.fields.location.as('text')}
-							placeholder="Ermou 15, Athens"
+							placeholder="Περικλέους 37, Αθήνα"
+							disabled={isSubmitting}
+							required
 						/>
 					</div>
 
@@ -287,8 +298,22 @@
 							checked={editStatus}
 							onCheckedChange={handleStatusChange}
 							class="cursor-pointer"
+							disabled={isSubmitting}
 						/>
 						<input type="hidden" {...updateOrganization.fields.status.as('text')} />
+					</div>
+
+					<div
+						class="flex gap-2 rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-950/50 dark:text-blue-200"
+					>
+						<Info class="mt-0.5 h-4 w-4 shrink-0" />
+						<div class="space-y-1">
+							<p class="font-medium">Μορφή διεύθυνσης για τον χάρτη</p>
+							<p class="text-xs opacity-90">
+								Χρησιμοποιήστε: <span class="font-mono">[Οδός] [Αριθμός], [Πόλη]</span>
+							</p>
+							<p class="text-xs opacity-75">π.χ. Ερμού 10, Αθήνα ή Τσιμισκή 50, Θεσσαλονίκη</p>
+						</div>
 					</div>
 				</div>
 

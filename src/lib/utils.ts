@@ -180,3 +180,28 @@ export function formatWeekRange(start: string, end: string): string {
 
 	return `Εβδομάδα ${startDay}-${endDay} ${month} ${year}`;
 }
+
+export async function geocodeAddress(address:string):Promise<{lat:number; lon:number} | null>{
+	const encoded = encodeURIComponent(address);
+  const response = await fetch(
+    `https://nominatim.openstreetmap.org/search?format=json&q=${encoded}&limit=1`,
+    {
+      headers: {
+        'User-Agent': 'tailormadebov2.app' 
+      }
+    }
+  );
+  
+  const data = await response.json();
+
+  console.log(data);
+  
+  if (data.length > 0) {
+    return {
+      lat: parseFloat(data[0].lat),
+      lon: parseFloat(data[0].lon)
+    };
+  }
+  return null;
+}
+

@@ -51,7 +51,7 @@
 
 <div
 	style="animation-delay: {index * 325}ms; animation-fill-mode: backwards;"
-	class="group animate-fade-in-right relative cursor-pointer overflow-hidden rounded-xl border-1 bg-card text-card-foreground shadow-sm transition-all duration-300 hover:shadow-lg {serviceStatus ===
+	class="card-glass {serviceStatus ===
 	'overdue'
 		? 'border-red-400'
 		: serviceStatus === 'warning'

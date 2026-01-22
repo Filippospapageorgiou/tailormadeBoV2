@@ -14,7 +14,7 @@
 
 	let { open = $bindable(false), shiftData, onSuccess }: any = $props();
 
-	let requestType = $state<'change' | 'swap' | 'cancel'>('change');
+	let requestType = $state<'change' | 'swap' | 'cancel'>('cancel');
 	let proposedDate = $state('');
 	let proposedStartTime = $state('');
 	let proposedEndTime = $state('');
@@ -32,7 +32,7 @@
 	// Reset form when modal closes
 	$effect(() => {
 		if (!open) {
-			requestType = 'change';
+			requestType = 'cancel';
 			proposedDate = '';
 			proposedStartTime = '';
 			proposedEndTime = '';
@@ -64,7 +64,7 @@
 	}
 
 	function refreshForm() {
-		requestType = 'change';
+		requestType = 'cancel';
 		proposedDate = '';
 		proposedStartTime = '';
 		proposedEndTime = '';
@@ -111,7 +111,7 @@
 				/>
 
 				<!-- Current Shift Info -->
-				<Alert.Root class="border-blue-200 bg-blue-50">
+				<Alert.Root class="border border-border/50">
 					<BadgeAlertIcon class="h-4 w-4 text-blue-600" />
 					<Alert.Title>Τρέχουσα Βάρδια</Alert.Title>
 					<Alert.Description>

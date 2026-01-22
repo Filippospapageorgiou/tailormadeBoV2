@@ -178,7 +178,6 @@ export const getRegisterClosingByDateRange = query(registerTableSchema, async (p
 		} else if (totalSales > 0) {
 			percentageChange = 100;
 		}
-
 		return {
 			success: true,
 			message: 'Successfully fetched register data',

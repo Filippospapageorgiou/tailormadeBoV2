@@ -64,7 +64,7 @@
 				</Breadcrumb.Root>
 			</div>
 
-			<div class="flex items-center gap-4">
+			<div class="flex items-center gap-1">
 				<Command />
 				<Notifications />
 				<ThemeSelector />

@@ -3,7 +3,7 @@
 	import { Card } from '$lib/components/ui/card';
 </script>
 
-<Card class="relative col-span-full overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-br from-muted via-secondary to-accent/50">
+<Card class="relative col-span-full overflow-hidden rounded-2xl border border-border/50">
 	
 	<div
 		class="relative z-20 flex flex-col items-center justify-center p-4 py-16 text-foreground transition-transform duration-200 ease-out sm:p-6 sm:py-20 lg:py-28"

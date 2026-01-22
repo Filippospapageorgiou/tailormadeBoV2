@@ -2,6 +2,8 @@
 	import { goto } from '$app/navigation';
 	import Badge from '$lib/components/ui/badge/badge.svelte';
 	import { Calendar, User } from 'lucide-svelte';
+	import * as Card from '$lib/components/ui/card';
+
 
 	let { blog } = $props();
 
