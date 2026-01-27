@@ -7,27 +7,60 @@
 	import { sensors } from '$lib';
 	import { updateDayliTaskForUser } from '../data.remote';
 	import { toast } from 'svelte-sonner';
+	import PhotoModal from './PhotoModal.svelte';
 
 	let { tasks, onUpdate } = $props();
 
-	// Organize tasks into the format move() expects [cite: 1, 4]
+	// Organize tasks into the format move() expects
 	let groupedTasks = $derived({
 		'in-progress': tasks.filter((t: any) => !t.completed),
 		done: tasks.filter((t: any) => t.completed)
 	});
 
+	// Photo modal state
+	let photoModalOpen = $state(false);
+	let pendingTask = $state<any>(null);
+
 	async function handleDragEnd(event: any) {
-        const { source, target } = event.operation; 
-        if (!target) return;
-        const targetGroup = target.data.group || target.id;    
-        const isCompleted = targetGroup === 'done';
-        await handleUpdateDayliTask(source.id,isCompleted);
-        
-    }
+		const { source, target } = event.operation;
+		if (!target) return;
+
+		const targetGroup = target.data.group || target.id;
+		const isCompleted = targetGroup === 'done';
+
+		// Find the task being moved
+		const task = tasks.find((t: any) => t.id === source.id);
+
+		// If moving to "done" and task requires photo and doesn't have one yet
+		if (isCompleted && task?.task_items?.requires_photo && !task.photo_url) {
+			// Store the task for the modal
+			pendingTask = task;
+			photoModalOpen = true;
+			return;
+		}
+
+		// Normal flow - no photo required
+		await handleUpdateDayliTask(source.id, isCompleted);
+	}
+
+	async function handlePhotoSuccess() {
+		photoModalOpen = false;
+		pendingTask = null;
+		await onUpdate();
+	}
+
+	function handlePhotoCancel() {
+		photoModalOpen = false;
+		pendingTask = null;
+		// Refresh to reset the visual state
+		onUpdate();
+	}
 
 	async function handleUpdateDayliTask(id: string, completed: boolean) {
 		if (!id) return;
-		const nowInGreece =  new Date().toLocaleString('sv-SE', { timeZone: 'Europe/Athens' }).replace(' ', 'T');
+		const nowInGreece = new Date()
+			.toLocaleString('sv-SE', { timeZone: 'Europe/Athens' })
+			.replace(' ', 'T');
 		const result = await updateDayliTaskForUser({
 			id: id,
 			completed: completed,
@@ -44,13 +77,14 @@
 <DragDropProvider
 	{sensors}
 	onDragOver={(event) => {
-		// move() updates the keyed object structure [cite: 1, 4]
 		groupedTasks = move(groupedTasks, event);
 	}}
 	onDragEnd={handleDragEnd}
 >
-	<div class="grid gap-4 font-game md:grid-cols-2 animate-fade-in-down"
-			style="animation-delay: {400}ms;">
+	<div
+		class="grid animate-fade-in-down gap-4 font-game md:grid-cols-2"
+		style="animation-delay: {400}ms;"
+	>
 		{@render taskList('in-progress', 'In Progress', groupedTasks['in-progress'])}
 		{@render taskList('done', 'Done', groupedTasks['done'])}
 	</div>
@@ -68,6 +102,15 @@
 		{/snippet}
 	</DragOverlay>
 </DragDropProvider>
+
+<!-- Photo Capture Modal -->
+<PhotoModal
+	bind:open={photoModalOpen}
+	taskId={pendingTask?.id ?? ''}
+	taskTitle={pendingTask?.task_items?.title ?? ''}
+	onSuccess={handlePhotoSuccess}
+	onCancel={handlePhotoCancel}
+/>
 
 {#snippet taskList(id: string, title: string, columnTasks: any[])}
 	<Droppable

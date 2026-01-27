@@ -152,7 +152,7 @@
 		   dark:shadow-black/20"
 		align="end"
 	>
-		<div class="flex items-center justify-between border-b px-4 py-3">
+		<div class="flex items-center justify-between border-b border-border/50 px-4 py-3">
 			<h3 class="text-sm font-semibold">Ειδοποιήσεις</h3>
 			<div class="flex items-center gap-1">
 				<Button

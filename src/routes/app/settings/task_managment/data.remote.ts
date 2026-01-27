@@ -571,30 +571,63 @@ export const addCustomDayliTask = command(addCustomDayliTaskSchema, async (data)
 
 
 export const deleteDailyTask = command(DeleteItemSchema, async (data) => {
-    const supabase = createServerClient();
-    try {
-        // Use .select() or check the count to see if something happened
-        const { error, count } = await supabase
-            .from('user_daily_tasks')
-            .delete({ count: 'exact' }) // Add this to get the count
-            .eq('id', data.id);
+	const supabase = createServerClient();
+	try {
+		// First, fetch the task to check if it has a photo
+		const { data: task, error: fetchError } = await supabase
+			.from('user_daily_tasks')
+			.select(`
+				*,
+				task_items (requires_photo)
+			`)
+			.eq('id', data.id)
+			.single();
 
-        if (error) {
-            console.error('[deleteDailyTask] DB Error:', error);
-            return { success: false, message: 'Σφάλμα βάσης δεδομένων' };
-        }
+		if (fetchError) {
+			console.error('[deleteDailyTask] Fetch Error:', fetchError);
+			return { success: false, message: 'Σφάλμα κατά την ανάκτηση της εργασίας' };
+		}
 
-        // If count is 0, nothing was deleted (likely RLS or wrong ID)
-        if (count === 0) {
-            console.warn('[deleteDailyTask] No rows deleted. Check RLS or ID:', data.id);
-            return { 
-                success: false, 
-                message: 'Η εργασία δεν βρέθηκε ή δεν έχετε δικαίωμα διαγραφής' 
-            };
-        }
+		// If task has a photo, delete it from storage
+		if (task?.photo_url) {
+			// Extract the file path from the URL
+			// URL format: https://xxx.supabase.co/storage/v1/object/public/daily-task-photos/{user_id}/{task_id}/{filename}
+			const bucketPath = task.photo_url.split('/daily-task-photos/')[1];
 
-        return { success: true, message: 'Επιτυχής διαγραφή εργασίας' };
-    } catch (err) {
-        return { success: false, message: 'Σφάλμα κατά την επικοινωνία' };
-    }
+			if (bucketPath) {
+				const { error: storageError } = await supabase.storage
+					.from('daily-task-photos')
+					.remove([bucketPath]);
+
+				if (storageError) {
+					console.error('[deleteDailyTask] Storage delete error:', storageError);
+					// Continue anyway - don't fail the whole operation for storage cleanup
+				}
+			}
+		}
+
+		// Now delete the task
+		const { error, count } = await supabase
+			.from('user_daily_tasks')
+			.delete({ count: 'exact' })
+			.eq('id', data.id);
+
+		if (error) {
+			console.error('[deleteDailyTask] DB Error:', error);
+			return { success: false, message: 'Σφάλμα βάσης δεδομένων' };
+		}
+
+		if (count === 0) {
+			console.warn('[deleteDailyTask] No rows deleted. Check RLS or ID:', data.id);
+			return {
+				success: false,
+				message: 'Η εργασία δεν βρέθηκε ή δεν έχετε δικαίωμα διαγραφής'
+			};
+		}
+
+		return { success: true, message: 'Επιτυχής διαγραφή εργασίας' };
+	} catch (err) {
+		console.error('[deleteDailyTask] Error:', err);
+		return { success: false, message: 'Σφάλμα κατά την επικοινωνία' };
+	}
 });

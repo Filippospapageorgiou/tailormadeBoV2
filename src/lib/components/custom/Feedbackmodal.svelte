@@ -7,7 +7,7 @@
 	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
 	import { submitFeedback } from '$lib/api/feedback/data.remote';
 	import { showSuccessToast, showFailToast } from '$lib/stores/toast.svelte';
-    import { openFeedBackModal,openModal,closeModal} from '$lib/stores/feedback.svelte';
+    import { openFeedBackModal,closeModal} from '$lib/stores/feedback.svelte';
 	
     let open = $derived(openFeedBackModal.open);
 

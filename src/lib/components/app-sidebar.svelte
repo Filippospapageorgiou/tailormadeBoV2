@@ -13,18 +13,13 @@
 		Network,
 		Refrigerator,
 		Book,
-
 		Users,
-
 		Calendar,
-
 		Cog,
-
 		Landmark,
-
 		ShieldCheck,
 		Award,
-		Building,
+		Building
 	} from 'lucide-svelte';
 
 	const data = {
@@ -74,6 +69,7 @@
 				title: 'Ρυθμίσεις διαχειριστή',
 				url: '/app',
 				icon: Settings2Icon,
+				adminOnly: true, // <-- Flag for admin-only items
 				items: [
 					{
 						title: 'Χρήστες & Οργανισμός',
@@ -122,14 +118,19 @@
 				icon: Globe,
 				items: [
 					{
-						title:'Πίνακας Ελένχου',
-						url:'/app/organization_managment',
-						icon:Building
+						title: 'Πίνακας Ελένχου',
+						url: '/app/organization_managment',
+						icon: Building
 					},
 					{
-						title:'Διαχείρηση bonus',
-						url:'/app/bonus_managment',
-						icon:Award
+						title: 'Διαχείρηση bonus',
+						url: '/app/bonus_managment',
+						icon: Award
+					},
+					{
+						title: 'Ai βοήθος',
+						url: '/app/ai_assistant',
+						icon: Bot
 					},
 					{
 						title: 'Συνταγές',
@@ -160,10 +161,23 @@
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 	import type { ComponentProps } from 'svelte';
 	import { getProfileContext } from '$lib/stores/profile.svelte';
+	import { Bot } from '@lucide/svelte';
+	import { goto } from '$app/navigation';
 
 	let { ref = $bindable(null), ...restProps }: ComponentProps<typeof Sidebar.Root> = $props();
 
 	let user = getProfileContext();
+
+	// Filter navMain based on user role
+	let filteredNavMain = $derived(
+		data.navMain.filter((item) => {
+			// If item is adminOnly, only show for role_id 1 or 2
+			if (item.adminOnly) {
+				return user.role_id === 1 || user.role_id === 2;
+			}
+			return true;
+		})
+	);
 </script>
 
 <Sidebar.Root bind:ref variant="inset" {...restProps}>
@@ -172,24 +186,33 @@
 			<Sidebar.MenuItem>
 				<Sidebar.MenuButton size="lg">
 					{#snippet child({ props })}
-						<a href="/app/" {...props}>
+						<button
+							onclick={() => {
+								goto('/app/');
+							}}
+							{...props}
+						>
 							<div
-								class="flex aspect-square size-8 items-center justify-center rounded-lg bg-transparent text-sidebar-primary-foreground"
+								class="flex aspect-square size-10 items-center justify-center overflow-hidden rounded-lg"
 							>
-								<img src="/iconTailor.png" alt="Tailor Made Coffee Roasters" class="size-4" />
+								<img
+									src="/iconTailor.png"
+									alt="Tailor Made Coffee Roasters"
+									class="size-6 object-cover"
+								/>
 							</div>
 							<div class="grid flex-1 text-left text-sm leading-tight">
 								<span class="truncate font-medium">Tailor Made</span>
 								<span class="truncate text-xs">Enterprise</span>
 							</div>
-						</a>
+						</button>
 					{/snippet}
 				</Sidebar.MenuButton>
 			</Sidebar.MenuItem>
 		</Sidebar.Menu>
 	</Sidebar.Header>
 	<Sidebar.Content>
-		<NavMain items={data.navMain} />
+		<NavMain items={filteredNavMain} />
 		{#if user.role_id === 1}
 			<NavProjects projects={data.projects} />
 		{/if}
