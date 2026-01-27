@@ -314,12 +314,14 @@ export const getAllOrganizations = query(async () => {
 	const supabase = createServerClient();
 
 	try {
+		// Get organizations with counts
 		const { data: organizations, error: orgsError } = await supabase.from('core_organizations')
 			.select(`
 				*,
 				profiles(count),
 				equipment(count)
 			`);
+
 		if (orgsError) {
 			console.error('[getAllOrganizations] Error:', orgsError);
 			return {
@@ -329,12 +331,45 @@ export const getAllOrganizations = query(async () => {
 			};
 		}
 
-		// Transform τα counts
+		// Get latest bonus data for each organization
+		// This gets the most recent period's data per org
+		const { data: latestBonusData, error: bonusError } = await supabase
+			.from('bonus_organization_data')
+			.select(`
+				org_id,
+				percentage_change,
+				bonus_periods!inner(year, quarter)
+			`)
+			.order('bonus_periods(year)', { ascending: false })
+			.order('bonus_periods(quarter)', { ascending: false });
+
+		if (bonusError) {
+			console.error('[getAllOrganizations] Bonus data error:', bonusError);
+			// Don't fail - just continue without bonus data
+		}
+
+		// Create a map of org_id -> latest percentage_change
+		const latestPercentageMap = new Map<number, number>();
+		
+		if (latestBonusData) {
+			for (const item of latestBonusData) {
+				// Only keep the first (latest) entry per org
+				if (!latestPercentageMap.has(item.org_id)) {
+					const percentage = typeof item.percentage_change === 'string'
+						? parseFloat(item.percentage_change)
+						: item.percentage_change;
+					latestPercentageMap.set(item.org_id, percentage);
+				}
+			}
+		}
+
+		// Transform with counts and latest percentage
 		const orgsWithCounts =
 			organizations?.map((org) => ({
 				...org,
 				employee_count: org.profiles?.[0]?.count ?? 0,
-				equipment_count: org.equipment?.[0]?.count ?? 0
+				equipment_count: org.equipment?.[0]?.count ?? 0,
+				latest_percentage_change: latestPercentageMap.get(org.id) ?? null
 			})) ?? [];
 
 		return {

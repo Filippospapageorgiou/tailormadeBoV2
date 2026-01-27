@@ -112,19 +112,28 @@
 	}
 
 	let isFullscreen = $state(false);
+	let originalStyles: {
+		position: string;
+		top: string;
+		left: string;
+		width: string;
+		height: string;
+		zIndex: string;
+		transition: string;
+	} | null = $state(null);
 
 	function handleFullscreen() {
 		const map = mapCtx.getMap();
 		const container = map?.getContainer();
 		if (!container) return;
 
-		// Check if real fullscreen API is available and works (not iOS)
+		// Check if real fullscreen API is available (not iOS Safari)
 		const canFullscreen =
 			document.fullscreenEnabled ||
 			// @ts-ignore - vendor prefixes
 			document.webkitFullscreenEnabled;
 
-		if (canFullscreen) {
+		if (canFullscreen && !isIOS()) {
 			// Use native fullscreen where supported
 			if (document.fullscreenElement || (document as any).webkitFullscreenElement) {
 				if (document.exitFullscreen) {
@@ -142,44 +151,107 @@
 				isFullscreen = true;
 			}
 		} else {
-			// Fallback: CSS-based "fullscreen" for iOS
+			// Fallback: CSS-based "fullscreen" for iOS Safari
 			isFullscreen = !isFullscreen;
 
 			if (isFullscreen) {
-				container.style.position = 'fixed';
-				container.style.top = '0';
-				container.style.left = '0';
-				container.style.width = '100vw';
-				container.style.height = '100vh';
-				container.style.zIndex = '9999';
-				document.body.style.overflow = 'hidden';
-			} else {
-				container.style.position = '';
-				container.style.top = '';
-				container.style.left = '';
-				container.style.width = '';
-				container.style.height = '';
-				container.style.zIndex = '';
-				document.body.style.overflow = '';
-			}
+				// Save original styles for restoration
+				originalStyles = {
+					position: container.style.position,
+					top: container.style.top,
+					left: container.style.left,
+					width: container.style.width,
+					height: container.style.height,
+					zIndex: container.style.zIndex,
+					transition: container.style.transition
+				};
 
-			// Trigger map resize after style change
-			setTimeout(() => map?.resize(), 100);
+				// Add transition for smooth animation
+				container.style.transition = 'all 0.3s ease-in-out';
+
+				// Use requestAnimationFrame to ensure transition works
+				requestAnimationFrame(() => {
+					container.style.position = 'fixed';
+					container.style.top = '0';
+					container.style.left = '0';
+					container.style.width = '100vw';
+					container.style.height = '100vh';
+					// Use env() for safe areas (notch, home indicator)
+					container.style.height =
+						'calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom))';
+					container.style.top = 'env(safe-area-inset-top)';
+					container.style.zIndex = '9999';
+					document.body.style.overflow = 'hidden';
+
+					// Prevent body scroll on iOS
+					document.body.style.position = 'fixed';
+					document.body.style.width = '100%';
+				});
+
+				// Resize map after animation completes
+				setTimeout(() => map?.resize(), 350);
+			} else {
+				// Restore original styles with animation
+				container.style.transition = 'all 0.3s ease-in-out';
+
+				requestAnimationFrame(() => {
+					container.style.position = originalStyles?.position || '';
+					container.style.top = originalStyles?.top || '';
+					container.style.left = originalStyles?.left || '';
+					container.style.width = originalStyles?.width || '';
+					container.style.height = originalStyles?.height || '';
+					container.style.zIndex = originalStyles?.zIndex || '';
+					document.body.style.overflow = '';
+					document.body.style.position = '';
+					document.body.style.width = '';
+				});
+
+				// Clean up transition and resize after animation
+				setTimeout(() => {
+					container.style.transition = originalStyles?.transition || '';
+					map?.resize();
+					originalStyles = null;
+				}, 350);
+			}
 		}
 	}
 
-	// Listen for fullscreen change events (for native fullscreen)
+	// Detect iOS (Safari doesn't support fullscreen API)
+	function isIOS(): boolean {
+		return (
+			/iPad|iPhone|iPod/.test(navigator.userAgent) ||
+			(navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+		);
+	}
+
+	// Handle back gesture / escape key to exit fullscreen
 	$effect(() => {
-		const handleChange = () => {
-			isFullscreen = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
+		if (!isFullscreen) return;
+
+		const handleKeydown = (e: KeyboardEvent) => {
+			if (e.key === 'Escape' && isFullscreen && isIOS()) {
+				handleFullscreen(); // Exit fullscreen
+			}
 		};
 
-		document.addEventListener('fullscreenchange', handleChange);
-		document.addEventListener('webkitfullscreenchange', handleChange);
+		// Handle popstate for back gesture on iOS
+		const handlePopstate = () => {
+			if (isFullscreen && isIOS()) {
+				handleFullscreen(); // Exit fullscreen
+			}
+		};
+
+		// Push a fake history state so back gesture works
+		if (isIOS()) {
+			window.history.pushState({ mapFullscreen: true }, '');
+		}
+
+		window.addEventListener('keydown', handleKeydown);
+		window.addEventListener('popstate', handlePopstate);
 
 		return () => {
-			document.removeEventListener('fullscreenchange', handleChange);
-			document.removeEventListener('webkitfullscreenchange', handleChange);
+			window.removeEventListener('keydown', handleKeydown);
+			window.removeEventListener('popstate', handlePopstate);
 		};
 	});
 </script>

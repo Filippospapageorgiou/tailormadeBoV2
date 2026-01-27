@@ -96,6 +96,7 @@ function getQuarterDateRange(quarter: number, year: number): { start: string; en
 	};
 }
 
+
 async function calculateEmployeeBonuses(
 	supabase: SupabaseClient,
 	orgBonusData: BonusOrganizationData,
@@ -104,14 +105,23 @@ async function calculateEmployeeBonuses(
 ): Promise<{ success: boolean; error?: string }> {
 	try {
 		const { start, end } = getQuarterDateRange(quarter, year);
-		// 1. Φέρε όλες τις work βάρδιες του org για το quarter
+		
+		// 1. Fetch all work shifts for baristas only (role_id 4 or 5)
+		// Using !shifts_user_id_fkey to specify the correct relationship
 		const { data: shifts, error: shiftsError } = await supabase
 			.from('shifts')
-			.select('user_id, start_time, end_time, break_duration_minutes')
+			.select(`
+				user_id, 
+				start_time, 
+				end_time, 
+				break_duration_minutes,
+				profiles!shifts_user_id_fkey!inner(role_id)
+			`)
 			.eq('org_id', orgBonusData.org_id)
 			.eq('shift_type', 'work')
 			.gte('shift_date', start)
-			.lte('shift_date', end);
+			.lte('shift_date', end)
+			.in('profiles.role_id', [4, 5]);
 
 		if (shiftsError) {
 			console.error('[calculateEmployeeBonuses] Error fetching shifts:', shiftsError);
@@ -119,7 +129,7 @@ async function calculateEmployeeBonuses(
 		}
 
 		if (!shifts || shifts.length === 0) {
-			// Δεν υπάρχουν βάρδιες, update total_hours_worked = 0
+			// No shifts found, update total_hours_worked = 0
 			await supabase
 				.from('bonus_organization_data')
 				.update({ total_hours_worked: 0 })
@@ -127,7 +137,8 @@ async function calculateEmployeeBonuses(
 
 			return { success: true };
 		}
-		// 2. Υπολόγισε ώρες ανά υπάλληλο
+
+		// 2. Calculate minutes per employee
 		const employeeHoursMap = new Map<string, number>();
 
 		for (const shift of shifts) {
@@ -139,7 +150,11 @@ async function calculateEmployeeBonuses(
 			const startMinutes = startHour * 60 + startMin;
 			const endMinutes = endHour * 60 + endMin;
 
-			const netMinutes = endMinutes - startMinutes;
+			// Handle overnight shifts (e.g., 22:00 to 06:00)
+			let netMinutes = endMinutes - startMinutes;
+			if (netMinutes < 0) {
+				netMinutes += 24 * 60; // Add 24 hours worth of minutes
+			}
 
 			if (netMinutes > 0) {
 				const current = employeeHoursMap.get(shift.user_id) || 0;
@@ -147,8 +162,7 @@ async function calculateEmployeeBonuses(
 			}
 		}
 
-		//3. Φιλτράρουμε όσους έχουν 0 ώρες
-		// 3. Φιλτράρισε όσους έχουν 0 ώρες
+		// 3. Filter employees with zero hours
 		const employeesWithHours: EmployeeHours[] = Array.from(employeeHoursMap.entries())
 			.filter(([_, minutes]) => minutes > 0)
 			.map(([user_id, total_minutes]) => ({ user_id, total_minutes }));
@@ -162,11 +176,11 @@ async function calculateEmployeeBonuses(
 			return { success: true };
 		}
 
-		// 4. Υπολόγισε total hours
+		// 4. Calculate total hours
 		const totalMinutes = employeesWithHours.reduce((sum, emp) => sum + emp.total_minutes, 0);
-		const totalHoursWorked = Math.round((totalMinutes / 60) * 100) / 100; // 2 δεκαδικά
+		const totalHoursWorked = Math.round((totalMinutes / 60) * 100) / 100;
 
-		// 5. Υπολόγισε bonus για κάθε υπάλληλο
+		// 5. Calculate bonus for each employee
 		const payouts: Omit<BonusEmployeePayout, 'id' | 'created_at'>[] = employeesWithHours.map(
 			(emp) => {
 				const hoursWorked = Math.round((emp.total_minutes / 60) * 100) / 100;
@@ -193,7 +207,7 @@ async function calculateEmployeeBonuses(
 			return { success: false, error: 'Failed to insert employee payouts' };
 		}
 
-		// 7. Update total_hours_worked στο organization data
+		// 7. Update total_hours_worked in organization data
 		const { error: updateError } = await supabase
 			.from('bonus_organization_data')
 			.update({ total_hours_worked: totalHoursWorked })

@@ -48,7 +48,20 @@
 			: 0
 	);
 
-	const isPositive = $derived(averageChange >= 0);
+	// Determine trend direction: compare last value to first value
+	// This reflects whether performance is IMPROVING or DECLINING over time
+	const trendDirection = $derived(() => {
+		if (chartData.length < 2) {
+			// Only one data point - use its sign
+			return chartData.length === 1 ? chartData[0].percentage >= 0 : true;
+		}
+		// Compare last period to first period
+		const firstValue = chartData[0].percentage;
+		const lastValue = chartData[chartData.length - 1].percentage;
+		return lastValue >= firstValue;
+	});
+
+	const isPositive = $derived(trendDirection());
 
 	const chartConfig = {
 		percentage: {
@@ -69,7 +82,7 @@
 			{:else}
 				<TrendingDown class="size-3" />
 			{/if}
-			<span>{averageChange.toFixed(1)}%</span>
+			<span>{averageChange >= 0 ? '+' : ''}{averageChange.toFixed(1)}%</span>
 		</div>
 	</div>
 

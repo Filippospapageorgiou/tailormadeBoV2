@@ -13,10 +13,10 @@
 
 	let { organizations } = $props();
 
-	// Store for bonus data per org
+	// Store for bonus data per org (for the chart)
 	let orgBonusData: Record<number, any[]> = $state({});
 	let loadingOrgs: Record<number, boolean> = $state({});
-	
+
 	// Track active queries to react to their changes
 	let activeQueries: Record<number, ReturnType<typeof getOrganizationBonusData>> = $state({});
 
@@ -32,39 +32,71 @@
 			: [23.729757, 37.976707]
 	);
 
-	// Start loading data when popup opens
+	// Get marker colors based on latest_percentage_change
+	function getMarkerColors(latestPercentage: number | null): {
+		primary: string;
+		secondary: string;
+		secondaryStrong: string;
+		glow: string;
+		border: string;
+		shadow: string;
+	} {
+		// Negative percentage = red
+		if (latestPercentage !== null && latestPercentage < 0) {
+			return {
+				primary: 'bg-red-500',
+				secondary: 'bg-red-500/40',
+				secondaryStrong: 'bg-red-500/60',
+				glow: 'bg-red-400/80',
+				border: 'border-red-300',
+				shadow: 'shadow-red-500/50'
+			};
+		}
+
+		// Positive or unknown = green
+		return {
+			primary: 'bg-emerald-500',
+			secondary: 'bg-emerald-500/40',
+			secondaryStrong: 'bg-emerald-500/60',
+			glow: 'bg-emerald-400/80',
+			border: 'border-emerald-300',
+			shadow: 'shadow-emerald-500/50'
+		};
+	}
+
+	// Get trend status for display
+	function getTrendStatus(latestPercentage: number | null): 'positive' | 'negative' | 'unknown' {
+		if (latestPercentage === null) return 'unknown';
+		return latestPercentage >= 0 ? 'positive' : 'negative';
+	}
+
+	// Load full chart data when popup opens
 	function loadOrgData(orgId: number) {
-		// Check without triggering reactivity
 		if (untrack(() => orgBonusData[orgId]) || untrack(() => loadingOrgs[orgId])) return;
-		
+
 		loadingOrgs[orgId] = true;
 		activeQueries[orgId] = getOrganizationBonusData({ id: orgId });
 	}
 
 	// React to query state changes
 	$effect(() => {
-		// Read the queries (this creates the dependency)
 		const queries = activeQueries;
-		
+
 		for (const [orgIdStr, query] of Object.entries(queries)) {
 			const orgId = parseInt(orgIdStr);
 			const current = query.current;
-			
+
 			if (current) {
-				// Use untrack to prevent the effect from re-running when we write
 				untrack(() => {
-					// Check if we already processed this
 					if (orgBonusData[orgId] && orgBonusData[orgId].length > 0) return;
-					if (!loadingOrgs[orgId]) return; // Already processed
-					
+					if (!loadingOrgs[orgId]) return;
+
 					if (current.success) {
 						orgBonusData[orgId] = current.data;
 						loadingOrgs[orgId] = false;
-						toast.success('Επιτυχής ανάκτηση δεδομένων');
 					} else if (current.message) {
-						orgBonusData[orgId] = []; // Set empty to prevent retries
+						orgBonusData[orgId] = [];
 						loadingOrgs[orgId] = false;
-						toast.error('Σφάλμα κατά την ανάκτηση δεδομένων');
 					}
 				});
 			}
@@ -75,6 +107,8 @@
 <div class="h-full w-full">
 	<Map center={mapCenter} zoom={11}>
 		{#each mappableOrgs as org (org.id)}
+			{@const colors = getMarkerColors(org.latest_percentage_change)}
+			{@const trendStatus = getTrendStatus(org.latest_percentage_change)}
 			<MapMarker longitude={org.longitude} latitude={org.latitude}>
 				<MarkerContent>
 					<!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -85,25 +119,32 @@
 					>
 						<!-- Outer pulse ring 1 -->
 						<div
-							class="absolute size-8 animate-pulsing rounded-full bg-emerald-500/40 repeat-infinite"
+							class="absolute size-8 animate-pulsing rounded-full {colors.secondary} repeat-infinite"
 						></div>
 						<!-- Outer pulse ring 2 (delayed) -->
 						<div
-							class="absolute size-6 animate-pulsing rounded-full bg-emerald-500/60 repeat-infinite [animation-delay:300ms]"
+							class="absolute size-6 animate-pulsing rounded-full {colors.secondaryStrong} repeat-infinite [animation-delay:300ms]"
 						></div>
 						<!-- Inner glow -->
 						<div
-							class="absolute size-4 animate-pulse-fade-in rounded-full bg-emerald-400/80 blur-sm repeat-infinite"
+							class="absolute size-4 animate-pulse-fade-in rounded-full {colors.glow} blur-sm repeat-infinite"
 						></div>
 						<!-- Core dot -->
 						<div
-							class="relative size-3 rounded-full border-2 border-emerald-300 bg-emerald-500 shadow-lg shadow-emerald-500/50 repeat-infinite"
+							class="relative size-3 rounded-full border-2 {colors.border} {colors.primary} shadow-lg {colors.shadow} repeat-infinite"
 						></div>
 					</div>
 				</MarkerContent>
 
 				<MarkerTooltip class="border border-border/50">
-					<span class="font-bold">{org.store_name}</span>
+					<div class="flex items-center gap-2">
+						<span class="font-bold">{org.store_name}</span>
+						{#if trendStatus === 'positive'}
+							<span class="text-xs text-emerald-500">▲ {org.latest_percentage_change?.toFixed(1)}%</span>
+						{:else if trendStatus === 'negative'}
+							<span class="text-xs text-red-500">▼ {org.latest_percentage_change?.toFixed(1)}%</span>
+						{/if}
+					</div>
 				</MarkerTooltip>
 
 				<MarkerPopup class="border border-border/50">
@@ -111,9 +152,15 @@
 						<!-- Header -->
 						<div class="flex items-start gap-3">
 							<div
-								class="flex size-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/50"
+								class="flex size-10 shrink-0 items-center justify-center rounded-full {trendStatus === 'negative'
+									? 'bg-red-100 dark:bg-red-900/50'
+									: 'bg-emerald-100 dark:bg-emerald-900/50'}"
 							>
-								<MapPin class="size-5 text-emerald-600 dark:text-emerald-400" />
+								<MapPin
+									class="size-5 {trendStatus === 'negative'
+										? 'text-red-600 dark:text-red-400'
+										: 'text-emerald-600 dark:text-emerald-400'}"
+								/>
 							</div>
 							<div class="min-w-0 flex-1">
 								<h3 class="truncate font-semibold text-foreground">
@@ -131,7 +178,7 @@
 
 						<!-- Chart με data -->
 						{#if loadingOrgs[org.id]}
-							<div class="flex h-[80px] items-center justify-center">
+							<div class="flex h-[100px] items-center justify-center">
 								<div
 									class="animate-spin-clockwise repeat-infinite size-4 rounded-full border-2 border-emerald-500 border-t-transparent"
 								></div>
@@ -163,10 +210,10 @@
 							{#if org.email}
 								<div class="flex items-center gap-2 text-muted-foreground">
 									<Mail class="size-4 shrink-0" />
-									<a
-										href="mailto:{org.email}"
-										class="truncate hover:text-foreground hover:underline"
-									>
+									
+										
+									<a href="mailto:{org.email}"
+										class="truncate hover:text-foreground hover:underline">
 										{org.email}
 									</a>
 								</div>
