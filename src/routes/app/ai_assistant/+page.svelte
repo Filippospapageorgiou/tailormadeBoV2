@@ -226,7 +226,7 @@
 							<div class="flex w-full items-center justify-between">
 								<div class="flex items-center gap-2 text-sm text-muted-foreground">
 									<img
-										src="/src/lib/assets/anthropic.svg"
+										src="/anthropic.svg"
 										class="h-4 w-4 dark:box-content dark:rounded-sm dark:bg-white dark:p-0.5"
 										alt=""
 									/>
@@ -411,7 +411,7 @@
 							<div class="flex w-full items-center justify-between">
 								<div class="flex items-center gap-2 text-sm text-muted-foreground">
 									<img
-										src="/src/lib/assets/anthropic.svg"
+										src="/anthropic.svg"
 										class="h-4 w-4 dark:box-content dark:rounded-sm dark:bg-white dark:p-0.5"
 										alt=""
 									/>
