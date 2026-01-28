@@ -32,7 +32,9 @@
 	import EmergencyContactCard from '$lib/components/custom/EmergencyContactCard.svelte';
 	import { ScrollArea } from '$lib/components/ui/scroll-area';
 
+
 	let { data } = $props();
+
 
 	const profileStore = getProfileContext();
 

@@ -1,12 +1,8 @@
-import { query, command,form } from '$app/server';
+import { query, command, form } from '$app/server';
 import { createServerClient } from '$lib/supabase/server';
 import { z } from 'zod/v4';
-import {
-	getUserProfile,
-} from '$lib/supabase/queries';
-import {
-	type UserDailyTask
-} from '$lib/models/tasks.types';
+import { getUserProfile } from '$lib/supabase/queries';
+import { type UserDailyTask } from '$lib/models/tasks.types';
 
 export const getDayliTaskForUser = query(async () => {
 	const supabase = createServerClient();
@@ -26,10 +22,14 @@ export const getDayliTaskForUser = query(async () => {
 			.eq('user_id', profile.id)
 			.overrideTypes<UserDailyTask[]>();
 
+		const sorted = dailyTasks?.sort((a, b) =>
+			a.task_items.scheduled_time.localeCompare(b.task_items.scheduled_time)
+		);
+
 		return {
 			success: true,
 			message: 'Επιτυχία',
-			tasks: dailyTasks || []
+			tasks: sorted || []
 		};
 	} catch (err) {
 		console.error('[getDayliTaskForUser] Error fethcing dayli task for user: ', err);
@@ -53,10 +53,12 @@ export const updateDayliTaskForUser = command(updateTaskSchema, async (data) => 
 		// Fetch the task with task_items to check requires_photo
 		const { data: task, error: taskError } = await supabase
 			.from('user_daily_tasks')
-			.select(`
+			.select(
+				`
 				*,
 				task_items (requires_photo)
-			`)
+			`
+			)
 			.eq('id', data.id)
 			.single();
 
@@ -129,7 +131,6 @@ export const updateDayliTaskForUser = command(updateTaskSchema, async (data) => 
 	}
 });
 
-
 // ============================================
 // REPLACE the uploadTaskPhoto in: src/routes/app/daily_tasks/data.remote.ts
 // ============================================
@@ -152,7 +153,7 @@ export const uploadTaskPhoto = form(uploadTaskPhotoSchema, async (data) => {
 	const supabase = createServerClient();
 	try {
 		const profile = await getUserProfile();
-		
+
 		// Create file path: {user_id}/{task_id}/{filename}
 		const fileExt = data.photoFile.name.split('.').pop() || 'jpg';
 		const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;

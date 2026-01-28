@@ -528,3 +528,40 @@ export const uploadBeverageImage = command(
 		}
 	}
 );
+
+const toogleSchema = z.object({
+	id: z.number().positive().min(0).int(),
+	public: z.boolean()
+});
+
+export const tooglebeverage = command(toogleSchema, async (data) => {
+	const supabase = createServerClient();
+	try {
+		const { error } = await supabase
+			.from('beverages')
+			.update({
+				public: data.public
+			})
+			.eq('id', data.id);
+
+		if (error) {
+			console.error('[tooglebeverage] Error toogling beverage: ', error);
+			return {
+				success: false,
+				message: 'Σφάλμα κάτα την ενημέρωση ροφήματος'
+			};
+		}
+
+
+		return{
+			success:true,
+			message:'Επιτυχής ενημέρωση ροφήματος'
+		};
+	} catch (err) {
+		console.error('[tooglebeverage] Error toogling beverage: ', err);
+		return {
+			success: false,
+			message: 'Σφάλμα κάτα την ενημέρωση ροφήματος'
+		};
+	}
+});

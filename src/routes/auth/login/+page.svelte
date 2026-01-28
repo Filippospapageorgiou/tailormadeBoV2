@@ -34,7 +34,7 @@
 		</div>
 		<div class="flex flex-1 items-center justify-center py-4">
 			<div class="py-4 md:w-7/12">
-				<Card.Root>
+				<Card.Root class="bg-muted rounded-xl">
 					<Card.Header class="text-center">
 						<Card.Title class="text-xl">Welcome</Card.Title>
 						<Card.Description
@@ -105,14 +105,6 @@
 					</Card.Content>
 				</Card.Root>
 				<div class="space-y-2 py-6 text-center text-xs text-muted-foreground">
-					<p class="text-sm font-medium text-primary">Key Points</p>
-					<ul class="list-inside list-disc text-xs text-balance text-muted-foreground">
-						<li>Your account is used for work-related purposes only.</li>
-						<li>We collect basic data such as your name, schedule, and training progress.</li>
-						<li>Your data is stored securely and not shared outside the company.</li>
-						<li>Do not share internal app content with non-employees.</li>
-					</ul>
-
 					<div class="flex justify-center text-center text-xs text-balance text-muted-foreground">
 						By clicking continue, you agree to our
 						<span class="cursor-alias px-1 underline underline-offset-4 hover:text-primary">
@@ -129,7 +121,7 @@
 	</div>
 	<div class="relative hidden items-center justify-center bg-white md:flex md:w-2/2">
 		<div class="max-h-96 max-w-96">
-			<img src="/auth.jpg" alt="Tailor Made Coffee Roasters" class="h-full w-full object-contain" />
+			<img src="/tailor_venetis.png" alt="Tailor Made Coffee Roasters" class="h-full w-full object-contain" />
 		</div>
 	</div>
 </div>

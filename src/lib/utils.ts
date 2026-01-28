@@ -43,23 +43,23 @@ export function formatDate(dateString: string): string {
 	try {
 		const date = new Date(dateString);
 
-		// Check if it has time component (ISO format with T)
 		if (dateString.includes('T')) {
-			return new Intl.DateTimeFormat('en-US', {
+			return new Intl.DateTimeFormat('el-GR', {
 				year: 'numeric',
 				month: 'long',
 				day: 'numeric',
 				hour: '2-digit',
 				minute: '2-digit',
-				hour12: true
+				hour12: false,
+				timeZone: 'UTC'
 			}).format(date);
 		}
 
-		// Date only
-		return new Intl.DateTimeFormat('en-US', {
+		return new Intl.DateTimeFormat('el-GR', {
 			year: 'numeric',
 			month: 'long',
-			day: 'numeric'
+			day: 'numeric',
+			timeZone: 'UTC'
 		}).format(date);
 	} catch (error) {
 		console.error('Error formatting date:', error, dateString);

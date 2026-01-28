@@ -29,7 +29,8 @@
 	let user = getProfileContext();
 </script>
 
-<div class="fixed backdrop-blur-sm w-full h-full flex items-center justify-center z-50">
+<div class="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
+	<div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
 		<Empty.Root>
 			<Empty.Header>
 				<Empty.Media variant="default">
@@ -38,15 +39,16 @@
 						<Avatar.Fallback>{user.email.slice(0, 2)}</Avatar.Fallback>
 					</Avatar.Root>
 				</Empty.Media>
-				<Empty.Title>Απογαρευεται η πρόσβαση</Empty.Title>
+				<Empty.Title>Απαγορεύεται η πρόσβαση</Empty.Title>
 				<Empty.Description>
 					Δεν έχεις πρόσβαση στην εφαρμογή σε αυτήν την λειτουργία.
 				</Empty.Description>
 			</Empty.Header>
 			<Empty.Content>
-				<Button onclick={() => {
-					goto('/app/');
-				}} class="cursor-pointer" size="sm">Πίσω στην εφαρμογή</Button>
+				<Button onclick={() => goto('/app/')} class="cursor-pointer" size="sm">
+					Πίσω στην εφαρμογή
+				</Button>
 			</Empty.Content>
 		</Empty.Root>
+	</div>
 </div>

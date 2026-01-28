@@ -1,10 +1,16 @@
 // src/routes/app/profile/[id]/+page.server.ts
 import type { PageServerLoad, Actions } from './$types';
-import { error, fail } from '@sveltejs/kit';
+import { error, fail, redirect } from '@sveltejs/kit';
 import type { Profile, Organization } from '$lib/models/database.types';
 
-export const load: PageServerLoad = async ({ params, locals: { supabase } }) => {
+export const load: PageServerLoad = async ({ params, locals: { supabase, session } }) => {
 	const { id } = params;
+
+	const user_id = session?.user.id;
+
+	if (user_id !== id) {
+		redirect(303, '/app');
+	}
 
 	const { data: profile, error: profileError } = await supabase
 		.from('profiles')

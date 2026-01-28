@@ -6,6 +6,10 @@
 	import IngredientsList from './IngredientsList.svelte';
 	import EditBeverageDialog from './EditBeverageDialog.svelte';
 	import DeleteBeverageDialog from './DeleteBeverageDialog.svelte';
+	import { tooglebeverage } from '../data.remote';
+	import * as Tooltip from '$lib/components/ui/tooltip';
+	import Switch from '$lib/components/ui/switch/switch.svelte';
+	import { toast } from 'svelte-sonner';
 
 	let {
 		beverage,
@@ -18,6 +22,7 @@
 	let editingBeverage = $state(false);
 	let deletingBeverage = $state(false);
 	let accordionValue = $state<string[]>([]);
+	let beveragePublic = $derived(beverage?.public ?? false);
 
 	function openEditDialog() {
 		editingBeverage = true;
@@ -26,15 +31,31 @@
 	function openDeleteDialog() {
 		deletingBeverage = true;
 	}
+
+	async function handleToggle(checked: boolean) {
+		const result = await tooglebeverage({ id: beverage.id, public: checked });
+		try {
+			if (result?.success) {
+				toast.success(result.message);
+				await onUpdate();
+			} else {
+				toast.error(result?.message || 'Σφάλμα κάτα την ενημέρωση');
+				beveragePublic = beverage?.public ?? false;
+			}
+		} catch (err) {
+			toast.error('Σφάλμα κάτα την ενημέρωση');
+			beveragePublic = beverage?.public ?? false;
+		}
+	}
 </script>
 
 <div
-	class="group rounded-xl border border-border/50 dark:border-white/10 bg-card 
-		   shadow-sm transition-all duration-300 
-		   hover:border-primary/30 hover:shadow-md"
+	class="group rounded-xl border border-border/50 bg-card shadow-sm
+		   transition-all duration-300 hover:border-primary/30
+		   hover:shadow-md dark:border-white/10"
 >
 	<!-- Card Header: ID, Name, Actions -->
-	<div class="border-b border-border/50 dark:border-white/10 p-4">
+	<div class="border-b border-border/50 p-4 dark:border-white/10">
 		<div class="flex items-start justify-between gap-2">
 			<div class="flex min-w-0 flex-1 items-center gap-2">
 				<span class="flex-shrink-0 text-xs font-medium text-primary">#{beverage.id}</span>
@@ -43,24 +64,53 @@
 				</h3>
 			</div>
 
-			<!-- Action Buttons -->
-			<div class="flex flex-shrink-0 gap-1">
-				<Button
-					variant="ghost"
-					size="icon"
-					class="h-8 w-8 cursor-pointer hover:bg-primary/10 hover:text-primary"
-					onclick={openEditDialog}
-				>
-					<Pencil class="h-4 w-4" />
-				</Button>
-				<Button
-					variant="ghost"
-					size="icon"
-					class="h-8 w-8 cursor-pointer hover:bg-red-500/10 hover:text-red-500"
-					onclick={openDeleteDialog}
-				>
-					<Trash2 class="h-4 w-4" />
-				</Button>
+			<div class="flex flex-shrink-0 items-center justify-center gap-1">
+				<Tooltip.Provider>
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							<Switch checked={beveragePublic} onCheckedChange={handleToggle} />
+						</Tooltip.Trigger>
+						<Tooltip.Content>
+							<p>Ενήμερωσε ορατότητα</p>
+						</Tooltip.Content>
+					</Tooltip.Root>
+				</Tooltip.Provider>
+
+				<Tooltip.Provider>
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							<Button
+								variant="ghost"
+								size="icon"
+								class="h-8 w-8 cursor-pointer hover:bg-primary/10 hover:text-primary"
+								onclick={openEditDialog}
+							>
+								<Pencil class="h-4 w-4" />
+							</Button>
+						</Tooltip.Trigger>
+						<Tooltip.Content>
+							<p>Ενήμερωσε ρόφημα</p>
+						</Tooltip.Content>
+					</Tooltip.Root>
+				</Tooltip.Provider>
+
+				<Tooltip.Provider>
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							<Button
+								variant="ghost"
+								size="icon"
+								class="h-8 w-8 cursor-pointer hover:bg-red-500/10 hover:text-red-500"
+								onclick={openDeleteDialog}
+							>
+								<Trash2 class="h-4 w-4" />
+							</Button>
+						</Tooltip.Trigger>
+						<Tooltip.Content>
+							<p>Δίεγραψε ρόφημα</p>
+						</Tooltip.Content>
+					</Tooltip.Root>
+				</Tooltip.Provider>
 			</div>
 		</div>
 	</div>
@@ -78,7 +128,7 @@
 			</div>
 		{:else}
 			<div
-				class="mb-3 flex h-48 items-center justify-center rounded-xl 
+				class="mb-3 flex h-48 items-center justify-center rounded-xl
 					   bg-muted text-muted-foreground"
 			>
 				<div class="flex flex-col items-center gap-2">
@@ -94,13 +144,13 @@
 				{beverage.description}
 			</p>
 		{:else}
-			<p class="mb-3 text-sm italic text-muted-foreground/60">No description available</p>
+			<p class="mb-3 text-sm text-muted-foreground/60 italic">No description available</p>
 		{/if}
 
 		<!-- Execution Preview -->
 		{#if beverage.execution}
-			<div class="mb-3 rounded-lg bg-muted/50 dark:bg-muted/30 p-3">
-				<p class="text-xs font-medium text-foreground mb-1">Execution:</p>
+			<div class="mb-3 rounded-lg bg-muted/50 p-3 dark:bg-muted/30">
+				<p class="mb-1 text-xs font-medium text-foreground">Execution:</p>
 				<p class="line-clamp-2 text-xs text-muted-foreground">
 					{beverage.execution}
 				</p>
@@ -109,12 +159,16 @@
 	</div>
 
 	<!-- Accordion: Ingredients -->
-	<Accordion.Root type="multiple" bind:value={accordionValue} class="border-t border-border/50 dark:border-white/10">
+	<Accordion.Root
+		type="multiple"
+		bind:value={accordionValue}
+		class="border-t border-border/50 dark:border-white/10"
+	>
 		<Accordion.Item value="ingredients" class="border-b-0">
 			<Accordion.Trigger
 				class="flex w-full items-center justify-between px-4 py-3 
 					   text-sm font-medium text-foreground 
-					   hover:bg-muted/50 transition-colors"
+					   transition-colors hover:bg-muted/50"
 			>
 				<span>Υλικά</span>
 			</Accordion.Trigger>
