@@ -1,13 +1,23 @@
 // src/routes/invite/accept/+page.server.ts
 import type { PageServerLoad, Actions } from './$types';
-import { error } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import { createAdminClient } from '$lib/supabase/server';
 
 export const load: PageServerLoad = async ({ url, locals: { supabase } }) => {
 	const token = url.searchParams.get('token');
+	
+	// Check if coming from successful registration
+	const success = url.searchParams.get('success');
+	if (success === 'true') {
+		return {
+			registrationComplete: true,
+			invitation: null,
+			userExists: false
+		};
+	}
 
 	if (!token) {
-		throw error(400, 'Invalid invitation link. No token provided.');
+		throw error(400, 'Μη έγκυρος σύνδεσμος πρόσκλησης.');
 	}
 
 	try {
@@ -25,14 +35,14 @@ export const load: PageServerLoad = async ({ url, locals: { supabase } }) => {
 			.single();
 
 		if (fetchError || !invitation) {
-			throw error(404, 'Invitation not found. It may have been cancelled or the link is invalid.');
+			throw error(404, 'Η πρόσκληση δεν βρέθηκε. Μπορεί να έχει ακυρωθεί ή ο σύνδεσμος να είναι μη έγκυρος.');
 		}
 
 		// Check if already accepted
 		if (invitation.status === 'accepted') {
 			throw error(
 				400,
-				'This invitation has already been accepted. Please login to access your account.'
+				'Αυτή η πρόσκληση έχει ήδη γίνει αποδεκτή. Παρακαλώ συνδέσου για να έχεις πρόσβαση στον λογαριασμό σου.'
 			);
 		}
 
@@ -40,7 +50,7 @@ export const load: PageServerLoad = async ({ url, locals: { supabase } }) => {
 		if (invitation.status === 'cancelled') {
 			throw error(
 				400,
-				'This invitation has been cancelled. Please contact the organization administrator.'
+				'Αυτή η πρόσκληση έχει ακυρωθεί. Παρακαλώ επικοινώνησε με τον διαχειριστή.'
 			);
 		}
 
@@ -49,7 +59,7 @@ export const load: PageServerLoad = async ({ url, locals: { supabase } }) => {
 		if (isExpired || invitation.status === 'expired') {
 			throw error(
 				400,
-				'This invitation has expired. Please request a new invitation from the organization administrator.'
+				'Αυτή η πρόσκληση έχει λήξει. Παρακαλώ ζήτησε νέα πρόσκληση από τον διαχειριστή.'
 			);
 		}
 
@@ -61,6 +71,7 @@ export const load: PageServerLoad = async ({ url, locals: { supabase } }) => {
 			.maybeSingle();
 
 		return {
+			registrationComplete: false,
 			invitation: {
 				id: invitation.id,
 				email: invitation.email,
@@ -68,11 +79,11 @@ export const load: PageServerLoad = async ({ url, locals: { supabase } }) => {
 				expires_at: invitation.expires_at,
 				organization: {
 					id: invitation.core_organizations?.id,
-					name: invitation.core_organizations?.store_name || 'Unknown Organization'
+					name: invitation.core_organizations?.store_name || 'Άγνωστος Οργανισμός'
 				},
 				role: {
 					id: invitation.role_types?.id,
-					name: invitation.role_types?.role_name || 'Member'
+					name: invitation.role_types?.role_name || 'Μέλος'
 				}
 			},
 			userExists: !!existingUser
@@ -83,7 +94,7 @@ export const load: PageServerLoad = async ({ url, locals: { supabase } }) => {
 			throw err;
 		}
 		console.error('[AcceptInvitation] Error:', err);
-		throw error(500, 'An error occurred while loading the invitation.');
+		throw error(500, 'Παρουσιάστηκε σφάλμα κατά τη φόρτωση της πρόσκλησης.');
 	}
 };
 
@@ -98,19 +109,19 @@ export const actions: Actions = {
 
 		// Validation
 		if (!token) {
-			return { success: false, message: 'Invalid invitation token' };
+			return { success: false, message: 'Μη έγκυρο token πρόσκλησης' };
 		}
 
 		if (!username || username.trim().length < 2) {
-			return { success: false, message: 'Username must be at least 2 characters' };
+			return { success: false, message: 'Το username πρέπει να έχει τουλάχιστον 2 χαρακτήρες' };
 		}
 
 		if (!password || password.length < 6) {
-			return { success: false, message: 'Password must be at least 6 characters' };
+			return { success: false, message: 'Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες' };
 		}
 
 		if (password !== confirmPassword) {
-			return { success: false, message: 'Passwords do not match' };
+			return { success: false, message: 'Οι κωδικοί δεν ταιριάζουν' };
 		}
 
 		try {
@@ -123,18 +134,17 @@ export const actions: Actions = {
 				.single();
 
 			if (fetchError || !invitation) {
-				return { success: false, message: 'Invalid or expired invitation' };
+				return { success: false, message: 'Μη έγκυρη ή ληγμένη πρόσκληση' };
 			}
 
 			// Check expiration
 			if (new Date(invitation.expires_at) < new Date()) {
-				// Mark as expired
 				await supabase
 					.from('organization_invitations')
 					.update({ status: 'expired' })
 					.eq('id', invitation.id);
 
-				return { success: false, message: 'This invitation has expired' };
+				return { success: false, message: 'Αυτή η πρόσκληση έχει λήξει' };
 			}
 
 			// Create user with Supabase Admin
@@ -143,7 +153,7 @@ export const actions: Actions = {
 			const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
 				email: invitation.email,
 				password: password,
-				email_confirm: true, // Auto-confirm since they clicked the invite link
+				email_confirm: true,
 				user_metadata: {
 					username: username.trim(),
 					org_id: invitation.org_id,
@@ -154,19 +164,18 @@ export const actions: Actions = {
 			if (createError) {
 				console.error('[AcceptInvitation] Error creating user:', createError);
 
-				// Check if user already exists
 				if (createError.message?.includes('already been registered')) {
 					return {
 						success: false,
-						message: 'An account with this email already exists. Please login instead.'
+						message: 'Υπάρχει ήδη λογαριασμός με αυτό το email. Παρακαλώ συνδέσου.'
 					};
 				}
 
-				return { success: false, message: createError.message || 'Failed to create account' };
+				return { success: false, message: createError.message || 'Αποτυχία δημιουργίας λογαριασμού' };
 			}
 
 			if (!newUser.user) {
-				return { success: false, message: 'Failed to create account' };
+				return { success: false, message: 'Αποτυχία δημιουργίας λογαριασμού' };
 			}
 
 			// Create profile for the user
@@ -176,20 +185,19 @@ export const actions: Actions = {
 				username: username.trim(),
 				org_id: invitation.org_id,
 				role_id: invitation.role_id,
-				full_name:full_name,
+				full_name: full_name,
 				image_url: `https://uhrpdmoknmrbosqenotk.supabase.co/storage/v1/object/public/avatars_url/default.png`,
 				badge_color: '#3b82f6'
 			});
 
 			if (profileError) {
 				console.error('[AcceptInvitation] Error creating profile:', profileError);
-				// Try to clean up the auth user if profile creation fails
 				await adminClient.auth.admin.deleteUser(newUser.user.id);
-				return { success: false, message: 'Failed to create user profile' };
+				return { success: false, message: 'Αποτυχία δημιουργίας προφίλ χρήστη' };
 			}
 
-			// Mark invitation as accepted - USE adminClient instead of supabase
-			const { data, error } = await adminClient
+			// Mark invitation as accepted
+			await adminClient
 				.from('organization_invitations')
 				.update({
 					status: 'accepted',
@@ -197,17 +205,16 @@ export const actions: Actions = {
 				})
 				.eq('id', invitation.id);
 
-			if (error) {
-				console.error('Failed to update invitation:', error);
+			// Redirect to clean URL with success flag
+			throw redirect(303, '/invite/accept?success=true');
+			
+		} catch (err: any) {
+			// Re-throw redirects
+			if (err?.status === 303) {
+				throw err;
 			}
-
-			return {
-				success: true,
-				message: 'Account created successfully! Redirecting to login...'
-			};
-		} catch (err) {
 			console.error('[AcceptInvitation] Unexpected error:', err);
-			return { success: false, message: 'An unexpected error occurred' };
+			return { success: false, message: 'Παρουσιάστηκε απρόσμενο σφάλμα' };
 		}
 	}
 };

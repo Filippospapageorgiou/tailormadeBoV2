@@ -8,7 +8,7 @@
 	import { Label } from '$lib/components/ui/label/index.js';
 	import Badge from '$lib/components/ui/badge/badge.svelte';
 	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
-	import { Building2, User, Lock, Mail, CheckCircle, AlertCircle, Sparkles } from 'lucide-svelte';
+	import { Building2, User, Lock, Mail, CheckCircle, AlertCircle, Sparkles, LogIn } from 'lucide-svelte';
 	import { toast } from 'svelte-sonner';
 	import * as Password from '$lib/components/ui/password';
 
@@ -16,6 +16,7 @@
 
 	let invitation = $derived(data.invitation);
 	let userExists = $derived(data.userExists);
+	let registrationComplete = $derived(data.registrationComplete);
 
 	let isSubmitting = $state(false);
 	let username = $state('');
@@ -25,7 +26,7 @@
 
 	// Format expiration date
 	function formatDate(dateString: string): string {
-		return new Date(dateString).toLocaleDateString('en-US', {
+		return new Date(dateString).toLocaleDateString('el-GR', {
 			weekday: 'long',
 			year: 'numeric',
 			month: 'long',
@@ -39,21 +40,16 @@
 	let passwordsMatch = $derived(password === confirmPassword && password.length >= 6);
 	let formValid = $derived(username.trim().length >= 2 && passwordsMatch);
 
-	// Handle form result
+	// Handle form errors
 	$effect(() => {
-		if (form?.success) {
-			toast.success(form.message);
-			setTimeout(() => {
-				goto('/auth/login');
-			}, 2000);
-		} else if (form?.message) {
+		if (form?.message && !form?.success) {
 			toast.error(form.message);
 		}
 	});
 </script>
 
 <svelte:head>
-	<title>Accept Invitation - TailorMade</title>
+	<title>Αποδοχή Πρόσκλησης - TailorMade</title>
 </svelte:head>
 
 <div
@@ -61,7 +57,7 @@
 >
 	<div class="flex min-h-screen items-center justify-center p-4 sm:p-6 lg:p-8">
 		<!-- Success State -->
-		{#if form?.success}
+		{#if registrationComplete}
 			<Card.Root
 				class="relative w-full max-w-lg overflow-hidden rounded-3xl border-green-200 bg-white/90 p-8 shadow-2xl backdrop-blur-xl dark:border-green-800/50 dark:bg-neutral-900/90"
 			>
@@ -77,16 +73,25 @@
 					<h1
 						class="mb-3 font-[family-name:var(--font-tailormade)] text-3xl font-bold text-green-800 dark:text-green-200"
 					>
-						Welcome Aboard! 🎉
+						Καλώς ήρθες στην ομάδα!
 					</h1>
 					<p class="mb-6 text-lg text-green-700 dark:text-green-300">
-						Your account has been created successfully.
+						Ο λογαριασμός σου δημιουργήθηκε με επιτυχία.
 					</p>
-					<p class="text-sm text-muted-foreground">Redirecting you to login...</p>
-					<Spinner class="mt-4 h-6 w-6" />
+					<p class="mb-6 text-sm text-muted-foreground">
+						Μπορείς τώρα να συνδεθείς με τα στοιχεία που δημιούργησες.
+					</p>
+					
+					<Button
+						href="/auth/login"
+						class="gap-2 bg-gradient-to-r from-green-600 to-emerald-600 px-8 py-3 text-white shadow-lg hover:from-green-700 hover:to-emerald-700"
+					>
+						<LogIn class="h-4 w-4" />
+						Σύνδεση
+					</Button>
 				</div>
 			</Card.Root>
-		{:else}
+		{:else if invitation}
 			<!-- Main Invitation Card -->
 			<Card.Root
 				class="w-full max-w-md overflow-hidden rounded-2xl bg-white/95 shadow-xl shadow-stone-900/10 backdrop-blur-sm sm:max-w-lg md:max-w-4xl md:rounded-3xl md:shadow-2xl dark:bg-stone-900/95 dark:shadow-black/30"
@@ -132,16 +137,16 @@
 								<Sparkles class="h-3 w-3 text-stone-600 sm:h-3.5 sm:w-3.5 dark:text-stone-400" />
 								<span
 									class="text-[10px] font-semibold tracking-wide text-stone-700 uppercase sm:text-xs dark:text-stone-300"
-									>Invitation</span
+									>Πρόσκληση</span
 								>
 							</div>
 							<h1
 								class="font-[family-name:var(--font-tailormade)] text-xl font-bold text-foreground sm:text-2xl lg:text-3xl"
 							>
-								Join the Team
+								Γίνε μέλος της ομάδας
 							</h1>
 							<p class="mt-1 text-sm text-muted-foreground sm:text-base">
-								Complete your account setup to get started
+								Ολοκλήρωσε τη δημιουργία του λογαριασμού σου
 							</p>
 						</div>
 
@@ -159,7 +164,7 @@
 									<p
 										class="text-[10px] font-medium tracking-wide text-muted-foreground uppercase sm:text-[11px]"
 									>
-										Organization
+										Οργανισμός
 									</p>
 									<p class="truncate text-sm font-medium text-foreground sm:text-base">
 										{invitation.organization.name}
@@ -179,7 +184,7 @@
 									<p
 										class="text-[10px] font-medium tracking-wide text-muted-foreground uppercase sm:text-[11px]"
 									>
-										Your Email
+										Το Email σου
 									</p>
 									<p class="truncate text-sm font-medium text-foreground sm:text-base">
 										{invitation.email}
@@ -200,7 +205,7 @@
 										<p
 											class="text-[10px] font-medium tracking-wide text-muted-foreground uppercase sm:text-[11px]"
 										>
-											Your Role
+											Ο Ρόλος σου
 										</p>
 										<p class="text-sm font-medium text-foreground sm:text-base">
 											{invitation.role.name}
@@ -220,7 +225,7 @@
 							<div class="flex-1 border-t border-stone-200 dark:border-stone-700"></div>
 							<span
 								class="mx-3 text-[10px] font-medium tracking-wide text-muted-foreground uppercase sm:mx-4 sm:text-xs"
-								>Account Setup</span
+								>Δημιουργία Λογαριασμού</span
 							>
 							<div class="flex-1 border-t border-stone-200 dark:border-stone-700"></div>
 						</div>
@@ -240,14 +245,13 @@
 										<p
 											class="text-sm font-semibold text-stone-800 sm:text-base dark:text-stone-200"
 										>
-											Account Already Exists
+											Υπάρχει ήδη λογαριασμός
 										</p>
 										<p class="mt-1 text-xs text-stone-600 sm:text-sm dark:text-stone-400">
-											An account with this email already exists. Please
+											Υπάρχει ήδη λογαριασμός με αυτό το email. Παρακαλώ
 											<a
 												href="/auth/login"
-												class="font-medium underline underline-offset-2 hover:no-underline">login</a
-											> instead.
+												class="font-medium underline underline-offset-2 hover:no-underline">συνδέσου</a>.
 										</p>
 									</div>
 								</div>
@@ -270,7 +274,7 @@
 
 								<div class="space-y-1.5 sm:space-y-2">
 									<Label for="username" class="text-xs font-medium sm:text-sm"
-										>Διαλέξε ένα Username</Label
+										>Διάλεξε ένα Username</Label
 									>
 									<div class="relative">
 										<User
@@ -280,7 +284,7 @@
 											id="username"
 											name="username"
 											type="text"
-											placeholder="Your display name"
+											placeholder="Το όνομα εμφάνισης σου"
 											bind:value={username}
 											class="h-10 pl-9 text-sm sm:h-12 sm:pl-11 sm:text-base"
 											required
@@ -288,8 +292,11 @@
 											disabled={isSubmitting}
 										/>
 									</div>
-									<Label for="username" class="text-xs font-medium sm:text-sm"
-										>Βάλε το ονοματεπώνυμο σου</Label
+								</div>
+								
+								<div class="space-y-1.5 sm:space-y-2">
+									<Label for="full_name" class="text-xs font-medium sm:text-sm"
+										>Ονοματεπώνυμο</Label
 									>
 									<div class="relative">
 										<User
@@ -299,7 +306,7 @@
 											id="full_name"
 											name="full_name"
 											type="text"
-											placeholder="John Doe"
+											placeholder="π.χ. Γιώργος Παπαδόπουλος"
 											bind:value={full_name}
 											class="h-10 pl-9 text-sm sm:h-12 sm:pl-11 sm:text-base"
 											required
@@ -311,7 +318,7 @@
 
 								<div class="space-y-1.5 sm:space-y-2">
 									<Label for="password" class="text-xs font-medium sm:text-sm"
-										>Δημίουργησε κώδικο</Label
+										>Δημιούργησε κωδικό</Label
 									>
 									<div class="relative">
 										<Lock
@@ -335,7 +342,7 @@
 
 								<div class="space-y-1.5 sm:space-y-2">
 									<Label for="confirmPassword" class="text-xs font-medium sm:text-sm"
-										>Επαλήθευσε τοων κώδικο σου</Label
+										>Επαλήθευσε τον κωδικό σου</Label
 									>
 									<div class="relative">
 										<Lock
@@ -345,7 +352,7 @@
 											<Password.Input
 												id="confirmPassword"
 												name="confirmPassword"
-												placeholder="Confirm your password"
+												placeholder="Επιβεβαίωση κωδικού"
 												bind:value={confirmPassword}
 												class="h-10 pl-9 text-sm sm:h-12 sm:pl-11 sm:text-base"
 												required
@@ -358,7 +365,7 @@
 									{#if confirmPassword && !passwordsMatch}
 										<p class="flex items-center gap-1.5 text-xs text-red-500 sm:text-sm">
 											<AlertCircle class="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-											Passwords do not match
+											Οι κωδικοί δεν ταιριάζουν
 										</p>
 									{/if}
 								</div>
@@ -370,10 +377,10 @@
 								>
 									{#if isSubmitting}
 										<Spinner class="h-4 w-4 sm:h-5 sm:w-5" />
-										<span>Creating Account...</span>
+										<span>Δημιουργία...</span>
 									{:else}
 										<CheckCircle class="h-4 w-4 sm:h-5 sm:w-5" />
-										<span>Accept & Create Account</span>
+										<span>Αποδοχή & Δημιουργία Λογαριασμού</span>
 									{/if}
 								</Button>
 							</form>
@@ -384,7 +391,7 @@
 							class="mt-4 rounded-lg border border-dashed border-stone-300 bg-stone-50/50 p-3 text-center sm:mt-6 sm:rounded-xl sm:p-4 dark:border-stone-600 dark:bg-stone-800/30"
 						>
 							<p class="text-xs text-muted-foreground sm:text-sm">
-								This invitation expires on
+								Η πρόσκληση λήγει
 								<span class="mt-0.5 block font-medium text-foreground sm:mt-1"
 									>{formatDate(invitation.expires_at)}</span
 								>
@@ -393,12 +400,10 @@
 
 						<!-- Footer -->
 						<p class="mt-4 text-center text-xs text-muted-foreground sm:mt-6 sm:text-sm">
-							Already have an account?
+							Έχεις ήδη λογαριασμό;
 							<a
 								href="/auth/login"
-								class="font-medium text-stone-700 transition-colors hover:text-stone-900 hover:underline dark:text-stone-400 dark:hover:text-stone-300"
-							>
-								Login here
+								class="font-medium text-stone-700 transition-colors hover:text-stone-900 hover:underline dark:text-stone-400 dark:hover:text-stone-300">Σύνδεση εδώ
 							</a>
 						</p>
 					</div>
