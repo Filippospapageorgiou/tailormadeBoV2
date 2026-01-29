@@ -14,10 +14,6 @@
 
 	let { data, form }: PageProps = $props();
 
-	let invitation = $derived(data.invitation);
-	let userExists = $derived(data.userExists);
-	let registrationComplete = $derived(data.registrationComplete);
-
 	let isSubmitting = $state(false);
 	let username = $state('');
 	let full_name = $state('');
@@ -38,7 +34,7 @@
 
 	// Check if passwords match
 	let passwordsMatch = $derived(password === confirmPassword && password.length >= 6);
-	let formValid = $derived(username.trim().length >= 2 && passwordsMatch);
+	let formValid = $derived(username.trim().length >= 2 && full_name.trim().length >= 2 && passwordsMatch);
 
 	// Handle form errors
 	$effect(() => {
@@ -57,7 +53,7 @@
 >
 	<div class="flex min-h-screen items-center justify-center p-4 sm:p-6 lg:p-8">
 		<!-- Success State -->
-		{#if registrationComplete}
+		{#if data.registrationComplete}
 			<Card.Root
 				class="relative w-full max-w-lg overflow-hidden rounded-3xl border-green-200 bg-white/90 p-8 shadow-2xl backdrop-blur-xl dark:border-green-800/50 dark:bg-neutral-900/90"
 			>
@@ -91,7 +87,7 @@
 					</Button>
 				</div>
 			</Card.Root>
-		{:else if invitation}
+		{:else if data.invitation}
 			<!-- Main Invitation Card -->
 			<Card.Root
 				class="w-full max-w-md overflow-hidden rounded-2xl bg-white/95 shadow-xl shadow-stone-900/10 backdrop-blur-sm sm:max-w-lg md:max-w-4xl md:rounded-3xl md:shadow-2xl dark:bg-stone-900/95 dark:shadow-black/30"
@@ -167,7 +163,7 @@
 										Οργανισμός
 									</p>
 									<p class="truncate text-sm font-medium text-foreground sm:text-base">
-										{invitation.organization.name}
+										{data.invitation.organization.name}
 									</p>
 								</div>
 							</div>
@@ -187,7 +183,7 @@
 										Το Email σου
 									</p>
 									<p class="truncate text-sm font-medium text-foreground sm:text-base">
-										{invitation.email}
+										{data.invitation.email}
 									</p>
 								</div>
 							</div>
@@ -208,14 +204,14 @@
 											Ο Ρόλος σου
 										</p>
 										<p class="text-sm font-medium text-foreground sm:text-base">
-											{invitation.role.name}
+											{data.invitation.role.name}
 										</p>
 									</div>
 								</div>
 								<Badge
 									class="border-0 bg-gradient-to-r from-stone-600 to-stone-800 text-xs text-white shadow-md sm:text-sm"
 								>
-									{invitation.role.name}
+									{data.invitation.role.name}
 								</Badge>
 							</div>
 						</div>
@@ -231,7 +227,7 @@
 						</div>
 
 						<!-- User Already Exists Warning -->
-						{#if userExists}
+						{#if data.userExists}
 							<div
 								class="rounded-lg border border-stone-300 bg-stone-100 p-4 sm:rounded-xl sm:p-5 dark:border-stone-600 dark:bg-stone-800/50"
 							>
@@ -251,7 +247,9 @@
 											Υπάρχει ήδη λογαριασμός με αυτό το email. Παρακαλώ
 											<a
 												href="/auth/login"
-												class="font-medium underline underline-offset-2 hover:no-underline">συνδέσου</a>.
+												class="font-medium underline underline-offset-2 hover:no-underline">
+												συνδέσου
+											</a>.
 										</p>
 									</div>
 								</div>
@@ -270,7 +268,7 @@
 								}}
 								class="space-y-3 sm:space-y-5"
 							>
-								<input type="hidden" name="token" value={invitation.token} />
+								<input type="hidden" name="token" value={data.invitation.token} />
 
 								<div class="space-y-1.5 sm:space-y-2">
 									<Label for="username" class="text-xs font-medium sm:text-sm"
@@ -393,7 +391,7 @@
 							<p class="text-xs text-muted-foreground sm:text-sm">
 								Η πρόσκληση λήγει
 								<span class="mt-0.5 block font-medium text-foreground sm:mt-1"
-									>{formatDate(invitation.expires_at)}</span
+									>{formatDate(data.invitation.expires_at)}</span
 								>
 							</p>
 						</div>
@@ -403,7 +401,9 @@
 							Έχεις ήδη λογαριασμό;
 							<a
 								href="/auth/login"
-								class="font-medium text-stone-700 transition-colors hover:text-stone-900 hover:underline dark:text-stone-400 dark:hover:text-stone-300">Σύνδεση εδώ
+								class="font-medium text-stone-700 transition-colors hover:text-stone-900 hover:underline dark:text-stone-400 dark:hover:text-stone-300"
+							>
+								Σύνδεση εδώ
 							</a>
 						</p>
 					</div>
