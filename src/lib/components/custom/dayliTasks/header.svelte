@@ -15,8 +15,8 @@
     });
 </script>
 
-<header class="w-full p-4 font-game">
-    <div class="relative  glass-card rounded-2xl p-6 overflow-hidden backdrop-blur-xl">
+<header class="w-full p-4">
+    <div class="relative glass-card rounded-2xl p-6 overflow-hidden backdrop-blur-xl">
         
         <!-- Glassy gradient background -->
         <div class="absolute inset-0 bg-gradient-to-br from-primary/20 via-card/80 to-secondary/30 -z-10"></div>
@@ -29,10 +29,10 @@
             
             <div class="space-y-1">
                 <p class="text-xs uppercase tracking-widest text-muted-foreground font-semibold">
-                    Current Expedition
+                    Τρέχουσα Αποστολή
                 </p>
                 <h1 class="text-3xl font-bold text-primary uppercase tracking-tight glow-text">
-                    Daily Tasks
+                    Καθημερινές Εργασίες
                 </h1>
                 <div class="flex items-center gap-2 text-muted-foreground font-medium">
                     <span class="text-sm">{today}</span>
@@ -42,7 +42,7 @@
             <div class="flex-1 max-w-md w-full space-y-2">
                 <div class="flex justify-between items-end">
                     <span class="text-sm font-semibold uppercase text-foreground">
-                        Progress
+                        Πρόοδος
                     </span>
                     <span class="text-2xl font-bold text-primary glow-text">
                         {completedTasks}<span class="text-muted-foreground text-lg">/{totalTasks}</span>
@@ -67,7 +67,7 @@
                 </div>
                 
                 <p class="text-[10px] uppercase text-right font-semibold text-muted-foreground tracking-widest">
-                    {progressPercentage === 100 ? "✨ Quest Complete!" : "Keep brewing"}
+                    {progressPercentage === 100 ? "✨ Αποστολή Ολοκληρώθηκε!" : "Συνέχισε δυνατά"}
                 </p>
             </div>
         </div>
@@ -75,10 +75,6 @@
 </header>
 
 <style>
-    .font-game {
-        font-family: 'Orbitron', 'Sansation', sans-serif;
-    }
-
     .glass-card {
         background: rgba(255, 255, 255, 0.05);
         border: 1px solid rgba(255, 255, 255, 0.1);

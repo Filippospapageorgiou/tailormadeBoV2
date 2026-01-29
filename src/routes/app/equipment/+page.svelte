@@ -109,7 +109,7 @@
 				<Input
 					bind:value={searchQuery}
 					class="w-full py-1 pr-8 sm:w-72"
-					placeholder="Filter Equipment..."
+					placeholder="Ανάζητησε εξοπλισμό...."
 				/>
 			</div>
 		</div>

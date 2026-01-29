@@ -50,14 +50,14 @@
 					class="mb-12 flex flex-col items-start justify-between gap-4 md:flex-row md:items-end md:gap-8"
 				>
 					<div class="flex flex-col gap-1">
-						<h1 class="font-mono text-4xl tracking-wider">BEVERAGES</h1>
-						<p class="text-sm text-primary">Available Products: {beverages.length}</p>
+						<h1 class="font-mono text-4xl tracking-wider">Ροφήματα</h1>
+						<p class="text-sm text-primary">Διαθέσιμα ροφήματα: {beverages.length}</p>
 					</div>
 					<div class="flex w-full flex-col items-end md:w-auto">
 						<Input
 							bind:value={searchQuery}
 							class="w-full py-1 md:w-72"
-							placeholder="Filter beverages..."
+							placeholder="Αναζήτησε ροφήματα"
 						/>
 					</div>
 				</div>

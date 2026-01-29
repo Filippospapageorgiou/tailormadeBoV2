@@ -27,10 +27,14 @@ const updateProfileSchema = z.object({
 			'Only image files (JPEG, PNG, WebP, GIF) are allowed.'
 		)
 		.optional(),
-	phone: z.string()
+	phone: z.string(),
+	full_name: z
+		.string({ error: 'full_name is required.' })
+		.min(3, { error: 'full_name must be at least 3 characters long.' })
+		.max(30, { error: 'full_name must not exceed 30 characters.' })
 });
 
-export const updateProfile = form(updateProfileSchema, async ({ username, avatar, phone }) => {
+export const updateProfile = form(updateProfileSchema, async ({ username, avatar, phone, full_name }) => {
 	const user = await requireAuthenticatedUser();
 	const supabase = createServerClient();
 
@@ -55,7 +59,8 @@ export const updateProfile = form(updateProfileSchema, async ({ username, avatar
 		.from('profiles')
 		.update({
 			username,
-			phone
+			phone,
+			full_name
 		})
 		.eq('id', user.id);
 
@@ -144,4 +149,42 @@ export const updateProfile = form(updateProfileSchema, async ({ username, avatar
 		success: true,
 		message: 'Το προφιλ σου ενημερωθήκε επιτυχώς'
 	};
+});
+
+
+export const getAllPhoneContactsProfile = query(async () => {
+	const supabase = createServerClient();
+
+	try {
+		const org_id = await getUserOrgId();
+
+		const { data: contacts, error } = await supabase
+			.from('important_phone_calls')
+			.select('*')
+			.eq('org_id', org_id)
+			.eq('is_active',true)
+			.order('associated_company', { ascending: true });
+
+		if (error) {
+			console.error('[getAllPhoneContacts] Error fetching contacts:', error);
+			return {
+				success: false,
+				contacts: [],
+				message: 'Σφάλμα κατά την ανάκτηση επαφών'
+			};
+		}
+
+		return {
+			success: true,
+			contacts: (contacts as importantPhoneCalls[]) || [],
+			message: 'Επιτυχής ανάκτηση επαφών'
+		};
+	} catch (err) {
+		console.error('[getAllPhoneContacts] Error:', err);
+		return {
+			success: false,
+			contacts: [],
+			message: 'Σφάλμα κατά την ανάκτηση επαφών'
+		};
+	}
 });

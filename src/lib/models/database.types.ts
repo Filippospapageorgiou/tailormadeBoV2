@@ -64,6 +64,7 @@ export interface Profile {
 	phone: string;
 	display_order: number;
 	is_manager: boolean;
+	full_name:string;
 }
 
 export interface RoleTypes {

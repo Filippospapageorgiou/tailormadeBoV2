@@ -305,6 +305,7 @@
 												{#each message.parts as part, partIndex (partIndex)}
 													{#if isTextPart(part)}
 														<MessageResponse content={part.text} />
+														<!-- Replace the tool display section (around line 230-250) with this: -->
 													{:else if part.type === 'tool-queryDatabase' || part.type === 'tool-invocation'}
 														{@const tool = asSqlTool(part)}
 														{#if tool.input}
@@ -320,14 +321,21 @@
 																	/>
 																	<ToolContent>
 																		<ToolInput input={tool.input} />
-																		<ToolOutput
-																			class="max-w-full [&_pre]:break-all [&_pre]:whitespace-pre-wrap"
-																			output={tool.output}
-																			errorText={tool.output?.error}
-																		/>
 																	</ToolContent>
 																</Tool>
 															</div>
+
+															<!-- Thinking indicator BELOW the tool -->
+															{#if !tool.output}
+																<div class="flex items-center gap-3 py-3">
+																	<Loader class="size-4 text-primary" />
+																	<Shimmer content_length={30}>
+																		{#snippet children()}
+																			Αναλύω τα δεδομένα και ετοιμάζω την απάντηση...
+																		{/snippet}
+																	</Shimmer>
+																</div>
+															{/if}
 														{/if}
 													{/if}
 												{/each}

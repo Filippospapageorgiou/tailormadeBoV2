@@ -34,11 +34,11 @@
 		</div>
 		<div class="flex flex-1 items-center justify-center py-4">
 			<div class="py-4 md:w-7/12">
-				<Card.Root class="bg-muted rounded-xl">
+				<Card.Root class="rounded-xl bg-muted">
 					<Card.Header class="text-center">
-						<Card.Title class="text-xl">Welcome</Card.Title>
+						<Card.Title class="text-xl">Καλώς Ήρθατε</Card.Title>
 						<Card.Description
-							>We are very happy for you becoming mebmer of our team login and begin your journey.</Card.Description
+							>Είμαστε πολύ χαρούμενοι που γίνατε μέλος της ομάδας μας. Συνδεθείτε και ξεκινήστε το ταξίδι σας.</Card.Description
 						>
 					</Card.Header>
 					<Card.Content>
@@ -73,7 +73,7 @@
 												href="/auth/forgot_password/"
 												class="ml-auto text-sm text-primary underline-offset-4 hover:underline"
 											>
-												Forgot your password?
+												Ξεχάσατε τον κωδικό πρόσβασής σας;
 											</a>
 										</div>
 										<Input
@@ -119,9 +119,13 @@
 			</div>
 		</div>
 	</div>
-	<div class="relative hidden items-center justify-center bg-white md:flex md:w-2/2">
-		<div class="max-h-96 max-w-96">
-			<img src="/tailor_venetis.png" alt="Tailor Made Coffee Roasters" class="h-full w-full object-contain" />
+	<div class="relative hidden w-full items-center justify-center bg-white md:flex">
+		<div class="max-h-96 max-w-96 bg-transparent">
+			<img
+				src="/tailor_venetis.png"
+				alt="Tailor Made Coffee Roasters"
+				class="h-full w-full object-fit-contain"
+			/>
 		</div>
 	</div>
 </div>

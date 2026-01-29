@@ -87,7 +87,7 @@
 												<Sidebar.MenuSubItem>
 													<Sidebar.MenuSubButton href={subItem.url} onclick={handleLinkClick}>
 														<subItem.icon />
-														<span>{subItem.title}</span>
+														<span class="text-sm">{subItem.title}</span>
 													</Sidebar.MenuSubButton>
 												</Sidebar.MenuSubItem>
 											{/if}

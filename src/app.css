@@ -259,3 +259,28 @@ button {
 .card-glass:hover .card-glass-readmore svg {
   @apply translate-x-1;
 }
+
+/* Sidebar content - increase all text */
+[data-sidebar="content"] {
+  font-size: 1rem; /* default is usually 0.875rem (text-sm) */
+}
+
+/* Menu buttons */
+[data-sidebar="menu-button"] {
+  font-size: 1rem;
+}
+
+/* Sub-menu items */
+[data-sidebar="menu-sub-button"] {
+  font-size: 0.9375rem;
+}
+
+/* Group labels */
+[data-sidebar="group-label"] {
+  font-size: 0.875rem;
+}
+
+[data-sidebar="sidebar"] svg {
+  width: 1.15rem;
+  height: 1.15rem;
+}

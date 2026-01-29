@@ -1,8 +1,7 @@
 // src/routes/invite/accept/+page.server.ts
 import type { PageServerLoad, Actions } from './$types';
-import { error, redirect } from '@sveltejs/kit';
+import { error } from '@sveltejs/kit';
 import { createAdminClient } from '$lib/supabase/server';
-import type { OrganizationInvitation } from '$lib/models/invitation.types';
 
 export const load: PageServerLoad = async ({ url, locals: { supabase } }) => {
 	const token = url.searchParams.get('token');
@@ -94,6 +93,7 @@ export const actions: Actions = {
 		const token = formData.get('token') as string;
 		const username = formData.get('username') as string;
 		const password = formData.get('password') as string;
+		const full_name = formData.get('full_name') as string;
 		const confirmPassword = formData.get('confirmPassword') as string;
 
 		// Validation
@@ -176,6 +176,7 @@ export const actions: Actions = {
 				username: username.trim(),
 				org_id: invitation.org_id,
 				role_id: invitation.role_id,
+				full_name:full_name,
 				image_url: `https://uhrpdmoknmrbosqenotk.supabase.co/storage/v1/object/public/avatars_url/default.png`,
 				badge_color: '#3b82f6'
 			});
@@ -195,8 +196,6 @@ export const actions: Actions = {
 					accepted_at: new Date().toISOString()
 				})
 				.eq('id', invitation.id);
-
-			console.log('Invitation update result:', { data, error });
 
 			if (error) {
 				console.error('Failed to update invitation:', error);

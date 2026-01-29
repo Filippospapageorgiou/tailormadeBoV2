@@ -25,8 +25,8 @@
 <div class="min-h-screen">
 	<main class="container mx-auto px-4 pt-8 pb-20 md:px-6">
 		<div class="mb-12">
-			<h1 class="font-mono text-4xl tracking-wider">Our Blog</h1>
-			<p class="text-sm text-primary">Stay updated with our latest news and stories.</p>
+			<h1 class="font-mono text-4xl tracking-wider">Το blog μας</h1>
+			<p class="text-sm text-primary pt-2">Μείνετε ενημερωμένοι με τα τελευταία νέα και τις ιστορίες μας.</p>
 		</div>
 
 		{#if query.loading}

@@ -15,6 +15,7 @@ export class ProfileStore {
 	can_close_register = $state(false);
 	phone = $state('');
 	isManager = $state(false);
+	full_name = $state('');
 
 	constructor(profile: Profile | null) {
 		if (profile) {
@@ -29,6 +30,7 @@ export class ProfileStore {
 			this.can_close_register = profile.can_close_register;
 			this.phone = profile.phone;
 			this.isManager = profile.is_manager;
+			this.full_name = profile.full_name;
 		}
 	}
 
@@ -44,6 +46,7 @@ export class ProfileStore {
 		this.can_close_register = profile.can_close_register;
 		this.phone = profile.phone;
 		this.isManager = profile.is_manager;
+		this.full_name = profile.full_name;
 	}
 
 	updateUsername(newUsername: string) {
@@ -55,6 +58,9 @@ export class ProfileStore {
 	}
 	updatePhone(phone: string) {
 		this.phone = phone;
+	}
+	updateFullName(fullName:string){
+		this.full_name = fullName;
 	}
 }
 

@@ -198,7 +198,7 @@
 								<img
 									src="/iconTailor.png"
 									alt="Tailor Made Coffee Roasters"
-									class="size-6 object-cover"
+									class="size-10 object-cover"
 								/>
 							</div>
 							<div class="grid flex-1 text-left text-sm leading-tight">

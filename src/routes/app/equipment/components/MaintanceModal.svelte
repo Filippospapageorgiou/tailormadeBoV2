@@ -109,14 +109,14 @@
 		<Dialog.Header>
 			<Dialog.Title class="flex items-center gap-2 text-lg sm:text-xl">
 				<AlertCircle class="h-5 w-5 flex-shrink-0 text-orange-600" />
-				<span class="truncate">Report Equipment Issue</span>
+				<span class="truncate">Αναφορά Προβλήματος Εξοπλισμού</span>
 			</Dialog.Title>
 			<Dialog.Description class="text-sm sm:text-base">
-				Submit a maintenance log for <span class="font-semibold break-words text-foreground"
+				Υποβολή αναφοράς συντήρησης για <span class="font-semibold break-words text-foreground"
 					>{equipment.name}</span
 				>.
 				{#if equipment.model}
-					<span class="block sm:inline">(Model: {equipment.model})</span>
+					<span class="block sm:inline">(Μοντέλο: {equipment.model})</span>
 				{/if}
 			</Dialog.Description>
 		</Dialog.Header>
@@ -135,13 +135,13 @@
 					for="issue"
 					class="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
 				>
-					Issue Description <span class="text-red-500">*</span>
+					Περιγραφή Προβλήματος <span class="text-red-500">*</span>
 				</label>
 				<Textarea
 					id="issue"
 					name="issueDescription"
 					bind:value={issueDescription}
-					placeholder="Describe the problem in detail..."
+					placeholder="Περιγράψτε το πρόβλημα με λεπτομέρειες..."
 					class="min-h-20 text-sm sm:min-h-24"
 				/>
 			</div>
@@ -151,13 +151,13 @@
 					for="action"
 					class="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
 				>
-					Action Taken <span class="text-red-500">*</span>
+					Ενέργεια που Πραγματοποιήθηκε <span class="text-red-500">*</span>
 				</label>
 				<Textarea
 					id="action"
 					name="actionTaken"
 					bind:value={actionTaken}
-					placeholder="What action was taken to resolve the issue..."
+					placeholder="Τι ενέργεια έγινε για την επίλυση του προβλήματος..."
 					class="min-h-16 text-sm sm:min-h-20"
 				/>
 			</div>
@@ -231,13 +231,13 @@
 					disabled={isSubmitting}
 					class="w-full sm:w-auto"
 				>
-					Cancel
+					Ακύρωση
 				</Button>
 				<Button type="submit" disabled={isSubmitting} class="w-full sm:w-auto">
 					{#if isSubmitting}
-						Submitting... <Spinner class="ml-2 h-4 w-4" />
+						Υποβολή... <Spinner class="ml-2 h-4 w-4" />
 					{:else}
-						Submit Issue
+						Υποβολή Αναφοράς
 					{/if}
 				</Button>
 			</Dialog.Footer>

@@ -100,7 +100,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			row.height = 25;
 
 			// Employee name
-			row.getCell('employee').value = employee.username;
+			row.getCell('employee').value = employee.full_name;
 			row.getCell('employee').font = { bold: true };
 			row.getCell('employee').alignment = { horizontal: 'left', vertical: 'middle' };
 			row.getCell('employee').fill = {

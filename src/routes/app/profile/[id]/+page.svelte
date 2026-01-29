@@ -10,7 +10,6 @@
 		Mail,
 		PhoneCall,
 		Users,
-		User2,
 		UserCheck,
 		PhoneIcon,
 		Building2
@@ -19,7 +18,7 @@
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge/index.js';
-	import { updateProfile } from './data.remote.js';
+	import { updateProfile, getAllPhoneContactsProfile } from './data.remote.js';
 	import { getProfileContext } from '$lib/stores/profile.svelte.js';
 	import { showSuccessToast, showFailToast } from '$lib/stores/toast.svelte';
 	import * as Modal from '$lib/components/ui/modal';
@@ -28,7 +27,6 @@
 	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import Separator from '$lib/components/ui/separator/separator.svelte';
-	import { getAllPhoneContacts } from '../../settings/manage_users/data.remote.js';
 	import EmergencyContactCard from '$lib/components/custom/EmergencyContactCard.svelte';
 	import { ScrollArea } from '$lib/components/ui/scroll-area';
 
@@ -44,7 +42,7 @@
 	let organization = $derived(data.organization);
 	let managers = $derived(data.managers);
 
-	let contactsQuery = getAllPhoneContacts();
+	let contactsQuery = getAllPhoneContactsProfile();
 	let contacts = $derived(contactsQuery.current?.contacts ?? []);
 
 	function getInitials(name: string) {
@@ -57,6 +55,7 @@
 	}
 
 	let username = $state('');
+	let full_name = $state('');
 	let phone = $state('');
 	let backgroundImage = $state('');
 	let editingBackgroundImage = $state('');
@@ -65,6 +64,7 @@
 		username = profile.username;
 		phone = profile.phone || '';
 		backgroundImage = profile.image_url;
+		full_name = profile.full_name;
 		editingBackgroundImage = profile.image_url;
 	});
 
@@ -209,6 +209,7 @@
 																	profileStore.updateUsername(username);
 																	profileStore.updatePhone(phone);
 																	profileStore.updateAvatar(editingBackgroundImage);
+																	profileStore.updateFullName(full_name);
 																} else {
 																	showFailToast(
 																		'Σφάλμα',
@@ -264,6 +265,16 @@
 																{...updateProfile.fields.username.as('text')}
 																bind:value={username}
 																placeholder={profile.username}
+																disabled={isUpdating}
+															/>
+														</div>
+														<div class="space-y-2">
+															<Label for="full_name">full name</Label>
+															<Input
+																id="full_name"
+																{...updateProfile.fields.full_name.as('text')}
+																bind:value={full_name}
+																placeholder={profile.full_name}
 																disabled={isUpdating}
 															/>
 														</div>

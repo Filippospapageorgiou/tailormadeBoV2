@@ -23,9 +23,10 @@ function generateInvitationEmailTemplate(params: InvitationEmailParams): string 
 	const { organizationName, roleName, inviterName, inviteToken, expiresAt } = params;
 
 	const acceptUrl = `${PUBLIC_APP_URL}/invite/accept?token=${inviteToken}`;
+	const logoUrl = `${PUBLIC_APP_URL}/tailor_venetis.png`;
 	
-	// Format expiration date
-	const expirationFormatted = expiresAt.toLocaleDateString('en-US', {
+	// Format expiration date in Greek
+	const expirationFormatted = expiresAt.toLocaleDateString('el-GR', {
 		weekday: 'long',
 		year: 'numeric',
 		month: 'long',
@@ -34,106 +35,83 @@ function generateInvitationEmailTemplate(params: InvitationEmailParams): string 
 
 	return `
 		<!DOCTYPE html>
-		<html lang="en">
+		<html lang="el">
 		<head>
 			<meta charset="UTF-8">
 			<meta name="viewport" content="width=device-width, initial-scale=1.0">
-			<title>You're Invited to Join ${organizationName}</title>
+			<title>Πρόσκληση στο ${organizationName}</title>
 		</head>
-		<body style="margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background-color: #f5f5f5; line-height: 1.6;">
-			<table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f5f5f5;">
+		<body style="margin: 0; padding: 0; font-family: Georgia, 'Times New Roman', serif; background-color: #F7F4F0; line-height: 1.7;">
+			<table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #F7F4F0;">
 				<tr>
-					<td style="padding: 40px 20px;">
-						<table role="presentation" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden;">
+					<td style="padding: 60px 20px;">
+						<table role="presentation" style="max-width: 460px; margin: 0 auto; background-color: #FFFEFA; border-radius: 4px; overflow: hidden; box-shadow: 0 1px 4px rgba(80, 60, 40, 0.06);">
 							
-							<!-- Header with gradient -->
+							<!-- Header -->
 							<tr>
-								<td style="padding: 40px 40px 32px; background: linear-gradient(135deg, #D4A574 0%, #8B6B4A 100%); text-align: center;">
-									<h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600; letter-spacing: -0.5px;">
-										You're Invited! 🎉
-									</h1>
-									<p style="margin: 12px 0 0; color: rgba(255,255,255,0.9); font-size: 16px;">
-										Join the ${organizationName} team
-									</p>
+								<td style="padding: 48px 48px 0; text-align: center;">
+									<img src="${logoUrl}" alt="Tailor Made" style="height: 52px;" />
+								</td>
+							</tr>
+
+							<!-- Divider -->
+							<tr>
+								<td style="padding: 32px 48px;">
+									<div style="height: 1px; background: linear-gradient(to right, transparent, #E0D6CC, transparent);"></div>
 								</td>
 							</tr>
 
 							<!-- Content -->
 							<tr>
-								<td style="padding: 40px;">
+								<td style="padding: 0 48px 48px;">
 									
-									<!-- Welcome Message -->
-									<div style="margin-bottom: 32px;">
-										<p style="margin: 0 0 16px; color: #1a1a1a; font-size: 16px; line-height: 1.6;">
-											Hello,
-										</p>
-										<p style="margin: 0 0 16px; color: #1a1a1a; font-size: 16px; line-height: 1.6;">
-											<strong>${inviterName}</strong> has invited you to join <strong>${organizationName}</strong> on TailorMade.
-										</p>
-										<p style="margin: 0; color: #1a1a1a; font-size: 16px; line-height: 1.6;">
-											You'll be joining as: <strong style="color: #8B6B4A;">${roleName}</strong>
-										</p>
-									</div>
-
-									<!-- What you'll get access to -->
-									<div style="margin-bottom: 32px; padding: 20px; background-color: #fafafa; border-radius: 8px; border-left: 4px solid #D4A574;">
-										<h3 style="margin: 0 0 12px; font-size: 14px; color: #525252; text-transform: uppercase; letter-spacing: 0.5px;">
-											What you'll have access to:
-										</h3>
-										<ul style="margin: 0; padding: 0 0 0 20px; color: #525252; font-size: 14px;">
-											<li style="margin-bottom: 8px;">Team schedules and shift management</li>
-											<li style="margin-bottom: 8px;">Equipment tracking and maintenance logs</li>
-											<li style="margin-bottom: 8px;">Recipes and beverage guides</li>
-											<li style="margin-bottom: 0;">Daily tasks and checklists</li>
-										</ul>
-									</div>
+									<!-- Welcome text -->
+									<p style="margin: 0 0 24px; color: #3D3428; font-size: 15px; text-align: center; line-height: 1.8;">
+										Ο/Η <strong>${inviterName}</strong> θα χαρεί να σε καλωσορίσει<br />
+										στην ομάδα <strong>${organizationName}</strong>
+									</p>
+									
+									<!-- Role -->
+									<p style="margin: 0 0 36px; text-align: center;">
+										<span style="color: #8C7B6B; font-size: 13px; font-style: italic;">
+											ως ${roleName}
+										</span>
+									</p>
 
 									<!-- CTA Button -->
-									<div style="text-align: center; margin-bottom: 32px;">
+									<div style="text-align: center; margin-bottom: 36px;">
 										<a href="${acceptUrl}" 
-											style="display: inline-block; background: linear-gradient(135deg, #D4A574 0%, #8B6B4A 100%); color: #ffffff; text-decoration: none; padding: 16px 48px; font-weight: 600; font-size: 16px; border-radius: 8px; letter-spacing: 0.3px; box-shadow: 0 4px 14px rgba(212, 165, 116, 0.4);">
-											Accept Invitation
+											style="display: inline-block; background-color: #6B5344; color: #FFFEFA; text-decoration: none; padding: 12px 32px; font-family: 'Segoe UI', system-ui, sans-serif; font-weight: 500; font-size: 13px; border-radius: 4px; letter-spacing: 0.5px;">
+											Αποδοχή Πρόσκλησης
 										</a>
 									</div>
 
-									<!-- Expiration Notice -->
-									<div style="padding: 16px; background-color: #FEF3C7; border-radius: 8px; text-align: center;">
-										<p style="margin: 0; color: #92400E; font-size: 13px;">
-											⏰ This invitation expires on <strong>${expirationFormatted}</strong>
-										</p>
-									</div>
-
-									<!-- Link fallback -->
-									<div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #e5e5e5;">
-										<p style="margin: 0 0 8px; color: #737373; font-size: 12px;">
-											If the button doesn't work, copy and paste this link into your browser:
-										</p>
-										<p style="margin: 0; color: #8B6B4A; font-size: 12px; word-break: break-all;">
-											${acceptUrl}
-										</p>
-									</div>
+									<!-- Warm closing -->
+									<p style="margin: 0; color: #A99888; font-size: 13px; text-align: center; font-style: italic;">
+										Σε περιμένουμε
+									</p>
 								</td>
 							</tr>
 
 							<!-- Footer -->
 							<tr>
-								<td style="padding: 24px 40px; background-color: #fafafa; border-top: 1px solid #e5e5e5;">
-									<p style="margin: 0 0 8px; color: #737373; font-size: 12px; text-align: center;">
-										This invitation was sent by TailorMade on behalf of ${organizationName}.
+								<td style="padding: 24px 48px; background-color: #F9F6F2;">
+									<p style="margin: 0 0 8px; color: #B5A898; font-size: 11px; text-align: center;">
+										Η πρόσκληση ισχύει έως ${expirationFormatted}
 									</p>
-									<p style="margin: 0; color: #737373; font-size: 12px; text-align: center;">
-										If you didn't expect this invitation, you can safely ignore this email.
+									<p style="margin: 0; color: #C8BDB0; font-size: 10px; text-align: center;">
+										Αν δεν αναγνωρίζεις αυτό το μήνυμα, μπορείς να το αγνοήσεις.
 									</p>
 								</td>
 							</tr>
 						</table>
 
-						<!-- Bottom branding -->
-						<table role="presentation" style="max-width: 600px; margin: 20px auto 0;">
+						<!-- Link fallback -->
+						<table role="presentation" style="max-width: 460px; margin: 24px auto 0;">
 							<tr>
 								<td style="text-align: center;">
-									<p style="margin: 0; color: #a3a3a3; font-size: 11px;">
-										Powered by TailorMade • Coffee Shop Management Platform
+									<p style="margin: 0; color: #C8BDB0; font-size: 10px; font-family: 'Segoe UI', system-ui, sans-serif;">
+										${acceptUrl}
 									</p>
 								</td>
 							</tr>
@@ -145,7 +123,6 @@ function generateInvitationEmailTemplate(params: InvitationEmailParams): string 
 		</html>
 	`;
 }
-
 /**
  * Send organization invitation email via Resend
  */

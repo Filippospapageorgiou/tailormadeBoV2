@@ -19,6 +19,7 @@
 
 	let isSubmitting = $state(false);
 	let username = $state('');
+	let full_name = $state('');
 	let password = $state('');
 	let confirmPassword = $state('');
 
@@ -105,9 +106,9 @@
 						</div>
 						<div class="relative">
 							<img
-								src="/logo.png"
+								src="/tailor_venetis.png"
 								alt="Tailor Made Coffee Roasters"
-								class="h-auto max-h-64 w-full rounded-2xl object-contain"
+								class="h-full w-full rounded-2xl object-contain"
 							/>
 						</div>
 					</div>
@@ -269,7 +270,7 @@
 
 								<div class="space-y-1.5 sm:space-y-2">
 									<Label for="username" class="text-xs font-medium sm:text-sm"
-										>Choose a Username</Label
+										>Διαλέξε ένα Username</Label
 									>
 									<div class="relative">
 										<User
@@ -287,11 +288,30 @@
 											disabled={isSubmitting}
 										/>
 									</div>
+									<Label for="username" class="text-xs font-medium sm:text-sm"
+										>Βάλε το ονοματεπώνυμο σου</Label
+									>
+									<div class="relative">
+										<User
+											class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground sm:left-3.5"
+										/>
+										<Input
+											id="full_name"
+											name="full_name"
+											type="text"
+											placeholder="John Doe"
+											bind:value={full_name}
+											class="h-10 pl-9 text-sm sm:h-12 sm:pl-11 sm:text-base"
+											required
+											minlength={2}
+											disabled={isSubmitting}
+										/>
+									</div>
 								</div>
 
 								<div class="space-y-1.5 sm:space-y-2">
 									<Label for="password" class="text-xs font-medium sm:text-sm"
-										>Create Password</Label
+										>Δημίουργησε κώδικο</Label
 									>
 									<div class="relative">
 										<Lock
@@ -315,7 +335,7 @@
 
 								<div class="space-y-1.5 sm:space-y-2">
 									<Label for="confirmPassword" class="text-xs font-medium sm:text-sm"
-										>Confirm Password</Label
+										>Επαλήθευσε τοων κώδικο σου</Label
 									>
 									<div class="relative">
 										<Lock

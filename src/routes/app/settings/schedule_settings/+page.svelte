@@ -265,8 +265,8 @@
 	<div class="container mx-auto space-y-6 px-6 py-6">
 		<!-- Header -->
 		<div>
-			<h1 class="text-3xl font-bold tracking-tight">Schedule Management</h1>
-			<p class="text-muted-foreground">Create and manage weekly schedules for your team</p>
+			<h1 class="text-3xl font-bold tracking-tight">Διαχείριση προγραμμάτων</h1>
+			<p class="text-muted-foreground">Δημιουργήστε και διαχειριστείτε εβδομαδιαία προγράμματα για την ομάδα σας</p>
 		</div>
 
 		<!-- Filter Bar -->

@@ -29,22 +29,30 @@
 
 {#if toast.show}
 	<div
-		class="fixed top-4 left-1/2 z-[52] w-full max-w-md -translate-x-1/2 transform px-4 {isExiting
+		class="fixed top-6 left-1/2 z-[52] w-full max-w-sm -translate-x-1/2 transform px-4 {isExiting
 			? 'animate-fade-out-up'
 			: 'animate-fade-in-down'}"
 	>
 		{#if toast.status}
-			<Alert.Root variant="default" class="bg-primary/10 border border-primary/30 shadow-lg backdrop-blur-sm">
-				<CheckCircle2Icon class="text-primary size-5" />
-				<Alert.Title class="text-foreground font-semibold">{toast.title}</Alert.Title>
-				<Alert.Description class="text-foreground/80">{toast.text}</Alert.Description>
-			</Alert.Root>
+			<div class="flex items-start gap-3 rounded-xl bg-card border border-border p-4 shadow-xl">
+				<div class="flex size-8 items-center justify-center rounded-full bg-primary/10">
+					<CheckCircle2Icon class="size-4 text-primary" />
+				</div>
+				<div class="flex-1 pt-0.5">
+					<p class="text-sm font-medium text-foreground">{toast.title}</p>
+					<p class="text-xs text-muted-foreground mt-0.5">{toast.text}</p>
+				</div>
+			</div>
 		{:else}
-			<Alert.Root variant="destructive" class="bg-destructive/10 border border-destructive/30 shadow-lg backdrop-blur-sm">
-				<AlertCircleIcon class="size-5 text-destructive" />
-				<Alert.Title class="text-destructive font-semibold">{toast.title}</Alert.Title>
-				<Alert.Description class="text-destructive/80">{toast.text}</Alert.Description>
-			</Alert.Root>
+			<div class="flex items-start gap-3 rounded-xl bg-card border border-destructive/20 p-4 shadow-xl">
+				<div class="flex size-8 items-center justify-center rounded-full bg-destructive/10">
+					<AlertCircleIcon class="size-4 text-destructive" />
+				</div>
+				<div class="flex-1 pt-0.5">
+					<p class="text-sm font-medium text-foreground">{toast.title}</p>
+					<p class="text-xs text-muted-foreground mt-0.5">{toast.text}</p>
+				</div>
+			</div>
 		{/if}
 	</div>
 {/if}

@@ -58,8 +58,8 @@
 				<Calendar class="h-6 w-6 text-primary" />
 			</div>
 			<div>
-				<h2 class="scroll-m-20 text-2xl font-semibold tracking-tight">Schedule Management</h2>
-				<p class="text-sm text-muted-foreground">Week of {weekDisplay}</p>
+				<h2 class="scroll-m-20 text-2xl font-semibold tracking-tight">Διαχείριση χρονοδιαγράμματος</h2>
+				<p class="text-sm text-muted-foreground">Εβδομάδα {weekDisplay}</p>
 			</div>
 		</div>
 	</div>
