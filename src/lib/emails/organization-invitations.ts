@@ -50,7 +50,7 @@ function generateInvitationEmailTemplate(params: InvitationEmailParams): string 
 							<!-- Header -->
 							<tr>
 								<td style="padding: 48px 48px 0; text-align: center;">
-									<img src="${logoUrl}" alt="Tailor Made" style="height: 52px;" />
+									<img src="${logoUrl}" alt="Tailor Made" style="width: 100%; height: auto; display: block;" />
 								</td>
 							</tr>
 
