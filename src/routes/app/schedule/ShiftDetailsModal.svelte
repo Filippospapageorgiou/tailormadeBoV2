@@ -146,7 +146,7 @@
 				<!-- Employee Info Card -->
 				<div class="rounded-lg border border-border/50 bg-background/40 p-6 backdrop-blur-sm">
 					<div class="flex items-center gap-4">
-						<Avatar.Root class="h-16 w-16 shadow-md" style="border: 3px solid {badgeColor};">
+						<Avatar.Root class="h-16 w-16 shadow-md dark:bg-white" style="border: 3px solid {badgeColor};">
 							<Avatar.Image src={employee?.image_url} alt={employee?.username} />
 							<Avatar.Fallback
 								class="text-xl font-bold text-white"
@@ -163,7 +163,7 @@
 								class="mt-2 text-xs"
 								style="background-color: {badgeColor}; color: white; border: none;"
 							>
-								{employee?.role_name || 'Employee'}
+								{employee.role}
 							</Badge>
 						</div>
 					</div>

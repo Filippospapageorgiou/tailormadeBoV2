@@ -4,7 +4,8 @@ import { requireAuthenticatedUser } from '$lib/supabase/shared';
 import type { WeeklySchedule } from '$lib/models/schedule.types';
 import { SCHEDULE_STATUS } from '$lib/models/schedule.types';
 import { z } from 'zod/v4';
-import { getUserProfileWithRoleCheck } from '$lib/supabase/queries';
+import { getUserOrgId, getUserProfileWithRoleCheck } from '$lib/supabase/queries';
+import { sendBulkScheduleNotifications } from '$lib/emails/schedule-notifications';
 
 // ======================== AUTH ACCESS CHECK ==============
 
@@ -148,6 +149,7 @@ export const deleteSchedule = command(deleteScheduleSchema, async ({ scheduleId 
 	}
 });
 
+
 /**
  * Update schedule status
  */
@@ -156,50 +158,121 @@ const updateScheduleStatusSchema = z.object({
 	status: z.enum(['draft', 'published', 'archived'])
 });
 
+/**
+ * Send email notifications to all employees in the schedule
+ */
+async function sendScheduleNotifications(
+    supabase: any, 
+    schedule: any,  
+): Promise<{ sentCount: number; errors: string[] }> {
+    try {
+        const org_id = await getUserOrgId();
+
+
+        const { data: org, error: orgError } = await supabase
+            .from('core_organizations')
+            .select('store_name')
+            .eq('id', org_id)
+            .single();
+
+        if (orgError) {
+            console.error('Error fetching organization:', orgError);
+            return { sentCount: 0, errors: ['Failed to fetch organization'] };
+        }
+
+        const { data: employees, error: employeesError } = await supabase
+            .from('profiles')
+            .select('id, email, full_name, username')
+            .eq('org_id', org_id);
+
+        if (employeesError) {
+            console.error('Error fetching employees for notifications:', employeesError);
+            return { sentCount: 0, errors: ['Failed to fetch employee list'] };
+        }
+
+        if (!employees || employees.length === 0) {
+            console.log('No employees found for schedule notifications');
+            return { sentCount: 0, errors: [] };
+        }
+
+        console.log(`Sending schedule notifications to ${employees.length} employees...`);
+
+        const emailParams = employees.map((employee: any) => ({
+            recipientEmail: employee.email,
+            employeeName: employee.full_name || employee.username,
+            organizationName: org.store_name, 
+            weekStartDate: schedule.week_start_date,
+            weekEndDate: schedule.week_end_date,
+            scheduleId: schedule.id.toString()
+        }));
+
+        const result = await sendBulkScheduleNotifications(emailParams);
+
+        return {
+            sentCount: result.sentCount,
+            errors: result.errors
+        };
+
+    } catch (err) {
+        console.error('Error sending schedule notifications:', err);
+        return { 
+            sentCount: 0, 
+            errors: ['Failed to send notifications'] 
+        };
+    }
+}
+
+/**
+ * Update schedule status
+ */
 export const updateScheduleStatus = command(
-	updateScheduleStatusSchema,
-	async ({ scheduleId, status }) => {
-		const supabase = createServerClient();
-		const user = await requireAuthenticatedUser();
+    updateScheduleStatusSchema,
+    async ({ scheduleId, status }) => {
+        const supabase = createServerClient();
+        const user = await requireAuthenticatedUser();
 
-		try {
-			const updateData: any = {
-				status
-			};
+        try {
+            const updateData: any = { status };
 
-			// If publishing, set published info
-			if (status === SCHEDULE_STATUS.PUBLISHED) {
-				updateData.published_by = user.id;
-				updateData.published_at = new Date().toISOString();
-			}
+            if (status === SCHEDULE_STATUS.PUBLISHED) {
+                updateData.published_by = user.id;
+                updateData.published_at = new Date().toISOString();
+            }
 
-			const { error: updateError } = await supabase
-				.from('weekly_schedules')
-				.update(updateData)
-				.eq('id', scheduleId);
+            const { data: scheduleArray, error: updateError } = await supabase
+                .from('weekly_schedules')
+                .update(updateData)
+                .eq('id', scheduleId)
+                .select()
+                .single(); 
 
-			if (updateError) {
-				console.error('Error updating schedule status:', updateError);
-				return {
-					success: false,
-					message: 'Failed to update schedule status'
-				};
-			}
+            if (updateError) {
+                console.error('Error updating schedule status:', updateError);
+                return {
+                    success: false,
+                    message: 'Failed to update schedule status'
+                };
+            }
 
-			return {
-				success: true,
-				message: `Schedule ${status === 'published' ? 'published' : status === 'archived' ? 'archived' : 'set to draft'} successfully`
-			};
-		} catch (err) {
-			console.error('Unexpected error during status update:', err);
-			return {
-				success: false,
-				message: 'An unexpected error occurred while updating schedule status'
-			};
-		}
-	}
+
+            if (status === SCHEDULE_STATUS.PUBLISHED) {
+                const emailResult = await sendScheduleNotifications(supabase, scheduleArray);
+                console.log(`Sent ${emailResult.sentCount} emails, ${emailResult.errors.length} failures`);
+            }
+
+            return {
+                success: true,
+                message: `Schedule ${status === 'published' ? 'published' : status === 'archived' ? 'archived' : 'set to draft'} successfully`
+            };
+        } catch (err) {
+            console.error('Unexpected error during status update:', err);
+            return {
+                success: false,
+                message: 'An unexpected error occurred while updating schedule status'
+            };
+        }
+    }
 );
-
 // ======================== PAGINATION ==============
 
 /**

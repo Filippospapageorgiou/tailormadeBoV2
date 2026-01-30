@@ -14,7 +14,7 @@
 </script>
 
 {#if beverage}
-	<div class="min-h-screen bg-background">
+	<div class="min-h-screen bg-background pt-2">
 		<!-- Hero Section with Image -->
 		<div class="relative h-[35vh] md:h-[45vh] w-full overflow-hidden">
 			<img

@@ -1,11 +1,11 @@
 # PROPRIETARY LICENSE
 
-Copyright (c) 2025 [Το Ονομά Σου]
+Copyright (c) 2025 [Filippos papageorgiou]
 
 All rights reserved.
 
 This software and associated documentation files (the "Software") 
-are the exclusive property of [Το Ονομά Σου].
+are the exclusive property of [Filippos papageorgiou].
 
 NO PERMISSION is granted to use, copy, modify, merge, publish, 
 distribute, sublicense, and/or sell copies of the Software without 

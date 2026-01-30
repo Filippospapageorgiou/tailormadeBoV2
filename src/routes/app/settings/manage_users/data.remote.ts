@@ -192,7 +192,7 @@ export const inviteUser = query(inviteUserEmailschema, async ({ email, expiratio
 			recipientEmail: email,
 			organizationName: 'Tailor Made coffee roasters',
 			roleName: 'employee',
-			inviterName: profile.username || profile.email,
+			inviterName: profile.full_name || profile.email,
 			inviteToken: token,
 			expiresAt: expiresAt
 		});
