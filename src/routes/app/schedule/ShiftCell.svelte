@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { Shift } from '$lib/models/schedule.types';
 	import { SHIFT_TYPE } from '$lib/models/schedule.types';
-	import { Clock } from 'lucide-svelte';
 
 	interface Props {
 		shift: Shift;
@@ -48,7 +47,6 @@
 
 		<div class="relative z-10 flex items-center gap-2 px-2.5 font-bold text-stone-700 drop-shadow-[0_1px_2px_rgba(255,255,255,0.6)] dark:text-white dark:drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
 			{#if isWorkShift}
-				<Clock class="h-3.5 w-3.5 transition-colors" />
 				<span class="font-sans text-sm tracking-tight whitespace-nowrap">
 					{formatTime(shift.start_time)} - {formatTime(shift.end_time)}
 				</span>

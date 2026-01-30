@@ -73,7 +73,7 @@
 												href="/auth/forgot_password/"
 												class="ml-auto text-sm text-primary underline-offset-4 hover:underline"
 											>
-												Ξεχάσατε τον κωδικό πρόσβασής σας;
+												Ξεχάσατε τον κωδικό σας;
 											</a>
 										</div>
 										<Input
