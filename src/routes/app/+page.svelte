@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { CardBodyImg, CardImg1 } from '$lib/components/custom/cardBodyImgs/index.js';
 	import { getLocalTimeZone, today, type DateValue } from '@internationalized/date';
 	import { Calendar } from '$lib/components/ui/calendar/index.js';
+	import { Card } from '$lib/components/ui/card';
 	import type { Blog } from '$lib/models/database.types';
 	import Hero from '$lib/components/custom/hero/hero.svelte';
 	import * as Empty from '$lib/components/ui/empty/index.js';
-	import { Search } from 'lucide-svelte';
+	import { Search, Sparkles, ArrowRight, Calendar as CalendarIcon } from 'lucide-svelte';
 	import { enhance } from '$app/forms';
 	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
@@ -18,6 +18,7 @@
 
 	let { data, form } = $props();
 	let blog = $derived(data.blog as Blog);
+	let count = $derived(data.count);
 	let tosFlag = $derived(data?.tos ?? false);
 
 	function getFirstImage(images: any) {
@@ -26,6 +27,7 @@
 			if (typeof firstImage === 'string') return firstImage;
 			if (typeof firstImage === 'object' && firstImage.url) return firstImage.url;
 		}
+		return '/placeholder.jpg';
 	}
 
 	function truncateText(text: string | null | undefined, maxLength: number = 120) {
@@ -37,78 +39,163 @@
 		if (!dateString) return '';
 		return format(new Date(dateString), 'dd MMMM yyyy', { locale: el });
 	}
-
-	let value: DateValue[] | undefined = $state([today(getLocalTimeZone())]);
 	let loading = $state(false);
 	let termsAccepted = $state(false);
 </script>
 
 <div class="flex flex-1 flex-col gap-4 p-4 pt-6 bg-background">
-	<div class="grid auto-rows-min gap-4 pt-0 md:grid-cols-3 md:pt-1">
-		<Hero />
+	<!-- Hero Section - Now compact -->
+	<Hero />
 
-		<a href="/app/recipes/" class="aspect-video rounded-2xl bg-muted border border-border/50 overflow-hidden hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10">
-			<CardImg1>
-				<CardBodyImg
-					class="absolute inset-x-0 bottom-2 flex size-full flex-col justify-end px-4 pb-0.5 md:pb-10"
-				/>
-			</CardImg1>
-		</a>
-
-		<a
-			href="/app/schedule/"
-			class="group relative flex aspect-video cursor-pointer flex-col justify-end overflow-hidden rounded-2xl bg-gradient-to-t from-accent to-secondary border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10"
+	<!-- Main Cards Grid - Equal Height -->
+	<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+		
+		<!-- Recipes Card -->
+		<a 
+			href="/app/recipes/"
+			style="animation-delay: 220ms; animation-fill-mode: backwards;"
+			class="group relative animate-fade-in overflow-hidden rounded-2xl bg-card border border-border/50 cursor-pointer transition-all duration-300 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5"
 		>
-			<Calendar
-				type="multiple"
-				bind:value
-				class="absolute top-4 right-0 origin-top rounded-md [mask-image:linear-gradient(to_top,transparent_40%,#000_100%)] transition-all duration-300 ease-out group-hover:scale-105"
-			/>
-			<div
-				class="px-3 [text-shadow:0_2px_4px_rgb(0_0_0_/_0.5)] sm:px-4 lg:px-6 text-gray-200 py-3 sm:py-4 lg:py-6 text-left"
-			>
-				<h3 class="mb-3 text-lg font-bold tracking-tighter sm:text-xl lg:text-2xl">
-					Το Πρόγραμμά μου
+			<!-- Image -->
+			<div class="relative h-40 overflow-hidden">
+				<div class="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent z-10"></div>
+				<img 
+					src="/drink.jpg" 
+					alt="Coffee recipes"
+					class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+				/>
+				<!-- Badge -->
+				<div class="absolute top-3 left-3 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary text-xs font-medium text-primary-foreground">
+					<Sparkles class="w-3 h-3" />
+					{count} Συνταγές
+				</div>
+			</div>
+			
+			<!-- Content -->
+			<div class="p-5">
+				<h3 class="text-lg font-semibold mb-2 text-foreground group-hover:text-primary transition-colors">
+					Οι συνταγές μας
 				</h3>
-				<div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 sm:gap-6">
-					<p class="text-sm sm:text-base lg:text-lg leading-relaxed sm:leading-6 lg:leading-7 flex-1 max-w-none sm:max-w-md lg:max-w-lg">Δες τις βάρδιές σου για αυτή την εβδομάδα</p>
-					<p class="text-sm sm:text-base lg:text-lg leading-relaxed sm:leading-6 lg:leading-7 flex-1 max-w-none sm:max-w-md lg:max-w-lg">
-						Ενημερώσου για άδειες και συντονίσου με τον υπεύθυνο
-					</p>
+				<p class="text-sm text-muted-foreground leading-relaxed mb-4">
+					Μελέτησε τις συνταγές μας για να είσαι πάντα προετοιμασμένος για το επόμενο ρόφημα.
+				</p>
+				<div class="flex items-center gap-2 text-primary text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+					Εξερεύνησε <ArrowRight class="w-4 h-4" />
 				</div>
 			</div>
 		</a>
 
+		<!-- Schedule Card -->
+		<a 
+			href="/app/schedule/"
+			style="animation-delay: 280ms; animation-fill-mode: backwards;"
+			class="group relative animate-fade-in overflow-hidden rounded-2xl bg-card border border-border/50 cursor-pointer transition-all duration-300 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5"
+		>
+			<!-- Calendar Visual Header -->
+			<div class="relative h-40 bg-gradient-to-br from-primary/20 via-primary/5 to-transparent p-4">
+				<!-- Background Icon -->
+				<div class="absolute top-3 right-3">
+					<CalendarIcon class="w-8 h-8 text-primary/20" />
+				</div>
+				
+				<!-- Today indicator -->
+				<div class="absolute top-3 left-3 flex items-center gap-2 px-2 py-1 rounded-full bg-green-500/20 border border-green-500/30">
+					<div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+					<span class="text-xs text-green-600 dark:text-green-400 font-medium">Σήμερα</span>
+				</div>
+
+				<!-- Mini Calendar Preview -->
+				<div class="absolute bottom-4 right-4 left-4">
+					<div class="text-xs text-muted-foreground mb-2">Ιανουάριος 2026</div>
+					<div class="grid grid-cols-7 gap-1">
+						{#each ['Δ', 'Τ', 'Τ', 'Π', 'Π', 'Σ', 'Κ'] as day}
+							<div class="text-[10px] text-muted-foreground/60 text-center">{day}</div>
+						{/each}
+						{#each [27, 28, 29, 30, 31, 1, 2] as day}
+							<div 
+								class="text-xs text-center py-1 rounded {day === 31 
+									? 'bg-primary text-primary-foreground font-semibold' 
+									: day > 26 && day < 32 
+										? 'text-muted-foreground' 
+										: 'text-muted-foreground/40'}"
+							>
+								{day}
+							</div>
+						{/each}
+					</div>
+				</div>
+			</div>
+			
+			<!-- Content -->
+			<div class="p-5">
+				<h3 class="text-lg font-semibold mb-2 text-foreground group-hover:text-primary transition-colors">
+					Το Πρόγραμμά μου
+				</h3>
+				<p class="text-sm text-muted-foreground leading-relaxed mb-4">
+					Δες τις βάρδιές σου και συντονίσου με την ομάδα.
+				</p>
+				<div class="flex items-center gap-2 text-primary text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+					Δες πρόγραμμα <ArrowRight class="w-4 h-4" />
+				</div>
+			</div>
+		</a>
+
+		<!-- Blog Card -->
 		{#if blog}
-			<a href="/app/blog/{blog.id}" class="group relative aspect-video overflow-hidden rounded-2xl border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10">
-				<div class="absolute inset-0">
-					<img
+			<a 
+				style="animation-delay: 300ms; animation-fill-mode: backwards;"
+				href="/app/blog/{blog.id}" 
+				class="group relative overflow-hidden animate-fade-in rounded-2xl bg-card border border-border/50 cursor-pointer transition-all duration-300 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5"
+			>
+				<!-- Image -->
+				<div class="relative h-40 overflow-hidden">
+					<div class="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent z-10"></div>
+					<img 
 						src={getFirstImage(blog.images)}
 						alt={blog.title}
-						class="h-full w-full object-cover transition-all duration-500 group-hover:scale-110"
+						class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
 					/>
-					<div
-						class="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent"
-					></div>
+					<!-- Date Badge -->
+					<div class="absolute top-3 left-3 z-20 px-2.5 py-1 rounded-full bg-background/80 backdrop-blur-sm text-xs text-muted-foreground border border-border/50">
+						{formatDate(blog.created_at)}
+					</div>
 				</div>
-				<div class="relative z-10 flex h-full flex-col justify-end p-4">
-					<span class="mb-2 text-xs font-light text-muted-foreground">{formatDate(blog.created_at)}</span>
-					<h3 class="mb-2 line-clamp-2 text-lg font-bold text-foreground sm:text-xl">{blog.title}</h3>
-					<p class="line-clamp-2 text-sm text-muted-foreground opacity-90">{truncateText(blog.content)}</p>
+				
+				<!-- Content -->
+				<div class="p-5">
+					<h3 class="text-lg font-semibold mb-2 text-foreground group-hover:text-primary transition-colors line-clamp-1">
+						{blog.title}
+					</h3>
+					<p class="text-sm text-muted-foreground leading-relaxed mb-4 line-clamp-2">
+						{truncateText(blog.content, 100)}
+					</p>
+					<div class="flex items-center gap-2 text-primary text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+						Διάβασε περισσότερα <ArrowRight class="w-4 h-4" />
+					</div>
 				</div>
 			</a>
 		{:else}
-			<Empty.Root class="h-full bg-muted border border-border/50 rounded-2xl">
-				<Empty.Header>
-					<Empty.Media variant="icon"><Search class="text-primary" /></Empty.Media>
-					<Empty.Title class="text-foreground">Δεν υπάρχουν νέα</Empty.Title>
-					<Empty.Description class="text-muted-foreground">Μείνετε συντονισμένοι για μελλοντικές αναρτήσεις.</Empty.Description>
-				</Empty.Header>
-			</Empty.Root>
+			<div class="flex items-center justify-center rounded-2xl bg-card border border-border/50">
+				<Empty.Root>
+					<Empty.Header>
+						<Empty.Media variant="icon"><Search class="text-primary" /></Empty.Media>
+						<Empty.Title class="text-foreground">Δεν υπάρχουν νέα</Empty.Title>
+						<Empty.Description class="text-muted-foreground">Μείνετε συντονισμένοι.</Empty.Description>
+					</Empty.Header>
+				</Empty.Root>
+			</div>
 		{/if}
+	</div>
+
+	<!-- Footer Branding -->
+	<div class="text-center pt-2">
+		<p class="text-xs text-muted-foreground/50">
+			ⓒ TAILORMADE · CRAFTING EXCEPTIONAL COFFEE EXPERIENCES
+		</p>
 	</div>
 </div>
 
+<!-- Terms Dialog - Keep as is -->
 <Dialog.Root open={tosFlag}>
 	<Dialog.Content class="max-w-[500px] overflow-hidden p-0 border-border/50">
 		<Dialog.Header class="bg-muted px-6 py-4 border-b border-border/50">

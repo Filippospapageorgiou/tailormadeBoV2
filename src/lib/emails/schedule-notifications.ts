@@ -22,7 +22,7 @@ interface NewScheduleEmailParams {
 function generateNewScheduleEmailTemplate(params: NewScheduleEmailParams): string {
 	const { employeeName, organizationName, weekStartDate, weekEndDate, scheduleId } = params;
 
-	const scheduleUrl = `${PUBLIC_APP_URL}/schedule`;
+	const scheduleUrl = `${PUBLIC_APP_URL}/app/schedule`;
 	const logoUrl = `${PUBLIC_APP_URL}/tailor_venetis.png`;
 	
 	// Format dates in Greek

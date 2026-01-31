@@ -26,6 +26,11 @@ export const load: PageServerLoad = async ({ locals: { supabase, user } }) => {
 		};
 	}
 
+	const { count, error } = await supabase
+		.from('beverages')
+		.select('*', { count: 'exact', head: true })
+		.eq('public', true);
+
 	// --- Check if user has accepted ToS ---
 	const { data: tos, error: tosError } = await supabase
 		.from('user_term_acceptance')
@@ -38,13 +43,15 @@ export const load: PageServerLoad = async ({ locals: { supabase, user } }) => {
 		console.error('Error fetching Terms of acceptance:', tosError);
 		return {
 			blog,
+			count,
 			tos: null,
 			error: tosError.message
 		};
 	}
 
-	const tosFlag = user?.id ? !(!!tos) : false;
+	const tosFlag = user?.id ? !!!tos : false;
 	return {
+		count,
 		blog: blog || null,
 		tos: tosFlag
 	};
