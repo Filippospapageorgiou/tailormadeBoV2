@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button';
-	import { Card, CardContent } from '$lib/components/ui/card';
 	import {
 		Dialog,
 		DialogContent,
@@ -12,7 +11,6 @@
 	import { Label } from '$lib/components/ui/label';
 	import { Input } from '$lib/components/ui/input';
 	import { Calendar } from 'lucide-svelte';
-	import * as Empty from '$lib/components/ui/empty/index.js';
 	import * as Pagination from '$lib/components/ui/pagination';
 	import ChevronLeftIcon from 'lucide-svelte/icons/chevron-left';
 	import ChevronRightIcon from 'lucide-svelte/icons/chevron-right';
@@ -21,10 +19,13 @@
 		getSchedulesWithMetricsPaginated,
 		createSchedule,
 		deleteSchedule,
-		updateScheduleStatus
+		updateScheduleStatus,
+		copySchedule,
+		getScheduleCalendarOverview,
+		type ScheduleWithMetrics
 	} from './data.remote';
 	import { goto } from '$app/navigation';
-	import type { WeeklySchedule, ScheduleStatus } from '$lib/models/schedule.types';
+	import type { ScheduleStatus } from '$lib/models/schedule.types';
 	import { SvelteDate } from 'svelte/reactivity';
 	import { showFailToast, showSuccessToast } from '$lib/stores/toast.svelte';
 	import { Spinner } from '$lib/components/ui/spinner';
@@ -33,6 +34,9 @@
 	import { toast } from 'svelte-sonner';
 	import ScheduleCard from './components/ScheduleCard.svelte';
 	import FilterBar from './components/FilterBar.svelte';
+	import EmptyScheduleState from './components/EmptyScheduleState.svelte';
+	import CopyScheduleModal from './components/CopyScheduleModal.svelte';
+	import MiniCalendar from './components/MiniCalendar.svelte';
 	import AuthBlock from '$lib/components/custom/AuthBlock/authBlock.svelte';
 
 	// Pagination state
@@ -51,10 +55,16 @@
 		getSchedulesWithMetricsPaginated({ page: currentPage, perPage })
 	);
 
+	// Calendar year state
+	let calendarYear = $state(new Date().getFullYear());
+	let calendarOverview = $derived(getScheduleCalendarOverview({ year: calendarYear }));
+
 	// Modal state
 	let isCreateModalOpen = $state(false);
 	let isDeleteModalOpen = $state(false);
-	let scheduleToDelete = $state<WeeklySchedule | null>(null);
+	let isCopyModalOpen = $state(false);
+	let scheduleToDelete = $state<ScheduleWithMetrics | null>(null);
+	let scheduleToCopy = $state<ScheduleWithMetrics | null>(null);
 
 	// Form state - separate week_start_date for reactivity
 	let weekStartDate = $state('');
@@ -81,6 +91,7 @@
 	// Loading state
 	let isCreating = $state(false);
 	let isDeleting = $state(false);
+	let isCopying = $state(false);
 	let isRefreshing = $state(false);
 
 	// Filter state
@@ -129,7 +140,7 @@
 	// Format date for display
 	function formatDate(dateString: string): string {
 		const date = new Date(dateString);
-		return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+		return date.toLocaleDateString('el-GR', { month: 'short', day: 'numeric', year: 'numeric' });
 	}
 
 	// Handle status change with proper typing
@@ -140,18 +151,18 @@
 		});
 
 		if (result.success) {
-			showSuccessToast('Success', result.message);
+			showSuccessToast('Επιτυχία', result.message);
 			await schedulesQuery.refresh();
+			await calendarOverview.refresh();
 		} else {
-			showFailToast('Error', result.message || 'Failed to update status');
+			showFailToast('Σφάλμα', result.message || 'Αποτυχία ενημέρωσης κατάστασης');
 		}
 	}
 
 	// Handle preview (placeholder for now)
 	function handlePreview(scheduleId: number) {
-		// TODO: Implement preview functionality
 		console.log('Preview schedule:', scheduleId);
-		showSuccessToast('Coming Soon', 'Preview functionality will be implemented soon');
+		showSuccessToast('Σύντομα', 'Η προεπισκόπηση θα υλοποιηθεί σύντομα');
 	}
 
 	// Reset form helper
@@ -162,7 +173,7 @@
 	// Handle create schedule
 	async function handleCreateSchedule() {
 		if (!formData.week_start_date || !formData.week_end_date) {
-			showFailToast('Validation Error', 'Please select a week start date');
+			showFailToast('Σφάλμα Επικύρωσης', 'Επιλέξτε ημερομηνία έναρξης εβδομάδας');
 			return;
 		}
 
@@ -178,14 +189,15 @@
 				isCreateModalOpen = false;
 				resetForm();
 				schedulesQuery.refresh();
-				showSuccessToast('Success', 'Schedule created successfully');
+				calendarOverview.refresh();
+				showSuccessToast('Επιτυχία', 'Το πρόγραμμα δημιουργήθηκε');
 				goto(`/app/settings/schedule_settings/${result.schedule.id}`);
 			} else {
-				showFailToast('Error', result.message || 'Failed to create schedule');
+				showFailToast('Σφάλμα', result.message || 'Αποτυχία δημιουργίας προγράμματος');
 			}
 		} catch (error) {
 			console.error('Error creating schedule:', error);
-			showFailToast('Error', 'An unexpected error occurred');
+			showFailToast('Σφάλμα', 'Παρουσιάστηκε απρόσμενο σφάλμα');
 		} finally {
 			isCreating = false;
 		}
@@ -202,16 +214,46 @@
 			if (result.success) {
 				isDeleteModalOpen = false;
 				scheduleToDelete = null;
-				showSuccessToast('Success', result.message);
+				showSuccessToast('Επιτυχία', result.message);
 				schedulesQuery.refresh();
+				calendarOverview.refresh();
 			} else {
-				showFailToast('Error', result.message || 'Failed to delete schedule');
+				showFailToast('Σφάλμα', result.message || 'Αποτυχία διαγραφής προγράμματος');
 			}
 		} catch (error) {
 			console.error('Error deleting schedule:', error);
-			showFailToast('Error', 'An unexpected error occurred');
+			showFailToast('Σφάλμα', 'Παρουσιάστηκε απρόσμενο σφάλμα');
 		} finally {
 			isDeleting = false;
+		}
+	}
+
+	// Handle copy schedule
+	async function handleCopySchedule(targetWeekStart: string) {
+		if (!scheduleToCopy) return;
+
+		isCopying = true;
+		try {
+			const result = await copySchedule({
+				sourceScheduleId: scheduleToCopy.id,
+				targetWeekStart
+			});
+
+			if (result.success && result.schedule) {
+				isCopyModalOpen = false;
+				scheduleToCopy = null;
+				showSuccessToast('Επιτυχία', result.message);
+				schedulesQuery.refresh();
+				calendarOverview.refresh();
+				goto(`/app/settings/schedule_settings/${result.schedule.id}`);
+			} else {
+				showFailToast('Σφάλμα', result.message || 'Αποτυχία αντιγραφής προγράμματος');
+			}
+		} catch (error) {
+			console.error('Error copying schedule:', error);
+			showFailToast('Σφάλμα', 'Παρουσιάστηκε απρόσμενο σφάλμα');
+		} finally {
+			isCopying = false;
 		}
 	}
 
@@ -221,9 +263,15 @@
 	}
 
 	// Handle delete click with proper typing
-	function handleDeleteClick(schedule: WeeklySchedule) {
+	function handleDeleteClick(schedule: ScheduleWithMetrics) {
 		scheduleToDelete = schedule;
 		isDeleteModalOpen = true;
+	}
+
+	// Handle copy click
+	function handleCopyClick(schedule: ScheduleWithMetrics) {
+		scheduleToCopy = schedule;
+		isCopyModalOpen = true;
 	}
 
 	// Handle refresh
@@ -231,9 +279,10 @@
 		isRefreshing = true;
 		try {
 			await schedulesQuery.refresh();
+			await calendarOverview.refresh();
 		} catch (error) {
 			console.error('Error refreshing schedules:', error);
-			showFailToast('Error', 'Failed to refresh schedules');
+			showFailToast('Σφάλμα', 'Αποτυχία ανανέωσης προγραμμάτων');
 		} finally {
 			isRefreshing = false;
 		}
@@ -257,6 +306,28 @@
 		isDeleteModalOpen = false;
 		scheduleToDelete = null;
 	}
+
+	// Handle copy modal close
+	function handleCopyModalClose() {
+		isCopyModalOpen = false;
+		scheduleToCopy = null;
+	}
+
+	// Handle calendar week click
+	function handleCalendarWeekClick(scheduleId: number) {
+		goto(`/app/settings/schedule_settings/${scheduleId}`);
+	}
+
+	// Handle empty week click from calendar
+	function handleEmptyWeekClick(weekStart: string) {
+		weekStartDate = weekStart;
+		isCreateModalOpen = true;
+	}
+
+	// Handle year change in calendar
+	function handleYearChange(year: number) {
+		calendarYear = year;
+	}
 </script>
 
 {#if auth.loading}
@@ -264,10 +335,27 @@
 {:else}
 	<div class="container mx-auto space-y-6 px-6 py-6">
 		<!-- Header -->
-		<div>
-			<h1 class="text-3xl font-bold tracking-tight">Διαχείριση προγραμμάτων</h1>
-			<p class="text-muted-foreground">Δημιουργήστε και διαχειριστείτε εβδομαδιαία προγράμματα για την ομάδα σας</p>
+		<div class="animate-in fade-in slide-in-from-top-4 duration-500">
+			<h1 class="text-3xl font-bold tracking-tight">Διαχείριση Προγραμμάτων</h1>
+			<p class="text-muted-foreground">
+				Δημιουργήστε και διαχειριστείτε εβδομαδιαία προγράμματα βαρδιών για την ομάδα σας
+			</p>
 		</div>
+
+		<!-- Mini Calendar -->
+		{#await calendarOverview}
+			<Skeleton class="h-48 w-full rounded-xl" />
+		{:then calendarResult}
+			{#if calendarResult.success}
+				<MiniCalendar
+					schedules={calendarResult.schedules}
+					currentYear={calendarYear}
+					onYearChange={handleYearChange}
+					onWeekClick={handleCalendarWeekClick}
+					onEmptyWeekClick={handleEmptyWeekClick}
+				/>
+			{/if}
+		{/await}
 
 		<!-- Filter Bar -->
 		<FilterBar
@@ -288,7 +376,7 @@
 			<!-- Initial Loading State - Show Skeletons -->
 			<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
 				{#each Array(perPage) as _, index (index)}
-					<Skeleton class="h-64" />
+					<Skeleton class="h-64 rounded-xl" />
 				{/each}
 			</div>
 		{:then result}
@@ -298,21 +386,23 @@
 					<!-- Results Count -->
 					<div class="flex items-center justify-between">
 						<p class="text-sm text-muted-foreground">
-							Showing {filteredSchedules.length} of {totalCount} schedule{totalCount !== 1
-								? 's'
+							Εμφάνιση {filteredSchedules.length} από {totalCount} πρόγραμμα{totalCount !== 1
+								? 'τα'
 								: ''}
 						</p>
 					</div>
 
 					<!-- Schedule Cards Grid -->
 					<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-						{#each filteredSchedules as schedule (schedule.id)}
+						{#each filteredSchedules as schedule, index (schedule.id)}
 							<ScheduleCard
 								{schedule}
+								{index}
 								onEdit={handleEditSchedule}
 								onDelete={handleDeleteClick}
 								onPreview={handlePreview}
 								onStatusChange={handleStatusChange}
+								onCopy={handleCopyClick}
 							/>
 						{/each}
 					</div>
@@ -325,7 +415,7 @@
 									<Pagination.Item>
 										<Pagination.PrevButton>
 											<ChevronLeftIcon class="size-4" />
-											<span class="hidden sm:block">Previous</span>
+											<span class="hidden sm:block">Προηγούμενη</span>
 										</Pagination.PrevButton>
 									</Pagination.Item>
 
@@ -345,7 +435,7 @@
 
 									<Pagination.Item>
 										<Pagination.NextButton>
-											<span class="hidden sm:block">Next</span>
+											<span class="hidden sm:block">Επόμενη</span>
 											<ChevronRightIcon class="size-4" />
 										</Pagination.NextButton>
 									</Pagination.Item>
@@ -355,89 +445,30 @@
 					</div>
 				{:else if totalCount > 0}
 					<!-- No Results from Filters -->
-					<Card>
-						<CardContent class="flex flex-col items-center justify-center py-12">
-							<Empty.Root>
-								<Empty.Header>
-									<Empty.Media variant="icon">
-										<Calendar class="h-12 w-12" />
-									</Empty.Media>
-									<Empty.Title>No schedules found</Empty.Title>
-									<Empty.Description>
-										No schedules match your current filters. Try adjusting your search criteria.
-									</Empty.Description>
-								</Empty.Header>
-								<Empty.Content>
-									<Button variant="outline" onclick={handleClearFilters}>Clear Filters</Button>
-								</Empty.Content>
-							</Empty.Root>
-						</CardContent>
-					</Card>
+					<EmptyScheduleState
+						hasSchedules={true}
+						onCreateNew={() => (isCreateModalOpen = true)}
+					/>
 				{:else}
 					<!-- No Schedules at All -->
-					<Card>
-						<CardContent class="flex flex-col items-center justify-center py-12">
-							<Empty.Root>
-								<Empty.Header>
-									<Empty.Media variant="icon">
-										<Calendar class="h-12 w-12" />
-									</Empty.Media>
-									<Empty.Title>No schedules yet</Empty.Title>
-									<Empty.Description>
-										Create your first weekly schedule to get started
-									</Empty.Description>
-								</Empty.Header>
-								<Empty.Content>
-									<Button onclick={() => (isCreateModalOpen = true)}>
-										<Calendar class="mr-2 h-4 w-4" />
-										Create Schedule
-									</Button>
-								</Empty.Content>
-							</Empty.Root>
-						</CardContent>
-					</Card>
+					<EmptyScheduleState
+						hasSchedules={false}
+						onCreateNew={() => (isCreateModalOpen = true)}
+					/>
 				{/if}
 			{:else}
 				<!-- Error state for unsuccessful result -->
-				<Card>
-					<CardContent class="flex flex-col items-center justify-center py-12">
-						<Empty.Root>
-							<Empty.Header>
-								<Empty.Media variant="icon">
-									<Calendar class="h-12 w-12 text-destructive" />
-								</Empty.Media>
-								<Empty.Title>Error Loading Schedules</Empty.Title>
-								<Empty.Description>
-									{result.message || 'Failed to load schedules. Please try again.'}
-								</Empty.Description>
-							</Empty.Header>
-							<Empty.Content>
-								<Button onclick={handleRefresh} variant="outline">Try Again</Button>
-							</Empty.Content>
-						</Empty.Root>
-					</CardContent>
-				</Card>
+				<EmptyScheduleState
+					hasSchedules={false}
+					onCreateNew={() => (isCreateModalOpen = true)}
+				/>
 			{/if}
 		{:catch error}
 			<!-- Error State -->
-			<Card>
-				<CardContent class="flex flex-col items-center justify-center py-12">
-					<Empty.Root>
-						<Empty.Header>
-							<Empty.Media variant="icon">
-								<Calendar class="h-12 w-12 text-destructive" />
-							</Empty.Media>
-							<Empty.Title>Error Loading Schedules</Empty.Title>
-							<Empty.Description>
-								An unexpected error occurred while loading schedules.
-							</Empty.Description>
-						</Empty.Header>
-						<Empty.Content>
-							<Button onclick={handleRefresh} variant="outline">Try Again</Button>
-						</Empty.Content>
-					</Empty.Root>
-				</CardContent>
-			</Card>
+			<EmptyScheduleState
+				hasSchedules={false}
+				onCreateNew={() => (isCreateModalOpen = true)}
+			/>
 		{/await}
 	</div>
 {/if}
@@ -446,40 +477,43 @@
 <Dialog bind:open={isCreateModalOpen}>
 	<DialogContent>
 		<DialogHeader>
-			<DialogTitle>Create New Schedule</DialogTitle>
+			<DialogTitle class="flex items-center gap-2">
+				<Calendar class="h-5 w-5 text-primary" />
+				Νέο Πρόγραμμα
+			</DialogTitle>
 			<DialogDescription>
-				Select the week start date. The week will automatically span 7 days.
+				Επιλέξτε την ημερομηνία έναρξης της εβδομάδας. Η εβδομάδα θα διαρκεί αυτόματα 7 ημέρες.
 			</DialogDescription>
 		</DialogHeader>
 
 		<div class="space-y-4 py-4">
 			<div class="space-y-2">
-				<Label for="week_start_date">Week Start Date</Label>
+				<Label for="week_start_date">Ημερομηνία Έναρξης Εβδομάδας</Label>
 				<InputCalendar id="week_start_date" bind:value={weekStartDate} required />
 			</div>
 
 			<div class="space-y-2">
-				<Label for="week_end_date">Week End Date</Label>
+				<Label for="week_end_date">Ημερομηνία Λήξης Εβδομάδας</Label>
 				<Input id="week_end_date" type="date" value={formData.week_end_date} disabled />
 				<p class="text-sm text-muted-foreground">
-					Automatically calculated as 6 days after start date
+					Υπολογίζεται αυτόματα ως 6 ημέρες μετά την έναρξη
 				</p>
 			</div>
 
 			<div class="space-y-2">
-				<Label for="year">Year</Label>
+				<Label for="year">Έτος</Label>
 				<Input id="year" type="number" value={formData.year} disabled />
 			</div>
 		</div>
 
 		<DialogFooter>
-			<Button variant="outline" onclick={handleModalClose} disabled={isCreating}>Cancel</Button>
+			<Button variant="outline" onclick={handleModalClose} disabled={isCreating}>Ακύρωση</Button>
 			<Button onclick={handleCreateSchedule} disabled={isCreating || !weekStartDate}>
 				{#if isCreating}
 					<Spinner />
-					Creating...
+					Δημιουργία...
 				{:else}
-					Create Schedule
+					Δημιουργία Προγράμματος
 				{/if}
 			</Button>
 		</DialogFooter>
@@ -490,38 +524,52 @@
 <Dialog bind:open={isDeleteModalOpen}>
 	<DialogContent>
 		<DialogHeader>
-			<DialogTitle>Delete Schedule</DialogTitle>
+			<DialogTitle class="text-destructive">Διαγραφή Προγράμματος</DialogTitle>
 			<DialogDescription>
-				Are you sure you want to delete this schedule? This will also delete all shifts associated
-				with it. This action cannot be undone.
+				Είστε σίγουροι ότι θέλετε να διαγράψετε αυτό το πρόγραμμα; Θα διαγραφούν επίσης όλες οι
+				βάρδιες που σχετίζονται με αυτό. Η ενέργεια αυτή δεν μπορεί να αναιρεθεί.
 			</DialogDescription>
 		</DialogHeader>
 
 		{#if scheduleToDelete}
 			<div class="py-4">
-				<p class="font-medium">
-					Week of {formatDate(scheduleToDelete.week_start_date)}
-				</p>
-				<p class="text-sm text-muted-foreground">
-					{formatDate(scheduleToDelete.week_start_date)} - {formatDate(
-						scheduleToDelete.week_end_date
-					)}
-				</p>
+				<div class="rounded-lg border border-destructive/20 bg-destructive/5 p-4">
+					<p class="font-medium">
+						Εβδομάδα {formatDate(scheduleToDelete.week_start_date)}
+					</p>
+					<p class="text-sm text-muted-foreground">
+						{formatDate(scheduleToDelete.week_start_date)} - {formatDate(
+							scheduleToDelete.week_end_date
+						)}
+					</p>
+					<p class="mt-2 text-sm text-muted-foreground">
+						{scheduleToDelete.employee_count} εργαζόμενοι · {scheduleToDelete.shift_count} βάρδιες
+					</p>
+				</div>
 			</div>
 		{/if}
 
 		<DialogFooter>
 			<Button variant="outline" onclick={handleDeleteModalClose} disabled={isDeleting}>
-				Cancel
+				Ακύρωση
 			</Button>
 			<Button variant="destructive" onclick={handleDeleteSchedule} disabled={isDeleting}>
 				{#if isDeleting}
 					<Spinner />
-					Deleting...
+					Διαγραφή...
 				{:else}
-					Delete Schedule
+					Διαγραφή Προγράμματος
 				{/if}
 			</Button>
 		</DialogFooter>
 	</DialogContent>
 </Dialog>
+
+<!-- Copy Schedule Modal -->
+<CopyScheduleModal
+	open={isCopyModalOpen}
+	sourceSchedule={scheduleToCopy}
+	isLoading={isCopying}
+	onClose={handleCopyModalClose}
+	onCopy={handleCopySchedule}
+/>

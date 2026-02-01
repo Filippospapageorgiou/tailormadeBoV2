@@ -939,6 +939,452 @@ function generateWeekDays(
 	return days;
 }
 
+// ======================== ADJACENT SCHEDULES FOR NAVIGATION ==============
+
+export interface AdjacentSchedule {
+	id: number;
+	week_start_date: string;
+	week_end_date: string;
+}
+
+export const getAdjacentSchedules = query(scheduleIdSchema, async ({ scheduleId }) => {
+	const supabase = createServerClient();
+
+	try {
+		// Get current schedule to find its date
+		const { data: currentSchedule, error: currentError } = await supabase
+			.from('weekly_schedules')
+			.select('week_start_date, org_id')
+			.eq('id', scheduleId)
+			.single();
+
+		if (currentError || !currentSchedule) {
+			return {
+				success: false,
+				previous: null,
+				next: null,
+				currentWeekScheduleId: null
+			};
+		}
+
+		// Get previous schedule (most recent before current)
+		const { data: previousSchedule } = await supabase
+			.from('weekly_schedules')
+			.select('id, week_start_date, week_end_date')
+			.eq('org_id', currentSchedule.org_id)
+			.lt('week_start_date', currentSchedule.week_start_date)
+			.order('week_start_date', { ascending: false })
+			.limit(1)
+			.single();
+
+		// Get next schedule (earliest after current)
+		const { data: nextSchedule } = await supabase
+			.from('weekly_schedules')
+			.select('id, week_start_date, week_end_date')
+			.eq('org_id', currentSchedule.org_id)
+			.gt('week_start_date', currentSchedule.week_start_date)
+			.order('week_start_date', { ascending: true })
+			.limit(1)
+			.single();
+
+		// Find current week schedule
+		const today = new Date();
+		const todayStr = today.toISOString().split('T')[0];
+
+		const { data: currentWeekSchedule } = await supabase
+			.from('weekly_schedules')
+			.select('id')
+			.eq('org_id', currentSchedule.org_id)
+			.lte('week_start_date', todayStr)
+			.gte('week_end_date', todayStr)
+			.single();
+
+		return {
+			success: true,
+			previous: previousSchedule as AdjacentSchedule | null,
+			next: nextSchedule as AdjacentSchedule | null,
+			currentWeekScheduleId: currentWeekSchedule?.id ?? null
+		};
+	} catch (err) {
+		console.error('Error fetching adjacent schedules:', err);
+		return {
+			success: false,
+			previous: null,
+			next: null,
+			currentWeekScheduleId: null
+		};
+	}
+});
+
+// ======================== BULK ADD EMPLOYEES ==============
+
+const bulkAddEmployeesSchema = z.object({
+	scheduleId: z.number().int().positive(),
+	employeeIds: z.array(z.uuid()).min(1)
+});
+
+export const bulkAddEmployees = command(bulkAddEmployeesSchema, async ({ scheduleId, employeeIds }) => {
+	const supabase = createServerClient();
+	const user = await requireAuthenticatedUser();
+
+	try {
+		// Get schedule info
+		const { data: schedule, error: scheduleError } = await supabase
+			.from('weekly_schedules')
+			.select('org_id, week_start_date')
+			.eq('id', scheduleId)
+			.single();
+
+		if (scheduleError || !schedule) {
+			return { success: false, message: 'Schedule not found' };
+		}
+
+		// Get the first day of the week
+		const firstDay = schedule.week_start_date;
+
+		// Create a placeholder shift for each employee on the first day
+		// This ensures they appear in the schedule grid
+		const shiftsToCreate = employeeIds.map((userId) => ({
+			schedule_id: scheduleId,
+			user_id: userId,
+			org_id: schedule.org_id,
+			shift_date: firstDay,
+			shift_type: SHIFT_TYPE.DAY_OFF,
+			shift_category: null,
+			start_time: null,
+			end_time: null,
+			break_duration_minutes: 0,
+			notes: null,
+			created_by: user.id
+		}));
+
+		const { error: insertError } = await supabase.from('shifts').insert(shiftsToCreate);
+
+		if (insertError) {
+			console.error('Error bulk adding employees:', insertError);
+			return { success: false, message: 'Failed to add employees' };
+		}
+
+		return {
+			success: true,
+			message: `Προστέθηκαν ${employeeIds.length} εργαζόμενοι επιτυχώς`
+		};
+	} catch (err) {
+		console.error('Unexpected error during bulk add:', err);
+		return { success: false, message: 'An unexpected error occurred' };
+	}
+});
+
+// ======================== SHIFT TEMPLATES ==============
+
+export interface ShiftTemplate {
+	id: number;
+	org_id: number;
+	name: string;
+	description: string | null;
+	shifts: TemplateShift[];
+	created_by: string;
+	created_at: string;
+}
+
+export interface TemplateShift {
+	day_offset: number; // 0 = Monday, 6 = Sunday
+	start_time: string | null;
+	end_time: string | null;
+	shift_type: string;
+	shift_category: string | null;
+	break_duration_minutes: number;
+}
+
+export const getShiftTemplates = query(async () => {
+	const supabase = createServerClient();
+	const user = await requireAuthenticatedUser();
+
+	try {
+		// Get user's org_id
+		const { data: profile } = await supabase
+			.from('profiles')
+			.select('org_id')
+			.eq('id', user.id)
+			.single();
+
+		if (!profile) {
+			return { success: false, templates: [] };
+		}
+
+		const { data: templates, error } = await supabase
+			.from('shift_templates')
+			.select('*')
+			.eq('org_id', profile.org_id)
+			.order('name');
+
+		if (error) {
+			console.error('Error fetching shift templates:', error);
+			return { success: false, templates: [] };
+		}
+
+		return {
+			success: true,
+			templates: (templates ?? []) as ShiftTemplate[]
+		};
+	} catch (err) {
+		console.error('Unexpected error fetching templates:', err);
+		return { success: false, templates: [] };
+	}
+});
+
+const createTemplateSchema = z.object({
+	name: z.string().min(1).max(100),
+	description: z.string().max(500).nullable().optional(),
+	shifts: z.array(z.object({
+		day_offset: z.number().int().min(0).max(6),
+		start_time: z.string().nullable(),
+		end_time: z.string().nullable(),
+		shift_type: z.enum(['work', 'day_off', 'sick_leave', 'vacation']),
+		shift_category: z.enum(['morning', 'afternoon', 'evening', 'part-time']).nullable(),
+		break_duration_minutes: z.number().int().min(0)
+	}))
+});
+
+export const createShiftTemplate = command(createTemplateSchema, async (templateData) => {
+	const supabase = createServerClient();
+	const user = await requireAuthenticatedUser();
+
+	try {
+		const { data: profile } = await supabase
+			.from('profiles')
+			.select('org_id')
+			.eq('id', user.id)
+			.single();
+
+		if (!profile) {
+			return { success: false, message: 'User profile not found' };
+		}
+
+		const { data: template, error } = await supabase
+			.from('shift_templates')
+			.insert({
+				org_id: profile.org_id,
+				name: templateData.name,
+				description: templateData.description ?? null,
+				shifts: templateData.shifts,
+				created_by: user.id
+			})
+			.select()
+			.single();
+
+		if (error) {
+			console.error('Error creating template:', error);
+			return { success: false, message: 'Failed to create template' };
+		}
+
+		return {
+			success: true,
+			message: 'Το πρότυπο δημιουργήθηκε επιτυχώς',
+			template
+		};
+	} catch (err) {
+		console.error('Unexpected error creating template:', err);
+		return { success: false, message: 'An unexpected error occurred' };
+	}
+});
+
+const deleteTemplateSchema = z.object({
+	templateId: z.number().int().positive()
+});
+
+export const deleteShiftTemplate = command(deleteTemplateSchema, async ({ templateId }) => {
+	const supabase = createServerClient();
+
+	try {
+		const { error } = await supabase
+			.from('shift_templates')
+			.delete()
+			.eq('id', templateId);
+
+		if (error) {
+			console.error('Error deleting template:', error);
+			return { success: false, message: 'Failed to delete template' };
+		}
+
+		return {
+			success: true,
+			message: 'Το πρότυπο διαγράφηκε επιτυχώς'
+		};
+	} catch (err) {
+		console.error('Unexpected error deleting template:', err);
+		return { success: false, message: 'An unexpected error occurred' };
+	}
+});
+
+const applyTemplateSchema = z.object({
+	scheduleId: z.number().int().positive(),
+	templateId: z.number().int().positive(),
+	employeeIds: z.array(z.uuid()).min(1)
+});
+
+export const applyShiftTemplate = command(applyTemplateSchema, async ({ scheduleId, templateId, employeeIds }) => {
+	const supabase = createServerClient();
+	const user = await requireAuthenticatedUser();
+
+	try {
+		// Get template
+		const { data: template, error: templateError } = await supabase
+			.from('shift_templates')
+			.select('*')
+			.eq('id', templateId)
+			.single<ShiftTemplate>();
+
+		if (templateError || !template) {
+			return { success: false, message: 'Template not found' };
+		}
+
+		// Get schedule
+		const { data: schedule, error: scheduleError } = await supabase
+			.from('weekly_schedules')
+			.select('org_id, week_start_date')
+			.eq('id', scheduleId)
+			.single();
+
+		if (scheduleError || !schedule) {
+			return { success: false, message: 'Schedule not found' };
+		}
+
+		// Create shifts for each employee based on template
+		const startDate = new Date(schedule.week_start_date);
+		const shiftsToCreate: any[] = [];
+
+		for (const employeeId of employeeIds) {
+			for (const templateShift of template.shifts) {
+				const shiftDate = new Date(startDate);
+				shiftDate.setDate(startDate.getDate() + templateShift.day_offset);
+
+				shiftsToCreate.push({
+					schedule_id: scheduleId,
+					user_id: employeeId,
+					org_id: schedule.org_id,
+					shift_date: shiftDate.toISOString().split('T')[0],
+					start_time: templateShift.start_time,
+					end_time: templateShift.end_time,
+					shift_type: templateShift.shift_type,
+					shift_category: templateShift.shift_category,
+					break_duration_minutes: templateShift.break_duration_minutes,
+					notes: `Από πρότυπο: ${template.name}`,
+					created_by: user.id
+				});
+			}
+		}
+
+		if (shiftsToCreate.length > 0) {
+			const { error: insertError } = await supabase.from('shifts').insert(shiftsToCreate);
+
+			if (insertError) {
+				console.error('Error applying template shifts:', insertError);
+				return { success: false, message: 'Failed to apply template' };
+			}
+		}
+
+		return {
+			success: true,
+			message: `Το πρότυπο εφαρμόστηκε σε ${employeeIds.length} εργαζόμενους (${shiftsToCreate.length} βάρδιες)`
+		};
+	} catch (err) {
+		console.error('Unexpected error applying template:', err);
+		return { success: false, message: 'An unexpected error occurred' };
+	}
+});
+
+// Create template from existing schedule shifts for an employee
+const createTemplateFromScheduleSchema = z.object({
+	scheduleId: z.number().int().positive(),
+	employeeId: z.uuid(),
+	name: z.string().min(1).max(100),
+	description: z.string().max(500).nullable().optional()
+});
+
+export const createTemplateFromSchedule = command(createTemplateFromScheduleSchema, async ({ scheduleId, employeeId, name, description }) => {
+	const supabase = createServerClient();
+	const user = await requireAuthenticatedUser();
+
+	try {
+		// Get schedule and shifts
+		const { data: schedule } = await supabase
+			.from('weekly_schedules')
+			.select('org_id, week_start_date')
+			.eq('id', scheduleId)
+			.single();
+
+		if (!schedule) {
+			return { success: false, message: 'Schedule not found' };
+		}
+
+		const { data: shifts } = await supabase
+			.from('shifts')
+			.select('*')
+			.eq('schedule_id', scheduleId)
+			.eq('user_id', employeeId)
+			.order('shift_date');
+
+		if (!shifts || shifts.length === 0) {
+			return { success: false, message: 'No shifts found for this employee' };
+		}
+
+		// Convert shifts to template format
+		const startDate = new Date(schedule.week_start_date);
+		const templateShifts: TemplateShift[] = shifts.map((shift) => {
+			const shiftDate = new Date(shift.shift_date);
+			const dayOffset = Math.floor((shiftDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+
+			return {
+				day_offset: dayOffset,
+				start_time: shift.start_time,
+				end_time: shift.end_time,
+				shift_type: shift.shift_type,
+				shift_category: shift.shift_category,
+				break_duration_minutes: shift.break_duration_minutes ?? 0
+			};
+		});
+
+		// Get user's org_id
+		const { data: profile } = await supabase
+			.from('profiles')
+			.select('org_id')
+			.eq('id', user.id)
+			.single();
+
+		if (!profile) {
+			return { success: false, message: 'User profile not found' };
+		}
+
+		// Create template
+		const { data: template, error } = await supabase
+			.from('shift_templates')
+			.insert({
+				org_id: profile.org_id,
+				name,
+				description: description ?? null,
+				shifts: templateShifts,
+				created_by: user.id
+			})
+			.select()
+			.single();
+
+		if (error) {
+			console.error('Error creating template from schedule:', error);
+			return { success: false, message: 'Failed to create template' };
+		}
+
+		return {
+			success: true,
+			message: `Πρότυπο "${name}" δημιουργήθηκε με ${templateShifts.length} βάρδιες`,
+			template
+		};
+	} catch (err) {
+		console.error('Unexpected error creating template from schedule:', err);
+		return { success: false, message: 'An unexpected error occurred' };
+	}
+});
+
 const updateDisplayOrderSchema = z.object({
 	userId: z.uuid(),
 	newDisplayOrder: z.number().int().min(0)

@@ -25,7 +25,7 @@
 		const labels: Record<string, string> = {
 			work: 'Εργασία',
 			day_off: 'Ρεπό',
-			sick_leave: 'Άρρωστος',
+			sick_leave: 'Ασθένεια',
 			vacation: 'Άδεια'
 		};
 		return labels[type] || type;
@@ -124,9 +124,3 @@
 		<Plus class="h-5 w-5 text-blue-400" />
 	</button>
 {/if}
-
-<style>
-	:global(.group:hover .shift-content) {
-		transform: translateY(-2px);
-	}
-</style>

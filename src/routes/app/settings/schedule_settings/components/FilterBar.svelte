@@ -2,7 +2,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import * as Select from '$lib/components/ui/select';
-	import { RefreshCcw, X, Plus } from 'lucide-svelte';
+	import { RefreshCcw, X, Plus, Search } from 'lucide-svelte';
 	import { SCHEDULE_STATUS } from '$lib/models/schedule.types';
 
 	interface Props {
@@ -23,7 +23,7 @@
 		statusFilter,
 		yearFilter,
 		searchQuery,
-		isRefreshing,
+		isRefreshing=true,
 		availableYears,
 		onStatusChange,
 		onYearChange,
@@ -36,45 +36,55 @@
 	// Derive if filters are active
 	let hasActiveFilters = $derived(statusFilter !== '' || yearFilter !== '' || searchQuery !== '');
 
-	// Status options
+	// Status options in Greek
 	const statusOptions = [
-		{ value: '', label: 'All Status' },
-		{ value: SCHEDULE_STATUS.DRAFT, label: 'Draft' },
-		{ value: SCHEDULE_STATUS.PUBLISHED, label: 'Published' },
-		{ value: SCHEDULE_STATUS.ARCHIVED, label: 'Archived' }
+		{ value: '', label: 'Όλες οι Καταστάσεις' },
+		{ value: SCHEDULE_STATUS.DRAFT, label: 'Πρόχειρο' },
+		{ value: SCHEDULE_STATUS.PUBLISHED, label: 'Δημοσιευμένο' },
+		{ value: SCHEDULE_STATUS.ARCHIVED, label: 'Αρχειοθετημένο' }
 	];
 
 	// Year options
 	let yearOptions = $derived([
-		{ value: '', label: 'All Years' },
+		{ value: '', label: 'Όλα τα Έτη' },
 		...availableYears.map((year) => ({ value: String(year), label: String(year) }))
 	]);
 
 	// Get current label for selects
 	let statusLabel = $derived(
-		statusOptions.find((opt) => opt.value === statusFilter)?.label ?? 'All Status'
+		statusOptions.find((opt) => opt.value === statusFilter)?.label ?? 'Όλες οι Καταστάσεις'
 	);
 
 	let yearLabel = $derived(
-		yearOptions.find((opt) => opt.value === yearFilter)?.label ?? 'All Years'
+		yearOptions.find((opt) => opt.value === yearFilter)?.label ?? 'Όλα τα Έτη'
 	);
 </script>
 
-<div class="space-y-4">
+<div
+	class="animate-fade-in slide-in-from-top-4 space-y-4 rounded-xl border
+	  border-border/50 dark:border-white/5 dark:bg-gradient-to-br dark:from-white/[0.02] dark:to-transparent p-4 dark:backdrop-blur-sm duration-500"
+	style="animation-delay: 100ms;"
+>
 	<!-- Top Row: Create Button & Refresh -->
 	<div class="flex items-center justify-between">
 		<div class="flex items-center gap-2">
-			<Button onclick={onCreate}>
-				<Plus class="mr-2 h-4 w-4" />
-				Create Schedule
+			<Button onclick={onCreate} class="gap-2 transition-all duration-300 hover:scale-105">
+				<Plus class="h-4 w-4" />
+				Νέο Πρόγραμμα
 			</Button>
 		</div>
 
-		<Button variant="outline" size="sm" onclick={onRefresh} disabled={isRefreshing}>
+		<Button
+			variant="outline"
+			size="sm"
+			onclick={onRefresh}
+			disabled={isRefreshing}
+			class="gap-2 transition-all duration-300 hover:border-white/20 hover:bg-white/5"
+		>
 			<RefreshCcw
-				class={`mr-2 h-4 w-4 repeat-infinite ${isRefreshing ? 'animate-spin-clockwise' : ''}`}
+				class="h-4 w-4 {isRefreshing ? 'animate-spin-clockwise repeat-infinite' : ''}"
 			/>
-			Refresh
+			Ανανέωση
 		</Button>
 	</div>
 
@@ -87,12 +97,12 @@
 			value={statusFilter}
 			onValueChange={onStatusChange}
 		>
-			<Select.Trigger class="w-full sm:w-[180px]">
+			<Select.Trigger class="w-full border-border/50 sm:w-[180px]">
 				{statusLabel}
 			</Select.Trigger>
 			<Select.Content>
 				<Select.Group>
-					<Select.Label>Status</Select.Label>
+					<Select.Label>Κατάσταση</Select.Label>
 					{#each statusOptions as option}
 						<Select.Item value={option.value} label={option.label}>
 							{option.label}
@@ -104,12 +114,12 @@
 
 		<!-- Year Filter -->
 		<Select.Root type="single" name="yearFilter" value={yearFilter} onValueChange={onYearChange}>
-			<Select.Trigger class="w-full sm:w-[180px]">
+			<Select.Trigger class="w-full border-border/50 sm:w-[140px]">
 				{yearLabel}
 			</Select.Trigger>
 			<Select.Content>
 				<Select.Group>
-					<Select.Label>Year</Select.Label>
+					<Select.Label>Έτος</Select.Label>
 					{#each yearOptions as option}
 						<Select.Item value={option.value} label={option.label}>
 							{option.label}
@@ -121,18 +131,19 @@
 
 		<!-- Search Input -->
 		<div class="relative flex-1">
+			<Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 			<Input
 				bind:value={searchQuery}
 				oninput={(e) => onSearchChange(e.currentTarget.value)}
-				placeholder="Search schedules..."
-				class="w-full pr-8"
+				placeholder="Αναζήτηση προγραμμάτων..."
+				class="w-full border-border/50 pl-9 pr-8"
 			/>
 			{#if searchQuery}
 				<Button
 					variant="ghost"
 					size="icon"
 					onclick={() => onSearchChange('')}
-					class="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2"
+					class="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2 hover:bg-white/10"
 				>
 					<X class="h-3 w-3" />
 				</Button>
@@ -141,37 +152,57 @@
 
 		<!-- Clear Filters Button -->
 		{#if hasActiveFilters}
-			<Button variant="outline" size="sm" onclick={onClearFilters} class="whitespace-nowrap">
-				<X class="mr-2 h-3 w-3" />
-				Clear Filters
+			<Button
+				variant="outline"
+				size="sm"
+				onclick={onClearFilters}
+				class="gap-2 whitespace-nowrap border-white/10 transition-all duration-300 hover:border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
+			>
+				<X class="h-3 w-3" />
+				Καθαρισμός
 			</Button>
 		{/if}
 	</div>
 
 	<!-- Active Filters Display -->
 	{#if hasActiveFilters}
-		<div class="flex flex-wrap items-center gap-2">
-			<span class="text-sm text-muted-foreground">Active filters:</span>
+		<div class="flex flex-wrap items-center gap-2 border-t border-white/5 pt-3">
+			<span class="text-xs text-muted-foreground">Ενεργά φίλτρα:</span>
 			{#if statusFilter}
-				<div class="flex items-center gap-1 rounded-md bg-secondary px-2 py-1 text-xs">
-					<span>Status: {statusLabel}</span>
-					<button onclick={() => onStatusChange('')} class="ml-1 hover:text-destructive">
+				<div
+					class="flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
+				>
+					<span>{statusLabel}</span>
+					<button
+						onclick={() => onStatusChange('')}
+						class="ml-0.5 transition-colors hover:text-destructive"
+					>
 						<X class="h-3 w-3" />
 					</button>
 				</div>
 			{/if}
 			{#if yearFilter}
-				<div class="flex items-center gap-1 rounded-md bg-secondary px-2 py-1 text-xs">
-					<span>Year: {yearLabel}</span>
-					<button onclick={() => onYearChange('')} class="ml-1 hover:text-destructive">
+				<div
+					class="flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
+				>
+					<span>{yearLabel}</span>
+					<button
+						onclick={() => onYearChange('')}
+						class="ml-0.5 transition-colors hover:text-destructive"
+					>
 						<X class="h-3 w-3" />
 					</button>
 				</div>
 			{/if}
 			{#if searchQuery}
-				<div class="flex items-center gap-1 rounded-md bg-secondary px-2 py-1 text-xs">
-					<span>Search: "{searchQuery}"</span>
-					<button onclick={() => onSearchChange('')} class="ml-1 hover:text-destructive">
+				<div
+					class="flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
+				>
+					<span>"{searchQuery}"</span>
+					<button
+						onclick={() => onSearchChange('')}
+						class="ml-0.5 transition-colors hover:text-destructive"
+					>
 						<X class="h-3 w-3" />
 					</button>
 				</div>

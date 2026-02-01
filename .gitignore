@@ -1,5 +1,6 @@
 node_modules
-agents
+.agents
+.claude
 CLAUDE.md
 
 # Output
@@ -24,5 +25,3 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
-
-.CLUADE.md

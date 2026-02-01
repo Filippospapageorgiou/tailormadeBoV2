@@ -283,6 +283,14 @@ const paginationSchema = z.object({
 	perPage: z.number().int().positive().default(9)
 });
 
+export interface ScheduleWithMetrics extends WeeklySchedule {
+	employee_count: number;
+	shift_count: number;
+	morning_shifts: number;
+	afternoon_shifts: number;
+	evening_shifts: number;
+}
+
 export const getSchedulesWithMetricsPaginated = query(
 	paginationSchema,
 	async ({ page, perPage }) => {
@@ -302,7 +310,7 @@ export const getSchedulesWithMetricsPaginated = query(
 				return {
 					success: false,
 					message: 'Error fetching schedules',
-					schedules: [],
+					schedules: [] as ScheduleWithMetrics[],
 					totalCount: 0,
 					totalPages: 0,
 					currentPage: page
@@ -322,18 +330,42 @@ export const getSchedulesWithMetricsPaginated = query(
 				return {
 					success: false,
 					message: 'Error fetching schedules',
-					schedules: [],
+					schedules: [] as ScheduleWithMetrics[],
 					totalCount: 0,
 					totalPages: 0,
 					currentPage: page
 				};
 			}
 
+			// Get metrics for each schedule
+			const schedulesWithMetrics: ScheduleWithMetrics[] = await Promise.all(
+				(schedules ?? []).map(async (schedule) => {
+					const { data: shifts } = await supabase
+						.from('shifts')
+						.select('user_id, shift_category')
+						.eq('schedule_id', schedule.id);
+
+					const uniqueEmployees = new Set((shifts ?? []).map((s) => s.user_id));
+					const morningShifts = (shifts ?? []).filter((s) => s.shift_category === 'morning').length;
+					const afternoonShifts = (shifts ?? []).filter((s) => s.shift_category === 'afternoon').length;
+					const eveningShifts = (shifts ?? []).filter((s) => s.shift_category === 'evening').length;
+
+					return {
+						...schedule,
+						employee_count: uniqueEmployees.size,
+						shift_count: shifts?.length ?? 0,
+						morning_shifts: morningShifts,
+						afternoon_shifts: afternoonShifts,
+						evening_shifts: eveningShifts
+					};
+				})
+			);
+
 			const totalPages = Math.ceil((count ?? 0) / perPage);
 
 			return {
 				success: true,
-				schedules: schedules ?? [],
+				schedules: schedulesWithMetrics,
 				totalCount: count ?? 0,
 				totalPages,
 				currentPage: page
@@ -343,7 +375,7 @@ export const getSchedulesWithMetricsPaginated = query(
 			return {
 				success: false,
 				message: 'An unexpected error occurred while fetching schedules',
-				schedules: [],
+				schedules: [] as ScheduleWithMetrics[],
 				totalCount: 0,
 				totalPages: 0,
 				currentPage: page
@@ -351,3 +383,141 @@ export const getSchedulesWithMetricsPaginated = query(
 		}
 	}
 );
+
+// ======================== COPY SCHEDULE ==============
+
+const copyScheduleSchema = z.object({
+	sourceScheduleId: z.number().int().positive(),
+	targetWeekStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format')
+});
+
+export const copySchedule = command(copyScheduleSchema, async ({ sourceScheduleId, targetWeekStart }) => {
+	const supabase = createServerClient();
+	const user = await requireAuthenticatedUser();
+
+	try {
+		// Get source schedule
+		const { data: sourceSchedule, error: sourceError } = await supabase
+			.from('weekly_schedules')
+			.select('*')
+			.eq('id', sourceScheduleId)
+			.single<WeeklySchedule>();
+
+		if (sourceError || !sourceSchedule) {
+			return { success: false, message: 'Source schedule not found' };
+		}
+
+		// Calculate target end date
+		const startDate = new Date(targetWeekStart);
+		const endDate = new Date(startDate);
+		endDate.setDate(startDate.getDate() + 6);
+
+		// Create new schedule
+		const { data: newSchedule, error: createError } = await supabase
+			.from('weekly_schedules')
+			.insert({
+				org_id: sourceSchedule.org_id,
+				week_start_date: targetWeekStart,
+				week_end_date: endDate.toISOString().split('T')[0],
+				year: startDate.getFullYear(),
+				status: SCHEDULE_STATUS.DRAFT,
+				created_by: user.id
+			})
+			.select()
+			.single<WeeklySchedule>();
+
+		if (createError || !newSchedule) {
+			console.error('Error creating new schedule:', createError);
+			return { success: false, message: 'Failed to create new schedule' };
+		}
+
+		// Get source shifts
+		const { data: sourceShifts, error: shiftsError } = await supabase
+			.from('shifts')
+			.select('*')
+			.eq('schedule_id', sourceScheduleId);
+
+		if (shiftsError) {
+			console.error('Error fetching source shifts:', shiftsError);
+			return { success: false, message: 'Failed to copy shifts' };
+		}
+
+		// Copy shifts with adjusted dates
+		if (sourceShifts && sourceShifts.length > 0) {
+			const sourceStart = new Date(sourceSchedule.week_start_date);
+
+			const newShifts = sourceShifts.map((shift) => {
+				const shiftDate = new Date(shift.shift_date);
+				const dayOffset = Math.floor((shiftDate.getTime() - sourceStart.getTime()) / (1000 * 60 * 60 * 24));
+				const newShiftDate = new Date(startDate);
+				newShiftDate.setDate(startDate.getDate() + dayOffset);
+
+				return {
+					org_id: shift.org_id,
+					schedule_id: newSchedule.id,
+					user_id: shift.user_id,
+					shift_date: newShiftDate.toISOString().split('T')[0],
+					start_time: shift.start_time,
+					end_time: shift.end_time,
+					shift_type: shift.shift_type,
+					shift_category: shift.shift_category,
+					break_duration_minutes: shift.break_duration_minutes,
+					notes: shift.notes,
+					created_by: user.id
+				};
+			});
+
+			const { error: insertError } = await supabase.from('shifts').insert(newShifts);
+
+			if (insertError) {
+				console.error('Error copying shifts:', insertError);
+				// Still return success as the schedule was created
+				return {
+					success: true,
+					message: 'Schedule created but some shifts could not be copied',
+					schedule: newSchedule
+				};
+			}
+		}
+
+		return {
+			success: true,
+			message: `Το πρόγραμμα αντιγράφηκε επιτυχώς με ${sourceShifts?.length ?? 0} βάρδιες`,
+			schedule: newSchedule
+		};
+	} catch (err) {
+		console.error('Unexpected error copying schedule:', err);
+		return { success: false, message: 'An unexpected error occurred' };
+	}
+});
+
+// ======================== CALENDAR OVERVIEW ==============
+
+const calendarOverviewSchema = z.object({
+	year: z.number().int().min(2024).max(2100)
+});
+
+export const getScheduleCalendarOverview = query(calendarOverviewSchema, async ({ year }) => {
+	const supabase = createServerClient();
+
+	try {
+		const { data: schedules, error } = await supabase
+			.from('weekly_schedules')
+			.select('*')
+			.eq('year', year)
+			.order('week_start_date', { ascending: true });
+
+		if (error) {
+			console.error('Error fetching calendar overview:', error);
+			return { success: false, schedules: [] };
+		}
+
+		return {
+			success: true,
+			schedules: schedules ?? []
+		};
+	} catch (err) {
+		console.error('Unexpected error fetching calendar overview:', err);
+		return { success: false, schedules: [] };
+	}
+});
