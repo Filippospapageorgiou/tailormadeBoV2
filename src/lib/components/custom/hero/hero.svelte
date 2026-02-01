@@ -14,26 +14,17 @@
 		CheckCircle2,
 		Zap
 	} from 'lucide-svelte';
-	import { getAllStatsForCards,getTasksAndBonuses } from '$lib/api/stats/data.remote';
+	import { getAllStatsForCards } from '$lib/api/stats/data.remote';
 	import { toast } from 'svelte-sonner';
 
 	let profile = getProfileContext();
 	let weather = getWeatherContext();
 
 	let stats = getAllStatsForCards();
-	let queryTasksBonus = getTasksAndBonuses();
-
-	let tasksBonuss = $derived(queryTasksBonus.current?.data);
 
 	$effect(() => {
 		if (!stats.current?.success) {
 			toast.error(stats.current?.message || 'Σφάλμα κάτα την ανάκτηση δεδομένων');
-		}
-	});
-
-	$effect(() => {
-		if (!queryTasksBonus?.current?.success) {
-			toast.error(queryTasksBonus.current?.message || 'Σφάλμα κάτα την ανάκτηση δεδομένων');
 		}
 	});
 

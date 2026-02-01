@@ -74,14 +74,16 @@ export const getAllStatsForCards = query(async (): Promise<StatsResponse> => {
 		// 🔄 Parallel fetching - όλα τα queries ταυτόχρονα!
 		const [shiftsResult, equipmentResult, employeesResult] = await Promise.all([
 			// 1️⃣ Shifts τελευταίας εβδομάδας για τον χρήστη
-			supabase
-				.from('shifts')
-				.select('id, shift_date, start_time, end_time, shift_type, break_duration_minutes')
-				.eq('org_id', orgId)
-				.eq('user_id', userId)
-				.eq('shift_type', 'work')
-				.eq('schedule_id', schedule?.id)
-				.order('shift_date', { ascending: false }),
+			schedule?.id
+				? supabase
+						.from('shifts')
+						.select('id, shift_date, start_time, end_time, shift_type, break_duration_minutes')
+						.eq('org_id', orgId)
+						.eq('user_id', userId)
+						.eq('shift_type', 'work')
+						.eq('schedule_id', schedule.id)
+						.order('shift_date', { ascending: false })
+				: Promise.resolve({ data: [], error: null }),
 
 			// 2️⃣ Equipment grouped by status
 			supabase.from('equipment').select('id, status').eq('org_id', orgId),
@@ -175,7 +177,6 @@ export const getAllStatsForCards = query(async (): Promise<StatsResponse> => {
 		};
 	}
 });
-
 
 interface TasksAndBonusesResponse {
 	success: boolean;
