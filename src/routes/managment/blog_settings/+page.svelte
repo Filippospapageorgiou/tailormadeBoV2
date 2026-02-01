@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { getAllBlogs, authenticatedAccess } from './data.remote';
+	import { getAllBlogs } from './data.remote';
+	import { authenticatedAccess } from '$lib/api/bonus_managment/data.remote';
 	import type { Blog } from '$lib/models/database.types';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
@@ -7,8 +8,7 @@
 	import * as Select from '$lib/components/ui/select';
 	import * as Pagination from '$lib/components/ui/pagination';
 	import * as Tooltip from '$lib/components/ui/tooltip';
-	import { X, RefreshCcw, Plus, Search, FileText } from 'lucide-svelte';
-	import * as Empty from '$lib/components/ui/empty/index.js';
+	import { X, RefreshCcw, Plus, FileText } from 'lucide-svelte';
 	import BlogCard from './components/BlogCard.svelte';
 	import AddBlogDialog from './components/AddBlogDialog.svelte';
 	import AuthBlock from '$lib/components/custom/AuthBlock/authBlock.svelte';

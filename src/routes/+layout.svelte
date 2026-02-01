@@ -7,8 +7,23 @@
 	import CustomProgressBar from '$lib/components/custom/customProgressBar.svelte';
 	import Feedbackmodal from '$lib/components/custom/Feedbackmodal.svelte';
 	import { ModeWatcher } from 'mode-watcher';
+	import { setProfileContext, updateGlobalProfile } from '$lib/stores/profile.svelte.js';
+
 	let { data, children } = $props();
-	let { session, supabase } = $derived(data);
+	let { session, supabase, profile } = $derived(data);
+
+	// Set profile context globally - available everywhere
+	let currentProfile = $derived(profile || null);
+
+	// svelte-ignore state_referenced_locally
+	setProfileContext(profile);
+
+	// Update when profile changes (e.g., after page refresh)
+	$effect(() => {
+		if (data.profile) {
+			updateGlobalProfile(data.profile);
+		}
+	});
 
 	let favicon = '/logo.png';
 

@@ -119,32 +119,32 @@
 				items: [
 					{
 						title: 'Πίνακας Ελένχου',
-						url: '/app/organization_managment',
+						url: '/managment/organization_managment',
 						icon: Building
 					},
 					{
 						title: 'Διαχείρηση bonus',
-						url: '/app/bonus_managment',
+						url: '/managment/bonus_managment',
 						icon: Award
 					},
 					{
 						title: 'Ai βοήθος',
-						url: '/app/ai_assistant',
+						url: '/managment/ai_assistant',
 						icon: Bot
 					},
 					{
 						title: 'Συνταγές',
-						url: '/app/settings/recipes_settings',
+						url: '/managment/recipes_settings',
 						icon: Coffee
 					},
 					{
 						title: 'Συστατικά',
-						url: '/app/settings/ingridients_settings',
+						url: '/managment/ingridients_settings',
 						icon: Refrigerator
 					},
 					{
 						title: 'Blog',
-						url: '/app/settings/blog_settings',
+						url: '/managment/blog_settings',
 						icon: Book
 					}
 				]
@@ -212,7 +212,9 @@
 		</Sidebar.Menu>
 	</Sidebar.Header>
 	<Sidebar.Content>
-		<NavMain items={filteredNavMain} />
+		{#if user.role_id !== 1}
+			<NavMain items={filteredNavMain} />
+		{/if}
 		{#if user.role_id === 1}
 			<NavProjects projects={data.projects} />
 		{/if}

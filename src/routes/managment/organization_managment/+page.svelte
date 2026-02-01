@@ -1,6 +1,7 @@
 <script lang="ts">
 	import AuthBlock from '$lib/components/custom/AuthBlock/authBlock.svelte';
-	import { authenticatedAccess, getAllOrganizations, createOrganization } from './data.remote';
+	import { getAllOrganizations, createOrganization } from './data.remote';
+	import { authenticatedAccess } from '$lib/api/bonus_managment/data.remote';
 	import { toast } from 'svelte-sonner';
 	import * as Tooltip from '$lib/components/ui/tooltip';
 	import * as Modal from '$lib/components/ui/modal/index.js';

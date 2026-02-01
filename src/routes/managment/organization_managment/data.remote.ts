@@ -1,7 +1,6 @@
 import { query, command, form } from '$app/server';
 import { createServerClient } from '$lib/supabase/server';
 import type { Organization } from '$lib/models/database.types';
-import { getUserProfileWithRoleCheck } from '$lib/supabase/queries';
 import { z } from 'zod/v4';
 import { geocodeAddress } from '$lib/utils';
 
@@ -9,15 +8,6 @@ export interface OrganizationWithCounts extends Organization {
 	employee_count: number;
 	equipment_count: number;
 }
-
-export const authenticatedAccess = query(async () => {
-	const profile = await getUserProfileWithRoleCheck([1]);
-	return {
-		profile,
-		success: true
-	};
-});
-
 // ======================== FORM SCHEMAS ==============
 
 const createOrganizationSchema = z.object({

@@ -8,12 +8,12 @@ export const load: LayoutServerLoad = async ({ locals: { session }, parent }) =>
 		throw redirect(303, '/auth/login');
 	}
 	
-	// Only redirect admins to management
-	if (profile?.role_id === 1) {
-		throw redirect(303, '/managment/organization_managment');
+	// Only non-admins get redirected to app
+	if (profile?.role_id !== 1) {
+		throw redirect(303, '/app/');
 	}
 	
-	// Regular users stay here - just return the profile
+	// Admins stay here - just return the profile
 	return {
 		profile
 	};

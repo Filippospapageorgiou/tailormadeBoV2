@@ -19,15 +19,7 @@
 
 	let profile = getProfileContext();
 	let weather = getWeatherContext();
-
 	let stats = getAllStatsForCards();
-
-	$effect(() => {
-		if (!stats.current?.success) {
-			toast.error(stats.current?.message || 'Σφάλμα κάτα την ανάκτηση δεδομένων');
-		}
-	});
-
 	let statsData = $derived(stats.current?.data);
 	let currentTime = $state(new Date());
 	let timeInterval: ReturnType<typeof setInterval>;

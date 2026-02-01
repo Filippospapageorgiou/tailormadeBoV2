@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { authenticatedAccess, getBeverages } from './data.remote';
+	import { getBeverages } from './data.remote';
+	import { authenticatedAccess } from '$lib/api/bonus_managment/data.remote';
 	import BeverageCard from './components/BeverageCard.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';

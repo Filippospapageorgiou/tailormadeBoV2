@@ -1,19 +1,7 @@
-import { query, command, form, prerender } from '$app/server';
+import { query, command, form } from '$app/server';
 import { createServerClient } from '$lib/supabase/server';
-import { requireAuthenticatedUser } from '$lib/supabase/shared';
-import { error, redirect } from '@sveltejs/kit';
-import type { Profile, Beverage, RecipeIngredient } from '$lib/models/database.types';
-import { getUserOrgId, getUserProfileWithRoleCheck } from '$lib/supabase/queries';
+import type { Beverage, RecipeIngredient } from '$lib/models/database.types';
 import { z } from 'zod/v4';
-
-export const authenticatedAccess = query(async () => {
-	const profile = await getUserProfileWithRoleCheck([1]);
-
-	return {
-		profile,
-		success: true
-	};
-});
 
 const defaultImageUrl =
 	'https://uhrpdmoknmrbosqenotk.supabase.co/storage/v1/object/public/beverages/default_url.png';

@@ -3,9 +3,9 @@
 		getIngridients,
 		deleteIngredient,
 		editIngredient,
-		addIngredient,
-		authenticatedAccess
+		addIngredient
 	} from './data.remote';
+	import { authenticatedAccess } from '$lib/api/bonus_managment/data.remote';
 	import Skeleton from '$lib/components/ui/skeleton/skeleton.svelte';
 	import Input from '$lib/components/ui/input/input.svelte';
 	import * as Select from '$lib/components/ui/select';

@@ -6,8 +6,11 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { enhance } from '$app/forms';
+	import { goto } from '$app/navigation';
+	import { updateGlobalProfile } from '$lib/stores/profile.svelte.js';
 
 	let { form } = $props();
+
 	$effect(() => {
 		if (form?.error) {
 			toast.show = true;
@@ -37,9 +40,10 @@
 				<Card.Root class="rounded-xl bg-muted">
 					<Card.Header class="text-center">
 						<Card.Title class="text-xl">Καλώς Ήρθατε</Card.Title>
-						<Card.Description
-							>Είμαστε πολύ χαρούμενοι που γίνατε μέλος της ομάδας μας. Συνδεθείτε και ξεκινήστε το ταξίδι σας.</Card.Description
-						>
+						<Card.Description>
+							Είμαστε πολύ χαρούμενοι που γίνατε μέλος της ομάδας μας. Συνδεθείτε και ξεκινήστε το
+							ταξίδι σας.
+						</Card.Description>
 					</Card.Header>
 					<Card.Content>
 						<form
@@ -47,9 +51,21 @@
 							method="POST"
 							use:enhance={() => {
 								loading = true;
-								return async ({ update }) => {
+								return async ({ result, update }) => {
+									if (result.type === 'success' && result.data) {
+										const data = result.data as {
+											success?: boolean;
+											profile?: any;
+											redirectTo?: string;
+										};
+										if (data.success && data.profile) {
+											updateGlobalProfile(data.profile);
+											await goto(data.redirectTo || '/app/');
+											return; 
+										}
+										loading = false;
+									}
 									await update();
-									loading = false;
 								};
 							}}
 						>
@@ -94,7 +110,7 @@
 											<div
 												class="mr-2 h-4 w-4 animate-spin-clockwise rounded-full border-2 border-primary-foreground border-t-transparent repeat-infinite"
 											></div>
-											login in....
+											logging in....
 										{:else}
 											Login
 										{/if}
@@ -124,7 +140,7 @@
 			<img
 				src="/tailor_venetis.png"
 				alt="Tailor Made Coffee Roasters"
-				class="h-full w-full object-fit-contain"
+				class="object-fit-contain h-full w-full"
 			/>
 		</div>
 	</div>

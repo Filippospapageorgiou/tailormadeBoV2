@@ -163,7 +163,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			tomorrow_opening_float: item.tomorrow_opening_float || 0,
 			total_supplier_payments: item.total_supplier_payments || 0,
 			total_expenses: item.total_expenses || 0,
-			closed_by: profileName,
+			closed_by: profileName.full_name,
 			notes: item.notes || ''
 		});
 

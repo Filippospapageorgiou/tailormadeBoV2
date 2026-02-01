@@ -1,7 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import ExcelJS from 'exceljs';
-import { getProfileByUUId } from '$lib/supabase/queries';
 import type { Shift } from '$lib/models/schedule.types';
 import { SHIFT_TYPE } from '$lib/models/schedule.types';
 import { getScheduleDataForExport } from '../../[id]/data.remote';

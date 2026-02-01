@@ -119,7 +119,7 @@ export async function getProfileByUUId(id: string): Promise<Profile> {
 		console.error('[getUserProfile] Error fetching user profile:', profileError);
 		throw error(404, 'User profile not found');
 	}
-	return profile.username!;
+	return profile;
 }
 
 /**

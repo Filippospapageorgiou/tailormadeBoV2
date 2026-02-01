@@ -69,7 +69,7 @@
 	}
 
 	function handleViewClick() {
-		goto(`/app/organization_managment/${id}`);
+		goto(`/managment/organization_managment/${id}`);
 	}
 
 	function handleDeleteClick() {

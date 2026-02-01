@@ -69,6 +69,7 @@
 		<Command.Empty>No results found.</Command.Empty>
 		
 		<!-- Main Pages -->
+		{#if profile.role_id !== 1}
 		<Command.Group heading="Κύριες Σελίδες">
 			<Command.Item onSelect={() =>   gotohref('/app/recipes')}>
 				<Coffee class="me-2 size-4" />
@@ -106,6 +107,7 @@
                 <ArrowRightIcon class="ml-auto size-3.5 text-muted-foreground" />
 			</Command.Item>
 		</Command.Group>
+		{/if}
 
 		<Command.Separator />
 
@@ -121,7 +123,7 @@
 		<Command.Separator />
 
 		<!-- Admin Settings (for role_id 1 and 2) -->
-		{#if profile.role_id === 1 || profile.role_id === 2}
+		{#if profile.role_id === 2}
 		<Command.Group heading="Ρυθμίσεις Διαχειριστή">
 			<Command.Item onSelect={() => gotohref('/app/settings/manage_users')}>
 				<UserIcon class="me-2 size-4" />

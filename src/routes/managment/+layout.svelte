@@ -10,6 +10,7 @@
 	import Command from '$lib/components/command/command.svelte';
 	import Notifications from '$lib/components/custom/Notifications.svelte';
 	
+
 	let { children } = $props();
 
 	let breadcrumbs = $derived(() => {

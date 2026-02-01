@@ -69,7 +69,7 @@
 						size="lg"
 						class="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
 					>
-						<Avatar.Root class="size-8 rounded-lg">
+						<Avatar.Root class="size-8 rounded-lg dark:bg-white">
 							<Avatar.Image src={profile.imageUrl} alt={profile.username} />
 							<Avatar.Fallback class="rounded-lg">CN</Avatar.Fallback>
 						</Avatar.Root>
