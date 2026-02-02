@@ -89,6 +89,75 @@ export const getAllUsers = query(z.string(), async (selectedDate) => {
 	}
 });
 
+export const getAllUsersWithTasks = query(z.string(), async (selectedDate) => {
+	const supabase = createServerClient();
+	try {
+		const org_id = await getUserOrgId();
+		const users = await getAllProfilesSameOrg(org_id);
+
+		const { data: dailyTasks, error } = await supabase
+			.from('user_daily_tasks')
+			.select(
+				`
+				*,
+				task_items (*)
+			`
+			)
+			.eq('task_date', selectedDate)
+			.in(
+				'user_id',
+				users.map((u) => u.id)
+			);
+
+		if (error) {
+			console.error('[getAllUsers] Error fecthing all users from same org: ', error);
+			return {
+				users: [],
+				success: false,
+				message: 'Σφάλμα κάτα την ανάκτηση δεδομένων'
+			};
+		}
+
+		//create map of user_id to their tasks
+
+		const userWithTasks = new Map<string, UserDailyTask[]>();
+
+		//initialize with empty array for all users
+		users.forEach((user) => {
+			userWithTasks.set(user.id, []);
+		});
+
+		//populate the map with the tasks
+		dailyTasks?.forEach((task) => {
+			const userTasks = userWithTasks.get(task.user_id) || [];
+			userTasks.push(task);
+			userWithTasks.set(task.user_id, userTasks);
+		});
+
+		// Convert map to array format if needed
+		const usersWithTasksArray = users.map((user) => ({
+			...user,
+			dailyTasks: userWithTasks.get(user.id) || []
+		}))
+		.filter((user) => user.dailyTasks.length > 0);
+		
+
+		return {
+			users: usersWithTasksArray ?? [],
+			success: true,
+			message: 'Επιτυχία'
+		};
+	} catch (err) {
+		console.error('[getAllUsers] Error fecthing all users from same org: ', err);
+		return {
+			users: [],
+			success: false,
+			message: 'Σφάλμα κάτα την ανάκτηση δεδομένων'
+		};
+	}
+});
+
+
 export const getAllTemplatesTask = query(async () => {
 	const supabase = createServerClient();
 	const org_id = await getUserOrgId();

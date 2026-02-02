@@ -35,15 +35,14 @@
 		getAllTemplatesTask,
 		getAllUsers,
 		addUserDailyTasks,
-		addCustomDayliTask
+		addCustomDayliTask,
+		getAllUsersWithTasks
 	} from './data.remote';
 	import { toast } from 'svelte-sonner';
 	import AuthBlock from '$lib/components/custom/AuthBlock/authBlock.svelte';
 	import { Spinner } from '$lib/components/ui/spinner';
 	import Templates from './components/templates.svelte';
 	import InputCalendar from '$lib/components/custom/inputCalendar.svelte';
-	import type { TaskItem, TaskTemplateWithTasks } from '$lib/models/tasks.types';
-	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import * as Modal from '$lib/components/ui/modal';
 	import { ScrollArea } from '$lib/components/ui/scroll-area/index.js';
 	import Switch from '$lib/components/ui/switch/switch.svelte';
@@ -63,6 +62,9 @@
 
 	let usersQuery = $derived(getAllUsers(selectedDate));
 	let users = $derived(usersQuery.current?.users ?? []);
+
+	let userWithTasksQuery = $derived(getAllUsersWithTasks(selectedDate));
+	let usersWithTasks = $derived(userWithTasksQuery.current?.users ?? []);
 
 	let taskQuery = getAllTemplatesTask();
 	let taskTemplatesWithTasks = $derived(taskQuery.current?.taskTemplatesWithTasks ?? []);
@@ -544,7 +546,7 @@
 				<Templates {taskTemplatesWithTasks} />
 			{:else if currentView === 'assigned'}
 				{#if currentView === 'assigned'}
-					<AssignedTasks {users} bind:selectedDate isLoading={usersQuery.loading} onDelete={refresh}/>
+					<AssignedTasks {usersWithTasks} bind:selectedDate isLoading={usersQuery.loading} onDelete={refresh}/>
 				{/if}
 			{/if}
 		</main>

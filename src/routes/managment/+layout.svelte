@@ -1,11 +1,9 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import CustomAlert from '$lib/components/custom/customAlert.svelte';
 	import AppSidebar from '$lib/components/app-sidebar.svelte';
 	import * as Breadcrumb from '$lib/components/ui/breadcrumb/index.js';
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
-	import { setProfileContext } from '$lib/stores/profile.svelte.js';
 	import { ThemeSelector } from '$lib/components/ui/theme-selector';
 	import Command from '$lib/components/command/command.svelte';
 	import Notifications from '$lib/components/custom/Notifications.svelte';

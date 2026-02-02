@@ -20,7 +20,7 @@
 	import { toast } from 'svelte-sonner';
 	import { formatDate } from '$lib/utils';
 
-	let { users = [], selectedDate = $bindable(), isLoading = false, onDelete } = $props();
+	let { usersWithTasks = [], selectedDate = $bindable(), isLoading = false, onDelete } = $props();
 
 	let previewImage: string | null = $state(null);
 	let previewModalOpen = $state(false);
@@ -54,14 +54,14 @@
 
 	// Initialize progress values to 0 and animate to actual values
 	$effect(() => {
-		if (users.length > 0) {
+		if (usersWithTasks.length > 0) {
 			// Reset all to 0 first
-			users.forEach((user) => {
+			usersWithTasks.forEach((user) => {
 				animatedProgress[user.id] = 0;
 			});
 
 			// Then animate to actual values with staggered delays
-			users.forEach((user, index) => {
+			usersWithTasks.forEach((user, index) => {
 				setTimeout(
 					() => {
 						const stats = getUserStats(user);
@@ -105,11 +105,11 @@
 			</div>
 		</div>
 	</div>
-	{#if isLoading && users.length === 0}
+	{#if isLoading && usersWithTasks.length === 0}
 		<div class="flex justify-center py-12"><Spinner /></div>
 	{:else}
 		<div class="grid gap-3">
-			{#each users as user, index (user.id)}
+			{#each usersWithTasks as user, index (user.id)}
 				{@const s = getUserStats(user)}
 				<Card.Root
 					style="animation-delay: {index * 250}ms; animation-fill-mode: backwards;"
