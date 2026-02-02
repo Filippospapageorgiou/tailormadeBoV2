@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getAllBlogs } from './data.remote';
+	import { getAllBlogs } from '../../../lib/api/blog/data.remote';
 	import { authenticatedAccess } from '$lib/api/bonus_managment/data.remote';
 	import type { Blog } from '$lib/models/database.types';
 	import { Button } from '$lib/components/ui/button';

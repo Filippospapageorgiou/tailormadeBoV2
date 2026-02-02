@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { togglePublishStatus } from '../data.remote';
+	import { togglePublishStatus } from '../../../../lib/api/blog/data.remote';
 	import type { Blog } from '$lib/models/database.types';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Blog } from '$lib/models/database.types';
-	import { deleteBlog } from '../data.remote';
+	import { deleteBlog } from '../../../../lib/api/blog/data.remote';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import * as Alert from '$lib/components/ui/alert';
 	import { Button } from '$lib/components/ui/button';

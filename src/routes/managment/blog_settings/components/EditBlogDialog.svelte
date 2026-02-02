@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Blog } from '$lib/models/database.types';
-	import { editBlog } from '../data.remote';
+	import { editBlog } from '../../../../lib/api/blog/data.remote';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import { Label } from '$lib/components/ui/label';
 	import { Input } from '$lib/components/ui/input';

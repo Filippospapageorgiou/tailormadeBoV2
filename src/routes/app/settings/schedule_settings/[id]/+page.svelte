@@ -28,7 +28,7 @@
 		ShiftChangeRequestPorfile
 	} from '$lib/models/schedule.types';
 	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 	import { showFailToast, showSuccessToast } from '$lib/stores/toast.svelte';
 	import { Download, Users } from 'lucide-svelte';
 	import { showProgress, hideProgress } from '$lib/stores/progress.svelte';
@@ -126,7 +126,7 @@
 		const result = await deleteShift({ shiftId });
 
 		if (result.success) {
-			scheduleQuery?.refresh();
+			await scheduleQuery?.refresh();
 			showSuccessToast('Επιτυχία', result.message);
 		} else {
 			showFailToast('Σφάλμα', result.message);
@@ -161,7 +161,7 @@
 		});
 
 		if (result.success) {
-			scheduleQuery?.refresh();
+			await scheduleQuery?.refresh();
 			showSuccessToast('Επιτυχία', 'Η βάρδια αντιγράφηκε επιτυχώς');
 		} else {
 			showFailToast('Σφάλμα', result.message || 'Αποτυχία αντιγραφής βάρδιας');
@@ -217,9 +217,10 @@
 
 		if (result.success) {
 			isLoading = false;
-			scheduleQuery?.refresh();
+			await scheduleQuery?.refresh();
 			handleCloseModal();
 			showSuccessToast('Επιτυχία', result.message);
+			await invalidateAll();
 		} else {
 			isLoading = false;
 			showFailToast('Σφάλμα', result.message || 'Αποτυχία αποθήκευσης βάρδιας');

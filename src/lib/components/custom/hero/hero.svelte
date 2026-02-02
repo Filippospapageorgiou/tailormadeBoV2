@@ -56,27 +56,26 @@
 
 	let message = $derived(
 		hour < 12
-			? 'Έτοιμος για μια παραγωγική μέρα! 🚀'
+			? 'Έτοιμος για μια παραγωγική μέρα;'
 			: hour < 17
-				? 'Συνέχισε τη δυναμική! ⚡'
+				? 'Συνέχισε τη δυναμική!'
 				: hour < 21
-					? 'Ολοκληρώνεις μια υπέροχη μέρα! ✨'
-					: 'Ακόμα στο πόστο σου! 🌙'
+					? 'Ολοκληρώνεις μια υπέροχη μέρα!'
+					: 'Ακόμα στο πόστο σου;'
 	);
 
-	// Weather icon component based on weather code
+	// Weather icon component based on weather code - theme aware
 	function getWeatherIconClass(code: number): string {
-		// Return appropriate styling based on weather code
 		if (code === 0 || code === 1)
-			return 'text-yellow-500 drop-shadow-[0_0_8px_rgba(234,179,8,0.4)]';
-		if (code === 2 || code === 3) return 'text-gray-400';
-		if (code >= 45 && code <= 48) return 'text-gray-500';
-		if (code >= 51 && code <= 67) return 'text-blue-400';
-		if (code >= 71 && code <= 77) return 'text-blue-200';
-		if (code >= 80 && code <= 82) return 'text-blue-500';
-		if (code >= 85 && code <= 86) return 'text-blue-300';
-		if (code >= 95) return 'text-purple-500';
-		return 'text-yellow-500';
+			return 'text-amber-500 dark:text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.25)]';
+		if (code === 2 || code === 3) return 'text-muted-foreground';
+		if (code >= 45 && code <= 48) return 'text-muted-foreground/80';
+		if (code >= 51 && code <= 67) return 'text-sky-500 dark:text-sky-400';
+		if (code >= 71 && code <= 77) return 'text-sky-300 dark:text-sky-200';
+		if (code >= 80 && code <= 82) return 'text-sky-600 dark:text-sky-400';
+		if (code >= 85 && code <= 86) return 'text-sky-400 dark:text-sky-300';
+		if (code >= 95) return 'text-violet-500 dark:text-violet-400';
+		return 'text-amber-500 dark:text-amber-400';
 	}
 
 	async function refreshWeather() {
@@ -116,14 +115,14 @@
 		<!-- Hero Card: Full width mobile/tablet, 3 cols desktop, spans 2 rows -->
 		<div class="col-span-1 order-1 md:col-span-2 lg:col-span-3 lg:row-span-2">
 			<Card.Root
-				class="relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-background via-card/50 to-background"
+				class="relative overflow-hidden rounded-2xl border border-border/30 bg-gradient-to-br from-background via-card/30 to-background shadow-sm"
 			>
-				<!-- Ambient glow effects -->
+				<!-- Ambient glow effects - theme aware -->
 				<div
-					class="pointer-events-none absolute -top-24 right-1/4 h-64 w-64 animate-float rounded-full bg-blue-500/10 blur-3xl"
+					class="pointer-events-none absolute -top-24 right-1/4 h-64 w-64 animate-float rounded-full bg-primary/8 dark:bg-primary/5 blur-3xl"
 				></div>
 				<div
-					class="pointer-events-none absolute -bottom-24 -left-24 h-48 w-48 animate-float rounded-full bg-primary/10 blur-3xl"
+					class="pointer-events-none absolute -bottom-24 -left-24 h-48 w-48 animate-float rounded-full bg-secondary/15 dark:bg-secondary/8 blur-3xl"
 					style="animation-delay: 3s;"
 				></div>
 
@@ -132,16 +131,17 @@
 				>
 					<!-- Left: Greeting & Time -->
 					<div class="space-y-4">
-						<div class="space-y-1">
+						<div class="space-y-1.5">
 							<h2
-								class="animate-fade-in text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl"
+								class="animate-fade-in font-tailormade text-2xl font-medium tracking-tight text-foreground/90 sm:text-3xl md:text-4xl"
 								style="animation-delay: 100ms; animation-fill-mode: backwards;"
 							>
 								{greeting},
-								<span class="text-primary">{profile.full_name?.split(' ')[0] || 'Χρήστη'}</span> 👋
+								<span class="font-semibold text-primary">{profile.full_name?.split(' ')[0] || 'Χρήστη'}</span>
+								👋
 							</h2>
 							<p
-								class="animate-fade-in text-base text-muted-foreground sm:text-lg"
+								class="animate-fade-in text-sm text-muted-foreground/80 sm:text-base"
 								style="animation-delay: 200ms; animation-fill-mode: backwards;"
 							>
 								{message}
@@ -153,12 +153,12 @@
 							class="flex animate-fade-in items-center gap-3 pt-2"
 							style="animation-delay: 300ms; animation-fill-mode: backwards;"
 						>
-							<div class="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-primary/10">
-								<Clock class="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+							<div class="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-primary/10 dark:bg-primary/15">
+								<Clock class="h-5 w-5 sm:h-5 sm:w-5 text-primary" />
 							</div>
 							<div>
 								<time
-									class="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground tabular-nums"
+									class="font-tailormade text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight text-foreground tabular-nums"
 								>
 									{timeString}
 								</time>
@@ -198,38 +198,38 @@
 							</div>
 						{:else if weatherData}
 							<!-- Weather data -->
-							<div class="space-y-1 w-full">
+							<div class="space-y-1.5 w-full">
 								<div class="flex items-center justify-start sm:justify-end gap-2 sm:flex-col sm:items-end sm:gap-0">
-									<div class="flex items-center gap-2 text-2xl sm:text-3xl md:text-5xl font-bold">
+									<div class="flex items-center gap-2 font-tailormade text-2xl sm:text-3xl md:text-4xl font-medium text-foreground/90">
 										<span
-											class={`text-3xl sm:text-4xl ${getWeatherIconClass(weatherData.weatherCode)}`}
+											class={`text-2xl sm:text-3xl ${getWeatherIconClass(weatherData.weatherCode)}`}
 										>
 											{weatherData.icon}
 										</span>
-										<span>{weatherData.temperature}°C</span>
+										<span class="tabular-nums">{weatherData.temperature}°C</span>
 									</div>
-									<p class="text-sm font-medium text-muted-foreground">
+									<p class="text-sm text-muted-foreground/70">
 										{weatherData.description}
 									</p>
 								</div>
 
-								<div class="flex items-center justify-start sm:justify-end gap-1.5 text-xs text-muted-foreground">
+								<div class="flex items-center justify-start sm:justify-end gap-1.5 text-xs text-muted-foreground/60">
 									<MapPin class="h-3 w-3" />
 									<span>{weatherData.location?.city || 'Τοποθεσία'}</span>
 								</div>
 
 								<div
-									class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-xs text-muted-foreground/70 justify-start sm:justify-end"
+									class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-xs text-muted-foreground/50 justify-start sm:justify-end"
 								>
 									<span>Αίσθηση: {weatherData.feelsLike}°C</span>
-									<span class="hidden sm:inline">•</span>
+									<span class="hidden sm:inline text-muted-foreground/30">•</span>
 									<span>Υγρασία: {weatherData.humidity}%</span>
 								</div>
 
-								<p class="text-xs text-muted-foreground/80 capitalize text-left sm:text-right">{currentDate}</p>
+								<p class="text-xs text-muted-foreground/60 capitalize text-left sm:text-right">{currentDate}</p>
 
 								{#if weatherData.cached}
-									<p class="text-[10px] text-muted-foreground/50 text-left sm:text-right">
+									<p class="text-[10px] text-muted-foreground/40 text-left sm:text-right">
 										Cache: {weatherData.cacheAge}s ago
 									</p>
 								{/if}
@@ -248,69 +248,69 @@
 		<!-- Card 1: Shifts - Full width mobile, auto tablet, specific pos desktop -->
 		<div class="col-span-1 order-3 lg:row-start-3">
 			<Card.Root
-				class="relative overflow-hidden rounded-2xl border-border/40 bg-gradient-to-br from-background via-card/50 to-background h-full"
+				class="relative overflow-hidden rounded-2xl border border-border/30 bg-gradient-to-br from-background via-card/30 to-background h-full shadow-sm"
 			>
-				<!-- Ambient glow -->
+				<!-- Ambient glow - theme aware -->
 				<div
-					class="pointer-events-none absolute -top-10 -right-10 h-32 w-32 animate-float rounded-full bg-emerald-500/10 blur-2xl"
+					class="pointer-events-none absolute -top-10 -right-10 h-32 w-32 animate-float rounded-full bg-emerald-500/8 dark:bg-emerald-500/5 blur-2xl"
 					style="animation-delay: 0s;"
 				></div>
 				<div
-					class="pointer-events-none absolute -bottom-10 -left-10 h-24 w-24 animate-float rounded-full bg-primary/10 blur-2xl"
+					class="pointer-events-none absolute -bottom-10 -left-10 h-24 w-24 animate-float rounded-full bg-primary/8 dark:bg-primary/5 blur-2xl"
 					style="animation-delay: 2s;"
 				></div>
 
 				<Card.Header class="relative pb-2">
 					<div class="flex items-center justify-between">
-						<Card.Title class="text-sm font-medium text-muted-foreground"
+						<Card.Title class="text-sm font-normal text-muted-foreground/80"
 							>Βάρδιες Εβδομάδας</Card.Title
 						>
-						<div class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10">
-							<CheckCircle2 class="h-4 w-4 text-emerald-500" />
+						<div class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 dark:bg-emerald-500/15">
+							<CheckCircle2 class="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
 						</div>
 					</div>
-					<Card.Description class="text-xs">Τελευταίες 7 ημέρες</Card.Description>
+					<Card.Description class="text-xs text-muted-foreground/60">Τελευταίες 7 ημέρες</Card.Description>
 				</Card.Header>
 				<Card.Content class="relative space-y-3">
 					{#if !statsData}
 						<div class="space-y-2">
-							<div class="h-8 w-24 animate-pulse repeat-infinite rounded-lg bg-muted"></div>
-							<div class="h-3 w-20 animate-pulse repeat-infinite rounded bg-muted"></div>
-							<div class="h-1.5 w-full rounded-full bg-muted"></div>
+							<div class="h-8 w-24 animate-pulse repeat-infinite rounded-lg bg-muted/50"></div>
+							<div class="h-3 w-20 animate-pulse repeat-infinite rounded bg-muted/50"></div>
+							<div class="h-1.5 w-full rounded-full bg-muted/50"></div>
 						</div>
 					{:else}
 						<div class="flex items-baseline gap-2 flex-wrap">
-							<span class="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+							<span class="font-tailormade text-2xl sm:text-3xl font-semibold tracking-tight text-foreground/90 tabular-nums">
 								{statsData.userShifts.totalHours}
 							</span>
-							<span class="text-sm font-medium text-muted-foreground">ώρες</span>
+							<span class="text-sm font-normal text-muted-foreground/70">ώρες</span>
 							{#if statsData.userShifts.totalHours > 35}
 								<span
-									class="ml-auto flex items-center gap-0.5 text-xs font-medium text-emerald-500"
+									class="ml-auto flex items-center gap-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-400"
 								>
 									<TrendingUp class="h-3 w-3" />
 									{((statsData.userShifts.totalHours / 40) * 100).toFixed(0)}%
 								</span>
 							{:else if statsData.userShifts.totalHours < 20}
-								<span class="ml-auto flex items-center gap-0.5 text-xs font-medium text-orange-500">
+								<span class="ml-auto flex items-center gap-0.5 text-xs font-medium text-orange-600 dark:text-orange-400">
 									<TrendingDown class="h-3 w-3" />
 									Χαμηλά
 								</span>
 							{:else}
-								<span class="ml-auto flex items-center gap-0.5 text-xs font-medium text-blue-500">
+								<span class="ml-auto flex items-center gap-0.5 text-xs font-medium text-sky-600 dark:text-sky-400">
 									<TrendingUpDown class="h-3 w-3" />
 									Κανονικά
 								</span>
 							{/if}
 						</div>
-						<p class="text-xs text-muted-foreground">
-							{statsData.userShifts.totalShifts} βάρδιες • ~{statsData.userShifts.shifts.length > 0
+						<p class="text-xs text-muted-foreground/60">
+							{statsData.userShifts.totalShifts} βάρδιες <span class="text-muted-foreground/40">•</span> ~{statsData.userShifts.shifts.length > 0
 								? (statsData.userShifts.totalHours / statsData.userShifts.totalShifts).toFixed(1)
 								: '0'} ώρες/βάρδια
 						</p>
-						<div class="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+						<div class="h-1.5 w-full overflow-hidden rounded-full bg-muted/40">
 							<div
-								class="h-1.5 rounded-full bg-orange-500 transition-all duration-500"
+								class="h-1.5 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 dark:from-orange-400 dark:to-amber-400 transition-all duration-500"
 								style="width: {Math.min((statsData.userShifts.totalHours / 40) * 100, 100)}%"
 							></div>
 						</div>
@@ -322,36 +322,36 @@
 		<!-- Card 2: Employees -->
 		<div class="col-span-1 order-4 lg:row-start-3">
 			<Card.Root
-				class="relative overflow-hidden rounded-2xl border-border/40 bg-gradient-to-br from-background via-card/50 to-background h-full"
+				class="relative overflow-hidden rounded-2xl border border-border/30 bg-gradient-to-br from-background via-card/30 to-background h-full shadow-sm"
 			>
-				<!-- Ambient glow -->
+				<!-- Ambient glow - theme aware -->
 				<div
-					class="pointer-events-none absolute -top-10 -right-10 h-32 w-32 animate-float rounded-full bg-blue-500/10 blur-2xl"
+					class="pointer-events-none absolute -top-10 -right-10 h-32 w-32 animate-float rounded-full bg-sky-500/8 dark:bg-sky-500/5 blur-2xl"
 					style="animation-delay: 1s;"
 				></div>
 				<div
-					class="pointer-events-none absolute -bottom-10 -left-10 h-24 w-24 animate-float rounded-full bg-primary/10 blur-2xl"
+					class="pointer-events-none absolute -bottom-10 -left-10 h-24 w-24 animate-float rounded-full bg-primary/8 dark:bg-primary/5 blur-2xl"
 					style="animation-delay: 3s;"
 				></div>
 
 				<Card.Header class="relative pb-2">
 					<div class="flex items-center justify-between">
-						<Card.Title class="text-sm font-medium text-muted-foreground">Προσωπικό</Card.Title>
-						<div class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10">
-							<Users class="h-4 w-4 text-blue-500" />
+						<Card.Title class="text-sm font-normal text-muted-foreground/80">Προσωπικό</Card.Title>
+						<div class="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-500/10 dark:bg-sky-500/15">
+							<Users class="h-4 w-4 text-sky-600 dark:text-sky-400" />
 						</div>
 					</div>
-					<Card.Description class="text-xs">Μέλη ομάδας</Card.Description>
+					<Card.Description class="text-xs text-muted-foreground/60">Μέλη ομάδας</Card.Description>
 				</Card.Header>
 				<Card.Content class="relative space-y-3">
 					{#if !statsData}
 						<div class="space-y-2">
-							<div class="h-8 w-20 animate-pulse repeat-infinite rounded-lg bg-muted"></div>
-							<div class="h-6 w-32 animate-pulse repeat-infinite rounded bg-muted"></div>
+							<div class="h-8 w-20 animate-pulse repeat-infinite rounded-lg bg-muted/50"></div>
+							<div class="h-6 w-32 animate-pulse repeat-infinite rounded bg-muted/50"></div>
 						</div>
 					{:else}
 						<div class="flex items-baseline gap-2">
-							<span class="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+							<span class="font-tailormade text-2xl sm:text-3xl font-semibold tracking-tight text-foreground/90 tabular-nums">
 								{statsData.employees.total}
 							</span>
 						</div>
@@ -362,12 +362,12 @@
 									<img
 										src={employee.image_url}
 										alt={employee.full_name}
-										class="h-7 w-7 rounded-full object-cover ring-2 ring-background dark:bg-white"
+										class="h-7 w-7 rounded-full object-cover dark:bg-white ring-2 ring-background"
 										title="{employee.full_name} • {employee.role}"
 									/>
 								{:else}
 									<div
-										class="flex h-7 w-7 items-center justify-center rounded-full bg-primary/20 text-[10px] font-medium ring-2 ring-background"
+										class="flex h-7 w-7 items-center justify-center rounded-full bg-primary/15 dark:bg-primary/20 text-[10px] font-medium text-foreground/70 ring-2 ring-background"
 										title="{employee.full_name} • {employee.role}"
 									>
 										{employee.full_name
@@ -381,7 +381,7 @@
 							{/each}
 							{#if statsData.employees.total > 4}
 								<div
-									class="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-[10px] font-medium ring-2 ring-background"
+									class="flex h-7 w-7 items-center justify-center rounded-full bg-muted/60 text-[10px] font-medium text-muted-foreground ring-2 ring-background"
 								>
 									+{statsData.employees.total - 4}
 								</div>
@@ -395,50 +395,50 @@
 		<!-- Card 3: Equipment -->
 		<div class="col-span-1 order-5 lg:row-start-3">
 			<Card.Root
-				class="relative overflow-hidden rounded-2xl border-border/40 bg-gradient-to-br from-background via-card/50 to-background h-full"
+				class="relative overflow-hidden rounded-2xl border border-border/30 bg-gradient-to-br from-background via-card/30 to-background h-full shadow-sm"
 			>
-				<!-- Ambient glow -->
+				<!-- Ambient glow - theme aware -->
 				<div
-					class="pointer-events-none absolute -top-10 -right-10 h-32 w-32 animate-float rounded-full bg-orange-500/10 blur-2xl"
+					class="pointer-events-none absolute -top-10 -right-10 h-32 w-32 animate-float rounded-full bg-amber-500/8 dark:bg-amber-500/5 blur-2xl"
 					style="animation-delay: 2s;"
 				></div>
 				<div
-					class="pointer-events-none absolute -bottom-10 -left-10 h-24 w-24 animate-float rounded-full bg-primary/10 blur-2xl"
+					class="pointer-events-none absolute -bottom-10 -left-10 h-24 w-24 animate-float rounded-full bg-primary/8 dark:bg-primary/5 blur-2xl"
 					style="animation-delay: 4s;"
 				></div>
 
 				<Card.Header class="relative pb-2">
 					<div class="flex items-center justify-between">
-						<Card.Title class="text-sm font-medium text-muted-foreground">Εξοπλισμός</Card.Title>
-						<div class="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500/10">
-							<Zap class="h-4 w-4 text-orange-500" />
+						<Card.Title class="text-sm font-normal text-muted-foreground/80">Εξοπλισμός</Card.Title>
+						<div class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 dark:bg-amber-500/15">
+							<Zap class="h-4 w-4 text-amber-600 dark:text-amber-400" />
 						</div>
 					</div>
-					<Card.Description class="text-xs">Κατάσταση μηχανημάτων</Card.Description>
+					<Card.Description class="text-xs text-muted-foreground/60">Κατάσταση μηχανημάτων</Card.Description>
 				</Card.Header>
 				<Card.Content class="relative space-y-3">
 					{#if !statsData}
 						<div class="space-y-2">
-							<div class="h-8 w-24 animate-pulse repeat-infinite  rounded-lg bg-muted"></div>
-							<div class="h-3 w-32 animate-pulse repeat-infinite  rounded bg-muted"></div>
+							<div class="h-8 w-24 animate-pulse repeat-infinite rounded-lg bg-muted/50"></div>
+							<div class="h-3 w-32 animate-pulse repeat-infinite rounded bg-muted/50"></div>
 							<div class="grid grid-cols-4 gap-1">
 								{#each [1, 2, 3, 4] as _}
-									<div class="h-1.5 animate-pulse repeat-infinite  rounded-full bg-muted"></div>
+									<div class="h-1.5 animate-pulse repeat-infinite rounded-full bg-muted/50"></div>
 								{/each}
 							</div>
 						</div>
 					{:else}
 						<div class="flex items-baseline gap-2 flex-wrap">
-							<span class="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+							<span class="font-tailormade text-2xl sm:text-3xl font-semibold tracking-tight text-foreground/90 tabular-nums">
 								{statsData.equipment.operational}
 							</span>
-							<span class="text-sm font-medium text-muted-foreground"
+							<span class="text-sm font-normal text-muted-foreground/60"
 								>/ {statsData.equipment.total}</span
 							>
 							<span
 								class="ml-auto text-xs font-medium {statsData.equipment.broken > 0
-									? 'text-red-500'
-									: 'text-emerald-500'}"
+									? 'text-rose-600 dark:text-rose-400'
+									: 'text-emerald-600 dark:text-emerald-400'}"
 							>
 								{statsData.equipment.broken > 0
 									? `${statsData.equipment.broken} χαλασμένα`
@@ -455,13 +455,13 @@
 								<div
 									class="h-1.5 rounded-full transition-all duration-500 {i <
 									Math.ceil(percentage * 4)
-										? 'bg-emerald-500'
-										: 'bg-muted'}"
+										? 'bg-gradient-to-r from-emerald-500 to-emerald-400 dark:from-emerald-400 dark:to-emerald-300'
+										: 'bg-muted/40'}"
 								></div>
 							{/each}
 						</div>
 
-						<div class="flex items-center justify-between text-xs text-muted-foreground">
+						<div class="flex items-center justify-between text-xs text-muted-foreground/60">
 							<span>{statsData.equipment.maintenance} σε συντήρηση</span>
 							<span>{statsData.equipment.broken} εκτός λειτουργίας</span>
 						</div>

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { addBlog } from '../data.remote';
+	import { addBlog } from '../../../../lib/api/blog/data.remote';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import { Label } from '$lib/components/ui/label';
 	import { Input } from '$lib/components/ui/input';
