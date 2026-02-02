@@ -32,7 +32,7 @@
 				>
 					<GalleryVerticalEndIcon class="size-4" />
 				</div>
-				TailorMade.
+				KNOW HOW TECHNOLOGIES.
 			</div>
 		</div>
 		<div class="flex flex-1 items-center justify-center py-4">
@@ -65,6 +65,7 @@
 										}
 										loading = false;
 									}
+									loading=false;
 									await update();
 								};
 							}}

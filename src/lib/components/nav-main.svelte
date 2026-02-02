@@ -56,7 +56,7 @@
 </script>
 
 <Sidebar.Group>
-	<Sidebar.GroupLabel>Platform</Sidebar.GroupLabel>
+	<Sidebar.GroupLabel><span class="text-lg font-semibold">Barista Work</span></Sidebar.GroupLabel>
 	<Sidebar.Menu>
 		{#each items as mainItem (mainItem.title)}
 			{#if canAccessItem(mainItem)}

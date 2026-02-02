@@ -66,7 +66,7 @@
 				icon: CalendarRange
 			},
 			{
-				title: 'Ρυθμίσεις διαχειριστή',
+				title: 'Manager work',
 				url: '/app',
 				icon: Settings2Icon,
 				adminOnly: true, // <-- Flag for admin-only items
@@ -182,35 +182,30 @@
 
 <Sidebar.Root bind:ref variant="inset" {...restProps}>
 	<Sidebar.Header>
-		<Sidebar.Menu>
-			<Sidebar.MenuItem>
-				<Sidebar.MenuButton size="lg">
-					{#snippet child({ props })}
-						<button
-							onclick={() => {
-								goto('/app/');
-							}}
-							{...props}
-						>
-							<div
-								class="flex aspect-square size-10 items-center justify-center overflow-hidden rounded-lg"
-							>
-								<img
-									src="/iconTailor.png"
-									alt="Tailor Made Coffee Roasters"
-									class="size-10 object-cover"
-								/>
-							</div>
-							<div class="grid flex-1 text-left text-sm leading-tight">
-								<span class="truncate font-medium">Tailor Made</span>
-								<span class="truncate text-xs">Enterprise</span>
-							</div>
-						</button>
-					{/snippet}
-				</Sidebar.MenuButton>
-			</Sidebar.MenuItem>
-		</Sidebar.Menu>
-	</Sidebar.Header>
+    <Sidebar.Menu>
+        <Sidebar.MenuItem>
+            <Sidebar.MenuButton size="lg" class="h-auto p-0 hover:bg-transparent">
+                {#snippet child({ props })}
+                    <button
+                        onclick={() => {
+                            goto('/app/');
+                        }}
+                        {...props}
+                        class="w-full overflow-hidden rounded-lg bg-gradient-to-b from-gray-900 to-gray-600"
+                    >
+                        <div class="flex h-20 w-full items-center justify-center p-2">
+                            <img
+                                src="/knowHowTech-removebg-preview.png"
+                                alt="Tailor Made Coffee Roasters"
+                                class="h-auto w-full object-contain"
+                            />
+                        </div>
+                    </button>
+                {/snippet}
+            </Sidebar.MenuButton>
+        </Sidebar.MenuItem>
+    </Sidebar.Menu>
+</Sidebar.Header>
 	<Sidebar.Content>
 		{#if user.role_id !== 1}
 			<NavMain items={filteredNavMain} />
