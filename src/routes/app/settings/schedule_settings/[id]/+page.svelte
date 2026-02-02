@@ -133,6 +133,41 @@
 		}
 	}
 
+	// Copy shift handler (drag and drop)
+	async function handleCopyShift(sourceShift: Shift, targetEmployeeId: string, targetDate: string) {
+		const employee = allEmployees.find((e) => e.id === targetEmployeeId);
+		if (!employee || !scheduleId || isNaN(scheduleId)) return;
+
+		// Check if target cell already has a shift
+		const existingShift = shifts.find(
+			(s) => s.user_id === targetEmployeeId && s.shift_date === targetDate
+		);
+		if (existingShift) {
+			showFailToast('Σφάλμα', 'Υπάρχει ήδη βάρδια για αυτή την ημέρα');
+			return;
+		}
+
+		const result = await addShift({
+			schedule_id: scheduleId,
+			user_id: targetEmployeeId,
+			org_id: employee.org_id,
+			shift_date: targetDate,
+			start_time: sourceShift.start_time,
+			end_time: sourceShift.end_time,
+			shift_type: sourceShift.shift_type,
+			shift_category: sourceShift.shift_category,
+			break_duration_minutes: sourceShift.break_duration_minutes,
+			notes: sourceShift.notes
+		});
+
+		if (result.success) {
+			scheduleQuery?.refresh();
+			showSuccessToast('Επιτυχία', 'Η βάρδια αντιγράφηκε επιτυχώς');
+		} else {
+			showFailToast('Σφάλμα', result.message || 'Αποτυχία αντιγραφής βάρδιας');
+		}
+	}
+
 	// Close modal handler
 	function handleCloseModal() {
 		shiftModalOpen = false;
@@ -356,6 +391,7 @@
 							onAddShift={handleAddShiftFromGrid}
 							onEditShift={handleEditShift}
 							onDeleteShift={handleDeleteShift}
+							onCopyShift={handleCopyShift}
 						/>
 					{/if}
 				</div>

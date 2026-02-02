@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { useSortable } from '@dnd-kit-svelte/svelte/sortable';
 	import * as Avatar from '$lib/components/ui/avatar';
-	import ScheduleDayCell from './ScheduleDayCell.svelte';
+	import DroppableShiftCell from './DroppableShiftCell.svelte';
 	import type { Profile } from '$lib/models/database.types';
 	import type { Shift } from '$lib/models/schedule.types';
 
@@ -9,7 +9,6 @@
 		employee: Profile;
 		shifts: Shift[];
 		weekDays: { date: string; dayName: string; dayNum: number }[];
-		// Added index prop (Required by dnd-kit)
 		index: number;
 		onAddShift: (employeeId: string, date: string) => void;
 		onEditShift: (shift: Shift) => void;
@@ -46,38 +45,33 @@
 </script>
 
 <div
-	class="flex border-b border-white/5 bg-gradient-to-r from-white/[0.02] to-transparent transition-colors hover:bg-white/[0.03]"
+	class="flex bg-white transition-colors duration-150 hover:bg-zinc-50 dark:bg-zinc-900 dark:hover:bg-zinc-800/50"
 	{@attach ref}
 	class:opacity-50={isDragging.current}
 	class:z-50={isDragging.current}
 	class:relative={isDragging.current}
 >
 	<div
-		class="w-56 flex-shrink-0 cursor-grab touch-none border-r border-white/10 px-6 py-4 active:cursor-grabbing"
-		style="border-left: 3px solid {badgeColor}40; border-left-color: {badgeColor};"
+		class="w-44 flex-shrink-0 cursor-grab touch-none border-r border-zinc-200 px-4 py-3 active:cursor-grabbing dark:border-zinc-800"
+		style="border-left: 3px solid {badgeColor};"
 		{@attach handleRef}
 	>
 		<div class="flex items-center gap-3">
-			<div class="relative">
-				<Avatar.Root
-					class="h-10 w-10 flex-shrink-0 ring-2 ring-offset-2 dark:bg-white"
-					style="--tw-ring-color: {badgeColor}20;"
+			<Avatar.Root class="h-9 w-9 flex-shrink-0">
+				<Avatar.Image class="dark:bg-white" src={employee.image_url} alt={employee.username} />
+				<Avatar.Fallback
+					class="text-xs font-semibold text-white"
+					style="background-color: {badgeColor};"
 				>
-					<Avatar.Image src={employee.image_url} alt={employee.username} />
-					<Avatar.Fallback
-						class="text-xs font-bold text-white"
-						style="background-color: {badgeColor};"
-					>
-						{initials}
-					</Avatar.Fallback>
-				</Avatar.Root>
-			</div>
+					{initials}
+				</Avatar.Fallback>
+			</Avatar.Root>
 
 			<div class="min-w-0 flex-1 select-none">
-				<p class="truncate text-sm leading-tight font-semibold text-white">
+				<p class="truncate text-sm font-medium leading-tight text-zinc-900 dark:text-zinc-100">
 					{employee.username}
 				</p>
-				<p class="truncate text-xs text-muted-foreground">
+				<p class="truncate text-xs text-zinc-500 dark:text-zinc-400">
 					{employee.email.split('@')[0]}
 				</p>
 			</div>
@@ -87,10 +81,12 @@
 	{#each weekDays as day (day.date)}
 		{@const shift = getShiftForEmployeeAndDate(employee.id, day.date)}
 
-		<div class="w-40 flex-shrink-0 border-r border-white/10 p-3 last:border-r-0">
-			<ScheduleDayCell
+		<div class="w-46 flex-shrink-0 border-r border-zinc-200 p-2.5 last:border-r-0 dark:border-zinc-800">
+			<DroppableShiftCell
 				{shift}
 				{badgeColor}
+				employeeId={employee.id}
+				date={day.date}
 				onAdd={() => onAddShift(employee.id, day.date)}
 				onEdit={() => shift && onEditShift(shift)}
 				onDelete={() => shift && onDeleteShift(shift.id)}

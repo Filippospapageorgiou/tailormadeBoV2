@@ -3,17 +3,26 @@
 	import { SHIFT_TYPE } from '$lib/models/schedule.types';
 	import { Button } from '$lib/components/ui/button';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
-	import { Plus, MoreVertical, Pencil, Trash2, Coffee, Thermometer, Palmtree } from 'lucide-svelte';
+	import { MoreVertical, Pencil, Trash2, Coffee, Thermometer, Palmtree, GripVertical } from 'lucide-svelte';
+	import { useDraggable } from '@dnd-kit-svelte/svelte';
 
 	interface Props {
-		shift: Shift | null;
+		shift: Shift;
 		badgeColor: string;
-		onAdd: () => void;
 		onEdit: () => void;
 		onDelete: () => void;
+		isOverlay?: boolean;
 	}
 
-	let { shift, badgeColor, onAdd, onEdit, onDelete }: Props = $props();
+	let { shift, badgeColor, onEdit, onDelete, isOverlay = false }: Props = $props();
+
+	const { ref, isDragging } = useDraggable({
+		// svelte-ignore state_referenced_locally
+		id: `shift-${shift.id}`,
+		// svelte-ignore state_referenced_locally
+		data: { shift, badgeColor },
+		type: 'shift'
+	});
 
 	function formatTime(time: string | null): string {
 		if (!time) return '';
@@ -31,9 +40,9 @@
 		return labels[type] || type;
 	}
 
-	let isWorkShift = $derived(shift?.shift_type === SHIFT_TYPE.WORK);
+	let isWorkShift = $derived(shift.shift_type === SHIFT_TYPE.WORK);
 	let timeRange = $derived(
-		shift && isWorkShift ? `${formatTime(shift.start_time)} - ${formatTime(shift.end_time)}` : null
+		isWorkShift ? `${formatTime(shift.start_time)} - ${formatTime(shift.end_time)}` : null
 	);
 
 	function getShiftTypeConfig(type: string): { bg: string; border: string; text: string; darkBg: string; darkBorder: string; darkText: string } {
@@ -73,18 +82,31 @@
 		};
 		return configs[type] || configs.work;
 	}
+
+	const config = $derived(getShiftTypeConfig(shift.shift_type));
 </script>
 
-{#if shift}
-	{@const config = getShiftTypeConfig(shift.shift_type)}
-	<!-- Shift exists - Show shift info with actions -->
-	<div class="group relative h-full min-h-[48px]">
+<div
+	class="group relative h-full min-h-[48px]"
+	class:invisible={isDragging.current && !isOverlay}
+	{@attach ref}
+>
+	{#if isDragging.current && !isOverlay}
+		<!-- Placeholder while dragging -->
+		<div class="flex h-full min-h-[48px] items-center justify-center rounded-lg border-2 border-dashed border-zinc-300 dark:border-zinc-600">
+			<span class="text-xs text-zinc-400 dark:text-zinc-500">Moving...</span>
+		</div>
+	{:else}
 		<div
-			class="flex h-full items-center justify-between gap-2 rounded-lg border px-3 py-2 transition-all duration-150
+			class="flex h-full cursor-grab items-center justify-between gap-2 rounded-lg border px-3 py-2 transition-all duration-150 active:cursor-grabbing
 				{config.bg} {config.border} {config.darkBg} {config.darkBorder}
-				hover:shadow-sm dark:hover:shadow-none"
+				hover:shadow-sm dark:hover:shadow-none
+				{isOverlay ? 'shadow-lg ring-2 ring-blue-500/50' : ''}"
 			style="border-left: 3px solid {badgeColor};"
 		>
+			<!-- Drag handle indicator -->
+			<GripVertical class="h-3.5 w-3.5 flex-shrink-0 text-zinc-300 dark:text-zinc-600" />
+
 			<div class="flex min-w-0 flex-1 flex-col">
 				{#if isWorkShift && timeRange}
 					<span class="truncate text-sm font-semibold tabular-nums tracking-tight {config.text} {config.darkText}">
@@ -138,20 +160,5 @@
 				</DropdownMenu.Content>
 			</DropdownMenu.Root>
 		</div>
-	</div>
-{:else}
-	<!-- No shift - Show add button -->
-	<button
-		type="button"
-		onclick={onAdd}
-		class="group flex h-full min-h-[48px] w-full items-center justify-center rounded-lg border border-dashed
-			border-zinc-200 bg-zinc-50/50
-			dark:border-zinc-700 dark:bg-zinc-800/50
-			transition-all duration-150
-			hover:border-zinc-300 hover:bg-zinc-100
-			dark:hover:border-zinc-600 dark:hover:bg-zinc-800"
-		aria-label="Add shift"
-	>
-		<Plus class="h-4 w-4 text-zinc-400 transition-colors duration-150 group-hover:text-zinc-600 dark:text-zinc-500 dark:group-hover:text-zinc-300" />
-	</button>
-{/if}
+	{/if}
+</div>

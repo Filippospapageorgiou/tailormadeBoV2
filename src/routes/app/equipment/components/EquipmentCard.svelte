@@ -80,7 +80,7 @@
 	</div>
 
 	<!-- Content Section -->
-	<div class="space-y-6 p-6">
+	<div class="space-y-6 p-6 border border-border/50 bg-card text-card-foreground shadow-sm transition-all duration-300 hover:border-primary/20 hover:shadow-md dark:bg-gradient-to-br dark:from-white/[0.03] dark:to-transparent dark:hover:shadow-black/20">
 		<div class="flex items-start justify-between">
 			<div>
 				<h3 class="font-serif text-xl font-medium tracking-wide text-foreground">
