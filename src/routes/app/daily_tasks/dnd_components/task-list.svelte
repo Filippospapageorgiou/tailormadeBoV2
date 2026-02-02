@@ -82,7 +82,7 @@
 	onDragEnd={handleDragEnd}
 >
 	<div
-		class="grid animate-fade-in-down gap-4 font-game md:grid-cols-2"
+		class="grid animate-fade-in-down grid-cols-2 gap-2 font-game sm:gap-4"
 		style="animation-delay: {400}ms;"
 	>
 		{@render taskList('in-progress', 'In Progress', groupedTasks['in-progress'])}
@@ -114,15 +114,15 @@
 
 {#snippet taskList(id: string, title: string, columnTasks: any[])}
 	<Droppable
-		class="bg-#F9F9F9 rd-3xl p-3 pt-6"
+		class="task-column min-w-0 overflow-hidden rounded-2xl p-2 pt-4 sm:rounded-3xl sm:p-3 sm:pt-6"
 		{id}
 		type="column"
 		accept="item"
 		collisionPriority={CollisionPriority.Low}
 	>
-		<p class="fw-bold pb-3 text-lg">{title}</p>
+		<p class="pb-2 text-xs font-semibold text-foreground/80 sm:pb-3 sm:text-lg">{title}</p>
 
-		<div class="grid gap-2">
+		<div class="grid min-w-0 gap-1.5 sm:gap-2">
 			{#each columnTasks as task, index (task.id)}
 				<TaskCard
 					{task}
