@@ -4,6 +4,7 @@
 	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
 	import { getProfileContext } from '$lib/stores/profile.svelte';
 	import { useSidebar } from '$lib/components/ui/sidebar/index.js';
+	import Separator from './ui/separator/separator.svelte';
 
 	let user = getProfileContext();
 
@@ -24,6 +25,7 @@
 			url: string;
 			icon: any;
 			isActive?: boolean;
+			newLine?:boolean;
 			requiresAdmin?: boolean;
 			items?: {
 				title: string;
@@ -56,10 +58,13 @@
 </script>
 
 <Sidebar.Group>
-	<Sidebar.GroupLabel><span class="text-lg font-semibold">Barista Work</span></Sidebar.GroupLabel>
-	<Sidebar.Menu>
+	<Sidebar.GroupLabel><span class="text-sm ml-2 font-semibold">Barista Work</span></Sidebar.GroupLabel>
+	<Sidebar.Menu class="px-2">
 		{#each items as mainItem (mainItem.title)}
 			{#if canAccessItem(mainItem)}
+				{#if mainItem?.newLine}
+					<Separator />
+				{/if}
 				<Collapsible.Root open={mainItem.isActive}>
 					{#snippet child({ props })}
 						<Sidebar.MenuItem {...props}>

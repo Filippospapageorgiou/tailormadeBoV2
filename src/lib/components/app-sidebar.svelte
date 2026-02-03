@@ -33,68 +33,81 @@
 				title: 'Συνταγές',
 				url: '/app/recipes',
 				icon: Coffee,
-				isActive: true
+				isActive: false,
 			},
 			{
 				title: 'Εξοπλισμός',
 				url: '/app/equipment',
-				icon: Cog
+				icon: Cog,
+				isActive: false,
 			},
 			{
 				title: 'Καθημερινές Εργασίες',
 				url: '/app/daily_tasks',
-				icon: Network
+				icon: Network,
+				isActive: false,
 			},
 			{
 				title: 'Μανιφέστο',
 				url: '/app/manifesto',
-				icon: BookOpenIcon
+				icon: BookOpenIcon,
+				isActive: false,
 			},
 			{
 				title: 'Blog',
 				url: '/app/blog',
-				icon: NotebookPen
+				icon: NotebookPen,
+				isActive: false,
 			},
 			{
 				title: 'Ταμείο',
 				url: '/app/register',
-				icon: EuroIcon
+				icon: EuroIcon,
+				isActive: false,
 			},
 			{
 				title: 'Πρόγραμμα',
 				url: '/app/schedule',
-				icon: CalendarRange
+				icon: CalendarRange,
+				isActive: false,
 			},
 			{
 				title: 'Manager work',
 				url: '/app',
 				icon: Settings2Icon,
+				isActive: false,
+				newLine:true,
 				adminOnly: true, // <-- Flag for admin-only items
 				items: [
 					{
 						title: 'Χρήστες & Οργανισμός',
 						url: '/app/settings/manage_users',
-						icon: Users
+						icon: Users,
+						isActive: false,
 					},
 					{
 						title: 'Πρόγραμμα',
 						url: '/app/settings/schedule_settings',
-						icon: Calendar
+						icon: Calendar,
+						isActive: false,
 					},
 					{
 						title: 'Εξοπλισμός',
 						url: '/app/settings/equipment_settings',
-						icon: Cog
+						icon: Cog,
+						isActive: false,
 					},
 					{
 						title: 'Ταμείο',
 						url: '/app/settings/register_settings',
-						icon: Landmark
+						icon: Landmark,
+						isActive: false,
 					},
 					{
 						title: 'Tasks',
 						url: '/app/settings/task_managment',
-						icon: ShieldCheck
+						icon: ShieldCheck,
+						isActive: false,
 					}
 				]
 			}
@@ -103,12 +116,14 @@
 			{
 				title: 'legal',
 				url: '/app/legal',
-				icon: LifeBuoyIcon
+				icon: LifeBuoyIcon,
+				isActive: false,
 			},
 			{
 				title: 'Feedback',
 				url: '#',
-				icon: SendIcon
+				icon: SendIcon,
+				isActive: false,
 			}
 		],
 		projects: [
@@ -186,22 +201,27 @@
         <Sidebar.MenuItem>
             <Sidebar.MenuButton size="lg" class="h-auto p-0 hover:bg-transparent">
                 {#snippet child({ props })}
-                    <button
-                        onclick={() => {
-                            goto('/app/');
-                        }}
-                        {...props}
-                        class="w-full overflow-hidden rounded-lg bg-gradient-to-b from-gray-900 to-gray-600"
-                    >
-                        <div class="flex h-20 w-full items-center justify-center p-2">
-                            <img
-                                src="/knowHowTech-removebg-preview.png"
-                                alt="Tailor Made Coffee Roasters"
-                                class="h-auto w-full object-contain"
-                            />
-                        </div>
-                    </button>
-                {/snippet}
+						<button
+							onclick={() => {
+								goto('/app/');
+							}}
+							{...props}
+						>
+							<div
+								class="flex aspect-square size-10 items-center justify-center overflow-hidden rounded-lg"
+							>
+								<img
+									src="/iconTailor.png"
+									alt="Tailor Made Coffee Roasters"
+									class="size-10 object-cover"
+								/>
+							</div>
+							<div class="grid flex-1 text-left text-sm leading-tight">
+								<span class="truncate font-medium">Tailor Made</span>
+								<span class="truncate text-xs">Enterprise.</span>
+							</div>
+						</button>
+					{/snippet}
             </Sidebar.MenuButton>
         </Sidebar.MenuItem>
     </Sidebar.Menu>
