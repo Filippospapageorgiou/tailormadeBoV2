@@ -479,6 +479,30 @@ If someone asks about anything not related to TailorMade data (weather, general 
 | created_at | timestamp | default now() (no timezone!) |
 | expires_at | timestamptz | NOT NULL |
 | is_used | boolean | default false |
+
+
+**manuals**
+| Column | Type | Notes |
+|--------|------|-------|
+| id | bigint | PRIMARY KEY, IDENTITY |
+| title | **text** | NOT NULL |
+| description | text | nullable |
+| content | **text** | NOT NULL |
+| category | **text** | NOT NULL, Index: 'idx_manuals_category' |
+| media | **jsonb** | default '[]'::jsonb (url, type, caption) |
+| author_id | **UUID** | FK → 'profiles.id' |
+| published | **boolean** | default 'false', Index: 'idx_manuals_published' |
+| display_order | integer | default '0', Index: 'idx_manuals_display_order' |
+| created_at | timestamptz | default 'now()' |
+| updated_at | timestamptz | default 'now()' |
+
+**manual_reads**
+| Column | Type | Notes |
+|--------|------|-------|
+| id | bigint | PRIMARY KEY, IDENTITY |
+| user_id | **UUID** | FK → 'profiles.id', NOT NULL (ON DELETE CASCADE) |
+| manual_id | **bigint** | FK → 'manuals.id', NOT NULL (ON DELETE CASCADE) |
+| read_at | **timestamptz** | default 'now()' |
 </database_schema>
 
 <query_guidelines>

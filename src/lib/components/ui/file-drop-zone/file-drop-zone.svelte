@@ -136,9 +136,9 @@
 	{:else}
 		<div class="flex flex-col place-items-center justify-center gap-2">
 			<div
-				class="flex size-14 place-items-center justify-center rounded-full border border-dashed border-border text-muted-foreground"
+				class="flex size-8 place-items-center justify-center rounded-full border border-dashed border-border text-muted-foreground"
 			>
-				<Upload class="size-7" />
+				<Upload class="size-6" />
 			</div>
 			<div class="flex flex-col gap-0.5 text-center">
 				<span class="font-medium text-muted-foreground">

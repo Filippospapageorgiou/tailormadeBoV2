@@ -22,4 +22,6 @@ npm install clsx tailwind-merge
 npm install lucide-svelte
 
 npm i svelte-motion
+
+npm install -D @tailwindcss/typography
 ```

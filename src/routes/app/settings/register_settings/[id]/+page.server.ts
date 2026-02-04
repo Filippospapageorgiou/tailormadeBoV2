@@ -1,18 +1,18 @@
-import type { PageServerLoad } from './$types';
-import { error } from '@sveltejs/kit';
-import { 
-  getUserProfileWithRoleCheck,  
+import type { PageServerLoad, Actions } from './$types';
+import { error, fail } from '@sveltejs/kit';
+import {
+  getUserProfileWithRoleCheck,
 } from '$lib/supabase/queries';
-import type { 
-  DailyRegisterClosingWithDetails, 
+import type {
+  DailyRegisterClosingWithDetails,
   RegisterSupplierPaymentWithSupplier,
-  RegisterExpense 
+  RegisterExpense
 } from '$lib/models/register.types';
 
 export const load: PageServerLoad = async ({ params, locals: { supabase } }) => {
-  const profile = await getUserProfileWithRoleCheck([1, 2]); 
+  const profile = await getUserProfileWithRoleCheck([1, 2]);
   const { id } = params;
-  
+
   if (!id || isNaN(Number(id))) {
     throw error(400, 'Invalid closing ID');
   }
@@ -71,5 +71,120 @@ export const load: PageServerLoad = async ({ params, locals: { supabase } }) => 
   } catch (err) {
     console.error('Error loading register closing details:', err);
     throw error(500, 'Failed to load register closing data');
+  }
+};
+
+export const actions: Actions = {
+  update: async ({ request, params, locals: { supabase } }) => {
+    const profile = await getUserProfileWithRoleCheck([1, 2]);
+    const closingId = Number(params.id);
+
+    if (!closingId || isNaN(closingId)) {
+      return fail(400, { success: false, message: 'Invalid closing ID' });
+    }
+
+    const formData = await request.formData();
+    const updateDataRaw = formData.get('updateData');
+
+    if (!updateDataRaw || typeof updateDataRaw !== 'string') {
+      return fail(400, { success: false, message: 'No update data provided' });
+    }
+
+    try {
+      const updateData = JSON.parse(updateDataRaw);
+
+      // Update the main closing record
+      const { error: updateError } = await supabase
+        .from('daily_register_closings')
+        .update({
+          total_sales: updateData.total_sales,
+          card_sales: updateData.card_sales,
+          wolt_sales: updateData.wolt_sales,
+          efood_sales: updateData.efood_sales,
+          other_digital_sales: updateData.other_digital_sales,
+          opening_float: updateData.opening_float,
+          actual_cash_counted: updateData.actual_cash_counted,
+          excepted_cash: updateData.excepted_cash,
+          total_supplier_payments: updateData.total_supplier_payments,
+          total_expenses: updateData.total_expenses,
+          tomorrow_opening_float: updateData.tomorrow_opening_float,
+          cash_deposit: updateData.cash_deposit,
+        })
+        .eq('id', closingId)
+        .eq('org_id', profile.org_id);
+
+      if (updateError) {
+        console.error('Error updating register closing:', updateError);
+        return fail(500, { success: false, message: 'Failed to update register closing' });
+      }
+
+      // Update supplier payments: delete old, insert new
+      if (updateData.supplierPayments) {
+        const { error: deletePaymentsError } = await supabase
+          .from('register_supplier_payments')
+          .delete()
+          .eq('closing_id', closingId);
+
+        if (deletePaymentsError) {
+          console.error('Error deleting old supplier payments:', deletePaymentsError);
+        }
+
+        if (updateData.supplierPayments.length > 0) {
+          const paymentsToInsert = updateData.supplierPayments.map((p: any) => ({
+            closing_id: closingId,
+            supplier_id: p.supplier_id || null,
+            supplier_name: p.supplier_name || null,
+            amount: p.amount,
+            payment_method: p.payment_method || 'cash',
+            invoice_number: p.invoice_number || null,
+            notes: p.notes || null,
+          }));
+
+          const { error: insertPaymentsError } = await supabase
+            .from('register_supplier_payments')
+            .insert(paymentsToInsert);
+
+          if (insertPaymentsError) {
+            console.error('Error inserting supplier payments:', insertPaymentsError);
+            return fail(500, { success: false, message: 'Failed to update supplier payments' });
+          }
+        }
+      }
+
+      // Update expenses: delete old, insert new
+      if (updateData.expenses) {
+        const { error: deleteExpensesError } = await supabase
+          .from('register_expenses')
+          .delete()
+          .eq('closing_id', closingId);
+
+        if (deleteExpensesError) {
+          console.error('Error deleting old expenses:', deleteExpensesError);
+        }
+
+        if (updateData.expenses.length > 0) {
+          const expensesToInsert = updateData.expenses.map((e: any) => ({
+            closing_id: closingId,
+            expense_category: e.expense_category || null,
+            description: e.description || null,
+            amount: e.amount,
+          }));
+
+          const { error: insertExpensesError } = await supabase
+            .from('register_expenses')
+            .insert(expensesToInsert);
+
+          if (insertExpensesError) {
+            console.error('Error inserting expenses:', insertExpensesError);
+            return fail(500, { success: false, message: 'Failed to update expenses' });
+          }
+        }
+      }
+
+      return { success: true, message: 'Το ταμείο ενημερώθηκε με επιτυχία.' };
+    } catch (err) {
+      console.error('Error updating register closing:', err);
+      return fail(500, { success: false, message: 'An error occurred while updating' });
+    }
   }
 };

@@ -2,19 +2,7 @@ import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async ({ locals: { session }, parent }) => {
-	const { profile } = await parent();
-	
 	if (!session) {
 		throw redirect(303, '/auth/login');
 	}
-	
-	// Only redirect admins to management
-	if (profile?.role_id === 1) {
-		throw redirect(303, '/managment/organization_managment');
-	}
-	
-	// Regular users stay here - just return the profile
-	return {
-		profile
-	};
 };

@@ -398,28 +398,6 @@
 									</div>
 
 									<div class="mt-5 flex flex-wrap items-center justify-between gap-4">
-										<form
-											{...deleteMaintanceLog.enhance(async ({ form, data, submit }) => {
-												deletingLogId = log.id;
-												await submit();
-												if (deleteMaintanceLog.result?.success) {
-													toast.success(deleteMaintanceLog.result.message);
-												} else {
-													toast.error(deleteMaintanceLog.result?.message || '');
-												}
-												form.reset();
-											})}
-										>
-											<input class="hidden" name="maintanceLogId" value={log.id} />
-											<Button
-												type="submit"
-												variant="outline"
-												class="h-7 w-7 border-destructive! text-destructive! hover:bg-destructive/10! focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40"
-											>
-												<Trash2 />
-											</Button>
-										</form>
-
 										{#if log.images && log.images.length > 0}
 											<div class="flex -space-x-2">
 												{#each log.images.slice(0, 3) as img, idx}

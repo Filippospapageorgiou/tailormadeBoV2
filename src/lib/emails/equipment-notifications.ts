@@ -215,17 +215,6 @@ export async function sendMaintanceNotification(
 			};
 		}
 
-		/*//filter out the reporter if it recipient
-		const filteredRecipients = recipients.filter((r) => r.id !== reportedBy.id);
-
-		if (filteredRecipients.length === 0) {
-			console.warn('[sendMaintenanceNotification] No recipients after filtering reporter');
-			return {
-				success: true,
-				message: 'No additional recipients to notify',
-				sentCount: 0
-			};
-		}*/
 
 		// Generate email HTML
 		const emailHtml = generateMaintenanceEmailTemplate(params);

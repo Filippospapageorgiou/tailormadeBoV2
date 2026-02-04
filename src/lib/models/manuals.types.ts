@@ -154,21 +154,13 @@ export const MANUAL_CATEGORY_LABELS: Record<ManualCategory, string> = {
 // ---------------------------------------------
 // MEDIA TYPES
 // ---------------------------------------------
-export type MediaType = 'image' | 'video';
-
-export interface ManualMedia {
-	url: string;
-	type: MediaType;
-	caption?: string;
-}
-
 export interface Manual {
 	id: number;
 	title: string;
 	description: string | null;
 	content: string;
 	category: ManualCategory;
-	media: ManualMedia[];
+	media: string[];
 	author_id: string; // UUID
 	published: boolean;
 	display_order: number;
@@ -181,7 +173,7 @@ export interface ManualInsert {
 	description?: string | null;
 	content: string;
 	category: ManualCategory;
-	media?: ManualMedia[];
+	media?: string[];
 	author_id: string;
 	published?: boolean;
 	display_order?: number;
@@ -192,7 +184,7 @@ export interface ManualUpdate {
 	description?: string | null;
 	content?: string;
 	category?: ManualCategory;
-	media?: ManualMedia[];
+	media?: string[];
 	published?: boolean;
 	display_order?: number;
 	updated_at?: string;

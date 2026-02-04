@@ -119,9 +119,7 @@ export const getAllStatsForCards = query(async (): Promise<StatsResponse> => {
 				// Αν το end είναι μικρότερο από start, σημαίνει νυχτερινή βάρδια
 				if (hours < 0) hours += 24;
 
-				// Αφαίρεση διαλείμματος
-				const breakHours = (shift.break_duration_minutes || 0) / 60;
-				totalHours += hours - breakHours;
+				totalHours += hours
 			}
 		});
 

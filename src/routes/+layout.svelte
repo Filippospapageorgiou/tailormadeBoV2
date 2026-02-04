@@ -12,9 +12,6 @@
 	let { data, children } = $props();
 	let { session, supabase, profile } = $derived(data);
 
-	// Set profile context globally - available everywhere
-	let currentProfile = $derived(profile || null);
-
 	// svelte-ignore state_referenced_locally
 	setProfileContext(profile);
 

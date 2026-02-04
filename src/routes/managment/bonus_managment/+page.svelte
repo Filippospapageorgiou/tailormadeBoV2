@@ -404,7 +404,7 @@
 			</div>
 
 			<!-- Tabs Section - Horizontal like User Management -->
-			<Tabs.Root value="import" class="w-full">
+			<Tabs.Root value="periods" class="w-full">
 				<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 					<Tabs.List class="flex h-auto w-auto justify-start space-x-1 bg-transparent">
 						<Tabs.Trigger

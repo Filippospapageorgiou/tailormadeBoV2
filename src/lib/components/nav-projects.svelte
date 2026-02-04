@@ -3,6 +3,7 @@
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
 	import { useSidebar } from '$lib/components/ui/sidebar/index.js';
+	import Separator from './ui/separator/separator.svelte';
 
 	let {
 		projects
@@ -10,6 +11,7 @@
 		projects: {
 			name: string;
 			url: string;
+			newLine:boolean;
 			icon: any;
 			items?: {
 				title: string;
@@ -30,9 +32,12 @@
 </script>
 
 <Sidebar.Group class="group-data-[collapsible=icon]:hidden">
-	<Sidebar.GroupLabel>Manager Organizations</Sidebar.GroupLabel>
+	<Sidebar.GroupLabel><span class="text-sm ml-2 font-semibold">Manage Organizations</span></Sidebar.GroupLabel>
 	<Sidebar.Menu>
 		{#each projects as project (project.name)}
+			{#if project.newLine}
+				<Separator />
+			{/if}
 			<Collapsible.Root>
 				{#snippet child({ props })}
 					<Sidebar.MenuItem {...props}>

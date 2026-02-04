@@ -9,21 +9,14 @@ import type {
 	ManualWithAuthor,
 	ManualWithDetails,
 	ManualReader,
-	ManualMedia,
 	ManualCategory
 } from '$lib/models/manuals.types';
-import { MANUAL_CATEGORIES } from '$lib/models/manuals.types';
+
+const STORAGE_BUCKET = 'manual_media';
 
 // =============================================
 // SCHEMAS
 // =============================================
-
-const manualMediaSchema = z.object({
-	url: z.url(),
-	type: z.enum(['image', 'video']),
-	caption: z.string().optional()
-});
-
 const manualCategorySchema = z.enum([
 	'equipment',
 	'cleaning',
@@ -35,26 +28,15 @@ const manualCategorySchema = z.enum([
 	'other'
 ]);
 
-const createManualSchema = z.object({
-	title: z.string().min(3, 'Ο τίτλος πρέπει να έχει τουλάχιστον 3 χαρακτήρες').max(200),
-	description: z.string().max(500).optional(),
-	content: z.string().min(10, 'Το περιεχόμενο πρέπει να έχει τουλάχιστον 10 χαρακτήρες'),
-	category: manualCategorySchema,
-	media: z.array(manualMediaSchema).default([]),
-	published: z.boolean().default(false),
-	display_order: z.number().int().default(0)
-});
-
-const updateManualSchema = z.object({
-	id: z.number().int().positive(),
-	title: z.string().min(3).max(200).optional(),
-	description: z.string().max(500).nullable().optional(),
-	content: z.string().min(10).optional(),
-	category: manualCategorySchema.optional(),
-	media: z.array(manualMediaSchema).optional(),
-	published: z.boolean().optional(),
-	display_order: z.number().int().optional()
-});
+const imageFileSchema = z
+	.instanceof(File)
+	.refine((file) => file.size > 0, 'File cannot be empty.')
+	.refine((file) => file.size < 5 * 1024 * 1024, 'File must be less than 5MB.')
+	.refine(
+		(file) =>
+			['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'].includes(file.type),
+		'Only image files (JPEG, PNG, WebP, GIF) are allowed.'
+	);
 
 const manualIdSchema = z.object({
 	id: z.number().int().positive()
@@ -62,6 +44,33 @@ const manualIdSchema = z.object({
 
 const categoryFilterSchema = z.object({
 	category: manualCategorySchema.optional()
+});
+
+// Form schemas (string-based for FormData)
+const createManualFormSchema = z.object({
+	title: z.string().min(3, 'Ο τίτλος πρέπει να έχει τουλάχιστον 3 χαρακτήρες').max(200),
+	description: z.string().max(500).optional(),
+	content: z.string().min(10, 'Το περιεχόμενο πρέπει να έχει τουλάχιστον 10 χαρακτήρες'),
+	category: manualCategorySchema,
+	media: z.array(imageFileSchema).max(4, 'Μέγιστο 4 εικόνες.').optional(),
+	published: z.string().transform((val) => val === 'true'),
+	display_order: z.string().transform((val) => parseInt(val, 10)).pipe(z.number().int()).optional()
+});
+
+const editManualFormSchema = z.object({
+	id: z.string().transform((val) => parseInt(val, 10)).pipe(z.number().int().positive()),
+	title: z.string().min(3, 'Ο τίτλος πρέπει να έχει τουλάχιστον 3 χαρακτήρες').max(200),
+	description: z.string().max(500).optional(),
+	content: z.string().min(10, 'Το περιεχόμενο πρέπει να έχει τουλάχιστον 10 χαρακτήρες'),
+	category: manualCategorySchema,
+	existingMedia: z.string().optional(), // JSON array of URLs to keep
+	newMedia: z.array(imageFileSchema).max(4, 'Μέγιστο 4 εικόνες.').optional(),
+	published: z.string().transform((val) => val === 'true'),
+	display_order: z.string().transform((val) => parseInt(val, 10)).pipe(z.number().int()).optional()
+});
+
+const deleteManualSchema = z.object({
+	id: z.number().int().positive()
 });
 
 
@@ -465,6 +474,256 @@ export const updateManualsOrder = command(updateDisplayOrderSchema, async ({ ord
 		};
 	} catch (err) {
 		console.error('[updateManualsOrder] Unexpected error:', err);
+		return {
+			success: false,
+			message: 'Απρόσμενο σφάλμα'
+		};
+	}
+});
+
+// =============================================
+// FORMS - File Upload Operations
+// =============================================
+
+/**
+ * Create a new manual with media upload (super admin only)
+ */
+export const createManual = form(createManualFormSchema, async (manualData) => {
+	const supabase = createServerClient();
+	const user = await requireAuthenticatedUser();
+
+	try {
+		await getUserProfileWithRoleCheck([1]); // super_admin only
+		let mediaUrls: string[] = [];
+		// Handle media uploads
+		if (manualData.media && manualData.media.length > 0) {
+			for (const file of manualData.media) {
+				const fileExt = file.name.split('.').pop();
+				const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+				const filePath = `manual_images/${fileName}`;
+
+				const { data: uploadData, error: uploadError } = await supabase.storage
+					.from(STORAGE_BUCKET)
+					.upload(filePath, file, {
+						cacheControl: '3600',
+						upsert: false
+					});
+
+				if (uploadError) {
+					console.error('[createManual] Upload error:', uploadError);
+					// Cleanup already uploaded files
+					if (mediaUrls.length > 0) {
+						const paths = mediaUrls
+							.map((url) => url.split(`/${STORAGE_BUCKET}/`)[1])
+							.filter(Boolean) as string[];
+						await supabase.storage.from(STORAGE_BUCKET).remove(paths);
+					}
+					return {
+						success: false,
+						message: 'Σφάλμα κατά την μεταφόρτωση αρχείου.'
+					};
+				}
+
+				const { data: urlData } = supabase.storage
+					.from(STORAGE_BUCKET)
+					.getPublicUrl(uploadData.path);
+
+				mediaUrls.push(urlData.publicUrl);
+			}
+		}
+
+		// Insert manual
+		const { error: insertError } = await supabase.from('manuals').insert({
+			title: manualData.title,
+			description: manualData.description || null,
+			content: manualData.content,
+			category: manualData.category,
+			media: mediaUrls,
+			author_id: user.id,
+			published: manualData.published,
+			display_order: manualData.display_order ?? 0
+		});
+
+		if (insertError) {
+			console.error('[createManual] Insert error:', insertError);
+			// Cleanup uploaded files on DB error
+			if (mediaUrls.length > 0) {
+				const paths = mediaUrls
+					.map((url) => url.split(`/${STORAGE_BUCKET}/`)[1])
+					.filter(Boolean) as string[];
+				await supabase.storage.from(STORAGE_BUCKET).remove(paths);
+			}
+			return {
+				success: false,
+				message: 'Σφάλμα κατά τη δημιουργία εγχειριδίου.'
+			};
+		}
+
+		return {
+			success: true,
+			message: 'Το εγχειρίδιο δημιουργήθηκε επιτυχώς'
+		};
+	} catch (err) {
+		console.error('[createManual] Unexpected error:', err);
+		return {
+			success: false,
+			message: 'Απρόσμενο σφάλμα κατά τη δημιουργία εγχειριδίου.'
+		};
+	}
+});
+
+/**
+ * Edit an existing manual with media management (super admin only)
+ */
+export const editManual = form(editManualFormSchema, async (manualData) => {
+	const supabase = createServerClient();
+
+	try {
+		await getUserProfileWithRoleCheck([1]); // super_admin only
+
+		// Get current manual media
+		const { data: currentManual } = await supabase
+			.from('manuals')
+			.select('media')
+			.eq('id', manualData.id)
+			.single();
+
+		if (!currentManual) {
+			return { success: false, message: 'Το εγχειρίδιο δεν βρέθηκε.' };
+		}
+
+		const currentMedia = (currentManual.media as string[]) || [];
+
+		// Parse which existing media to keep
+		const existingMediaToKeep: string[] = manualData.existingMedia
+			? JSON.parse(manualData.existingMedia)
+			: [];
+
+		// Find media to delete
+		const mediaToDelete = currentMedia.filter((url) => !existingMediaToKeep.includes(url));
+
+		// Delete removed media from storage
+		if (mediaToDelete.length > 0) {
+			const pathsToDelete = mediaToDelete
+				.filter((url) => url.includes(STORAGE_BUCKET))
+				.map((url) => url.split(`/${STORAGE_BUCKET}/`)[1])
+				.filter(Boolean) as string[];
+
+			if (pathsToDelete.length > 0) {
+				await supabase.storage.from(STORAGE_BUCKET).remove(pathsToDelete);
+			}
+		}
+
+		// Upload new media
+		let newMediaUrls: string[] = [];
+
+		if (manualData.newMedia && manualData.newMedia.length > 0) {
+			for (const file of manualData.newMedia) {
+				const fileExt = file.name.split('.').pop();
+				const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+				const { data: uploadData, error: uploadError } = await supabase.storage
+					.from(STORAGE_BUCKET)
+					.upload(`manual_images/${fileName}`, file, {
+						cacheControl: '3600',
+						upsert: false
+					});
+
+				if (uploadError) {
+					console.error('[editManual] Upload error:', uploadError);
+					// Cleanup newly uploaded files on error
+					if (newMediaUrls.length > 0) {
+						const paths = newMediaUrls
+							.map((url) => url.split(`/${STORAGE_BUCKET}/`)[1])
+							.filter(Boolean) as string[];
+						await supabase.storage.from(STORAGE_BUCKET).remove(paths);
+					}
+					return { success: false, message: 'Σφάλμα κατά την μεταφόρτωση αρχείου.' };
+				}
+
+				const { data: urlData } = supabase.storage
+					.from(STORAGE_BUCKET)
+					.getPublicUrl(uploadData.path);
+
+				newMediaUrls.push(urlData.publicUrl);
+			}
+		}
+
+		// Combine: existing media to keep + newly uploaded media
+		const finalMediaUrls = [...existingMediaToKeep, ...newMediaUrls];
+
+		// Update manual
+		const { error: updateError } = await supabase
+			.from('manuals')
+			.update({
+				title: manualData.title,
+				description: manualData.description || null,
+				content: manualData.content,
+				category: manualData.category,
+				media: finalMediaUrls,
+				published: manualData.published,
+				display_order: manualData.display_order ?? undefined,
+				updated_at: new Date().toISOString()
+			})
+			.eq('id', manualData.id);
+
+		if (updateError) {
+			console.error('[editManual] Update error:', updateError);
+			return { success: false, message: 'Σφάλμα κατά την ενημέρωση εγχειριδίου.' };
+		}
+
+		return { success: true, message: 'Το εγχειρίδιο ενημερώθηκε επιτυχώς' };
+	} catch (err) {
+		console.error('[editManual] Unexpected error:', err);
+		return { success: false, message: 'Απρόσμενο σφάλμα κατά την ενημέρωση.' };
+	}
+});
+
+/**
+ * Delete a manual and its media (super admin only)
+ */
+export const deleteManual = command(deleteManualSchema, async ({ id }) => {
+	const supabase = createServerClient();
+
+	try {
+		await getUserProfileWithRoleCheck([1]); // super_admin only
+
+		// Get manual to check for media
+		const { data: manual } = await supabase
+			.from('manuals')
+			.select('media')
+			.eq('id', id)
+			.single();
+
+		// Delete associated media from storage
+		if (manual?.media && Array.isArray(manual.media) && manual.media.length > 0) {
+			const pathsToDelete = (manual.media as string[])
+				.filter((url) => url.includes(STORAGE_BUCKET))
+				.map((url) => url.split(`/${STORAGE_BUCKET}/`)[1])
+				.filter(Boolean) as string[];
+
+			if (pathsToDelete.length > 0) {
+				await supabase.storage.from(STORAGE_BUCKET).remove(pathsToDelete);
+			}
+		}
+
+		// Delete manual from database (manual_reads cascade automatically)
+		const { error } = await supabase.from('manuals').delete().eq('id', id);
+
+		if (error) {
+			console.error('[deleteManual] Error:', error);
+			return {
+				success: false,
+				message: 'Σφάλμα κατά τη διαγραφή εγχειριδίου'
+			};
+		}
+
+		return {
+			success: true,
+			message: 'Το εγχειρίδιο διαγράφηκε επιτυχώς'
+		};
+	} catch (err) {
+		console.error('[deleteManual] Unexpected error:', err);
 		return {
 			success: false,
 			message: 'Απρόσμενο σφάλμα'

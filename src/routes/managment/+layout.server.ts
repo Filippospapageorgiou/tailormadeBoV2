@@ -12,9 +12,4 @@ export const load: LayoutServerLoad = async ({ locals: { session }, parent }) =>
 	if (profile?.role_id !== 1) {
 		throw redirect(303, '/app/');
 	}
-	
-	// Admins stay here - just return the profile
-	return {
-		profile
-	};
 };

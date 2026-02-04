@@ -18,9 +18,6 @@ export const load: LayoutServerLoad = async ({
 	if (url.pathname === '/') {
 		if (!session) {
 			throw redirect(303, '/auth/login');
-		}
-		if (profile?.role_id === 1) {
-			throw redirect(303, '/managment/organization_managment');
 		} else {
 			throw redirect(303, '/app/');
 		}
@@ -34,11 +31,6 @@ export const load: LayoutServerLoad = async ({
 	// 3️⃣ Management routes - require roleId === 1
 	if (session && url.pathname.startsWith('/managment') && profile?.role_id !== 1) {
 		throw redirect(303, '/app/');
-	}
-
-	// 4️⃣ App routes - admins go to management
-	if (session && url.pathname.startsWith('/app') && profile?.role_id === 1) {
-		throw redirect(303, '/managment/organization_managment');
 	}
 
 	// 5️⃣ Logged-in users shouldn't access auth pages

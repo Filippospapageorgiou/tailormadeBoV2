@@ -33,81 +33,87 @@
 				title: 'Συνταγές',
 				url: '/app/recipes',
 				icon: Coffee,
-				isActive: false,
+				isActive: false
 			},
 			{
 				title: 'Εξοπλισμός',
 				url: '/app/equipment',
 				icon: Cog,
-				isActive: false,
+				isActive: false
 			},
 			{
 				title: 'Καθημερινές Εργασίες',
 				url: '/app/daily_tasks',
 				icon: Network,
-				isActive: false,
+				isActive: false
 			},
 			{
 				title: 'Μανιφέστο',
 				url: '/app/manifesto',
 				icon: BookOpenIcon,
-				isActive: false,
+				isActive: false
 			},
 			{
 				title: 'Blog',
 				url: '/app/blog',
 				icon: NotebookPen,
-				isActive: false,
+				isActive: false
+			},
+			{
+				title: 'Manuals',
+				url: '/app/manuals',
+				icon: Boxes,
+				isActive:false
 			},
 			{
 				title: 'Ταμείο',
 				url: '/app/register',
 				icon: EuroIcon,
-				isActive: false,
+				isActive: false
 			},
 			{
 				title: 'Πρόγραμμα',
 				url: '/app/schedule',
 				icon: CalendarRange,
-				isActive: false,
+				isActive: false
 			},
 			{
 				title: 'Manager work',
 				url: '/app',
 				icon: Settings2Icon,
 				isActive: false,
-				newLine:true,
+				newLine: true,
 				adminOnly: true, // <-- Flag for admin-only items
 				items: [
 					{
 						title: 'Χρήστες & Οργανισμός',
 						url: '/app/settings/manage_users',
 						icon: Users,
-						isActive: false,
+						isActive: false
 					},
 					{
 						title: 'Πρόγραμμα',
 						url: '/app/settings/schedule_settings',
 						icon: Calendar,
-						isActive: false,
+						isActive: false
 					},
 					{
 						title: 'Εξοπλισμός',
 						url: '/app/settings/equipment_settings',
 						icon: Cog,
-						isActive: false,
+						isActive: false
 					},
 					{
 						title: 'Ταμείο',
 						url: '/app/settings/register_settings',
 						icon: Landmark,
-						isActive: false,
+						isActive: false
 					},
 					{
 						title: 'Tasks',
 						url: '/app/settings/task_managment',
 						icon: ShieldCheck,
-						isActive: false,
+						isActive: false
 					}
 				]
 			}
@@ -117,18 +123,19 @@
 				title: 'legal',
 				url: '/app/legal',
 				icon: LifeBuoyIcon,
-				isActive: false,
+				isActive: false
 			},
 			{
 				title: 'Feedback',
 				url: '#',
 				icon: SendIcon,
-				isActive: false,
+				isActive: false
 			}
 		],
 		projects: [
 			{
 				name: 'Διαχείριση οργανισμών',
+				newLine: true,
 				url: '/app/manage_organizations',
 				icon: Globe,
 				items: [
@@ -146,6 +153,11 @@
 						title: 'Ai βοήθος',
 						url: '/managment/ai_assistant',
 						icon: Bot
+					},
+					{
+						title: 'Manuals',
+						url: '/managment/manuals',
+						icon: Boxes
 					},
 					{
 						title: 'Συνταγές',
@@ -176,7 +188,7 @@
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 	import type { ComponentProps } from 'svelte';
 	import { getProfileContext } from '$lib/stores/profile.svelte';
-	import { Bot } from '@lucide/svelte';
+	import { Bot, Boxes } from '@lucide/svelte';
 	import { goto } from '$app/navigation';
 
 	let { ref = $bindable(null), ...restProps }: ComponentProps<typeof Sidebar.Root> = $props();
@@ -197,10 +209,10 @@
 
 <Sidebar.Root bind:ref variant="inset" {...restProps}>
 	<Sidebar.Header>
-    <Sidebar.Menu>
-        <Sidebar.MenuItem>
-            <Sidebar.MenuButton size="lg" class="h-auto p-0 hover:bg-transparent">
-                {#snippet child({ props })}
+		<Sidebar.Menu>
+			<Sidebar.MenuItem>
+				<Sidebar.MenuButton size="lg" class="h-auto p-0 hover:bg-transparent">
+					{#snippet child({ props })}
 						<button
 							onclick={() => {
 								goto('/app/');
@@ -222,14 +234,12 @@
 							</div>
 						</button>
 					{/snippet}
-            </Sidebar.MenuButton>
-        </Sidebar.MenuItem>
-    </Sidebar.Menu>
-</Sidebar.Header>
+				</Sidebar.MenuButton>
+			</Sidebar.MenuItem>
+		</Sidebar.Menu>
+	</Sidebar.Header>
 	<Sidebar.Content>
-		{#if user.role_id !== 1}
-			<NavMain items={filteredNavMain} />
-		{/if}
+		<NavMain items={filteredNavMain} />
 		{#if user.role_id === 1}
 			<NavProjects projects={data.projects} />
 		{/if}

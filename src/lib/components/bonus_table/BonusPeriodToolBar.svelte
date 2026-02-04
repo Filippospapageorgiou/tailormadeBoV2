@@ -10,6 +10,7 @@
 	import { cn } from '$lib/utils';
 	import { Search, X, CirclePlus, Check, Filter } from 'lucide-svelte';
 	import { SvelteSet } from 'svelte/reactivity';
+	import Checkbox from '../ui/checkbox/checkbox.svelte';
 
 	type Props = {
 		table: Table<BonusPeriod>;
@@ -85,7 +86,7 @@
 							</Button>
 						{/snippet}
 					</Popover.Trigger>
-					<Popover.Content class="w-[200px] p-0" align="start">
+					<Popover.Content class="w-[200px] p-0 border border-border/50 rounded-md" align="start">
 						<Command.Root>
 							<Command.Input placeholder="Αναζήτηση..." />
 							<Command.List>
@@ -104,16 +105,7 @@
 												column?.setFilterValue(filterValues.length ? filterValues : undefined);
 											}}
 										>
-											<div
-												class={cn(
-													'mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary',
-													isSelected
-														? 'bg-primary text-primary-foreground'
-														: 'opacity-50 [&_svg]:invisible'
-												)}
-											>
-												<Check class="h-4 w-4" />
-											</div>
+											<Checkbox checked={isSelected} />
 											<span class="mr-2">{option.icon}</span>
 											<span>{option.label}</span>
 										</Command.Item>
@@ -155,7 +147,7 @@
 							</Button>
 						{/snippet}
 					</Popover.Trigger>
-					<Popover.Content class="w-[200px] p-0" align="start">
+					<Popover.Content class="w-[200px] p-0 border border-border/50 rounded-md" align="start">
 						<Command.Root>
 							<Command.Input placeholder="Αναζήτηση έτους..." />
 							<Command.List>
@@ -166,6 +158,7 @@
 										<Command.Item
 											onSelect={() => {
 												if (isSelected) {
+
 													selectedValues.delete(option.value);
 												} else {
 													selectedValues.add(option.value);
@@ -174,16 +167,7 @@
 												column?.setFilterValue(filterValues.length ? filterValues : undefined);
 											}}
 										>
-											<div
-												class={cn(
-													'mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary',
-													isSelected
-														? 'bg-primary text-primary-foreground'
-														: 'opacity-50 [&_svg]:invisible'
-												)}
-											>
-												<Check class="h-4 w-4" />
-											</div>
+											<Checkbox checked={isSelected} />
 											<span>{option.label}</span>
 										</Command.Item>
 									{/each}
@@ -237,7 +221,7 @@
 							</Button>
 						{/snippet}
 					</Popover.Trigger>
-					<Popover.Content class="w-[220px] p-0" align="start">
+					<Popover.Content class="w-[220px] p-0  border border-border/50 rounded-md" align="start">
 						<Command.Root>
 							<Command.Input placeholder="Αναζήτηση τριμήνου..." />
 							<Command.List>
@@ -256,16 +240,7 @@
 												column?.setFilterValue(filterValues.length ? filterValues : undefined);
 											}}
 										>
-											<div
-												class={cn(
-													'mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary',
-													isSelected
-														? 'bg-primary text-primary-foreground'
-														: 'opacity-50 [&_svg]:invisible'
-												)}
-											>
-												<Check class="h-4 w-4" />
-											</div>
+											<Checkbox checked={isSelected} />
 											<span>{option.label}</span>
 										</Command.Item>
 									{/each}
