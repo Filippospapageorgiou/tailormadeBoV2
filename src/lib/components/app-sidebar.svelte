@@ -135,7 +135,6 @@
 		projects: [
 			{
 				name: 'Διαχείριση οργανισμών',
-				newLine: true,
 				url: '/app/manage_organizations',
 				icon: Globe,
 				items: [

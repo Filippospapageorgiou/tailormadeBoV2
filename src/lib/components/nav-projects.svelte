@@ -11,7 +11,6 @@
 		projects: {
 			name: string;
 			url: string;
-			newLine:boolean;
 			icon: any;
 			items?: {
 				title: string;
@@ -32,12 +31,10 @@
 </script>
 
 <Sidebar.Group class="group-data-[collapsible=icon]:hidden">
+	<Separator />
 	<Sidebar.GroupLabel><span class="text-sm ml-2 font-semibold">Manage Organizations</span></Sidebar.GroupLabel>
 	<Sidebar.Menu>
 		{#each projects as project (project.name)}
-			{#if project.newLine}
-				<Separator />
-			{/if}
 			<Collapsible.Root>
 				{#snippet child({ props })}
 					<Sidebar.MenuItem {...props}>

@@ -6,7 +6,8 @@ export type NotificationType =
 	| 'schedule_published'
 	| 'equipment_added'
 	| 'daily_tasks'
-	| 'shift_request_update';
+	| 'shift_request_update'
+	| 'manual_published';
 
 export interface Notification {
 	id: number;

@@ -177,12 +177,13 @@
 
 		<!-- Content -->
 		{#if query.loading}
-			<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+			<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
 				{#each Array(6) as _, i}
 					<div class="overflow-hidden rounded-2xl border border-border/50 bg-card/50 shadow-sm">
-						<Skeleton class="h-48 w-full" />
+						<Skeleton class="h-56 w-full" />
 						<div class="space-y-3 p-5">
-							<Skeleton class="h-5 w-4/5" />
+							<Skeleton class="h-6 w-4/5" />
+							<Skeleton class="h-4 w-full" />
 							<Skeleton class="h-4 w-full" />
 							<Skeleton class="h-4 w-2/3" />
 							<div class="flex items-center gap-2 pt-2">
@@ -222,7 +223,7 @@
 				{/if}
 			</div>
 		{:else}
-			<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+			<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
 				{#each filteredManuals() as manual, index (manual.id)}
 					<UserManualCard {manual} {index} onRead={refresh} />
 				{/each}

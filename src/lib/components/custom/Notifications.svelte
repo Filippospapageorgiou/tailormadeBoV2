@@ -12,9 +12,8 @@
 		Wrench,
 		ClipboardList,
 		RefreshCw,
-		Check,
 		CheckCheck,
-		Inbox
+		Boxes
 	} from 'lucide-svelte';
 	import {
 		getNotifications,
@@ -49,7 +48,8 @@
 		schedule_published: Calendar,
 		equipment_added: Wrench,
 		daily_tasks: ClipboardList,
-		shift_request_update: RefreshCw
+		shift_request_update: RefreshCw,
+		manual_published:Boxes
 	};
 
 	// Group notifications by date

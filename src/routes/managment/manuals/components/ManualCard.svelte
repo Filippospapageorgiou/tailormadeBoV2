@@ -6,16 +6,7 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import * as Tooltip from '$lib/components/ui/tooltip';
 	import { Switch } from '$lib/components/ui/switch/index.js';
-	import {
-		Pencil,
-		Trash2,
-		Eye,
-		EyeOff,
-		Calendar,
-		User,
-		ImageOff,
-		BookOpen,
-	} from 'lucide-svelte';
+	import { Pencil, Trash2, Eye, EyeOff, Calendar, User, ImageOff, BookOpen } from 'lucide-svelte';
 	import { showProgress, hideProgress } from '$lib/stores/progress.svelte';
 	import EditManualDialog from './EditManualDialog.svelte';
 	import DeleteManualDialog from './DeleteManualDialog.svelte';
@@ -84,27 +75,34 @@
 		opening_closing: 'bg-orange-500/10 text-orange-700 dark:text-orange-400',
 		other: 'bg-muted text-muted-foreground'
 	};
+
+	function formatDateShort(date: string) {
+		return new Date(date).toLocaleDateString('el-GR', { day: '2-digit', month: '2-digit' });
+	}
 </script>
 
 <div
 	style="animation-delay: {index * 80}ms; animation-fill-mode: backwards;"
-	class="card-glass group !rounded-xl !cursor-default animate-fade-in-down"
+	class="card-glass group animate-fade-in-down !cursor-default !rounded-xl"
 >
-	<div class="flex items-stretch">
-		<!-- Thumbnail Column -->
-		<div class="relative w-40 flex-shrink-0 overflow-hidden sm:w-48">
+	<!-- Mobile: Stack layout / Desktop: Horizontal layout -->
+	<div class="flex flex-col sm:flex-row sm:items-stretch">
+		<!-- Thumbnail -->
+		<div class="relative h-48 w-full flex-shrink-0 overflow-hidden sm:h-auto sm:w-40 md:w-48">
 			{#if manual.media && manual.media.length > 0}
 				<img
 					src={typeof manual.media[0] === 'string' ? manual.media[0] : ''}
 					alt={manual.title}
 					class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
 				/>
-				<div class="absolute inset-0 bg-gradient-to-r from-transparent to-black/10"></div>
+				<div
+					class="absolute inset-0 bg-gradient-to-b from-transparent to-black/20 sm:bg-gradient-to-r sm:from-transparent sm:to-black/10"
+				></div>
 			{:else}
 				<div class="flex h-full w-full items-center justify-center bg-muted/50">
 					<div class="flex flex-col items-center gap-1.5 text-muted-foreground/40">
 						<ImageOff class="h-8 w-8" />
-						<span class="text-[10px] font-medium uppercase tracking-wider">No media</span>
+						<span class="text-[10px] font-medium tracking-wider uppercase">No media</span>
 					</div>
 				</div>
 			{/if}
@@ -112,45 +110,65 @@
 			<!-- Media count badge -->
 			{#if manual.media && manual.media.length > 1}
 				<div class="absolute bottom-2 left-2">
-					<span class="rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
+					<span
+						class="rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm"
+					>
 						+{manual.media.length - 1}
 					</span>
 				</div>
 			{/if}
+
+			<!-- Category badge on mobile (over image) -->
+			<div class="absolute top-2 left-2 sm:hidden">
+				<Badge
+					class="rounded-full border-0 text-[10px] font-semibold shadow-sm {categoryColors[
+						manual.category
+					] || categoryColors.other}"
+				>
+					{MANUAL_CATEGORY_LABELS[manual.category]}
+				</Badge>
+			</div>
 		</div>
 
 		<!-- Content Column -->
-		<div class="flex flex-1 flex-col justify-between p-5">
+		<div class="flex flex-1 flex-col justify-between p-4 sm:p-5">
 			<div class="space-y-2.5">
 				<!-- Top row: Title + Actions -->
-				<div class="flex items-start justify-between gap-3">
+				<div class="flex items-start justify-between gap-2">
 					<div class="min-w-0 flex-1">
-						<div class="flex items-center gap-2">
-							<h3 class="line-clamp-1 text-base font-semibold tracking-tight text-foreground transition-colors group-hover:text-primary sm:text-lg">
+						<!-- Title row -->
+						<div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+							<h3
+								class="line-clamp-2 text-base leading-snug font-semibold tracking-tight text-foreground transition-colors group-hover:text-primary sm:line-clamp-1 sm:text-lg"
+							>
 								{manual.title}
 							</h3>
-							<span class="flex-shrink-0 font-mono text-[10px] text-muted-foreground">#{manual.id}</span>
+							<span class="flex-shrink-0 font-mono text-[10px] text-muted-foreground"
+								>#{manual.id}</span
+							>
 						</div>
+
+						<!-- Description -->
 						{#if manual.description}
-							<p class="mt-1 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+							<p class="mt-1.5 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
 								{manual.description}
 							</p>
 						{:else if manual.content}
-							<p class="mt-1 line-clamp-2 text-sm leading-relaxed text-muted-foreground/70">
+							<p class="mt-1.5 line-clamp-2 text-sm leading-relaxed text-muted-foreground/70">
 								{truncateText(manual.content)}
 							</p>
 						{/if}
 					</div>
 
-					<!-- Compact action buttons -->
+					<!-- Action buttons - always visible -->
 					<div class="flex flex-shrink-0 items-center gap-0.5">
 						<Tooltip.Provider>
 							<Tooltip.Root>
 								<Tooltip.Trigger>
-									<div class="pr-1.5">
+									<div class="pr-1">
 										<Switch
 											id="toggle-{manual.id}"
-											class="cursor-pointer"
+											class="scale-90 cursor-pointer sm:scale-100"
 											checked={manual.published}
 											onCheckedChange={handleTogglePublish}
 										/>
@@ -168,7 +186,7 @@
 									<Button
 										variant="ghost"
 										size="icon"
-										class="h-8 w-8 cursor-pointer text-muted-foreground hover:bg-primary/10 hover:text-primary"
+										class="h-7 w-7 cursor-pointer text-muted-foreground hover:bg-primary/10 hover:text-primary sm:h-8 sm:w-8"
 										onclick={() => (editDialogOpen = true)}
 									>
 										<Pencil class="h-3.5 w-3.5" />
@@ -184,7 +202,7 @@
 									<Button
 										variant="ghost"
 										size="icon"
-										class="h-8 w-8 cursor-pointer text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+										class="h-7 w-7 cursor-pointer text-muted-foreground hover:bg-destructive/10 hover:text-destructive sm:h-8 sm:w-8"
 										onclick={() => (deleteDialogOpen = true)}
 									>
 										<Trash2 class="h-3.5 w-3.5" />
@@ -196,46 +214,60 @@
 					</div>
 				</div>
 
-				<!-- Meta row -->
-				<div class="flex flex-wrap items-center gap-2">
+				<!-- Meta row - wraps nicely on mobile -->
+				<div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
 					<!-- Status -->
 					{#if manual.published}
-						<Badge class="gap-1 rounded-full border-0 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-[11px] font-semibold">
+						<Badge
+							class="gap-1 rounded-full border-0 bg-emerald-500/10 text-[10px] font-semibold text-emerald-700 sm:text-[11px] dark:text-emerald-400"
+						>
 							<Eye class="h-3 w-3" />
-							Δημοσιευμένο
+							<span class="xs:inline hidden">Δημοσιευμένο</span>
+							<span class="xs:hidden">Live</span>
 						</Badge>
 					{:else}
-						<Badge class="gap-1 rounded-full border-0 bg-muted text-muted-foreground text-[11px] font-semibold">
+						<Badge
+							class="gap-1 rounded-full border-0 bg-muted text-[10px] font-semibold text-muted-foreground sm:text-[11px]"
+						>
 							<EyeOff class="h-3 w-3" />
-							Πρόχειρο
+							<span class="xs:inline hidden">Πρόχειρο</span>
+							<span class="xs:hidden">Draft</span>
 						</Badge>
 					{/if}
 
-					<!-- Category -->
-					<Badge class="rounded-full border-0 text-[11px] font-semibold {categoryColors[manual.category] || categoryColors.other}">
+					<!-- Category (hidden on mobile, shown in image) -->
+					<Badge
+						class="hidden rounded-full border-0 text-[11px] font-semibold sm:inline-flex {categoryColors[
+							manual.category
+						] || categoryColors.other}"
+					>
 						{MANUAL_CATEGORY_LABELS[manual.category]}
 					</Badge>
 
+					<!-- Separator dot -->
+					<span class="hidden text-muted-foreground/30 sm:inline">•</span>
+
 					<!-- Read Count -->
 					{#if manual.read_count !== undefined}
-						<span class="flex items-center gap-1 text-[11px] text-muted-foreground">
+						<span class="flex items-center gap-1 text-[10px] text-muted-foreground sm:text-[11px]">
 							<BookOpen class="h-3 w-3" />
 							{manual.read_count}
 						</span>
 					{/if}
 
-					<!-- Author -->
+					<!-- Author - hide on very small screens -->
 					{#if manual.profiles}
-						<span class="flex items-center gap-1 text-[11px] text-muted-foreground">
+						<span class="xs:flex hidden items-center gap-1 text-[11px] text-muted-foreground">
 							<User class="h-3 w-3" />
 							{manual.profiles.username}
 						</span>
 					{/if}
 
 					<!-- Date -->
-					<span class="flex items-center gap-1 text-[11px] text-muted-foreground">
+					<span class="flex items-center gap-1 text-[10px] text-muted-foreground sm:text-[11px]">
 						<Calendar class="h-3 w-3" />
-						{formatDate(manual.created_at)}
+						<span class="hidden sm:inline">{formatDate(manual.created_at)}</span>
+						<span class="sm:hidden">{formatDateShort(manual.created_at)}</span>
 					</span>
 				</div>
 			</div>
