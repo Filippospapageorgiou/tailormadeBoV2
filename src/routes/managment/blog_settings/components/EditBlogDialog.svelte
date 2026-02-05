@@ -11,6 +11,7 @@
 	import { toast } from '$lib/stores/toast.svelte';
 	import { X, CloudIcon, ImagePlus } from 'lucide-svelte';
 	import * as Empty from '$lib/components/ui/empty/index.js';
+	import Markdown from '$lib/components/custom/htmlMarkdown/markdown.svelte';
 
 	let {
 		open = $bindable(),
@@ -22,7 +23,8 @@
 		onSuccess: () => Promise<void>;
 	} = $props();
 
-	let formData = $derived({
+	// svelte-ignore state_referenced_locally
+	let formData = $state({
 		title: blog.title,
 		description: blog.description || '',
 		content: blog.content,
@@ -31,23 +33,26 @@
 	});
 
 	// Track existing images (URLs to keep)
-	let existingImages = $derived<string[]>([...blog.images]);
-	
+	// svelte-ignore state_referenced_locally
+	let existingImages = $state<string[]>([...blog.images]);
+
 	// Track new files to upload
 	let newFiles: FileList | undefined = $state();
 	let fileInput: HTMLInputElement;
 
 	// Derive preview URLs for new files
 	let newPreviewUrls = $derived(
-		newFiles ? Array.from(newFiles).map((file) => ({
-			file,
-			url: URL.createObjectURL(file)
-		})) : []
+		newFiles
+			? Array.from(newFiles).map((file) => ({
+					file,
+					url: URL.createObjectURL(file)
+				}))
+			: []
 	);
 
 	// Combine existing images + new file previews for display
 	let allPreviews = $derived([
-		...existingImages.map(url => ({ type: 'existing' as const, url })),
+		...existingImages.map((url) => ({ type: 'existing' as const, url })),
 		...newPreviewUrls.map(({ file, url }) => ({ type: 'new' as const, url, file }))
 	]);
 
@@ -69,7 +74,7 @@
 
 	function removeImage(index: number) {
 		const existingCount = existingImages.length;
-		
+
 		if (index < existingCount) {
 			// Remove from existing images array
 			existingImages = existingImages.filter((_, i) => i !== index);
@@ -135,10 +140,10 @@
 			<input type="hidden" {...editBlog.fields.id.as('text')} value={blog.id.toString()} />
 
 			<!-- Hidden field for existing images -->
-			<input 
-				type="hidden" 
+			<input
+				type="hidden"
 				{...editBlog.fields.existingImages.as('text')}
-				value={JSON.stringify(existingImages)} 
+				value={JSON.stringify(existingImages)}
 			/>
 
 			<!-- Title -->
@@ -169,15 +174,14 @@
 			<!-- Content -->
 			<div class="space-y-2">
 				<Label for="edit-content">Content *</Label>
-				<Textarea
-					id="edit-content"
-					{...editBlog.fields.content.as('text')}
+				<Markdown
 					bind:value={formData.content}
-					placeholder="Write your blog content here... You can use HTML formatting."
-					rows={10}
-					class="resize-none font-mono text-sm"
-					required
+					placeholder="Write your blog content here..."
+					minHeight="400px"
+					maxHeight="600px"
 				/>
+
+				<input type="hidden" {...editBlog.fields.content.as('text')} value={formData.content} />
 			</div>
 
 			<!-- Tags -->
@@ -237,16 +241,16 @@
 						<div class="grid grid-cols-2 gap-3">
 							{#each allPreviews as preview, index}
 								<div class="group relative aspect-video overflow-hidden rounded-lg border">
-									<img 
-										src={preview.url} 
-										alt="Preview {index + 1}" 
-										class="h-full w-full object-cover" 
+									<img
+										src={preview.url}
+										alt="Preview {index + 1}"
+										class="h-full w-full object-cover"
 									/>
 									<Button
 										variant="secondary"
 										type="button"
 										onclick={() => removeImage(index)}
-										class="absolute right-2 top-2 rounded-full p-1 opacity-0 group-hover:opacity-100 cursor-pointer"
+										class="absolute top-2 right-2 cursor-pointer rounded-full p-1 opacity-0 group-hover:opacity-100"
 										aria-label="Remove image"
 									>
 										<X class="h-4 w-4" />
@@ -270,14 +274,10 @@
 					</div>
 				{/if}
 			</div>
-			
+
 			<!-- Published Toggle -->
 			<div class="flex items-center space-x-2">
-				<Switch
-					id="edit-published"
-					bind:checked={formData.published}
-					class="cursor-pointer"
-				/>
+				<Switch id="edit-published" bind:checked={formData.published} class="cursor-pointer" />
 				<Label for="edit-published" class="cursor-pointer">Published</Label>
 				<input
 					type="hidden"

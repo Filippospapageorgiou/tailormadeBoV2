@@ -10,6 +10,7 @@
 	import { toast } from '$lib/stores/toast.svelte';
 	import { X, CloudIcon, ImagePlus } from 'lucide-svelte';
 	import * as Empty from '$lib/components/ui/empty/index.js';
+	import Markdown from '$lib/components/custom/htmlMarkdown/markdown.svelte';
 
 	let {
 		open = $bindable(),
@@ -139,13 +140,19 @@
 			<!-- Content -->
 			<div class="space-y-2">
 				<Label for="content">Content *</Label>
+				<Markdown
+					bind:value={formData.content}
+					placeholder="Write your admin instructions here..."
+					minHeight="400px"
+					maxHeight="600px"
+				/>
 				<Textarea
 					id="content"
 					{...addBlog.fields.content.as('text')}
 					bind:value={formData.content}
 					placeholder="Write your blog content here... You can use HTML formatting."
 					rows={10}
-					class="resize-none font-mono text-sm"
+					class="hidden"
 					required
 				/>
 			</div>

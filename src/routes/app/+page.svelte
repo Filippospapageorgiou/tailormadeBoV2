@@ -11,6 +11,8 @@
 	import { Checkbox } from '$lib/components/ui/checkbox/index.js';
 	import { format } from 'date-fns';
 	import { el } from 'date-fns/locale';
+	import { marked } from 'marked';
+	import DOMPurify from 'dompurify'; 
 
 	let { data, form } = $props();
 	let blog = $derived(data.blog as Blog);
@@ -37,6 +39,11 @@
 	}
 	let loading = $state(false);
 	let termsAccepted = $state(false);
+
+	// Add this derived state
+	const renderedContent = $derived(
+		blog.content ? DOMPurify.sanitize(marked.parse(blog.content) as string) : ''
+	);
 </script>
 
 <div class="flex flex-1 flex-col gap-4 p-4 pt-6 bg-background">
@@ -162,9 +169,19 @@
 					<h3 class="text-lg font-semibold mb-2 text-foreground group-hover:text-primary transition-colors line-clamp-1">
 						{blog.title}
 					</h3>
-					<p class="text-sm text-muted-foreground leading-relaxed mb-4 line-clamp-2">
-						{truncateText(blog.content, 100)}
-					</p>
+					{#if blog.content}
+					<div
+						class="preview-content overflow-auto p-4"
+						role="document"
+						aria-label="Markdown preview"
+					>
+						{#if blog.content.trim()}
+							{@html truncateText(renderedContent,100)}
+						{:else}
+							<p class="text-muted-foreground italic">Nothing to preview</p>
+						{/if}
+					</div>
+				{/if}
 					<div class="flex items-center gap-2 text-primary text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
 						Διάβασε περισσότερα <ArrowRight class="w-4 h-4" />
 					</div>

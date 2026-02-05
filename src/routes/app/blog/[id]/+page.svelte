@@ -8,6 +8,8 @@
 	import { ArrowLeft, Calendar, Clock } from 'lucide-svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import Badge from '$lib/components/ui/badge/badge.svelte';
+	import { marked } from 'marked';
+	import DOMPurify from 'dompurify'; // Highly recommended to keep this!
 
 	let { data }: { data: PageData } = $props();
 	const { blog } = $derived(data) as { blog: Blog };
@@ -34,6 +36,12 @@
 		const words = content?.replace(/<[^>]*>/g, '').split(/\s+/).length || 0;
 		return Math.max(1, Math.ceil(words / wordsPerMinute));
 	}
+
+
+	// Add this derived state
+	const renderedContent = $derived(
+		blog.content ? DOMPurify.sanitize(marked.parse(blog.content) as string) : ''
+	);
 </script>
 
 {#if blog}
@@ -118,20 +126,19 @@
 					</div>
 				{/if}
 
-				<!-- Content -->
-				<div
-					class="prose prose-lg dark:prose-invert max-w-none
-						   prose-headings:font-bold prose-headings:tracking-tight
-						   prose-p:text-muted-foreground prose-p:leading-relaxed
-						   prose-a:text-primary prose-a:no-underline hover:prose-a:underline
-						   prose-img:rounded-xl
-						   prose-blockquote:border-l-primary prose-blockquote:bg-muted/30 
-						   prose-blockquote:py-1 prose-blockquote:px-4 prose-blockquote:rounded-r-lg
-						   prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded
-						   prose-code:before:content-none prose-code:after:content-none"
-				>
-					{@html blog.content}
-				</div>
+				{#if blog.content}
+					<div
+						class="preview-content overflow-auto p-4"
+						role="document"
+						aria-label="Markdown preview"
+					>
+						{#if blog.content.trim()}
+							{@html renderedContent}
+						{:else}
+							<p class="text-muted-foreground italic">Nothing to preview</p>
+						{/if}
+					</div>
+				{/if}
 
 				<!-- Footer -->
 				<footer class="mt-12 pt-8 border-t border-border/50 dark:border-white/10">
@@ -165,3 +172,148 @@
 		</main>
 	</div>
 {/if}
+
+
+<style>
+	/* Preview content styling */
+	.preview-content :global(h1) {
+		font-size: 1.875rem;
+		line-height: 2.25rem;
+		font-weight: 700;
+		margin-bottom: 1rem;
+		color: hsl(var(--foreground));
+	}
+
+	.preview-content :global(h2) {
+		font-size: 1.5rem;
+		line-height: 2rem;
+		font-weight: 600;
+		margin-bottom: 0.75rem;
+		color: hsl(var(--foreground));
+	}
+
+	.preview-content :global(h3) {
+		font-size: 1.25rem;
+		line-height: 1.75rem;
+		font-weight: 500;
+		margin-bottom: 0.5rem;
+		color: hsl(var(--foreground));
+	}
+
+	.preview-content :global(p) {
+		margin-bottom: 1rem;
+		line-height: 1.625;
+		color: hsl(var(--foreground));
+	}
+
+	.preview-content :global(ul) {
+		list-style-type: disc;
+		list-style-position: inside;
+		margin-bottom: 1rem;
+		color: hsl(var(--foreground));
+	}
+
+	.preview-content :global(ol) {
+		list-style-type: decimal;
+		list-style-position: inside;
+		margin-bottom: 1rem;
+		color: hsl(var(--foreground));
+	}
+
+	.preview-content :global(li) {
+		margin-bottom: 0.25rem;
+	}
+
+	.preview-content :global(blockquote) {
+		border-left-width: 4px;
+		border-color: hsl(var(--muted-foreground));
+		padding-left: 1rem;
+		font-style: italic;
+		margin-bottom: 1rem;
+		color: hsl(var(--muted-foreground));
+	}
+
+	.preview-content :global(code) {
+		background-color: hsl(var(--muted));
+		padding: 0.125rem 0.25rem;
+		border-radius: 0.25rem;
+		font-size: 0.875rem;
+		font-family:
+			ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+			monospace;
+		color: hsl(var(--foreground));
+	}
+
+	.preview-content :global(pre) {
+		background-color: hsl(var(--muted));
+		padding: 1rem;
+		border-radius: 0.5rem;
+		overflow-x: auto;
+		margin-bottom: 1rem;
+	}
+
+	.preview-content :global(pre code) {
+		background-color: transparent;
+		padding: 0;
+		border-radius: 0;
+	}
+
+	.preview-content :global(mark) {
+		background-color: rgb(254 240 138);
+		padding: 0.125rem 0.25rem;
+		border-radius: 0.25rem;
+	}
+
+	:global(.dark) .preview-content :global(mark) {
+		background-color: rgb(133 77 14);
+		color: rgb(254 243 199);
+	}
+
+	.preview-content :global(a) {
+		color: hsl(var(--primary));
+		text-decoration: underline;
+	}
+
+	.preview-content :global(a:hover) {
+		opacity: 0.8;
+	}
+
+	.preview-content :global(img) {
+		max-width: 100%;
+		border-radius: 0.5rem;
+		margin-bottom: 1rem;
+	}
+
+	.preview-content :global(u) {
+		text-decoration: underline;
+	}
+
+	.preview-content :global(del),
+	.preview-content :global(s) {
+		text-decoration: line-through;
+	}
+
+	.preview-content :global(hr) {
+		border: none;
+		border-top: 1px solid hsl(var(--border));
+		margin: 1.5rem 0;
+	}
+
+	.preview-content :global(table) {
+		width: 100%;
+		border-collapse: collapse;
+		margin-bottom: 1rem;
+	}
+
+	.preview-content :global(th),
+	.preview-content :global(td) {
+		border: 1px solid hsl(var(--border));
+		padding: 0.5rem;
+		text-align: left;
+	}
+
+	.preview-content :global(th) {
+		background-color: hsl(var(--muted));
+		font-weight: 600;
+	}
+</style>

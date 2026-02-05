@@ -20,6 +20,7 @@
 	import { onDestroy, untrack } from 'svelte';
 	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
 	import { file } from 'zod';
+	import Markdown from '$lib/components/custom/htmlMarkdown/markdown.svelte';
 
 	let {
 		open = $bindable(),
@@ -45,37 +46,36 @@
 		file: File;
 	};
 
-	let fileInput: HTMLInputElement | undefined= $state();
+	let fileInput: HTMLInputElement | undefined = $state();
 
 	// Helper function to keep the hidden input in sync with our state
-    // This is the logic that was previously in the $effect
-    function syncFileInput() {
-        if (!fileInput) return;
-        const dataTransfer = new DataTransfer();
-        files.forEach((f) => dataTransfer.items.add(f.file));
-        fileInput.files = dataTransfer.files;
-    }
-
+	// This is the logic that was previously in the $effect
+	function syncFileInput() {
+		if (!fileInput) return;
+		const dataTransfer = new DataTransfer();
+		files.forEach((f) => dataTransfer.items.add(f.file));
+		fileInput.files = dataTransfer.files;
+	}
 
 	let files = $state<UploadedFile[]>([]);
 
 	const handleUpload = async (newFiles: File[]) => {
-        const remaining = 4 - files.length;
-        const toAdd = newFiles.slice(0, remaining);
+		const remaining = 4 - files.length;
+		const toAdd = newFiles.slice(0, remaining);
 
-        toAdd.forEach((file) => {
-            if (files.find((f) => f.name === file.name)) return;
-            files.push({
-                name: file.name,
-                size: file.size,
-                url: URL.createObjectURL(file),
-                file: file
-            });
-        });
+		toAdd.forEach((file) => {
+			if (files.find((f) => f.name === file.name)) return;
+			files.push({
+				name: file.name,
+				size: file.size,
+				url: URL.createObjectURL(file),
+				file: file
+			});
+		});
 
-        // Sync immediately after modification
-        syncFileInput();
-    };
+		// Sync immediately after modification
+		syncFileInput();
+	};
 
 	// --- Blueprint: Memory Management ---
 	onDestroy(() => {
@@ -86,7 +86,7 @@
 		URL.revokeObjectURL(files[index].url);
 		files = files.filter((_, i) => i !== index);
 		// Sync immediately after modification
-        syncFileInput();
+		syncFileInput();
 	}
 
 	$effect(() => {
@@ -160,6 +160,7 @@
 					placeholder="π.χ. Οδηγός Λειτουργίας Espresso Machine"
 					required
 					class="font-medium"
+					disabled={isSubmitting}
 				/>
 			</div>
 
@@ -176,6 +177,7 @@
 					placeholder="Σύντομη περιγραφή εγχειριδίου..."
 					rows={2}
 					class="resize-none"
+					disabled={isSubmitting}
 				/>
 			</div>
 
@@ -185,14 +187,22 @@
 					class="text-xs font-semibold tracking-wider text-muted-foreground uppercase"
 					>Περιεχόμενο *</Label
 				>
+				<Markdown
+					bind:value={formData.content}
+					placeholder="Write your admin instructions here..."
+					minHeight="400px"
+					maxHeight="600px"
+				/>
+
 				<Textarea
 					id="content"
 					{...createManual.fields.content.as('text')}
 					bind:value={formData.content}
 					placeholder="Γράψτε αναλυτικά το περιεχόμενο του εγχειριδίου..."
 					rows={10}
-					class="resize-none font-mono text-sm leading-relaxed"
+					class="hidden"
 					required
+					disabled={isSubmitting}
 				/>
 			</div>
 
@@ -200,7 +210,7 @@
 				<Label class="text-xs font-semibold tracking-wider text-muted-foreground uppercase"
 					>Κατηγορία *</Label
 				>
-				<Select.Root type="single" bind:value={formData.category}>
+				<Select.Root type="single" disabled={isSubmitting} bind:value={formData.category}>
 					<Select.Trigger class="w-full">
 						{formData.category
 							? MANUAL_CATEGORY_LABELS[formData.category as ManualCategory]
@@ -230,6 +240,7 @@
 					{...createManual.fields.media.as('file multiple')}
 					class="hidden"
 					bind:this={fileInput}
+					disabled={isSubmitting}
 				/>
 			</div>
 			<div class="space-y-2">
@@ -242,6 +253,7 @@
 						onUpload={handleUpload}
 						onFileRejected={({ reason }) => toast.error(reason)}
 						class={files.length > 0 ? 'h-24' : 'h-40'}
+						disabled={isSubmitting}
 					/>
 				{/if}
 			</div>
@@ -287,11 +299,17 @@
 						Το εγχειρίδιο θα είναι ορατό στους εργαζομένους
 					</p>
 				</div>
-				<Switch id="published" bind:checked={formData.published} class="cursor-pointer" />
+				<Switch
+					id="published"
+					bind:checked={formData.published}
+					disabled={isSubmitting}
+					class="cursor-pointer"
+				/>
 				<input
 					type="hidden"
 					{...createManual.fields.published.as('text')}
 					value={formData.published.toString()}
+					disabled={isSubmitting}
 				/>
 			</div>
 

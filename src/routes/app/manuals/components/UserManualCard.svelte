@@ -7,7 +7,8 @@
 	import * as Carousel from '$lib/components/ui/carousel';
 	import { BookOpen, CheckCircle2, User, Calendar, ChevronRight, X } from 'lucide-svelte';
 	import { toast } from 'svelte-sonner';
-
+	import { marked } from 'marked';
+	import DOMPurify from 'dompurify'; // Highly recommended to keep this!
 	let {
 		manual,
 		index = 0,
@@ -55,6 +56,13 @@
 			markingAsRead = false;
 		}
 	}
+
+	// ... existing state
+
+	// Add this derived state
+	const renderedContent = $derived(
+		manual.content ? DOMPurify.sanitize(marked.parse(manual.content) as string) : ''
+	);
 
 	const categoryColors: Record<string, string> = {
 		equipment: 'bg-blue-500/10 text-blue-700 dark:text-blue-400',
@@ -167,7 +175,6 @@
 	</div>
 </div>
 
-
 {#if expanded}
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
@@ -226,7 +233,7 @@
 						/>
 					</div>
 				{/if}
-				
+
 				<!-- Title below images -->
 				<div class="px-6 pt-5 pb-2">
 					<Badge
@@ -257,17 +264,24 @@
 			{/if}
 
 			<!-- Scrollable body -->
-			<div class="max-h-[40vh] space-y-5 overflow-y-auto p-6 sm:p-8">
+			<div class="max-h-[35vh] space-y-5 overflow-y-auto p-6 sm:p-8">
 				{#if manual.description}
 					<p class="text-sm leading-relaxed font-medium text-muted-foreground">
 						{manual.description}
 					</p>
 				{/if}
 
-				<!-- Full content (Markdown + HTML) -->
 				{#if manual.content}
-					<div>
-						{@html manual.content}
+					<div
+						class="preview-content overflow-auto p-4"
+						role="document"
+						aria-label="Markdown preview"
+					>
+						{#if manual.content.trim()}
+							{@html renderedContent}
+						{:else}
+							<p class="text-muted-foreground italic">Nothing to preview</p>
+						{/if}
 					</div>
 				{/if}
 			</div>
@@ -312,3 +326,147 @@
 		</div>
 	</div>
 {/if}
+
+<style>
+	/* Preview content styling */
+	.preview-content :global(h1) {
+		font-size: 1.875rem;
+		line-height: 2.25rem;
+		font-weight: 700;
+		margin-bottom: 1rem;
+		color: hsl(var(--foreground));
+	}
+
+	.preview-content :global(h2) {
+		font-size: 1.5rem;
+		line-height: 2rem;
+		font-weight: 600;
+		margin-bottom: 0.75rem;
+		color: hsl(var(--foreground));
+	}
+
+	.preview-content :global(h3) {
+		font-size: 1.25rem;
+		line-height: 1.75rem;
+		font-weight: 500;
+		margin-bottom: 0.5rem;
+		color: hsl(var(--foreground));
+	}
+
+	.preview-content :global(p) {
+		margin-bottom: 1rem;
+		line-height: 1.625;
+		color: hsl(var(--foreground));
+	}
+
+	.preview-content :global(ul) {
+		list-style-type: disc;
+		list-style-position: inside;
+		margin-bottom: 1rem;
+		color: hsl(var(--foreground));
+	}
+
+	.preview-content :global(ol) {
+		list-style-type: decimal;
+		list-style-position: inside;
+		margin-bottom: 1rem;
+		color: hsl(var(--foreground));
+	}
+
+	.preview-content :global(li) {
+		margin-bottom: 0.25rem;
+	}
+
+	.preview-content :global(blockquote) {
+		border-left-width: 4px;
+		border-color: hsl(var(--muted-foreground));
+		padding-left: 1rem;
+		font-style: italic;
+		margin-bottom: 1rem;
+		color: hsl(var(--muted-foreground));
+	}
+
+	.preview-content :global(code) {
+		background-color: hsl(var(--muted));
+		padding: 0.125rem 0.25rem;
+		border-radius: 0.25rem;
+		font-size: 0.875rem;
+		font-family:
+			ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+			monospace;
+		color: hsl(var(--foreground));
+	}
+
+	.preview-content :global(pre) {
+		background-color: hsl(var(--muted));
+		padding: 1rem;
+		border-radius: 0.5rem;
+		overflow-x: auto;
+		margin-bottom: 1rem;
+	}
+
+	.preview-content :global(pre code) {
+		background-color: transparent;
+		padding: 0;
+		border-radius: 0;
+	}
+
+	.preview-content :global(mark) {
+		background-color: rgb(254 240 138);
+		padding: 0.125rem 0.25rem;
+		border-radius: 0.25rem;
+	}
+
+	:global(.dark) .preview-content :global(mark) {
+		background-color: rgb(133 77 14);
+		color: rgb(254 243 199);
+	}
+
+	.preview-content :global(a) {
+		color: hsl(var(--primary));
+		text-decoration: underline;
+	}
+
+	.preview-content :global(a:hover) {
+		opacity: 0.8;
+	}
+
+	.preview-content :global(img) {
+		max-width: 100%;
+		border-radius: 0.5rem;
+		margin-bottom: 1rem;
+	}
+
+	.preview-content :global(u) {
+		text-decoration: underline;
+	}
+
+	.preview-content :global(del),
+	.preview-content :global(s) {
+		text-decoration: line-through;
+	}
+
+	.preview-content :global(hr) {
+		border: none;
+		border-top: 1px solid hsl(var(--border));
+		margin: 1.5rem 0;
+	}
+
+	.preview-content :global(table) {
+		width: 100%;
+		border-collapse: collapse;
+		margin-bottom: 1rem;
+	}
+
+	.preview-content :global(th),
+	.preview-content :global(td) {
+		border: 1px solid hsl(var(--border));
+		padding: 0.5rem;
+		text-align: left;
+	}
+
+	.preview-content :global(th) {
+		background-color: hsl(var(--muted));
+		font-weight: 600;
+	}
+</style>

@@ -14,6 +14,7 @@
     import { X, Save } from 'lucide-svelte';
     import { onDestroy, untrack } from 'svelte';
     import Spinner from '$lib/components/ui/spinner/spinner.svelte';
+	import Markdown from '$lib/components/custom/htmlMarkdown/markdown.svelte';
 
     let {
         open = $bindable(),
@@ -158,6 +159,7 @@
 					{...editManual.fields.title.as('text')}
 					bind:value={formData.title}
 					required
+					disabled={isSubmitting}
 				/>
 			</div>
 
@@ -168,23 +170,33 @@
 					{...editManual.fields.description.as('text')}
 					bind:value={formData.description}
 					rows={2}
+					disabled={isSubmitting}
 				/>
 			</div>
 
 			<div class="space-y-1.5">
 				<Label for="edit-content" class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Περιεχόμενο *</Label>
+				<Markdown
+					bind:value={formData.content}
+					placeholder="Write your admin instructions here..."
+					minHeight="400px"
+					maxHeight="600px"
+					disabled={isSubmitting}
+				/>
 				<Textarea
 					id="edit-content"
+					class="hidden"
 					{...editManual.fields.content.as('text')}
 					bind:value={formData.content}
 					rows={10}
 					required
+					disabled={isSubmitting}
 				/>
 			</div>
 
 			<div class="space-y-1.5">
 				<Label class="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Κατηγορία *</Label>
-				<Select.Root type="single" bind:value={formData.category}>
+				<Select.Root type="single" disabled={isSubmitting} bind:value={formData.category}>
 					<Select.Trigger class="w-full">
 						{formData.category ? MANUAL_CATEGORY_LABELS[formData.category as ManualCategory] : 'Επιλέξτε κατηγορία'}
 					</Select.Trigger>
@@ -249,6 +261,7 @@
 						onUpload={handleUpload}
 						onFileRejected={({ reason }) => toast.error(reason)}
 						class={totalCount > 0 ? 'h-24' : 'h-40'}
+						disabled={isSubmitting}
 					/>
 				{/if}
 			</div>
@@ -257,7 +270,7 @@
 				<div>
 					<p class="text-sm font-medium">Δημοσιευμένο</p>
 				</div>
-				<Switch id="edit-published" bind:checked={formData.published} class="cursor-pointer" />
+				<Switch id="edit-published" bind:checked={formData.published} disabled={isSubmitting} class="cursor-pointer" />
 				<input type="hidden" {...editManual.fields.published.as('text')} value={formData.published.toString()} />
 			</div>
 

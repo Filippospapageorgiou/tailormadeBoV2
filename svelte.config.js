@@ -8,10 +8,6 @@ const config = {
 	kit: {
 		adapter: adapter({
 			runtime: 'nodejs20.x',
-			// If you're using edge functions, add:
-			// edge: false,
-			// If your functions need more memory/time:
-			// maxDuration: 10
 		}),
 		experimental: {
 			remoteFunctions: true
