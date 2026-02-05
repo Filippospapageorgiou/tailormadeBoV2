@@ -9,6 +9,7 @@
 	import * as Tooltip from '$lib/components/ui/tooltip';
 	import { BookOpen, Search, X, RefreshCcw, CheckCircle2 } from 'lucide-svelte';
 	import UserManualCard from './components/UserManualCard.svelte';
+	import EmptyComp from '$lib/components/custom/EmptyComp.svelte';
 
 	let query = getPublishedManuals({});
 	let allManuals = $derived(query.current?.manuals ?? []);
@@ -68,9 +69,7 @@
 		<!-- Header -->
 		<div class="mb-8">
 			<h1 class="font-mono text-4xl tracking-wider">Εγχειρίδια</h1>
-			<p class="mt-1 text-sm text-primary">
-				Οδηγοί εκπαίδευσης και λειτουργίας για την ομάδα μας
-			</p>
+			<p class="mt-1 text-sm text-primary">Οδηγοί εκπαίδευσης και λειτουργίας για την ομάδα μας</p>
 
 			<!-- Progress bar -->
 			{#if totalCount > 0}
@@ -96,7 +95,9 @@
 				<div class="flex flex-wrap items-center gap-2">
 					<button
 						class="rounded-full border px-3 py-1.5 text-xs font-medium transition-all
-							{activeCategory === '' ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card text-muted-foreground hover:border-primary/50 hover:text-foreground'}"
+							{activeCategory === ''
+							? 'border-primary bg-primary text-primary-foreground'
+							: 'border-border bg-card text-muted-foreground hover:border-primary/50 hover:text-foreground'}"
 						onclick={() => (activeCategory = '')}
 					>
 						Όλα
@@ -104,7 +105,9 @@
 					{#each availableCategories as [key, label]}
 						<button
 							class="rounded-full border px-3 py-1.5 text-xs font-medium transition-all
-								{activeCategory === key ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card text-muted-foreground hover:border-primary/50 hover:text-foreground'}"
+								{activeCategory === key
+								? 'border-primary bg-primary text-primary-foreground'
+								: 'border-border bg-card text-muted-foreground hover:border-primary/50 hover:text-foreground'}"
 							onclick={() => (activeCategory = activeCategory === key ? '' : key)}
 						>
 							{label}
@@ -119,7 +122,9 @@
 					<button
 						class="rounded-full border px-3 py-1 text-[11px] font-medium transition-all
 							{showReadFilter === '' ? 'border-border bg-card text-muted-foreground' : ''}
-							{showReadFilter === 'unread' ? 'border-amber-500 bg-amber-500/10 text-amber-700 dark:text-amber-400' : 'border-border bg-card text-muted-foreground hover:border-primary/50'}
+							{showReadFilter === 'unread'
+							? 'border-amber-500 bg-amber-500/10 text-amber-700 dark:text-amber-400'
+							: 'border-border bg-card text-muted-foreground hover:border-primary/50'}
 							{showReadFilter === 'read' ? 'hidden' : ''}"
 						onclick={() => (showReadFilter = showReadFilter === 'unread' ? '' : 'unread')}
 					>
@@ -127,7 +132,9 @@
 					</button>
 					<button
 						class="rounded-full border px-3 py-1 text-[11px] font-medium transition-all
-							{showReadFilter === 'read' ? 'border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' : 'border-border bg-card text-muted-foreground hover:border-primary/50'}
+							{showReadFilter === 'read'
+							? 'border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+							: 'border-border bg-card text-muted-foreground hover:border-primary/50'}
 							{showReadFilter === 'unread' ? 'hidden' : ''}"
 						onclick={() => (showReadFilter = showReadFilter === 'read' ? '' : 'read')}
 					>
@@ -146,7 +153,9 @@
 									disabled={refreshAction}
 									class="h-8 w-8 cursor-pointer"
 								>
-									<RefreshCcw class={`h-3.5 w-3.5 ${refreshAction ? 'animate-spin-clockwise' : ''}`} />
+									<RefreshCcw
+										class={`h-3.5 w-3.5 ${refreshAction ? 'animate-spin-clockwise' : ''}`}
+									/>
 								</Button>
 							</Tooltip.Trigger>
 							<Tooltip.Content><p>Ανανέωση</p></Tooltip.Content>
@@ -154,10 +163,12 @@
 					</Tooltip.Provider>
 
 					<div class="relative">
-						<Search class="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+						<Search
+							class="absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground"
+						/>
 						<Input
 							bind:value={searchQuery}
-							class="h-8 w-full pl-8 pr-8 text-sm sm:w-56"
+							class="h-8 w-full pr-8 pl-8 text-sm sm:w-56"
 							placeholder="Αναζήτηση..."
 						/>
 						{#if searchQuery}
@@ -165,7 +176,7 @@
 								variant="ghost"
 								size="icon"
 								onclick={() => (searchQuery = '')}
-								class="absolute right-0.5 top-1/2 -translate-y-1/2 h-7 w-7 cursor-pointer"
+								class="absolute top-1/2 right-0.5 h-7 w-7 -translate-y-1/2 cursor-pointer"
 							>
 								<X class="h-3 w-3" />
 							</Button>
@@ -195,33 +206,20 @@
 				{/each}
 			</div>
 		{:else if filteredManuals().length === 0}
-			<div class="flex flex-col items-center justify-center py-24 text-center">
-				<div class="mb-5 flex h-20 w-20 items-center justify-center rounded-2xl bg-muted/50">
-					<BookOpen class="h-10 w-10 text-muted-foreground/40" />
-				</div>
-				<p class="mb-1.5 text-lg font-semibold tracking-tight text-foreground">
-					{hasActiveFilters ? 'Δεν βρέθηκαν εγχειρίδια' : 'Δεν υπάρχουν εγχειρίδια ακόμα'}
-				</p>
-				<p class="max-w-sm text-sm text-muted-foreground">
-					{hasActiveFilters
-						? 'Δοκιμάστε να αλλάξετε τα φίλτρα αναζήτησης'
-						: 'Τα εγχειρίδια εκπαίδευσης θα εμφανιστούν εδώ όταν δημοσιευτούν'}
-				</p>
-				{#if hasActiveFilters}
-					<Button
-						variant="outline"
-						class="mt-4 cursor-pointer gap-2"
-						onclick={() => {
-							searchQuery = '';
-							activeCategory = '';
-							showReadFilter = '';
-						}}
-					>
-						<X class="h-4 w-4" />
-						Καθαρισμός Φίλτρων
-					</Button>
-				{/if}
-			</div>
+			<EmptyComp
+				title={hasActiveFilters ? 'Δεν βρέθηκαν εγχειρίδια' : 'Δεν υπάρχουν εγχειρίδια ακόμα'}
+				description={hasActiveFilters
+					? 'Δοκιμάστε να αλλάξετε τα φίλτρα αναζήτησης'
+					: 'Τα εγχειρίδια εκπαίδευσης θα εμφανιστούν εδώ όταν δημοσιευτούν'}
+				icon={BookOpen as any}
+				primaryLabel="Καθαρισμός Φίλτρων"
+				onPrimaryClick={() => {
+					searchQuery = '';
+					activeCategory = '';
+					showReadFilter = '';
+				}}
+				primaryIcon={X as any}
+			/>
 		{:else}
 			<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
 				{#each filteredManuals() as manual, index (manual.id)}

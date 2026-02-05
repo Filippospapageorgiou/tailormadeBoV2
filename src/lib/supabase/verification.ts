@@ -1,7 +1,4 @@
-import { createServerClient } from './server';
-import { requireAuthenticatedUser } from './shared';
-import type { Profile } from '$lib/models/database.types';
-import { error, redirect } from '@sveltejs/kit';
+import { createAdminClient, createServerClient } from './server';
 import { Resend } from 'resend';
 import { RESEND_API_KEY } from '$env/static/private';
 
@@ -14,7 +11,7 @@ export function generateVerificationCode(): string {
 // Send verification code via email
 export async function sendVerificationCode(email: string) {
 	try {
-		const supabase = createServerClient();
+		const supabase = createAdminClient();
 		const code = generateVerificationCode();
 		const expiresAt = new Date(Date.now() + 60 * 1000); // 60 seconds from now
 		const expiresAtISO = expiresAt.toISOString();
@@ -58,7 +55,7 @@ export async function sendVerificationCode(email: string) {
 
 export async function verifyCode(email: string, code: string) {
 	try {
-		const supabase = createServerClient();
+		const supabase = createAdminClient();
 		const { data, error } = await supabase
 			.from('verification_codes')
 			.select('*')

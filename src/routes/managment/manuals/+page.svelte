@@ -14,6 +14,7 @@
 	import AddManualDialog from './components/AddManualDialog.svelte';
 	import AuthBlock from '$lib/components/custom/AuthBlock/authBlock.svelte';
 	import { toast } from 'svelte-sonner';
+	import EmptyComp from '$lib/components/custom/EmptyComp.svelte';
 
 	let auth = authenticatedAccess();
 	let query = getAllManuals();
@@ -234,7 +235,7 @@
 									variant="ghost"
 									size="icon"
 									onclick={clearSearch}
-									class="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 cursor-pointer"
+									class="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2 cursor-pointer"
 								>
 									<X class="h-3 w-3" />
 								</Button>
@@ -248,7 +249,9 @@
 			{#if query.loading}
 				<div class="space-y-3">
 					{#each Array(5) as _}
-						<div class="rounded-xl border border-border/50 dark:border-white/10 bg-card p-4 shadow-sm">
+						<div
+							class="rounded-xl border border-border/50 bg-card p-4 shadow-sm dark:border-white/10"
+						>
 							<div class="flex items-start justify-between gap-4">
 								<div class="flex-1 space-y-3">
 									<div class="flex items-start gap-4">
@@ -275,35 +278,21 @@
 					{/each}
 				</div>
 			{:else if filteredManuals().length === 0}
-				<!-- Empty State -->
-				<div class="flex flex-col items-center justify-center py-16 text-center">
-					<div class="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-						<BookOpen class="h-8 w-8 text-muted-foreground" />
-					</div>
-					<p class="mb-2 text-lg font-medium text-foreground">Δεν βρέθηκαν εγχειρίδια</p>
-					{#if hasActiveFilters}
-						<p class="text-sm text-muted-foreground mb-4">Δοκιμάστε να αλλάξετε τα φίλτρα</p>
-						<Button variant="outline" onclick={clearAllFilters} class="cursor-pointer gap-2">
-							<RefreshCcw class="h-4 w-4" />
-							Καθαρισμός Φίλτρων
-						</Button>
-					{:else}
-						<p class="text-sm text-muted-foreground mb-4">Ξεκινήστε δημιουργώντας το πρώτο εγχειρίδιο</p>
-						<Button
-							variant="default"
-							onclick={() => (creatingManual = true)}
-							class="cursor-pointer gap-2"
-						>
-							<Plus class="h-4 w-4" />
-							Νέο Εγχειρίδιο
-						</Button>
-					{/if}
-				</div>
+				<EmptyComp
+					title="Δεν βρέθηκαν εγχειρίδια"
+					description={hasActiveFilters
+						? 'Δοκιμάστε να αλλάξετε τα φίλτρα'
+						: 'Ξεκινήστε δημιουργώντας το πρώτο εγχειρίδιο'}
+					icon={BookOpen as any}
+					primaryLabel={hasActiveFilters ? 'Καθαρισμός Φίλτρων' : 'Νέο Εγχειρίδιο'}
+					onPrimaryClick={hasActiveFilters ? clearAllFilters : () => (creatingManual = true)}
+					primaryIcon={hasActiveFilters ? RefreshCcw : Plus as any}
+				/>
 			{:else}
 				<!-- Manuals List -->
 				<div class="space-y-3">
 					{#each paginatedManuals() as manual (manual.id)}
-						<ManualCard manual={manual} onUpdate={refresh}  />
+						<ManualCard {manual} onUpdate={refresh} />
 					{/each}
 				</div>
 
