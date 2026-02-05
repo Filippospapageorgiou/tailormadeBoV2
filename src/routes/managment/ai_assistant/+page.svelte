@@ -225,12 +225,7 @@
 						<PromptInputToolbar class="flex items-center justify-between px-3 pb-3">
 							<div class="flex w-full items-center justify-between">
 								<div class="flex items-center gap-2 text-sm text-muted-foreground">
-									<img
-										src="/anthropic.svg"
-										class="h-4 w-4 dark:box-content dark:rounded-sm dark:bg-white dark:p-0.5"
-										alt=""
-									/>
-									<span>claude-sonnet-4</span>
+									<span class="bg-mute">Press enter</span>
 								</div>
 								<PromptInputSubmit
 									disabled={!input.trim()}
@@ -418,12 +413,7 @@
 						<PromptInputToolbar class="flex items-center justify-between px-3 pb-3">
 							<div class="flex w-full items-center justify-between">
 								<div class="flex items-center gap-2 text-sm text-muted-foreground">
-									<img
-										src="/anthropic.svg"
-										class="h-4 w-4 dark:box-content dark:rounded-sm dark:bg-white dark:p-0.5"
-										alt=""
-									/>
-									<span>claude-sonnet-4</span>
+									<span class="bg-mute">Press enter</span>
 								</div>
 								<PromptInputSubmit
 									disabled={!input.trim()}
