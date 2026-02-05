@@ -12,6 +12,7 @@
 	import { format } from 'date-fns';
 	import { el } from 'date-fns/locale';
 	import { marked } from 'marked';
+	import { browser } from '$app/environment';
 	import DOMPurify from 'dompurify'; 
 
 	let { data, form } = $props();
@@ -40,10 +41,12 @@
 	let loading = $state(false);
 	let termsAccepted = $state(false);
 
-	// Add this derived state
-	const renderedContent = $derived(
-		blog.content ? DOMPurify.sanitize(marked.parse(blog.content) as string) : ''
-	);
+	// Change the derived to check for browser
+	const renderedContent = $derived.by(() => {
+		if (!blog.content) return '';
+		const parsed = marked.parse(blog.content) as string;
+		return browser ? DOMPurify.sanitize(parsed) : parsed;
+	});
 </script>
 
 <div class="flex flex-1 flex-col gap-4 p-4 pt-6 bg-background">

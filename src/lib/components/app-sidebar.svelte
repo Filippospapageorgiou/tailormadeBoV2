@@ -19,17 +19,19 @@
 		Landmark,
 		ShieldCheck,
 		Award,
-		Building
+		Building,
+		PersonStanding
 	} from 'lucide-svelte';
 
 	const data = {
-		user: {
-			name: 'shadcn',
-			email: 'm@example.com',
-			avatar: '/avatars/shadcn.jpg'
-		},
 		navMain: [
 			{
+				title: 'Barista work',
+				url: '/app',
+				icon: PersonStanding,
+				isActive: false,
+				items: [
+					{
 				title: 'Συνταγές',
 				url: '/app/recipes',
 				icon: Coffee,
@@ -76,6 +78,8 @@
 				url: '/app/schedule',
 				icon: CalendarRange,
 				isActive: false
+			},
+				]
 			},
 			{
 				title: 'Manager work',
@@ -134,7 +138,7 @@
 		],
 		projects: [
 			{
-				name: 'Διαχείριση οργανισμών',
+				name: 'Administration',
 				url: '/app/manage_organizations',
 				icon: Globe,
 				items: [
@@ -222,14 +226,14 @@
 								class="flex aspect-square size-10 items-center justify-center overflow-hidden rounded-lg"
 							>
 								<img
-									src="/iconTailor.png"
+									src="/knowHow.png"
 									alt="Tailor Made Coffee Roasters"
 									class="size-10 object-cover"
 								/>
 							</div>
 							<div class="grid flex-1 text-left text-sm leading-tight">
-								<span class="truncate font-medium">Tailor Made</span>
-								<span class="truncate text-xs">Enterprise.</span>
+								<span class="truncate font-medium">KNOWHOW</span>
+								<span class="truncate text-xs">TECHNOLOGIES.</span>
 							</div>
 						</button>
 					{/snippet}

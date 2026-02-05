@@ -31,9 +31,8 @@
 </script>
 
 <Sidebar.Group class="group-data-[collapsible=icon]:hidden">
-	<Separator />
-	<Sidebar.GroupLabel><span class="text-sm ml-2 font-semibold">Manage Organizations</span></Sidebar.GroupLabel>
-	<Sidebar.Menu>
+	<Sidebar.Menu class="px-2">
+		<Separator />
 		{#each projects as project (project.name)}
 			<Collapsible.Root>
 				{#snippet child({ props })}

@@ -58,13 +58,9 @@
 </script>
 
 <Sidebar.Group>
-	<Sidebar.GroupLabel><span class="text-sm ml-2 font-semibold">Barista Work</span></Sidebar.GroupLabel>
 	<Sidebar.Menu class="px-2">
 		{#each items as mainItem (mainItem.title)}
 			{#if canAccessItem(mainItem)}
-				{#if mainItem?.newLine}
-					<Separator />
-				{/if}
 				<Collapsible.Root open={mainItem.isActive}>
 					{#snippet child({ props })}
 						<Sidebar.MenuItem {...props}>
