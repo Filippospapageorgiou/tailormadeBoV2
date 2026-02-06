@@ -69,7 +69,7 @@
 	}
 
 	function handleViewClick() {
-		goto(`/managment/organization_managment/${id}`);
+		goto(`/app/managment/organization_managment/${id}`);
 	}
 
 	function handleDeleteClick() {
@@ -194,13 +194,13 @@
 
 <!-- EDIT ORGANIZATION MODAL -->
 <Modal.Root bind:open={openEdit}>
-	<Modal.Content class="flex h-[85dvh] max-h-[95dvh] flex-col sm:h-auto sm:max-w-[500px]">
+	<Modal.Content class="flex flex-col sm:max-w-[500px]">
 		<Modal.Header>
 			<Modal.Title>Επεξεργασία οργανισμού</Modal.Title>
 			<Modal.Description>Ενημερώστε τα στοιχεία του οργανισμού "{storeName}"</Modal.Description>
 		</Modal.Header>
 
-		<ScrollArea class="h-[65dvh] w-full sm:h-auto sm:max-h-[60dvh]">
+		<ScrollArea class="h-[65dvh] w-full">
 			<form
 				class="space-y-6 px-1 py-4"
 				{...updateOrganization.enhance(async ({ form, submit }) => {

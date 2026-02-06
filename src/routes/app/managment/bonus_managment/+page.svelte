@@ -39,7 +39,7 @@
 	import AuthBlock from '$lib/components/custom/AuthBlock/authBlock.svelte';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import { hideProgress, showProgress } from '$lib/stores/progress.svelte';
-	import { createColumns } from '../../../lib/components/bonus_table/bonus-periods-columns';
+	import { createColumns } from '$lib/components/bonus_table/bonus-periods-columns';
 	import BonusPeriodsTable from '$lib/components/bonus_table/BonusPeriodsTable.svelte';
 
 	// ============================================

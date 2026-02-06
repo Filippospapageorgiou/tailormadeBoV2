@@ -41,7 +41,7 @@ export const actions = {
 		return {
 			success: true,
 			profile,
-			redirectTo: profile?.role_id === 1 ? '/managment/organization_managment' : '/app/'
+			redirectTo: profile?.role_id === 1 ? '/app/managment/organization_managment' : '/app/'
 		};
 	}
 } satisfies Actions;

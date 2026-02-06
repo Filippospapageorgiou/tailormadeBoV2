@@ -118,7 +118,6 @@
 						{/if}
 					</div>
 				{/if}
-
 				{#if blog.content}
 					<div
 						class="preview-content overflow-auto p-4"

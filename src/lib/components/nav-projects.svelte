@@ -3,6 +3,7 @@
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
 	import { useSidebar } from '$lib/components/ui/sidebar/index.js';
+	import { page } from '$app/state';
 	import Separator from './ui/separator/separator.svelte';
 
 	let {
@@ -10,23 +11,42 @@
 	}: {
 		projects: {
 			name: string;
-			url: string;
+			url?: string;
 			icon: any;
 			items?: {
 				title: string;
 				url: string;
-				icon:any;
+				icon: any;
 			}[];
 		}[];
 	} = $props();
 
 	const sidebar = useSidebar();
 
-	// Close sidebar on mobile when link is clicked
-	function handleLinkClick() {
+	let openState = $state<Record<string, boolean>>(
+		Object.fromEntries(
+			// svelte-ignore state_referenced_locally
+						projects.map((p) => [
+				p.name,
+				p.items?.some((sub) => page.url.pathname.startsWith(sub.url)) ?? false
+			])
+		)
+	);
+
+	function handleMainClick(project: (typeof projects)[0]) {
+		if (project.items?.length) {
+			openState[project.name] = !openState[project.name];
+		}
+	}
+
+	function handleSubClick() {
 		if (sidebar.isMobile) {
 			sidebar.setOpenMobile(false);
 		}
+	}
+
+	function isActive(url: string): boolean {
+		return page.url.pathname === url || page.url.pathname.startsWith(url + '/');
 	}
 </script>
 
@@ -34,32 +54,40 @@
 	<Sidebar.Menu class="px-2">
 		<Separator />
 		{#each projects as project (project.name)}
-			<Collapsible.Root>
+			<Collapsible.Root bind:open={openState[project.name]}>
 				{#snippet child({ props })}
 					<Sidebar.MenuItem {...props}>
 						<Sidebar.MenuButton tooltipContent={project.name}>
 							{#snippet child({ props })}
-								<p {...props} onclick={handleLinkClick}>
+								<button
+									{...props}
+									onclick={() => handleMainClick(project)}
+								>
 									<project.icon />
-									<span>{project.name}</span>
-								</p>
+									<span class="text-base font-semibold">{project.name}</span>
+									{#if project.items?.length}
+										<ChevronRightIcon
+											class="ml-auto h-4 w-4 shrink-0 transition-transform duration-200 {openState[project.name] ? 'rotate-90' : ''}"
+										/>
+									{/if}
+								</button>
 							{/snippet}
 						</Sidebar.MenuButton>
 						{#if project.items?.length}
-							<Collapsible.Trigger>
-								{#snippet child({ props })}
-									<Sidebar.MenuAction {...props} class="data-[state=open]:rotate-90">
-										<ChevronRightIcon />
-										<span class="sr-only">Toggle</span>
-									</Sidebar.MenuAction>
-								{/snippet}
-							</Collapsible.Trigger>
 							<Collapsible.Content>
 								<Sidebar.MenuSub>
 									{#each project.items as subItem (subItem.title)}
 										<Sidebar.MenuSubItem>
-											<Sidebar.MenuSubButton href={subItem.url} onclick={handleLinkClick}>
-												<subItem.icon />
+											<Sidebar.MenuSubButton
+												href={subItem.url}
+												onclick={handleSubClick}
+												class={isActive(subItem.url)
+													? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
+													: ''}
+											>
+												<subItem.icon
+													class="h-4 w-4 {isActive(subItem.url) ? 'text-primary' : ''}"
+												/>
 												<span>{subItem.title}</span>
 											</Sidebar.MenuSubButton>
 										</Sidebar.MenuSubItem>

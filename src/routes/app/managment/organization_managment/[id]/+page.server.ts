@@ -66,7 +66,6 @@ export const load: PageServerLoad = async ({ params, locals: { supabase } }) => 
 		const { data: roleTypes, error: roleTypesError } = await supabase
 			.from('role_types')
 			.select('*')
-			.neq('id', 1); // Exclude super_admin from invite options
 
 		if (roleTypesError) {
 			console.error('[OrganizationDetail] Error fetching role types:', roleTypesError);

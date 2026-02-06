@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { EquipmentWithLogs } from '$lib/models/equipment.types';
 	import { Button } from '$lib/components/ui/button';
+	import { Badge } from '$lib/components/ui/badge';
 	import {
 		Pencil,
 		Trash2,
@@ -9,16 +10,21 @@
 		Wrench,
 		X,
 		Clock,
-		BadgeAlert
+		BadgeAlert,
+		Calendar,
+		AlertTriangle,
+		ImageIcon,
+		ChevronDown,
+		Cloud
 	} from 'lucide-svelte';
 	import { differenceInDays, parseISO } from 'date-fns';
 	import type { EquipmentStatus } from '$lib/models/equipment.types';
 	import * as Modal from '$lib/components/ui/modal';
+	import * as Tooltip from '$lib/components/ui/tooltip';
 	import { format } from 'date-fns';
 	import { el } from 'date-fns/locale';
 	import * as Avatar from '$lib/components/ui/avatar';
 	import Separator from '$lib/components/ui/separator/separator.svelte';
-	import { Calendar, AlertTriangle } from 'lucide-svelte';
 	import { fade, scale } from 'svelte/transition';
 	import { deleteEquipment, deleteMaintanceLog, editEquipment } from '../data.remote';
 	import { toast } from 'svelte-sonner';
@@ -29,13 +35,10 @@
 	import * as Empty from '$lib/components/ui/empty/index.js';
 	import { ScrollArea } from '$lib/components/ui/scroll-area/index.js';
 	import InputCalendar from '$lib/components/custom/inputCalendar.svelte';
-	import { Cloud } from 'lucide-svelte';
-	
 
 	let previewImage: string | null = $state(null);
-	let { equipment,index }: { equipment: EquipmentWithLogs,index:number } = $props();
+	let { equipment, index }: { equipment: EquipmentWithLogs; index: number } = $props();
 
-	// Add this helper for initials
 	const getInitials = (name: string) => {
 		return (
 			name
@@ -47,7 +50,6 @@
 		);
 	};
 
-	// Sort logs by newest first for the timeline
 	let sortedLogs = $derived(
 		[...equipment.maintenance_logs].sort(
 			(a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -56,7 +58,6 @@
 
 	let modalOpen = $state(false);
 
-	// Derived state for service calculations
 	let daysUntilService = $derived(
 		equipment.next_service_date
 			? differenceInDays(parseISO(equipment.next_service_date), new Date())
@@ -72,21 +73,23 @@
 
 	let statusCustom = [
 		{ value: 'operational', label: 'Σε λειτουργία' },
-		{ value: 'maintenance', label: 'σε service' },
+		{ value: 'maintenance', label: 'Σε service' },
 		{ value: 'broken', label: 'Βλάβη' }
 	];
 
 	let serviceBars = $derived.by(() => {
 		if (serviceStatus === 'overdue') return { count: 1, color: 'bg-red-500' };
 		if (serviceStatus === 'warning') return { count: 4, color: 'bg-orange-400' };
-		if (serviceStatus === 'unknown') return { count: 0, color: 'bg-gray-400' };
+		if (serviceStatus === 'unknown') return { count: 0, color: 'bg-muted-foreground/30' };
 		return { count: 9, color: 'bg-emerald-500' };
 	});
 
 	const statusColors: Record<EquipmentStatus, string> = {
-		operational: 'bg-white/90 text-emerald-800 border-emerald-200 backdrop-blur-sm',
-		maintenance: 'bg-white/90 text-orange-800 border-orange-200 backdrop-blur-sm',
-		broken: 'bg-white/90 text-red-800 border-red-200 backdrop-blur-sm'
+		operational:
+			'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/20',
+		maintenance:
+			'bg-orange-500/10 text-orange-600 dark:text-orange-400 ring-1 ring-orange-500/20',
+		broken: 'bg-red-500/10 text-red-600 dark:text-red-400 ring-1 ring-red-500/20'
 	};
 
 	const statusIcons = {
@@ -96,6 +99,14 @@
 	};
 
 	let StatusIcon = $derived(statusIcons[equipment.status]);
+
+	const borderColor = $derived(
+		serviceStatus === 'overdue'
+			? 'border-red-500/40 hover:border-red-500/60'
+			: serviceStatus === 'warning'
+				? 'border-orange-400/40 hover:border-orange-400/60'
+				: 'border-border/60 hover:border-border'
+	);
 
 	// Edit modal states
 	let editModalOpen = $state(false);
@@ -111,7 +122,6 @@
 	let editNextServiceDate = $state('');
 
 	function handleEdit() {
-		// Populate form with current equipment data
 		editName = equipment.name;
 		editModel = equipment.model || '';
 		editSerialNumber = equipment.serial_number || '';
@@ -126,7 +136,6 @@
 	function handleEditFileChange(e: Event) {
 		const target = e.target as HTMLInputElement;
 		const file = target.files?.[0];
-
 		if (file) {
 			const reader = new FileReader();
 			reader.onload = (e) => {
@@ -139,8 +148,8 @@
 	}
 
 	let openDeleteDialog = $state(false);
-
 	let deleteEquipmentData: EquipmentWithLogs | undefined = $state();
+
 	function handleDelete() {
 		openDeleteDialog = true;
 		deleteEquipmentData = equipment;
@@ -158,119 +167,156 @@
 
 	let deletingLogId = $state();
 	let isDeleting = $state(false);
+
+	// Expanded log tracking for accordion-style
+	let expandedLogId = $state<number | null>(null);
+
+	function toggleLog(id: number) {
+		expandedLogId = expandedLogId === id ? null : id;
+	}
 </script>
 
+
 <div
-	style="animation-delay: {index * 325}ms; animation-fill-mode: backwards;"
-	class="group relative animate-fade-in-right cursor-pointer overflow-hidden rounded-xl border-1 bg-card text-card-foreground shadow-sm transition-all duration-300 hover:shadow-lg {serviceStatus ===
-	'overdue'
-		? 'border-red-400'
-		: serviceStatus === 'warning'
-			? 'border-orange-200'
-			: 'border-border/60'}"
-	role="button"
-	tabindex="0"
+	style="animation-delay: {index * 80}ms; animation-fill-mode: backwards;"
+	class="group animate-fade-in-right overflow-hidden rounded-xl border bg-background/70 shadow-sm backdrop-blur-sm transition-all duration-300 hover:shadow-md dark:bg-background/50 {borderColor}"
 >
-	<!-- Top Bar with Actions and Badge -->
-	<div class="absolute top-3 right-3 left-3 z-10 flex items-center justify-between">
-		<!-- Edit & Delete Buttons -->
-		<div class="flex gap-1">
-			<Button
-				onclick={handleEdit}
-				variant="secondary"
-				class="inline-flex h-7 w-7 items-center justify-center rounded-md"
-				title="Edit equipment"
-			>
-				<Pencil class="h-3.5 w-3.5" />
-			</Button>
-			<Button
-				onclick={handleDelete}
-				variant="secondary"
-				class="rounded-mdhover:text-red-600 inline-flex h-7 w-7 items-center justify-center"
-				title="Delete equipment"
-			>
-				<Trash2 class="h-3.5 w-3.5" />
-			</Button>
-		</div>
-
-		<!-- Maintenance Log Badge -->
-		{#if equipment.maintenance_logs.length > 0}
-			<button
-				onclick={() => (modalOpen = true)}
-				class={`inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-red-500 px-2.5 py-1 text-[10px] font-bold tracking-widest text-white uppercase shadow-sm transition-all hover:scale-105`}
-				title="View maintenance logs"
-			>
-				{equipment.maintenance_logs.length} LOGS
-				{#if serviceStatus === 'overdue' || serviceStatus === 'warning'}
-					<span
-						class={`inline-block h-2 w-2 rounded-full ${
-							serviceStatus === 'overdue' ? 'animate-pulse bg-red-300' : 'bg-orange-300'
-						}`}
-					></span>
-				{/if}
-			</button>
-		{/if}
-	</div>
-
-	
-	<!-- Hero Image Section -->
-	<div class="relative h-52 w-full overflow-hidden bg-muted">
+	<!-- Hero Image -->
+	<div class="relative h-48 w-full overflow-hidden sm:h-52">
 		<img
 			src={equipment.image_url || '/placeholder.svg'}
 			alt={equipment.name}
 			class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
 		/>
+		<div
+			class="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent"
+		></div>
+
+		<!-- Top bar: Edit/Delete + Logs badge -->
+		<div class="absolute top-3 right-3 left-3 z-10 flex items-center justify-between">
+			<div class="flex gap-1">
+				<Tooltip.Provider>
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							<Button
+								variant="secondary"
+								size="icon"
+								class="h-7 w-7 cursor-pointer bg-background/80 backdrop-blur-md hover:bg-background"
+								onclick={handleEdit}
+							>
+								<Pencil class="h-3.5 w-3.5" />
+							</Button>
+						</Tooltip.Trigger>
+						<Tooltip.Content><p>Επεξεργασία</p></Tooltip.Content>
+					</Tooltip.Root>
+				</Tooltip.Provider>
+
+				<Tooltip.Provider>
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							<Button
+								variant="secondary"
+								size="icon"
+								class="h-7 w-7 cursor-pointer bg-background/80 backdrop-blur-md hover:bg-destructive/10 hover:text-destructive"
+								onclick={handleDelete}
+							>
+								<Trash2 class="h-3.5 w-3.5" />
+							</Button>
+						</Tooltip.Trigger>
+						<Tooltip.Content><p>Διαγραφή</p></Tooltip.Content>
+					</Tooltip.Root>
+				</Tooltip.Provider>
+			</div>
+
+			{#if equipment.maintenance_logs.length > 0}
+				<button
+					onclick={() => (modalOpen = true)}
+					class="inline-flex cursor-pointer items-center gap-1.5 rounded-md bg-red-500/90 px-2.5 py-1 text-[10px] font-semibold text-white shadow-sm backdrop-blur-md transition-all hover:bg-red-600"
+				>
+					<Wrench class="h-3 w-3" />
+					{equipment.maintenance_logs.length} Logs
+					{#if serviceStatus === 'overdue'}
+						<span class="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-white"></span>
+					{/if}
+				</button>
+			{/if}
+		</div>
+
+		<!-- Status badge bottom-right -->
+		<div class="absolute right-3 bottom-3">
+			<Badge
+				class="gap-1.5 rounded-md border-0 px-2.5 py-1 text-[10px] font-semibold shadow-sm backdrop-blur-md {statusColors[
+					equipment.status
+				]}"
+			>
+				<StatusIcon class="h-3 w-3" />
+				{statusCustom.find((s) => s.value === equipment.status)?.label || equipment.status}
+			</Badge>
+		</div>
+
+		<!-- Service dot top-left corner -->
+		<div class="absolute bottom-3 left-3">
+			<div
+				class="h-2.5 w-2.5 rounded-full ring-2 ring-black/20 {serviceStatus === 'overdue'
+					? 'bg-red-500 shadow-sm shadow-red-500/50'
+					: serviceStatus === 'warning'
+						? 'bg-orange-400 shadow-sm shadow-orange-400/50'
+						: serviceStatus === 'good'
+							? 'bg-emerald-500 shadow-sm shadow-emerald-500/50'
+							: 'bg-muted-foreground/40'}"
+			></div>
+		</div>
 	</div>
-	<!-- Content Section -->
-	<div class="space-y-6 p-6">
-		<div class="flex items-start justify-between">
-			<div>
-				<h3 class="font-serif text-xl font-medium tracking-wide text-foreground">
-					{equipment.name}
-				</h3>
-				<p class="mt-1 text-xs font-medium tracking-wider text-muted-foreground uppercase">
-					ID: #{equipment.id.toString().padStart(4, '0')}
-				</p>
+
+	<!-- Content -->
+	<div class="space-y-4 p-4 sm:p-5">
+		<!-- Header -->
+		<div>
+			<h3
+				class="text-lg font-semibold tracking-tight text-foreground transition-colors group-hover:text-primary"
+			>
+				{equipment.name}
+			</h3>
+			<div class="mt-1 flex flex-wrap items-center gap-2">
+				<span
+					class="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground/60"
+				>
+					#{equipment.id.toString().padStart(4, '0')}
+				</span>
 				{#if equipment.model}
-					<p class="text-xs text-muted-foreground">
-						{equipment.model}
-					</p>
+					<span class="text-xs text-muted-foreground/70">{equipment.model}</span>
 				{/if}
 			</div>
 		</div>
 
-		<!-- Service Health Section -->
+		<!-- Service Health -->
 		{#if equipment.next_service_date}
-			<div class="space-y-3">
-				<span class="text-[10px] font-bold tracking-widest text-muted-foreground uppercase"
-					>Service Status</span
+			<div class="space-y-2.5 rounded-lg bg-muted/30 p-3 dark:bg-muted/15">
+				<span
+					class="text-[10px] font-semibold tracking-widest text-muted-foreground/70 uppercase"
 				>
+					Service Status
+				</span>
 
-				<!-- Bars and Text Layout -->
-				<div class="flex w-full items-center justify-between">
-					<!-- Left Group: Bars & Text -->
-					<div class="flex items-center gap-4">
-						<!-- Futuristic Vertical Bars -->
-						<div class="flex h-4 items-center gap-1">
+				<div class="flex w-full items-center justify-between gap-3">
+					<div class="flex items-center gap-3">
+						<div class="flex h-5 items-end gap-0.5">
 							{#each { length: 9 } as _, i}
 								<div
-									class={`w-1 rounded-full transition-all duration-500 ${
-										i < serviceBars.count ? serviceBars.color : 'bg-muted/30'
-									}`}
-									style="height: 100%"
+									class="w-1 rounded-full transition-all duration-500 {i < serviceBars.count
+										? serviceBars.color
+										: 'bg-muted/40 dark:bg-muted/20'}"
+									style="height: {40 + i * 7}%"
 								></div>
 							{/each}
 						</div>
 
-						<!-- Days Text -->
 						<p
-							class={`text-xs font-medium tracking-wide ${
-								serviceStatus === 'overdue'
-									? 'text-red-600'
-									: serviceStatus === 'warning'
-										? 'text-orange-600'
-										: 'text-emerald-600'
-							}`}
+							class="text-xs font-medium {serviceStatus === 'overdue'
+								? 'text-red-600 dark:text-red-400'
+								: serviceStatus === 'warning'
+									? 'text-orange-600 dark:text-orange-400'
+									: 'text-emerald-600 dark:text-emerald-400'}"
 						>
 							{daysUntilService === null
 								? 'No service date'
@@ -279,147 +325,195 @@
 									: `${daysUntilService} DAYS REMAINING`}
 						</p>
 					</div>
-
-					<span
-						class={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-bold tracking-widest uppercase shadow-sm transition-colors ${statusColors[equipment.status]}`}
-					>
-						<StatusIcon class="h-3 w-3" />
-						{statusCustom.find((s) => s.value === equipment.status)?.label || equipment.status}
-					</span>
 				</div>
 			</div>
 		{:else}
-			<div class="space-y-3">
-				<span class="text-[10px] font-bold tracking-widest text-muted-foreground uppercase"
-					>Service Status</span
+			<div class="rounded-lg bg-muted/30 p-3 dark:bg-muted/15">
+				<span
+					class="text-[10px] font-semibold tracking-widest text-muted-foreground/70 uppercase"
 				>
-				<p class="text-xs text-muted-foreground">No service date scheduled</p>
+					Service Status
+				</span>
+				<p class="mt-1.5 text-xs text-muted-foreground/60">No service date scheduled</p>
 			</div>
 		{/if}
 	</div>
 </div>
 
+
 <Modal.Root bind:open={modalOpen}>
-	<Modal.Content class="flex max-h-[90vh] max-w-4xl flex-col overflow-hidden p-0">
-		<Modal.Header class="z-20 px-6 py-4 backdrop-blur-sm">
+	<Modal.Content class="flex max-h-[85vh] max-w-2xl flex-col overflow-hidden rounded-xl border-border/60 bg-background/95 p-0 backdrop-blur-xl dark:bg-background/90">
+		<!-- Header -->
+		<Modal.Header class="sticky top-0 z-20 border-b border-border/40 bg-background/80 px-6 py-4 backdrop-blur-md">
 			<div class="flex items-center gap-3">
-				<div class="rounded-full p-2 text-red-600">
+				<div
+					class="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/10 text-red-600 dark:text-red-400"
+				>
 					<Wrench class="h-5 w-5" />
 				</div>
-				<div>
-					<Modal.Title class="font-serif text-xl tracking-wide">Ιστορικό Συντήρησης</Modal.Title>
-					<Modal.Description class="mt-1">
-						Αρχείο καταγραφής για: <span class="font-semibold">{equipment.name}</span>
+				<div class="flex-1">
+					<Modal.Title class="text-lg font-semibold tracking-tight">
+						Ιστορικό Συντήρησης
+					</Modal.Title>
+					<Modal.Description class="text-xs text-muted-foreground">
+						{equipment.name}
+						<span class="text-muted-foreground/50">·</span>
+						{sortedLogs.length} καταγραφές
 					</Modal.Description>
 				</div>
 			</div>
 		</Modal.Header>
 
-		<div class="flex-1 overflow-y-auto p-6">
+		<!-- Logs list -->
+		<div class="flex-1 overflow-y-auto">
 			{#if sortedLogs.length === 0}
-				<div
-					class="flex animate-in flex-col items-center justify-center py-12 text-muted-foreground duration-500 fade-in zoom-in"
-				>
-					<CheckCircle2 class="mb-3 h-12 w-12 opacity-20" />
+				<div class="flex flex-col items-center justify-center py-16 text-muted-foreground">
+					<CheckCircle2 class="mb-3 h-10 w-10 opacity-20" />
 					<p class="text-sm">Δεν υπάρχουν καταγραφές συντήρησης.</p>
 				</div>
 			{:else}
-				<div
-					class="relative space-y-8 before:absolute before:top-2 before:left-5 before:h-full before:w-0.5"
-				>
+				<div class="divide-y divide-border/40">
 					{#each sortedLogs as log, i (log.id)}
 						{#if deletingLogId !== log.id}
+							{@const isExpanded = expandedLogId === log.id}
 							<div
-								class="relative animate-in pl-12 duration-700 fill-mode-both fade-in slide-in-from-bottom-8"
-								style="animation-delay: {i * 100}ms;"
-								transition:fade={{ duration: 300 }}
+								class="transition-colors duration-200 {isExpanded
+									? 'bg-muted/20 dark:bg-muted/10'
+									: 'hover:bg-muted/10'}"
+								style="animation-delay: {i * 50}ms;"
 							>
-								<div
-									class="absolute top-2 left-3 -ml-[5px] h-5 w-5 rounded-full border-4shadow-sm ring-1 ring-gray-200"
+								<!-- Log summary row (always visible, clickable) -->
+								<button
+									class="flex w-full cursor-pointer items-center gap-3 px-6 py-4 text-left"
+									onclick={() => toggleLog(log.id)}
 								>
-									<div class="h-full w-full rounded-full bg-primary"></div>
-								</div>
+									<!-- Avatar -->
+									<Avatar.Root class="h-9 w-9 flex-shrink-0 shadow-sm">
+										<Avatar.Image
+											src={log.profiles?.image_url}
+											alt={log.profiles?.username}
+										/>
+										<Avatar.Fallback class="text-[10px] font-bold text-primary">
+											{getInitials(log.profiles?.username || 'Unknown')}
+										</Avatar.Fallback>
+									</Avatar.Root>
 
-								<div class="group rounded-xl p-6 shadow-sm transition-all hover:shadow-md">
-									<div class="mb-4 flex items-start justify-between">
-										<div class="flex items-center gap-3">
-											<Avatar.Root class="h-10 w-10 shadow-sm">
-												<Avatar.Image src={log.profiles?.image_url} alt={log.profiles?.username} />
-												<Avatar.Fallback class="text-xs font-bold text-primary">
-													{getInitials(log.profiles?.username || 'Unknown')}
-												</Avatar.Fallback>
-											</Avatar.Root>
-											<div>
-												<p class="text-sm font-semibold">
-													{log.profiles?.username || 'Άγνωστος Χρήστης'}
-												</p>
-												<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-													{log.profiles?.role || 'Staff'}
-												</p>
-											</div>
+									<!-- Main info -->
+									<div class="min-w-0 flex-1">
+										<div class="flex items-center gap-2">
+											<span class="truncate text-sm font-medium text-foreground">
+												{log.profiles?.username || 'Άγνωστος'}
+											</span>
+											{#if log.profiles?.role}
+												<Badge
+													variant="secondary"
+													class="rounded px-1.5 py-0 text-[9px] font-medium"
+												>
+													{log.profiles.role}
+												</Badge>
+											{/if}
 										</div>
-
-										<div
-											class="flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium"
-										>
-											<Calendar class="h-3.5 w-3.5" />
-											{format(new Date(log.created_at), 'dd MMM yyyy, HH:mm', { locale: el })}
-										</div>
+										<p class="mt-0.5 truncate text-xs text-muted-foreground/70">
+											{log.issue_description}
+										</p>
 									</div>
 
-									<Separator class="mb-4" />
-
-									<div class="space-y-4">
-										<div class="space-y-2">
-											<h4
-												class="flex items-center gap-2 text-xs font-bold tracking-wider text-muted-foreground uppercase"
+									<!-- Right side: date + images count + chevron -->
+									<div class="flex flex-shrink-0 items-center gap-2">
+										{#if log.images && log.images.length > 0}
+											<span
+												class="flex items-center gap-1 text-[10px] text-muted-foreground/50"
 											>
-												<AlertTriangle class="h-3.5 w-3.5" />
-												Περιγραφη Βλαβης
+												<ImageIcon class="h-3 w-3" />
+												{log.images.length}
+											</span>
+										{/if}
+										<span class="text-[11px] text-muted-foreground/60">
+											{format(new Date(log.created_at), 'dd MMM', { locale: el })}
+										</span>
+										<ChevronDown
+											class="h-4 w-4 text-muted-foreground/40 transition-transform duration-200 {isExpanded
+												? 'rotate-180'
+												: ''}"
+										/>
+									</div>
+								</button>
+
+								<!-- Expanded details -->
+								{#if isExpanded}
+									<div
+										class="space-y-4 px-6 pb-5 pl-[4.5rem]"
+										transition:fade={{ duration: 150 }}
+									>
+										<!-- Date full -->
+										<div class="flex items-center gap-1.5 text-xs text-muted-foreground/60">
+											<Calendar class="h-3 w-3" />
+											{format(new Date(log.created_at), 'dd MMMM yyyy, HH:mm', {
+												locale: el
+											})}
+										</div>
+
+										<!-- Issue description -->
+										<div class="space-y-1.5">
+											<h4
+												class="flex items-center gap-1.5 text-[10px] font-semibold tracking-wider text-muted-foreground/70 uppercase"
+											>
+												<AlertTriangle class="h-3 w-3" />
+												Περιγραφή Βλάβης
 											</h4>
-											<p class="rounded-lg p-3 text-sm leading-relaxed">
+											<p
+												class="rounded-lg bg-muted/30 p-3 text-sm leading-relaxed text-foreground/90 dark:bg-muted/15"
+											>
 												{log.issue_description}
 											</p>
 										</div>
 
+										<!-- Action taken -->
 										{#if log.action_taken}
-											<div class="space-y-2">
+											<div class="space-y-1.5">
 												<h4
-													class="flex items-center gap-2 text-xs font-bold tracking-wideruppercase"
+													class="flex items-center gap-1.5 text-[10px] font-semibold tracking-wider text-muted-foreground/70 uppercase"
 												>
-													<Wrench class="h-3.5 w-3.5" />
-													Ενεργειες που εγιναν
+													<Wrench class="h-3 w-3" />
+													Ενέργειες που έγιναν
 												</h4>
-												<p class="rounded-lgp-3 text-sm leading-relaxed">
+												<p
+													class="rounded-lg bg-emerald-500/5 p-3 text-sm leading-relaxed text-foreground/90 dark:bg-emerald-500/5"
+												>
 													{log.action_taken}
 												</p>
 											</div>
 										{/if}
-									</div>
 
-									<div class="mt-5 flex flex-wrap items-center justify-between gap-4">
+										<!-- Images -->
 										{#if log.images && log.images.length > 0}
-											<div class="flex -space-x-2">
-												{#each log.images.slice(0, 3) as img, idx}
-													<button
-														class="relative z-0 h-8 w-8 cursor-pointer overflow-hidden rounded-full border-2 border-white ring-1 ring-gray-200 transition-transform hover:z-10 hover:scale-110"
-														title="View image"
-														onclick={() => openImagePreview(img)}
-													>
-														<img src={img} alt="Evidence" class="h-full w-full object-cover" />
-													</button>
-												{/each}
-												{#if log.images.length > 3}
-													<div
-														class="relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white text-[10px] font-bold text-gray-600 ring-1 ring-gray-200"
-													>
-														+{log.images.length - 3}
-													</div>
-												{/if}
+											<div class="space-y-1.5">
+												<h4
+													class="text-[10px] font-semibold tracking-wider text-muted-foreground/70 uppercase"
+												>
+													Φωτογραφίες
+												</h4>
+												<div class="flex flex-wrap gap-2">
+													{#each log.images as img, idx}
+														<button
+															class="group/img relative h-16 w-16 cursor-pointer overflow-hidden rounded-lg border border-border/50 transition-all hover:border-primary/30 hover:shadow-md sm:h-20 sm:w-20"
+															onclick={() => openImagePreview(img)}
+														>
+															<img
+																src={img}
+																alt="Evidence {idx + 1}"
+																class="h-full w-full object-cover transition-transform duration-300 group-hover/img:scale-110"
+															/>
+															<div
+																class="absolute inset-0 bg-black/0 transition-colors group-hover/img:bg-black/10"
+															></div>
+														</button>
+													{/each}
+												</div>
 											</div>
 										{/if}
 									</div>
-								</div>
+								{/if}
 							</div>
 						{/if}
 					{/each}
@@ -427,22 +521,32 @@
 			{/if}
 		</div>
 
-		<Modal.Footer class="z-20 flex items-center justify-betweenp-4">
-			<p class="text-xs italic">
+		<!-- Footer -->
+		<Modal.Footer
+			class="sticky bottom-0 z-20 flex items-center justify-between border-t border-border/40 bg-background/80 px-6 py-3 backdrop-blur-md"
+		>
+			<p class="text-[11px] text-muted-foreground/60">
 				Σύνολο: {sortedLogs.length} καταγραφές
 			</p>
-			<Button variant="outline" onclick={() => (modalOpen = false)}>Κλείσιμο</Button>
+			<Button
+				variant="outline"
+				size="sm"
+				class="cursor-pointer"
+				onclick={() => (modalOpen = false)}
+			>
+				Κλείσιμο
+			</Button>
 		</Modal.Footer>
 	</Modal.Content>
 </Modal.Root>
 
-<!-- Image Preview Modal -->
+
 {#if previewImage}
 	<div
-		class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+		class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
 		role="dialog"
 		aria-modal="true"
-		aria-label="Image preview dialog"
+		aria-label="Image preview"
 		tabindex="0"
 		onclick={closeImagePreview}
 		onkeydown={(e) => {
@@ -455,31 +559,29 @@
 		transition:fade={{ duration: 200 }}
 	>
 		<button
-			class="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white backdrop-blur-sm transition-colors hover:bg-white/20"
+			class="absolute top-4 right-4 cursor-pointer rounded-full bg-white/10 p-2.5 text-white backdrop-blur-md transition-colors hover:bg-white/20"
 			onclick={closeImagePreview}
 			aria-label="Close preview"
 			type="button"
 		>
-			<X class="h-6 w-6" />
+			<X class="h-5 w-5" />
 		</button>
 
-		<!-- make the image container an interactive element so clicks/keyboard are handled accessibly -->
 		<button
 			type="button"
-			class="rounded-lg p-0"
+			class="rounded-xl p-0"
 			onclick={(e) => e.stopPropagation()}
 			aria-label="Preview image"
 		>
 			<img
 				src={previewImage}
 				alt="Preview"
-				class="max-h-[90vh] max-w-[90vw] rounded-lg object-contain shadow-2xl"
+				class="max-h-[85vh] max-w-[90vw] rounded-xl object-contain shadow-2xl"
 				transition:scale={{ duration: 200 }}
 			/>
 		</button>
 	</div>
 {/if}
-
 <Modal.Root bind:open={openDeleteDialog}>
 	<Modal.Content>
 		<Modal.Header>

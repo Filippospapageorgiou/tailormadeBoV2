@@ -1,7 +1,7 @@
 <script lang="ts">
     import type { ManualWithDetails, ManualCategory } from '$lib/models/manuals.types';
     import { MANUAL_CATEGORY_LABELS } from '$lib/models/manuals.types';
-    import { editManual } from '../../../../lib/api/manual/data.remote';
+	import { editManual } from '$lib/api/manual/data.remote';
     import * as Dialog from '$lib/components/ui/dialog';
     import { Label } from '$lib/components/ui/label';
     import { Input } from '$lib/components/ui/input';

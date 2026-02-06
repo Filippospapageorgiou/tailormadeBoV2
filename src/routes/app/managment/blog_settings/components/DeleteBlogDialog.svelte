@@ -1,11 +1,7 @@
 <script lang="ts">
 	import type { Blog } from '$lib/models/database.types';
-	import { deleteBlog } from '../../../../lib/api/blog/data.remote';
-	import * as Dialog from '$lib/components/ui/dialog';
-	import * as Alert from '$lib/components/ui/alert';
-	import { Button } from '$lib/components/ui/button';
+	import { deleteBlog } from '$lib/api/blog/data.remote';
 	import { toast } from 'svelte-sonner';
-	import { AlertTriangleIcon } from 'lucide-svelte';
 	import DeleteConfirmDialog from '$lib/components/Reusable/DeleteConfirmDialog.svelte';
 
 	let {

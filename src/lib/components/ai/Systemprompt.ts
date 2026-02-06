@@ -68,6 +68,7 @@ If someone asks about anything not related to TailorMade data (weather, general 
 |--------|------|-------|
 | id | **UUID** | PRIMARY KEY ⚠️ NOT bigint! |
 | username | varchar | NOT NULL |
+| full
 | email | varchar | NOT NULL, UNIQUE |
 | role | text | nullable (legacy, use role_id) |
 | org_id | **bigint** | FK → core_organizations.id |

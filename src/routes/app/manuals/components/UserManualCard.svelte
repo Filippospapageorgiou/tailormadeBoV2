@@ -8,7 +8,8 @@
 	import { BookOpen, CheckCircle2, User, Calendar, ChevronRight, X } from 'lucide-svelte';
 	import { toast } from 'svelte-sonner';
 	import { marked } from 'marked';
-	import DOMPurify from 'dompurify'; // Highly recommended to keep this!
+	import DOMPurify from 'dompurify';
+
 	let {
 		manual,
 		index = 0,
@@ -57,69 +58,67 @@
 		}
 	}
 
-	// ... existing state
-
-	// Add this derived state
 	const renderedContent = $derived(
 		manual.content ? DOMPurify.sanitize(marked.parse(manual.content) as string) : ''
 	);
 
 	const categoryColors: Record<string, string> = {
-		equipment: 'bg-blue-500/10 text-blue-700 dark:text-blue-400',
-		cleaning: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
-		sales: 'bg-purple-500/10 text-purple-700 dark:text-purple-400',
-		customer_service: 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
-		safety: 'bg-red-500/10 text-red-700 dark:text-red-400',
-		inventory: 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-400',
-		opening_closing: 'bg-orange-500/10 text-orange-700 dark:text-orange-400',
-		other: 'bg-muted text-muted-foreground'
+		equipment: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 ring-blue-500/20',
+		cleaning: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-emerald-500/20',
+		sales: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 ring-purple-500/20',
+		customer_service: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 ring-amber-500/20',
+		safety: 'bg-red-500/10 text-red-600 dark:text-red-400 ring-red-500/20',
+		inventory: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 ring-cyan-500/20',
+		opening_closing: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 ring-orange-500/20',
+		other: 'bg-muted text-muted-foreground ring-border'
 	};
 
 	let hasMultipleImages = $derived(manual.media && manual.media.length > 1);
 </script>
 
-<!-- Card -->
 <div
-	style="animation-delay: {index * 100}ms; animation-fill-mode: backwards;"
-	class="card-glass group animate-fade-in-down {manual.is_read ? 'opacity-75' : ''}"
+	style="animation-delay: {index * 80}ms; animation-fill-mode: backwards;"
+	class="group animate-fade-in-down overflow-hidden rounded-xl cursor-pointer border border-border/60 bg-background/70 shadow-sm backdrop-blur-sm transition-all duration-300 hover:border-border hover:shadow-md dark:bg-background/50 {manual.is_read ? 'opacity-70' : ''}"
 	role="button"
 	tabindex="0"
 	onclick={() => (expanded = !expanded)}
 	onkeydown={(e) => e.key === 'Enter' && (expanded = !expanded)}
 >
 	<!-- Hero Image -->
-	<div class="card-glass-image relative h-52 sm:h-56">
+	<div class="relative h-48 w-full overflow-hidden sm:h-52">
 		{#if manual.media && manual.media.length > 0}
 			<img
 				src={typeof manual.media[0] === 'string' ? manual.media[0] : ''}
 				alt={manual.title}
-				class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+				class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
 			/>
-			<div class="card-glass-image-overlay"></div>
+			<div
+				class="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent"
+			></div>
 		{:else}
 			<div
-				class="flex h-full w-full items-center justify-center bg-gradient-to-br from-muted/80 to-muted/40"
+				class="flex h-full w-full items-center justify-center bg-muted/30 dark:bg-muted/20"
 			>
-				<BookOpen class="h-14 w-14 text-muted-foreground/20" />
+				<BookOpen class="h-12 w-12 text-muted-foreground/20" />
 			</div>
 		{/if}
 
-		<!-- Read status indicator -->
+		<!-- Read status -->
 		{#if manual.is_read}
 			<div class="absolute top-3 right-3">
-				<span
-					class="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/50 bg-emerald-500/90 px-2.5 py-1 text-[10px] font-bold tracking-wider text-white uppercase shadow-sm backdrop-blur-sm"
+				<Badge
+					class="gap-1 rounded-md border-0 bg-emerald-500/90 px-2 py-1 text-[10px] font-semibold text-white shadow-sm backdrop-blur-md"
 				>
 					<CheckCircle2 class="h-3 w-3" />
 					Αναγνωσμένο
-				</span>
+				</Badge>
 			</div>
 		{/if}
 
-		<!-- Bottom overlay with category + image count -->
+		<!-- Bottom overlay: category + image count -->
 		<div class="absolute right-0 bottom-0 left-0 flex items-end justify-between px-4 pb-3">
 			<Badge
-				class="rounded-full border-0 text-[11px] font-semibold shadow-sm backdrop-blur-sm {categoryColors[
+				class="rounded-md border-0 text-[10px] font-semibold shadow-sm ring-1 backdrop-blur-md {categoryColors[
 					manual.category
 				] || categoryColors.other}"
 			>
@@ -127,34 +126,37 @@
 			</Badge>
 			{#if hasMultipleImages}
 				<span
-					class="rounded-full bg-black/50 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm"
+					class="rounded-md bg-black/50 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-md"
 				>
-					{manual.media.length} φωτογραφίες
+					{manual.media.length} φωτό
 				</span>
 			{/if}
 		</div>
 	</div>
 
 	<!-- Content -->
-	<div class="card-glass-content space-y-3 p-5">
-		<!-- Title -->
+	<div class="space-y-3 p-4 sm:p-5">
 		<div>
-			<h3 class="card-glass-title !mb-1.5 text-xl leading-tight font-bold tracking-tight">
+			<h3
+				class="line-clamp-2 text-lg font-semibold leading-snug tracking-tight text-foreground transition-colors group-hover:text-primary"
+			>
 				{manual.title}
 			</h3>
 			{#if manual.description}
-				<p class="line-clamp-3 text-sm leading-relaxed text-muted-foreground">
+				<p class="mt-1.5 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
 					{manual.description}
 				</p>
-			{:else}
-				<p class="line-clamp-3 text-sm leading-relaxed text-muted-foreground/70">
+			{:else if manual.content}
+				<p
+					class="mt-1.5 line-clamp-2 text-sm leading-relaxed text-muted-foreground/60 italic"
+				>
 					{truncateText(manual.content)}
 				</p>
 			{/if}
 		</div>
 
 		<!-- Meta -->
-		<div class="flex items-center gap-3 text-[11px] text-muted-foreground">
+		<div class="flex items-center gap-3 text-[11px] text-muted-foreground/70">
 			{#if manual.profiles}
 				<span class="flex items-center gap-1">
 					<User class="h-3 w-3" />
@@ -167,13 +169,18 @@
 			</span>
 		</div>
 
-		<!-- Read more indicator -->
-		<div class="card-glass-readmore mt-auto pt-1">
+		<!-- Read more -->
+		<div
+			class="flex items-center gap-1.5 pt-1 text-xs font-medium text-primary/80 transition-colors group-hover:text-primary"
+		>
 			<span>Διαβάστε περισσότερα</span>
-			<ChevronRight />
+			<ChevronRight
+				class="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5"
+			/>
 		</div>
 	</div>
 </div>
+
 
 {#if expanded}
 	<!-- svelte-ignore a11y_no_static_element_interactions -->

@@ -4,15 +4,19 @@ export const roles = [
         label:"Super Admin"
     },
 	{
-		value: "admin",
-		label: "Admin",
+		value: "manager",
+		label: "manager",
 	},
 	{
 		value: "head_barista",
 		label: "Head barista",
 	},
 	{
-		value: "employee",
-		label: "Employee",
+		value: "barista",
+		label: "Barista",
+	},
+	{
+		value: "baker",
+		label: "Baker",
 	},
 ];

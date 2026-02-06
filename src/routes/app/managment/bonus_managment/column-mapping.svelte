@@ -1,8 +1,6 @@
 <script lang="ts">
-    import * as Card from '$lib/components/ui/card';
     import * as Select from '$lib/components/ui/select/index.js';
-    import Badge from '$lib/components/ui/badge/badge.svelte';
-    import { CheckCircle2, AlertCircle, ArrowRight, FileSpreadsheet, LayoutList, X } from 'lucide-svelte';
+    import { CheckCircle2, FileSpreadsheet, LayoutList } from 'lucide-svelte';
     import { REQUIRED_FIELDS, type ColumnMapping, type RawExcelData, type FieldKey } from './types';
     import { ScrollArea } from '$lib/components/ui/scroll-area/index.js'; // Ensure you have this
 

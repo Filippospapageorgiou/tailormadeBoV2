@@ -25,7 +25,7 @@ async function getNotificationRecipients(org_id: number): Promise<Profile[]> {
 			.from('profiles')
 			.select('*')
 			.eq('org_id', org_id)
-			.in('role_id', [2, 4]);
+			.in('role_id', [1,2, 4]);
 
 		if (error) {
 			console.error('[getNotificationRecipients] Error fetching recipients:', error);

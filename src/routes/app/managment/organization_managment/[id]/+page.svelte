@@ -133,7 +133,7 @@
 	});
 
 	function handleBack() {
-		goto('/app/organization_managment');
+		goto('/app/managment/organization_managment');
 	}
 
 	function openInviteDialog() {

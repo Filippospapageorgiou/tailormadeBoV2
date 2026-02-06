@@ -7,7 +7,7 @@
 	import { ThemeSelector } from '$lib/components/ui/theme-selector';
 	import Command from '$lib/components/command/command.svelte';
 	import Notifications from '$lib/components/custom/Notifications.svelte';
-	
+
 	let { children } = $props();
 
 	let breadcrumbs = $derived(() => {
@@ -25,12 +25,13 @@
 	<AppSidebar />
 	<Sidebar.Inset>
 		<header
-			class="sticky top-2 z-40 flex h-16 shrink-0 items-center justify-between bg-muted border border-border/50 rounded-lg mx-2 mt-1 px-4 py-1">
+			class="sticky top-2 z-40 mx-2 mt-1 flex h-14 shrink-0 items-center justify-between rounded-lg border border-border/50 bg-background/80 px-4 py-1 shadow-sm backdrop-blur-md"
+		>
 			<div class="flex items-center gap-2">
 				<Sidebar.Trigger class="-ml-1" />
 				<Separator orientation="vertical" class="mr-2 h-4" />
 
-				<Breadcrumb.Root class="hidden sm:flex items-center gap-2">
+				<Breadcrumb.Root class="hidden items-center gap-2 sm:flex">
 					<Breadcrumb.List>
 						{#if breadcrumbs().length > 0}
 							<Breadcrumb.Separator />
@@ -41,7 +42,12 @@
 								{#if i === breadcrumbs().length - 1}
 									<Breadcrumb.Page>{segment.name}</Breadcrumb.Page>
 								{:else}
-									<Breadcrumb.Link href={segment.href}>{segment.name}</Breadcrumb.Link>
+									<Breadcrumb.Link
+										href={segment.href}
+										class="text-muted-foreground/70 transition-colors hover:text-foreground"
+									>
+										{segment.name}
+									</Breadcrumb.Link>
 								{/if}
 							</Breadcrumb.Item>
 							{#if i < breadcrumbs().length - 1}
@@ -52,7 +58,7 @@
 				</Breadcrumb.Root>
 			</div>
 
-			<div class="flex items-center gap-1">
+			<div class="flex items-center gap-2">
 				<Command />
 				<Notifications />
 				<ThemeSelector />

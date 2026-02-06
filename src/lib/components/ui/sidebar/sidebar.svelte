@@ -25,12 +25,23 @@
 {#if collapsible === "none"}
 	<div
 		class={cn(
-			"bg-muted/50 text-sidebar-foreground w-(--sidebar-width) flex h-full flex-col border border-border/50 rounded-lg",
+			"relative overflow-hidden bg-background/70 backdrop-blur-xl text-sidebar-foreground w-(--sidebar-width) flex h-full flex-col border border-border/50 rounded-lg shadow-sm",
 			className
 		)}
 		bind:this={ref}
 		{...restProps}
 	>
+		<!-- Ambient glow blobs -->
+		<div class="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+			<div
+				class="absolute -top-20 -left-20 h-60 w-60 animate-pulse rounded-full bg-primary/10 blur-3xl dark:bg-primary/5"
+				style="animation-duration: 6s;"
+			></div>
+			<div
+				class="absolute -right-16 bottom-1/3 h-48 w-48 animate-pulse rounded-full bg-primary/8 blur-3xl dark:bg-primary/4"
+				style="animation-duration: 8s;"
+			></div>
+		</div>
 		{@render children?.()}
 	</div>
 {:else if sidebar.isMobile}
@@ -50,7 +61,14 @@
 				<Sheet.Title>Sidebar</Sheet.Title>
 				<Sheet.Description>Displays the mobile sidebar.</Sheet.Description>
 			</Sheet.Header>
-			<div class="flex h-full w-[calc(var(--sidebar-width)-24px)] flex-col bg-muted border border-border/50 rounded-lg overflow-hidden">
+			<div class="relative flex h-full w-[calc(var(--sidebar-width)-24px)] flex-col bg-background/90 backdrop-blur-sm border border-border/50 rounded-lg overflow-hidden shadow-lg">
+				<!-- Subtle single blob for mobile — less intense -->
+				<div class="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+					<div
+						class="absolute -top-16 -left-16 h-48 w-48 animate-pulse rounded-full bg-primary/8 blur-3xl dark:bg-primary/4"
+						style="animation-duration: 7s;"
+					></div>
+				</div>
 				{@render children?.()}
 			</div>
 		</Sheet.Content>
@@ -65,7 +83,6 @@
 		data-side={side}
 		data-slot="sidebar"
 	>
-		<!-- This is what handles the sidebar gap on desktop -->
 		<div
 			data-slot="sidebar-gap"
 			class={cn(
@@ -84,7 +101,6 @@
 				side === "left"
 					? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
 					: "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
-				// Adjust the padding for floating and inset variants.
 				variant === "floating" || variant === "inset"
 					? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
 					: "group-data-[collapsible=icon]:w-(--sidebar-width-icon)",
@@ -95,8 +111,23 @@
 			<div
 				data-sidebar="sidebar"
 				data-slot="sidebar-inner"
-				class="bg-muted border border-border/50 rounded-lg flex h-full w-full flex-col"
+				class="relative overflow-hidden bg-background/70 backdrop-blur-xl border border-border/50 rounded-lg flex h-full w-full flex-col shadow-sm"
 			>
+				<!-- Ambient glow blobs -->
+				<div class="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+					<div
+						class="absolute -top-20 -left-20 h-60 w-60 animate-pulse rounded-full bg-primary/10 blur-3xl dark:bg-primary/5"
+						style="animation-duration: 6s;"
+					></div>
+					<div
+						class="absolute -right-16 bottom-1/4 h-48 w-48 animate-pulse rounded-full bg-primary/8 blur-3xl dark:bg-primary/4"
+						style="animation-duration: 8s;"
+					></div>
+					<div
+						class="absolute -bottom-16 left-1/3 h-40 w-40 animate-pulse rounded-full bg-primary/6 blur-3xl dark:bg-primary/3"
+						style="animation-duration: 10s;"
+					></div>
+				</div>
 				{@render children?.()}
 			</div>
 		</div>

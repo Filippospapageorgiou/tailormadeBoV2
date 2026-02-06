@@ -24,20 +24,17 @@ export const load: LayoutServerLoad = async ({
 	}
 
 	// 2️⃣ Protected routes - require session
-	if (!session && (url.pathname.startsWith('/app') || url.pathname.startsWith('/managment'))) {
+	if (!session && (url.pathname.startsWith('/app'))) {
 		throw redirect(303, '/auth/login');
 	}
 
 	// 3️⃣ Management routes - require roleId === 1
-	if (session && url.pathname.startsWith('/managment') && profile?.role_id !== 1) {
+	if (session && url.pathname.startsWith('/app/managment') && profile?.role_id !== 1) {
 		throw redirect(303, '/app/');
 	}
 
-	// 5️⃣ Logged-in users shouldn't access auth pages
+	// 4 Logged-in users shouldn't access auth pages
 	if (session && url.pathname.startsWith('/auth') && url.pathname !== '/auth/set-password') {
-		if (profile?.role_id === 1) {
-			throw redirect(303, '/managment/organization_managment');
-		}
 		throw redirect(303, '/app/');
 	}
 

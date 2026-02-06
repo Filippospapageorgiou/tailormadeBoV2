@@ -27,7 +27,6 @@
 		navMain: [
 			{
 				title: 'Barista work',
-				url: '/app',
 				icon: PersonStanding,
 				isActive: false,
 				items: [
@@ -86,8 +85,7 @@
 				url: '/app',
 				icon: Settings2Icon,
 				isActive: false,
-				newLine: true,
-				adminOnly: true, // <-- Flag for admin-only items
+				adminOnly: true,
 				items: [
 					{
 						title: 'Χρήστες & Οργανισμός',
@@ -139,42 +137,42 @@
 		projects: [
 			{
 				name: 'Administration',
-				url: '/app/manage_organizations',
+				isActive: false,
 				icon: Globe,
 				items: [
 					{
 						title: 'Πίνακας Ελένχου',
-						url: '/managment/organization_managment',
+						url: '/app/managment/organization_managment',
 						icon: Building
 					},
 					{
 						title: 'Διαχείρηση bonus',
-						url: '/managment/bonus_managment',
+						url: '/app/managment/bonus_managment',
 						icon: Award
 					},
 					{
 						title: 'Ai βοήθος',
-						url: '/managment/ai_assistant',
+						url: '/app/managment/ai_assistant',
 						icon: Bot
 					},
 					{
 						title: 'Manuals',
-						url: '/managment/manuals',
+						url: '/app/managment/manuals',
 						icon: Boxes
 					},
 					{
 						title: 'Συνταγές',
-						url: '/managment/recipes_settings',
+						url: '/app/managment/recipes_settings',
 						icon: Coffee
 					},
 					{
 						title: 'Συστατικά',
-						url: '/managment/ingridients_settings',
+						url: '/app/managment/ingridients_settings',
 						icon: Refrigerator
 					},
 					{
 						title: 'Blog',
-						url: '/managment/blog_settings',
+						url: '/app/managment/blog_settings',
 						icon: Book
 					}
 				]

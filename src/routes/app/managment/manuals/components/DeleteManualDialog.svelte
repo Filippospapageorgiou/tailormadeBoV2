@@ -1,8 +1,7 @@
 <script lang="ts">
 	import type { ManualWithDetails } from '$lib/models/manuals.types';
 	import { MANUAL_CATEGORY_LABELS } from '$lib/models/manuals.types';
-	import { deleteManual } from '../../../../lib/api/manual/data.remote';
-	import { Button } from '$lib/components/ui/button';
+	import { deleteManual } from '$lib/api/manual/data.remote';
 	import { toast } from 'svelte-sonner';
 	import DeleteConfirmDialog from '$lib/components/Reusable/DeleteConfirmDialog.svelte';
 

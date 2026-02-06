@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { createManual } from '../../../../lib/api/manual/data.remote';
+	import { createManual } from '$lib/api/manual/data.remote';
 	import { MANUAL_CATEGORY_LABELS } from '$lib/models/manuals.types';
 	import type { ManualCategory } from '$lib/models/manuals.types';
 	import * as Dialog from '$lib/components/ui/dialog';

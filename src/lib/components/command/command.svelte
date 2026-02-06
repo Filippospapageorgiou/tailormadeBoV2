@@ -69,7 +69,6 @@
 		<Command.Empty>No results found.</Command.Empty>
 		
 		<!-- Main Pages -->
-		{#if profile.role_id !== 1}
 		<Command.Group heading="Κύριες Σελίδες">
 			<Command.Item onSelect={() =>   gotohref('/app/recipes')}>
 				<Coffee class="me-2 size-4" />
@@ -107,7 +106,6 @@
                 <ArrowRightIcon class="ml-auto size-3.5 text-muted-foreground" />
 			</Command.Item>
 		</Command.Group>
-		{/if}
 
 		<Command.Separator />
 
@@ -123,7 +121,7 @@
 		<Command.Separator />
 
 		<!-- Admin Settings (for role_id 1 and 2) -->
-		{#if profile.role_id === 2}
+		{#if profile.role_id === 2 || profile.role_id === 1}
 		<Command.Group heading="Ρυθμίσεις Διαχειριστή">
 			<Command.Item onSelect={() => gotohref('/app/settings/manage_users')}>
 				<UserIcon class="me-2 size-4" />
@@ -158,22 +156,22 @@
 		<!-- Organization Management (for role_id 1 only - Super Admin) -->
 		{#if profile.role_id === 1}
 		<Command.Group heading="Διαχείριση Οργανισμών">
-			<Command.Item onSelect={() => gotohref('/app/organization_managment')}>
+			<Command.Item onSelect={() => gotohref('/app/managment/organization_managment')}>
 				<BookOpen class="me-2 size-4" />
 				<span>Πίνακας Ελένχου</span>
                 <ArrowRightIcon class="ml-auto size-3.5 text-muted-foreground" />
 			</Command.Item>
-			<Command.Item onSelect={() => gotohref('/app/settings/recipes_settings')}>
+			<Command.Item onSelect={() => gotohref('/app/managment/recipes_settings')}>
 				<Coffee class="me-2 size-4" />
 				<span>Συνταγές</span>
                 <ArrowRightIcon class="ml-auto size-3.5 text-muted-foreground" />
 			</Command.Item>
-			<Command.Item onSelect={() => gotohref('/app/settings/ingridients_settings')}>
+			<Command.Item onSelect={() => gotohref('/app/managment/ingridients_settings')}>
 				<Cog class="me-2 size-4" />
 				<span>Συστατικά</span>
                 <ArrowRightIcon class="ml-auto size-3.5 text-muted-foreground" />
 			</Command.Item>
-			<Command.Item onSelect={() => gotohref('/app/settings/blog_settings')}>
+			<Command.Item onSelect={() => gotohref('/app/managment/blog_settings')}>
 				<NotebookPen class="me-2 size-4" />
 				<span>Blog</span>
                 <ArrowRightIcon class="ml-auto size-3.5 text-muted-foreground" />

@@ -17,6 +17,8 @@
 	import { ScrollArea } from '$lib/components/ui/scroll-area/index.js';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import InputCalendar from '$lib/components/custom/inputCalendar.svelte';
+	import EmptyComp from '$lib/components/custom/EmptyComp.svelte';
+	import { Cog } from '@lucide/svelte';
 
 	let auth = authenticatedAccess();
 	let query = getAllEquipments();
@@ -60,6 +62,11 @@
 
 		return equipments;
 	});
+
+	function clearAllFilters() {
+		searchQuery = '';
+		value = '';
+	}
 
 	let refreshAction = $state(false);
 	async function refresh() {
@@ -211,7 +218,7 @@
 								<Skeleton class="h-6 w-28 rounded-full" />
 
 								<!-- Service Status Section -->
-								<div class="space-y-2 rounded-lg  p-3">
+								<div class="space-y-2 rounded-lg p-3">
 									<Skeleton class="h-3 w-24" />
 
 									<!-- Service Bars -->
@@ -228,9 +235,17 @@
 						</div>
 					{/each}
 				</div>
+			{:else if filterEquipments.length === 0}
+				<EmptyComp
+					title="Δεν βρέθηκαν εξοπλισμοί"
+					description={'Δοκιμάστε να αλλάξετε τα φίλτρα'}
+					icon={Cog as any}
+					primaryLabel={'Καθαρισμός Φίλτρων'}
+					onPrimaryClick={clearAllFilters}
+				/>
 			{:else}
 				<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-					{#each filterEquipments as equipment,index (equipment.id)}
+					{#each filterEquipments as equipment, index (equipment.id)}
 						<EquipmentCard {equipment} {index} />
 					{/each}
 				</div>
@@ -240,7 +255,7 @@
 {/if}
 
 <Modal.Root bind:open={addEquipmentModal}>
-	<Modal.Content class="h-[85dvh] sm:h-auto max-h-[95dvh] flex flex-col">
+	<Modal.Content class="flex h-[85dvh] max-h-[95dvh] flex-col sm:h-auto">
 		<Modal.Header>
 			<Modal.Title>Πρόσθεσε νέο εξοπλισμό</Modal.Title>
 			<Modal.Description>

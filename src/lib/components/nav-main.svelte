@@ -4,45 +4,60 @@
 	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
 	import { getProfileContext } from '$lib/stores/profile.svelte';
 	import { useSidebar } from '$lib/components/ui/sidebar/index.js';
-	import Separator from './ui/separator/separator.svelte';
+	import { page } from '$app/state';
 
 	let user = getProfileContext();
-
 	const sidebar = useSidebar();
-
-	// Close sidebar on mobile when link is clicked
-	function handleLinkClick() {
-		if (sidebar.isMobile) {
-			sidebar.setOpenMobile(false);
-		}
-	}
 
 	let {
 		items
 	}: {
 		items: {
 			title: string;
-			url: string;
+			url?: string;
 			icon: any;
 			isActive?: boolean;
-			newLine?:boolean;
+			newLine?: boolean;
 			requiresAdmin?: boolean;
 			items?: {
 				title: string;
 				url: string;
 				requiresSuperAdmin?: boolean;
-				icon:any;
+				icon: any;
 			}[];
 		}[];
 	} = $props();
 
-	function canAccessItem(item: (typeof items)[0]): boolean {
-		if (!item.requiresAdmin) {
-			return true;
-		} else {
-			if (user.role_id === 1 || user.role_id === 2 || user.role_id == 4) return true;
+	// Initialize immediately with $derived so it's never undefined
+	let openState = $state<Record<string, boolean>>(
+		Object.fromEntries(
+			// svelte-ignore state_referenced_locally
+				items.map((item) => [
+				item.title,
+				item.items?.some((sub) => page.url.pathname.startsWith(sub.url)) ?? false
+			])
+		)
+	);
+
+	function handleMainClick(mainItem: (typeof items)[0]) {
+		if (mainItem.items?.length) {
+			openState[mainItem.title] = !openState[mainItem.title];
 		}
-		return false;
+	}
+
+	function handleSubClick() {
+		if (sidebar.isMobile) {
+			sidebar.setOpenMobile(false);
+		}
+	}
+
+	function isActive(url: string): boolean {
+		return page.url.pathname === url || page.url.pathname.startsWith(url + '/');
+	}
+
+	function canAccessItem(item: (typeof items)[0]): boolean {
+		if (!item.requiresAdmin) return true;
+		return user.role_id === 1 || user.role_id === 2 || user.role_id === 4;
 	}
 
 	function canAccessSubItem(item: {
@@ -50,9 +65,7 @@
 		url: string;
 		requiresSuperAdmin?: boolean;
 	}): boolean {
-		if (!item.requiresSuperAdmin) {
-			return true;
-		}
+		if (!item.requiresSuperAdmin) return true;
 		return user.role_id === 1 || user.role_id === 2;
 	}
 </script>
@@ -61,33 +74,41 @@
 	<Sidebar.Menu class="px-2">
 		{#each items as mainItem (mainItem.title)}
 			{#if canAccessItem(mainItem)}
-				<Collapsible.Root open={mainItem.isActive}>
+				<Collapsible.Root bind:open={openState[mainItem.title]}>
 					{#snippet child({ props })}
 						<Sidebar.MenuItem {...props}>
 							<Sidebar.MenuButton tooltipContent={mainItem.title}>
 								{#snippet child({ props })}
-									<a href={mainItem.url} {...props} onclick={handleLinkClick}>
-										<mainItem.icon />
-										<span>{mainItem.title}</span>
-									</a>
+									<button
+										{...props}
+										onclick={() => handleMainClick(mainItem)}
+									>
+										<mainItem.icon class="h-5 w-5" />
+										<span class="text-base font-semibold">{mainItem.title}</span>
+										{#if mainItem.items?.length}
+											<ChevronRightIcon
+												class="ml-auto h-4 w-4 shrink-0 transition-transform duration-200 {openState[mainItem.title] ? 'rotate-90' : ''}"
+											/>
+										{/if}
+									</button>
 								{/snippet}
 							</Sidebar.MenuButton>
 							{#if mainItem.items?.length}
-								<Collapsible.Trigger>
-									{#snippet child({ props })}
-										<Sidebar.MenuAction {...props} class="data-[state=open]:rotate-90">
-											<ChevronRightIcon />
-											<span class="sr-only">Toggle</span>
-										</Sidebar.MenuAction>
-									{/snippet}
-								</Collapsible.Trigger>
 								<Collapsible.Content>
 									<Sidebar.MenuSub>
 										{#each mainItem.items as subItem (subItem.title)}
 											{#if canAccessSubItem(subItem)}
 												<Sidebar.MenuSubItem>
-													<Sidebar.MenuSubButton href={subItem.url} onclick={handleLinkClick}>
-														<subItem.icon />
+													<Sidebar.MenuSubButton
+														href={subItem.url}
+														onclick={handleSubClick}
+														class={isActive(subItem.url)
+															? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
+															: ''}
+													>
+														<subItem.icon
+															class="h-4 w-4 {isActive(subItem.url) ? 'text-primary' : ''}"
+														/>
 														<span class="text-sm">{subItem.title}</span>
 													</Sidebar.MenuSubButton>
 												</Sidebar.MenuSubItem>

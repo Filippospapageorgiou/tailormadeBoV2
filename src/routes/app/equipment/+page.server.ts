@@ -5,6 +5,21 @@ import { sendMaintanceNotification } from '$lib/emails/equipment-notifications';
 import { getUserProfile } from '$lib/supabase/queries';
 import type { Equipment } from '$lib/models/equipment.types';
 
+function sanitizeFileName(name: string): string {
+	const ext = name.split('.').pop() || 'bin';
+	const baseName = name.replace(/\.[^/.]+$/, '');
+
+	const sanitized = baseName
+		.normalize('NFD')
+		.replace(/[\u0300-\u036f]/g, '')
+		.replace(/[^a-zA-Z0-9_-]/g, '_')
+		.replace(/_+/g, '_')
+		.replace(/^_|_$/g, '')
+		.slice(0, 100);
+
+	return `${sanitized || 'file'}.${ext}`;
+}
+
 export const actions = {
 	addMaintenanceLog: async ({ locals: { supabase, user }, request, url }) => {
 		const data = await request.formData();
@@ -25,7 +40,7 @@ export const actions = {
 
 			// Upload images to storage
 			for (const file of validFiles) {
-				const path = `maintenance-logs/${equipmentId}-${Date.now()}-${file.name}`;
+				const path = `maintenance-logs/${equipmentId}-${Date.now()}-${sanitizeFileName(file.name)}`;
 				const fileBuffer = await file.arrayBuffer();
 
 				const { data: uploadData, error: uploadError } = await supabase.storage
@@ -60,10 +75,9 @@ export const actions = {
 			if (dbError) throw dbError;
 
 			// ========================================
-			// NEW: Send Email Notification
+			// Send Email Notification
 			// ========================================
 			try {
-				// Fetch equipment details
 				const { data: equipment, error: equipmentError } = await supabase
 					.from('equipment')
 					.select('*')
@@ -75,15 +89,10 @@ export const actions = {
 						'[addMaintenanceLog] Failed to fetch equipment for notification:',
 						equipmentError
 					);
-					// Don't fail the entire action - log was still created successfully
 				} else {
-					// Get reporter profile
 					const reporterProfile = await getUserProfile();
-
-					// Construct equipment page URL
 					const equipmentPageUrl = `${url.origin}/app/settings/equipment_settings`;
 
-					// Send notification
 					const notificationResult = await sendMaintanceNotification({
 						equipment,
 						issueDescription,
@@ -101,11 +110,8 @@ export const actions = {
 					}
 				}
 			} catch (emailError) {
-				// Email notification is not critical - don't fail the maintenance log creation
 				console.error('[addMaintenanceLog] Email notification error (non-critical):', emailError);
 			}
-			// ========================================
-			// END: Email Notification
 			// ========================================
 
 			return { success: true };

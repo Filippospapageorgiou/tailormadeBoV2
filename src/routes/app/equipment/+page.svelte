@@ -7,6 +7,8 @@
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { RefreshCw } from 'lucide-svelte';
+	import EmptyComp from '$lib/components/custom/EmptyComp.svelte';
+	import { Cog } from '@lucide/svelte';
 
 	let query = getAllEquipments();
 
@@ -50,6 +52,11 @@
 		await query.refresh();
 		refreshAction = false;
 	}
+
+	function clearAllFilters() {
+		searchQuery = '';
+		value = '';
+	}
 </script>
 
 <div class="min-h-screen">
@@ -61,7 +68,7 @@
 			</p>
 			<div class="flex items-center gap-2">
 				<p class="text-xs text-primary md:text-sm">
-					Διαθέσιμα εξοπλισμοί: <span class="font-semibold">{equipmentList?.length ?? 0}</span>
+					Διαθέσιμα εξοπλισμοί: <span class="font-semibold">{filterEquipments?.length ?? 0}</span>
 					/ {total}
 				</p>
 			</div>
@@ -163,11 +170,21 @@
 				{/each}
 			</div>
 		{:else}
-			<div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-				{#each filterEquipments as equipment,index (equipment.id)}
-					<EquipmentCard {equipment} {index} />
-				{/each}
-			</div>
+			{#if filterEquipments.length === 0}
+				<EmptyComp
+					title="Δεν βρέθηκαν εξοπλισμοί"
+					description={'Δοκιμάστε να αλλάξετε τα φίλτρα'}
+					icon={Cog as any}
+					primaryLabel={'Καθαρισμός Φίλτρων'}
+					onPrimaryClick={clearAllFilters}
+				/>
+			{:else}
+				<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+					{#each filterEquipments as equipment, index (equipment.id)}
+						<EquipmentCard {equipment} {index} />
+					{/each}
+				</div>
+			{/if}
 		{/if}
 	</main>
 </div>
