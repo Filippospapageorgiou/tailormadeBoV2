@@ -400,7 +400,7 @@
 			</div>
 
 			<!-- Shift Requests -->
-			<ShiftRequests {shiftRequests} onSuccess={refreshRequests} />
+			<ShiftRequests {shiftRequests} loading={shiftChanges?.loading ?? true}   onSuccess={refreshRequests} />
 
 			<!-- Shift Modal -->
 			<ShiftModal

@@ -14,7 +14,7 @@
 
 		// Primary action
 		primaryLabel: string;
-		onPrimaryClick: () => void;
+		onPrimaryClick?: () => void;
 		primaryIcon?: Component<{ class?: string }>;
 
 		// Secondary action (optional)

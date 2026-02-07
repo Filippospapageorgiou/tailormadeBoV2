@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
-import { z } from "zod/v4";
+import { z } from "zod";
 
 const blogIdSchema = z.coerce
 .number({ error: 'Blog Id must be a number.'})

@@ -8,6 +8,8 @@
 	import { ArrowLeft, Calendar, Clock } from 'lucide-svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import Badge from '$lib/components/ui/badge/badge.svelte';
+	import { marked } from 'marked';
+	import DOMPurify from 'dompurify';
 
 	let { data }: { data: PageData } = $props();
 	const { blog } = $derived(data) as { blog: Blog };
@@ -34,6 +36,11 @@
 		const words = content?.replace(/<[^>]*>/g, '').split(/\s+/).length || 0;
 		return Math.max(1, Math.ceil(words / wordsPerMinute));
 	}
+
+	const renderedContent = $derived(
+		blog.content ? DOMPurify.sanitize(marked.parse(blog.content) as string) : ''
+	);
+
 
 </script>
 
@@ -125,7 +132,7 @@
 						aria-label="Markdown preview"
 					>
 						{#if blog.content.trim()}
-							{@html blog.content}
+							{@html renderedContent}
 						{:else}
 							<p class="text-muted-foreground italic">Nothing to preview</p>
 						{/if}

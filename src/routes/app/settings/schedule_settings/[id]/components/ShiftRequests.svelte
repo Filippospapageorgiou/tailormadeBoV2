@@ -17,15 +17,20 @@
 		Repeat,
 		Users,
 		XCircle,
-		AlertCircle
+		AlertCircle,
+		ArrowBigUpDashIcon
 	} from 'lucide-svelte';
+	import EmptyComp from '$lib/components/custom/EmptyComp.svelte';
+	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
+	import SpinnerComp from '$lib/components/custom/SpinnerComp.svelte';
 
 	interface Props {
+		loading: boolean;
 		onSuccess: () => Promise<void>;
 		shiftRequests: ShiftChangeRequestPorfile[];
 	}
 
-	let { shiftRequests, onSuccess }: Props = $props();
+	let { shiftRequests, onSuccess, loading }: Props = $props();
 
 	let expandedRejectId = $state<number | null>(null);
 	let rejectionReasons = $state<Map<number, string>>(new Map());
@@ -145,16 +150,19 @@
 </script>
 
 <div class="space-y-5">
-	{#if shiftRequests.length === 0}
-		<div class="rounded-xl border-2 border-dashed p-12 text-center">
-			<div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-muted/50">
-				<Calendar class="h-8 w-8 text-muted-foreground" />
-			</div>
-			<h3 class="mt-4 text-base font-semibold">Δεν υπάρχουν εκκρεμή αιτήματα</h3>
-			<p class="mt-2 text-sm text-muted-foreground">
-				Όλα τα αιτήματα αλλαγής βάρδιας έχουν αξιολογηθεί.
-			</p>
-		</div>
+	{#if loading}
+		<SpinnerComp
+			title="Φόρτωση αιτημάτων..."
+			description="Ανάκτηση αιτημάτων αλλαγής βάρδιας"
+			size="md"
+		/>
+	{:else if shiftRequests.length === 0}
+		<EmptyComp
+			title="Δεν βρέθηκαν αιτήματα"
+			description={'Χρήστες δεν έχουν κάνει αιτήματα για αλλάγη βάρδιας'}
+			icon={ArrowBigUpDashIcon as any}
+			primaryLabel={'αναμείνετε για αλλάγες'}
+		/>
 	{:else}
 		<div class="flex items-center justify-between">
 			<h3 class="text-xl font-bold tracking-tight">Αιτήματα Βαρδιών</h3>

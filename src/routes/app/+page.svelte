@@ -11,9 +11,6 @@
 	import { Checkbox } from '$lib/components/ui/checkbox/index.js';
 	import { format } from 'date-fns';
 	import { el } from 'date-fns/locale';
-	import { marked } from 'marked';
-	import { browser } from '$app/environment';
-	import DOMPurify from 'dompurify'; 
 
 	let { data, form } = $props();
 	let blog = $derived(data.blog as Blog);
@@ -31,29 +28,25 @@
 
 	function truncateText(text: string | null | undefined, maxLength: number = 120) {
 		if (!text || typeof text !== 'string') return '';
-		return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+		// Remove markdown syntax for preview
+		const plainText = text.replace(/[#*_~`\[\]]/g, '');
+		return plainText.length > maxLength ? plainText.substring(0, maxLength) + '...' : plainText;
 	}
 
 	function formatDate(dateString: string | null | undefined) {
 		if (!dateString) return '';
 		return format(new Date(dateString), 'dd MMMM yyyy', { locale: el });
 	}
+	
 	let loading = $state(false);
 	let termsAccepted = $state(false);
-
-	// Change the derived to check for browser
-	const renderedContent = $derived.by(() => {
-		if (!blog.content) return '';
-		const parsed = marked.parse(blog.content) as string;
-		return browser ? DOMPurify.sanitize(parsed) : parsed;
-	});
 </script>
 
 <div class="flex flex-1 flex-col gap-4 p-4 pt-6 bg-background">
-	<!-- Hero Section - Now compact -->
+	<!-- Hero Section -->
 	<Hero />
 
-	<!-- Main Cards Grid - Equal Height -->
+	<!-- Main Cards Grid -->
 	<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 		
 		<!-- Recipes Card -->
@@ -102,12 +95,6 @@
 				<!-- Background Icon -->
 				<div class="absolute top-3 right-3">
 					<CalendarIcon class="w-8 h-8 text-primary/20" />
-				</div>
-				
-				<!-- Today indicator -->
-				<div class="absolute top-3 left-3 flex items-center gap-2 px-2 py-1 rounded-full bg-green-500/20 border border-green-500/30">
-					<div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-					<span class="text-xs text-green-600 dark:text-green-400 font-medium">Σήμερα</span>
 				</div>
 
 				<!-- Mini Calendar Preview -->
@@ -173,18 +160,10 @@
 						{blog.title}
 					</h3>
 					{#if blog.content}
-					<div
-						class="preview-content overflow-auto p-4"
-						role="document"
-						aria-label="Markdown preview"
-					>
-						{#if blog.content.trim()}
-							{@html truncateText(renderedContent,100)}
-						{:else}
-							<p class="text-muted-foreground italic">Nothing to preview</p>
-						{/if}
-					</div>
-				{/if}
+						<p class="text-sm text-muted-foreground leading-relaxed mb-4 line-clamp-2">
+							{truncateText(blog.content, 120)}
+						</p>
+					{/if}
 					<div class="flex items-center gap-2 text-primary text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
 						Διάβασε περισσότερα <ArrowRight class="w-4 h-4" />
 					</div>
@@ -211,7 +190,7 @@
 	</div>
 </div>
 
-<!-- Terms Dialog - Keep as is -->
+<!-- Terms Dialog -->
 <Dialog.Root open={tosFlag}>
 	<Dialog.Content class="max-w-[500px] overflow-hidden p-0 border-border/50">
 		<Dialog.Header class="bg-muted px-6 py-4 border-b border-border/50">

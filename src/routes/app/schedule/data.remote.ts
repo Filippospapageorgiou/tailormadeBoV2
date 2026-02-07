@@ -1,5 +1,5 @@
 import { query, form } from '$app/server';
-import { createServerClient } from '$lib/supabase/server';
+import { createAdminClient, createServerClient } from '$lib/supabase/server';
 import { requireAuthenticatedUser } from '$lib/supabase/shared';
 import type { Profile, Organization } from '$lib/models/database.types';
 import type { WeeklySchedule, Shift } from '$lib/models/schedule.types';
@@ -263,9 +263,9 @@ export const createShiftChangeRequest = form(shiftChangeRequestSchema, async (da
 		// Get user's org_id
 		const { data: profile, error: profileError } = await supabase
 			.from('profiles')
-			.select('org_id')
+			.select('*')
 			.eq('id', user.id)
-			.single<Pick<Profile, 'org_id'>>();
+			.single<Profile>();
 
 		if (profileError || !profile) {
 			return {
@@ -277,7 +277,7 @@ export const createShiftChangeRequest = form(shiftChangeRequestSchema, async (da
 		// Verify the shift belongs to the user
 		const { data: shift, error: shiftError } = await supabase
 			.from('shifts')
-			.select('user_id, org_id')
+			.select('user_id, org_id, schedule_id')
 			.eq('id', data.shift_id)
 			.single();
 
@@ -352,9 +352,46 @@ export const createShiftChangeRequest = form(shiftChangeRequestSchema, async (da
 			};
 		}
 
+		const { data: managers, error: managersError } = await supabase
+			.from('profiles')
+			.select('id')
+			.eq('org_id', profile.org_id)
+			.in('role_id',[1,2]);
+
+		if (managersError) {
+			console.error('Error creating shift change request:', managersError);
+			return {
+				success: false,
+				message: 'Failed to create shift change request'
+			};
+		}
+
+		const admin = createAdminClient();
+		if (managers && managers.length > 0) {
+			const notifications = managers.map((manager) => ({
+				org_id: profile.org_id,
+				user_id: manager.id,
+				type: 'shift_request_update',
+				title: 'Αίτηση αλλαγής βάρδιας',
+				message: `Ο Χρήστης ${profile.full_name} ζήτησε αλλάγη βάρδιας`,
+				reference_id: newRequest.id?.toString() || null,
+				reference_url: `/app/settings/schedule_settings/${shift.schedule_id}`,
+				is_read: false
+			}));
+
+			const { data: newNotifications, error: notificationError } = await admin
+				.from('notifications')
+				.insert(notifications)
+				.select();
+
+			if (notificationError) {
+				console.error('Error creating notifications:', notificationError);
+			}
+		}
+
 		return {
 			success: true,
-			message: 'Shift change request created successfully',
+			message: 'Η αίτηση αλλαγής βάρδιας δημιουργήθηκε με επιτυχία',
 			request: newRequest
 		};
 	} catch (err) {

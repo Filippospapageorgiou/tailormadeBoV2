@@ -26,7 +26,7 @@
 	let openState = $state<Record<string, boolean>>(
 		Object.fromEntries(
 			// svelte-ignore state_referenced_locally
-						projects.map((p) => [
+			projects.map((p) => [
 				p.name,
 				p.items?.some((sub) => page.url.pathname.startsWith(sub.url)) ?? false
 			])
@@ -57,21 +57,21 @@
 			<Collapsible.Root bind:open={openState[project.name]}>
 				{#snippet child({ props })}
 					<Sidebar.MenuItem {...props}>
-						<Sidebar.MenuButton tooltipContent={project.name}>
-							{#snippet child({ props })}
-								<button
-									{...props}
-									onclick={() => handleMainClick(project)}
-								>
-									<project.icon />
-									<span class="text-base font-semibold">{project.name}</span>
-									{#if project.items?.length}
-										<ChevronRightIcon
-											class="ml-auto h-4 w-4 shrink-0 transition-transform duration-200 {openState[project.name] ? 'rotate-90' : ''}"
-										/>
-									{/if}
-								</button>
-							{/snippet}
+						<Sidebar.MenuButton
+							tooltipContent={project.name}
+							onclick={() => handleMainClick(project)}
+						>
+							<project.icon />
+							<span class="text-base font-semibold">{project.name}</span>
+							{#if project.items?.length}
+								<ChevronRightIcon
+									class="ml-auto h-4 w-4 shrink-0 transition-transform duration-200 {openState[
+										project.name
+									]
+										? 'rotate-90'
+										: ''}"
+								/>
+							{/if}
 						</Sidebar.MenuButton>
 						{#if project.items?.length}
 							<Collapsible.Content>
@@ -82,7 +82,7 @@
 												href={subItem.url}
 												onclick={handleSubClick}
 												class={isActive(subItem.url)
-													? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
+													? 'bg-sidebar-accent font-medium text-sidebar-accent-foreground'
 													: ''}
 											>
 												<subItem.icon

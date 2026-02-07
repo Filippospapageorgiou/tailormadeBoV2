@@ -32,7 +32,7 @@
 	let openState = $state<Record<string, boolean>>(
 		Object.fromEntries(
 			// svelte-ignore state_referenced_locally
-				items.map((item) => [
+			items.map((item) => [
 				item.title,
 				item.items?.some((sub) => page.url.pathname.startsWith(sub.url)) ?? false
 			])
@@ -77,21 +77,21 @@
 				<Collapsible.Root bind:open={openState[mainItem.title]}>
 					{#snippet child({ props })}
 						<Sidebar.MenuItem {...props}>
-							<Sidebar.MenuButton tooltipContent={mainItem.title}>
-								{#snippet child({ props })}
-									<button
-										{...props}
-										onclick={() => handleMainClick(mainItem)}
-									>
-										<mainItem.icon class="h-5 w-5" />
-										<span class="text-base font-semibold">{mainItem.title}</span>
-										{#if mainItem.items?.length}
-											<ChevronRightIcon
-												class="ml-auto h-4 w-4 shrink-0 transition-transform duration-200 {openState[mainItem.title] ? 'rotate-90' : ''}"
-											/>
-										{/if}
-									</button>
-								{/snippet}
+							<Sidebar.MenuButton
+								tooltipContent={mainItem.title}
+								onclick={() => handleMainClick(mainItem)}
+							>
+								<mainItem.icon class="h-5 w-5" />
+								<span class="text-base font-semibold">{mainItem.title}</span>
+								{#if mainItem.items?.length}
+									<ChevronRightIcon
+										class="ml-auto h-4 w-4 shrink-0 transition-transform duration-200 {openState[
+											mainItem.title
+										]
+											? 'rotate-90'
+											: ''}"
+									/>
+								{/if}
 							</Sidebar.MenuButton>
 							{#if mainItem.items?.length}
 								<Collapsible.Content>
@@ -103,7 +103,7 @@
 														href={subItem.url}
 														onclick={handleSubClick}
 														class={isActive(subItem.url)
-															? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
+															? 'bg-sidebar-accent font-medium text-sidebar-accent-foreground'
 															: ''}
 													>
 														<subItem.icon
