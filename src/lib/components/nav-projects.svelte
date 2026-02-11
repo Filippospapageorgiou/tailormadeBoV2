@@ -48,6 +48,8 @@
 	function isActive(url: string): boolean {
 		return page.url.pathname === url || page.url.pathname.startsWith(url + '/');
 	}
+
+	let hoveredItem = $state<string | null>(null);
 </script>
 
 <Sidebar.Group class="group-data-[collapsible=icon]:hidden">
@@ -60,8 +62,11 @@
 						<Sidebar.MenuButton
 							tooltipContent={project.name}
 							onclick={() => handleMainClick(project)}
+							class="sidebar-menu-button"
+							onmouseenter={() => (hoveredItem = project.name)}
+							onmouseleave={() => (hoveredItem = null)}
 						>
-							<project.icon />
+							<project.icon hover={hoveredItem === project.name} />
 							<span class="text-base font-semibold">{project.name}</span>
 							{#if project.items?.length}
 								<ChevronRightIcon

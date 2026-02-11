@@ -5,7 +5,6 @@
 	import * as Popover from '$lib/components/ui/popover';
 	import { ScrollArea } from '$lib/components/ui/scroll-area';
 	import {
-		BellIcon,
 		Coffee,
 		FileText,
 		Calendar,
@@ -13,7 +12,10 @@
 		ClipboardList,
 		RefreshCw,
 		CheckCheck,
-		Boxes
+		Boxes,
+
+		BellIcon
+
 	} from 'lucide-svelte';
 	import {
 		getNotifications,
@@ -24,6 +26,7 @@
 	import type { Notification, NotificationType } from '../../models/notifications.types';
 	import Separator from '../ui/separator/separator.svelte';
 	import Spinner from '../ui/spinner/spinner.svelte';
+	import Bell from '$lib/animated/icons/bell.svelte';
 
 	let query = getNotifications();
 
@@ -130,7 +133,7 @@
 	<Popover.Trigger>
 		<div class="relative inline-flex">
 			<Button variant="ghost" size="icon">
-				<BellIcon class="h-5 w-5" />
+				<Bell size={36} />
 			</Button>
 			{#if unreadCount > 0}
 				<Badge

@@ -2,7 +2,6 @@
 	import BookOpenIcon from '@lucide/svelte/icons/book-open';
 	import LifeBuoyIcon from '@lucide/svelte/icons/life-buoy';
 	import SendIcon from '@lucide/svelte/icons/send';
-	import Settings2Icon from '@lucide/svelte/icons/settings-2';
 	import {
 		NotebookPen,
 		Coffee,
@@ -22,12 +21,14 @@
 		Building,
 		PersonStanding
 	} from 'lucide-svelte';
+	import UserGroup from '$lib/animated/icons/user-group.svelte';
+	import GlobeAlt from '$lib/animated/icons/globe-alt.svelte';
 
 	const data = {
 		navMain: [
 			{
 				title: 'Barista work',
-				icon: PersonStanding,
+				icon: UserGroup,
 				isActive: false,
 				items: [
 					{
@@ -83,7 +84,7 @@
 			{
 				title: 'Manager work',
 				url: '/app',
-				icon: Settings2Icon,
+				icon: Settings,
 				isActive: false,
 				adminOnly: true,
 				items: [
@@ -138,7 +139,7 @@
 			{
 				name: 'Administration',
 				isActive: false,
-				icon: Globe,
+				icon: GlobeAlt,
 				items: [
 					{
 						title: 'Πίνακας Ελένχου',
@@ -191,6 +192,7 @@
 	import { getProfileContext } from '$lib/stores/profile.svelte';
 	import { Bot, Boxes } from '@lucide/svelte';
 	import { goto } from '$app/navigation';
+	import Settings from '$lib/animated/icons/settings.svelte';
 
 	let { ref = $bindable(null), ...restProps }: ComponentProps<typeof Sidebar.Root> = $props();
 

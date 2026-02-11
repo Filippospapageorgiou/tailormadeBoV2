@@ -1,6 +1,7 @@
 node_modules
 .agents
 .claude
+workspace
 CLAUDE.md
 
 # Output

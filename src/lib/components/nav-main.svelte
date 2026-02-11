@@ -68,6 +68,8 @@
 		if (!item.requiresSuperAdmin) return true;
 		return user.role_id === 1 || user.role_id === 2;
 	}
+
+	let hoveredItem = $state<string | null>(null);
 </script>
 
 <Sidebar.Group>
@@ -80,8 +82,11 @@
 							<Sidebar.MenuButton
 								tooltipContent={mainItem.title}
 								onclick={() => handleMainClick(mainItem)}
+								class="sidebar-menu-button"
+								onmouseenter={() => (hoveredItem = mainItem.title)}
+								onmouseleave={() => (hoveredItem = null)}
 							>
-								<mainItem.icon class="h-5 w-5" />
+								<mainItem.icon hover={hoveredItem === mainItem.title} />
 								<span class="text-base font-semibold">{mainItem.title}</span>
 								{#if mainItem.items?.length}
 									<ChevronRightIcon
