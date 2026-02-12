@@ -25,9 +25,11 @@
 		columns: ColumnDef<TData, TValue>[];
 		data: TData[];
 		pagination: PaginationState;
+		manualPagination?: boolean;
+		rowCount?: number;
 	};
 
-	let { columns, data, pagination = $bindable() }: DataTableProps<TData, TValue> = $props();
+	let { columns, data, pagination = $bindable(), manualPagination = false, rowCount }: DataTableProps<TData, TValue> = $props();
 
 	let sorting = $state<SortingState>([]);
 	let columnFilters = $state<ColumnFiltersState>([]);
@@ -39,9 +41,15 @@
 		// svelte-ignore state_referenced_locally
 		columns,
 		getCoreRowModel: getCoreRowModel(),
-		getPaginationRowModel: getPaginationRowModel(),
+		getPaginationRowModel: manualPagination ? undefined : getPaginationRowModel(),
 		getSortedRowModel: getSortedRowModel(),
 		getFilteredRowModel: getFilteredRowModel(),
+		get manualPagination() {
+			return manualPagination;
+		},
+		get rowCount() {
+			return rowCount;
+		},
 		onSortingChange: (updater) => {
 			if (typeof updater === 'function') {
 				sorting = updater(sorting);

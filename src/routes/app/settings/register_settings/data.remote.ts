@@ -278,13 +278,25 @@ export const getSuppliersDataPayments = query(registerTableSchema, async (params
 
 		const ids = currentPeriod.map((r) => r.id);
 
-		// Collect all payments from all closings
-		const allPayments: RegisterSupplierPayment[] = [];
-		for (const id of ids) {
-			const result = await getPayments(supabase, id);
-			if (result.success && result.payments) {
-				allPayments.push(...result.payments);
-			}
+		// Batch fetch all payments for all closings in a single query
+		const { data: allPayments, error: paymentsError } = await supabase
+			.from('register_supplier_payments')
+			.select('*')
+			.in('closing_id', ids)
+			.overrideTypes<RegisterSupplierPayment[]>();
+
+		if (paymentsError) {
+			console.error('[getSuppliersDataPayments] Error fetching payments:', paymentsError);
+			return {
+				success: false,
+				message: 'Error fetching supplier payments',
+				currentStartDate: currentStart,
+				currentEndDate: currentEnd,
+				totalSupplierPayments: 0,
+				supplierPayments: [],
+				supplierTotals: [],
+				countSuppliers: 0
+			};
 		}
 
 		// Create supplier totals map - aggregate by supplier_name
@@ -406,13 +418,25 @@ export const getExpensesData = query(registerTableSchema, async (params) => {
 
 		const ids = currentPeriod.map((r) => r.id);
 
-		// Collect all expenses from all closings
-		const allExpenses: RegisterExpense[] = [];
-		for (const id of ids) {
-			const result = await getExpenses(supabase, id);
-			if (result.success && result.expenses) {
-				allExpenses.push(...result.expenses);
-			}
+		// Batch fetch all expenses for all closings in a single query
+		const { data: allExpenses, error: expensesError } = await supabase
+			.from('register_expenses')
+			.select('*')
+			.in('closing_id', ids)
+			.overrideTypes<RegisterExpense[]>();
+
+		if (expensesError) {
+			console.error('[getExpensesData] Error fetching expenses:', expensesError);
+			return {
+				success: false,
+				message: 'Error fetching expenses',
+				currentStartDate: currentStart,
+				currentEndDate: currentEnd,
+				totalExpenses: 0,
+				expensesList: [],
+				expenseTotals: [],
+				countExpenseCategories: 0
+			};
 		}
 
 		// Calculate total expenses

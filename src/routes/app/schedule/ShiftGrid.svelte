@@ -125,7 +125,7 @@
 						<!-- Employee Cell (Sticky) -->
 						<button 
 							class={cn(
-								"sticky left-0 z-10 flex items-center gap-3 p-4 text-left border-r  border-border/50 transition-all backdrop-blur-sm",
+								"sticky left-0 z-10 flex items-center gap-2 p-1 text-left border-r  border-border/50 transition-all backdrop-blur-sm",
 								isSelected ? "bg-primary/10 dark:bg-primary/20" : "bg-inherit",
 								"hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary/20"
 							)}
@@ -181,7 +181,7 @@
 										<!-- Empty Cell -->
 										<!-- svelte-ignore a11y_click_events_have_key_events -->
 										<!-- svelte-ignore a11y_no_static_element_interactions -->
-										<div class="h-full min-h-[60px] rounded-md border  border-border/50 border-muted-foreground/20 bg-muted/10 flex items-center justify-center group cursor-pointer hover:border-primary/30 hover:bg-primary/5 transition-colors" onclick={() => {/* Could open "Add Shift" */}}>
+										<div class="h-full min-h-[60px] rounded-md border  border-border/50 bg-muted/10 flex items-center justify-center group cursor-pointer hover:border-primary/30 hover:bg-primary/5 transition-colors" onclick={() => {/* Could open "Add Shift" */}}>
 											<span class="text-xs text-muted-foreground/50 group-hover:text-primary/50">+</span>
 										</div>
 									{:else}

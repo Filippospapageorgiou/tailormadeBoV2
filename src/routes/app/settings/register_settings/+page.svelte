@@ -81,10 +81,8 @@
 		}
 	});
 
-	// svelte-ignore state_referenced_locally
-	let end = daysDifference;
-	// svelte-ignore state_referenced_locally
-	let start = pagination.pageIndex + 1;
+	let start = $derived(pagination.pageIndex * pagination.pageSize + 1);
+	let end = $derived(start + pagination.pageSize - 1);
 	// Get today's date - use derived to ensure they're always valid
 	let rangeStart = $state(now(getLocalTimeZone()).subtract({ days: 7 }));
 	let rangeEnd = $state(now(getLocalTimeZone()));
@@ -184,6 +182,7 @@
 
 	// Table data
 	let tableData = $derived(registerDataTableQuery.current?.data ?? []);
+	let totalCount = $derived(registerDataTableQuery.current?.totalCount ?? 0);
 
 	// Time period options
 	const periodOptions = [
@@ -297,7 +296,7 @@
 						<Select.Content>
 							<Select.Group>
 								<Select.Label>Select Period</Select.Label>
-								{#each periodOptions as option}
+								{#each periodOptions as option (option.value)}
 									<Select.Item value={option.value} label={option.label}>
 										{option.label}
 									</Select.Item>
@@ -352,7 +351,7 @@
 						Export Excel
 					</Button>
 				</div>
-				<RegisterDataTable data={tableData} columns={registerColumns} bind:pagination />
+				<RegisterDataTable data={tableData} columns={registerColumns} bind:pagination manualPagination={true} rowCount={totalCount} />
 			</div>
 		</main>
 	</div>

@@ -1,6 +1,10 @@
 <script lang="ts">
 	import type { Shift } from '$lib/models/schedule.types';
 	import { SHIFT_TYPE } from '$lib/models/schedule.types';
+	import Clock from '@lucide/svelte/icons/clock';
+	import Coffee from '@lucide/svelte/icons/coffee';
+	import Thermometer from '@lucide/svelte/icons/thermometer';
+	import Palmtree from '@lucide/svelte/icons/palmtree';
 
 	interface Props {
 		shift: Shift;
@@ -16,50 +20,75 @@
 		return `${hours}:${minutes}`;
 	}
 
-	function getShiftTypeLabel(type: string): string {
-		const labels: Record<string, string> = {
-			work: 'Εργασία',
-			day_off: 'Ρεπό',
-			sick_leave: 'Άρρωστος',
-			vacation: 'Άδεια'
-		};
-		return labels[type] || type;
-	}
+	const shiftConfig: Record<string, { label: string; icon: typeof Clock }> = {
+		work: { label: 'Εργασία', icon: Clock },
+		day_off: { label: 'Ρεπό', icon: Coffee },
+		sick_leave: { label: 'Άρρωστος', icon: Thermometer },
+		vacation: { label: 'Άδεια', icon: Palmtree }
+	};
 
+	let config = $derived(shiftConfig[shift.shift_type] ?? shiftConfig.work);
 	let isWorkShift = $derived(shift.shift_type === SHIFT_TYPE.WORK);
+	let ShiftIcon = $derived(config.icon);
 </script>
 
 <button
 	type="button"
 	onclick={onClick}
-	class="group relative w-full cursor-pointer transition-transform duration-200 active:scale-95"
-	aria-label={`Shift for ${formatTime(shift.start_time)} - ${formatTime(shift.end_time)}`}
+	class="group relative w-full cursor-pointer rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1"
+	aria-label={isWorkShift
+		? `${formatTime(shift.start_time)} - ${formatTime(shift.end_time)}`
+		: config.label}
 >
 	<div
-		class="relative flex h-12 w-full items-center justify-center overflow-hidden rounded-lg border border-white/30 backdrop-blur-md transition-all duration-300 group-hover:border-white/60 group-hover:shadow-lg group-hover:shadow-white/5"
-		style="background-color: {badgeColor}50;"
+		class="relative flex h-[50px] w-full items-center gap-2 overflow-hidden rounded-md border transition-all duration-150
+		       {isWorkShift
+			? 'border-border/60 bg-card hover:border-border hover:shadow-sm dark:bg-card dark:hover:border-border dark:hover:shadow-none'
+			: 'border-dashed border-border/50 bg-muted/40 hover:bg-muted/60 dark:bg-muted/20 dark:hover:bg-muted/30'}"
 	>
+		<!-- Left accent bar -->
 		<div
-			class="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/40 via-white/5 to-transparent dark:from-white/20"
+			class="absolute top-0 left-0 h-full w-[3px] rounded-l-md transition-all duration-150"
+			class:opacity-80={!isWorkShift}
+			style="background-color: {badgeColor};"
 		></div>
 
-		<div class="pointer-events-none absolute inset-0 bg-white/5"></div>
-
-		<div class="relative z-10 flex items-center gap-2 px-2.5 font-bold text-stone-700 drop-shadow-[0_1px_2px_rgba(255,255,255,0.6)] dark:text-white dark:drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
+		<!-- Content -->
+		<div class="flex w-full items-center gap-2 pr-2.5 pl-3">
 			{#if isWorkShift}
-				<span class="font-sans text-sm tracking-tight whitespace-nowrap">
-					{formatTime(shift.start_time)} - {formatTime(shift.end_time)}
-				</span>
+				<!-- Work shift: time range -->
+				<div class="flex min-w-0 flex-col">
+					<span
+						class="text-[13px] leading-tight font-semibold tracking-tight text-foreground tabular-nums"
+					>
+						{formatTime(shift.start_time)}–{formatTime(shift.end_time)}
+					</span>
+					{#if shift.shift_category}
+						<div class="flex gap-[20px] flex-row justify-between items-start content-center flex-nowrap">
+							<div
+								class="text-[10px] font-medium tracking-wider text-muted-foreground uppercase"
+							>
+								{shift.shift_category}
+							</div>
+							<!-- Subtle clock icon on the right -->
+							<div class="opacity-0 transition-opacity duration-150 group-hover:opacity-60">
+								<Clock class="h-3.5 w-3.5 text-muted-foreground" />
+							</div>
+						</div>
+					{/if}
+				</div>
 			{:else}
-				<span class="font-sans text-sm tracking-tight whitespace-nowrap">
-					{getShiftTypeLabel(shift.shift_type)}
+				<!-- Non-work shift: icon + label -->
+				<div
+					class="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded"
+					style="background-color: {badgeColor}18;"
+				>
+					<ShiftIcon class="h-3.5 w-3.5" style="color: {badgeColor};" />
+				</div>
+				<span class="truncate text-[12px] font-medium text-muted-foreground">
+					{config.label}
 				</span>
 			{/if}
 		</div>
-
-		<div
-			class="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-20"
-			style="background-color: {badgeColor};"
-		></div>
 	</div>
 </button>
