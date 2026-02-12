@@ -41,6 +41,7 @@
 	import type { importantPhoneCalls } from '$lib/models/database.types';
 	import ScrollAreaScrollbar from '$lib/components/ui/scroll-area/scroll-area-scrollbar.svelte';
 	import PhoneInput from '$lib/components/ui/phone-input/phone-input.svelte';
+	import EmptyComp from '$lib/components/custom/EmptyComp.svelte';
 
 	// Query
 	let contactsQuery = getAllPhoneContacts();
@@ -267,7 +268,7 @@
 	{#if contactsQuery.loading}
 		<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 			{#each Array(6) as _, i}
-				<div class="animate-pulse rounded-xl border bg-card p-6">
+				<div class="animate-pulse rounded-xl border border-border/50 bg-card p-6">
 					<div class="mb-4 flex items-start justify-between">
 						<div class="space-y-2">
 							<div class="h-5 w-32 rounded bg-muted"></div>
@@ -283,21 +284,17 @@
 			{/each}
 		</div>
 	{:else if filteredContacts.length === 0}
-		<div class="flex flex-col items-center justify-center rounded-xl border border-dashed py-16">
-			<div class="mb-4 rounded-full bg-muted p-4">
-				<Phone class="h-8 w-8 text-muted-foreground" />
-			</div>
-			<h3 class="mb-1 text-lg font-medium">Δεν βρέθηκαν επαφές</h3>
-			<p class="mb-4 text-center text-sm text-muted-foreground">
-				{searchQuery ? 'Δοκιμάστε διαφορετικούς όρους αναζήτησης' : 'Προσθέστε την πρώτη σας επαφή'}
-			</p>
-			{#if !searchQuery}
-				<Button onclick={() => (addModalOpen = true)}>
-					<Plus class="mr-2 h-4 w-4" />
-					Προσθήκη Επαφής
-				</Button>
-			{/if}
-		</div>
+		<EmptyComp 
+			title='Δεν βρέθηκαν επαφές'
+			description={'Προσθέστε την πρώτη σας επαφή ή καθάρισε τα φίλτρα'}
+				icon={Phone as any}
+				primaryLabel="Καθαρισμός Φίλτρων"
+				onPrimaryClick={() => {
+					searchQuery = '';
+					filterActive = 'all';
+				}}
+				primaryIcon={X as any}
+		/>
 	{:else}
 		<ScrollArea class="h-135">
 			<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -534,7 +531,7 @@
 						<Textarea id="add-notes" name="notes" placeholder="Επιπλέον πληροφορίες..." rows={3} />
 					</div>
 
-					<div class="flex items-center justify-between rounded-lg border p-3">
+					<div class="flex items-center justify-between rounded-lg border border-border/50 p-3">
 						<div class="space-y-0.5">
 							<Label>Ενεργή επαφή</Label>
 							<p class="text-xs text-muted-foreground">
@@ -648,7 +645,7 @@
 							<Textarea id="edit-notes" name="notes" value={editContact.notes || ''} rows={3} />
 						</div>
 
-						<div class="flex items-center justify-between rounded-lg border p-3">
+						<div class="flex items-center justify-between rounded-lg border border-border/50 p-3">
 							<div class="space-y-0.5">
 								<Label>Ενεργή επαφή</Label>
 								<p class="text-xs text-muted-foreground">

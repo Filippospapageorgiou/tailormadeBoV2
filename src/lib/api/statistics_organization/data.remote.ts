@@ -81,6 +81,43 @@ export const getTodayTasksStats = query(async () => {
 	}
 });
 
+// Get daily register closings grouped by org
+const dayliRegisterSchema = z.object({
+	date: z.string()
+});
+
+export const getAllRegisterClosingDate = query(dayliRegisterSchema, async ({ date }) => {
+	const supabase = createServerClient();
+	try {
+		const { data, error } = await supabase
+			.rpc('get_daily_register_closings', { p_date: date });
+
+		console.log('data from rpc function: ',data);	
+
+		if (error){
+			console.error('[getAllRegisterClosingDate] error fetching daily register data: ', error);
+			return {
+				success: false,
+				message: 'Σφάλμα κατά την ανάκτηση δεδομένων',
+				data:null
+			}
+		};
+
+		return {
+			success: true,
+			data
+		};
+	} catch (err) {
+		console.error('[getAllRegisterClosingDate] error fetching daily register data: ', err);
+		return {
+			success: false,
+			message: 'Σφάλμα κατά την ανάκτηση δεδομένων',
+			data:null
+		};
+	}
+});
+
+
 export const getAllEquipmentsOverview = query(async () => {
 	const supabase = createServerClient();
 	try {

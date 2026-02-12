@@ -80,9 +80,10 @@
 	});
 </script>
 
-<div class="flex items-center gap-2 py-4">
+<!-- Toolbar -->
+<div class="flex items-center gap-2 border-b border-border/40 px-4 py-3">
 	<Input
-		placeholder="Filter by store name..."
+		placeholder="Αναζήτηση καταστήματος..."
 		value={(table.getColumn('store_name')?.getFilterValue() as string) ?? ''}
 		onchange={(e) => {
 			table.getColumn('store_name')?.setFilterValue(e.currentTarget.value);
@@ -90,18 +91,22 @@
 		oninput={(e) => {
 			table.getColumn('store_name')?.setFilterValue(e.currentTarget.value);
 		}}
-		class="max-w-sm"
+		class="h-8 max-w-xs text-sm"
 	/>
+
+	<div class="ml-auto text-xs text-muted-foreground">
+		{table.getFilteredRowModel().rows.length} οργανισμοί
+	</div>
 </div>
 
 <!-- Table -->
-<div class="rounded-md">
+<div>
 	<Table.Root>
 		<Table.Header>
 			{#each table.getHeaderGroups() as headerGroup (headerGroup.id)}
-				<Table.Row>
+				<Table.Row class="border-border/40 hover:bg-transparent">
 					{#each headerGroup.headers as header (header.id)}
-						<Table.Head colspan={header.colSpan}>
+						<Table.Head colspan={header.colSpan} class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
 							{#if !header.isPlaceholder}
 								<FlexRender
 									content={header.column.columnDef.header}
@@ -116,12 +121,12 @@
 		<Table.Body>
 			{#each table.getRowModel().rows as row, index (row.id)}
 				<Table.Row
-					class="animate-fade-in-down"
-					style="animation-delay: {index * 200}ms;"
+					class="animate-fade-in-down border-border/30 transition-colors hover:bg-muted/50"
+					style="animation-delay: {index * 80}ms;"
 					data-state={row.getIsSelected() && 'selected'}
 				>
 					{#each row.getVisibleCells() as cell (cell.id)}
-						<Table.Cell>
+						<Table.Cell class="py-3">
 							<FlexRender content={cell.column.columnDef.cell} context={cell.getContext()} />
 						</Table.Cell>
 					{/each}
@@ -139,18 +144,15 @@
 	</Table.Root>
 </div>
 
-<!-- Pagination Controls -->
-<div class="flex flex-col gap-4 px-2 py-4 sm:flex-row sm:items-center sm:justify-between">
-	<!-- Left side: Row count info -->
-	<div class="text-sm text-muted-foreground text-center sm:text-left">
-		Showing {table.getRowModel().rows.length} of {table.getFilteredRowModel().rows.length} row(s).
+<!-- Pagination -->
+<div class="flex items-center justify-between border-t border-border/40 px-4 py-3">
+	<div class="text-xs text-muted-foreground">
+		Σελίδα {table.getState().pagination.pageIndex + 1} από {table.getPageCount()}
 	</div>
 
-	<!-- Right side: Pagination controls -->
-	<div class="flex flex-col items-center gap-4 sm:flex-row sm:gap-6 lg:gap-8">
-		<!-- Rows per page selector -->
-		<div class="flex items-center space-x-2">
-			<p class="text-sm font-medium">Rows per page</p>
+	<div class="flex items-center gap-4">
+		<div class="flex items-center gap-2">
+			<p class="text-xs text-muted-foreground">Ανά σελίδα</p>
 			<Select.Root
 				allowDeselect={false}
 				type="single"
@@ -159,7 +161,7 @@
 					table.setPageSize(Number(value));
 				}}
 			>
-				<Select.Trigger class="h-8 w-[70px]">
+				<Select.Trigger class="h-7 w-[60px] text-xs">
 					{String(table.getState().pagination.pageSize)}
 				</Select.Trigger>
 				<Select.Content side="top">
@@ -172,56 +174,45 @@
 			</Select.Root>
 		</div>
 
-		<!-- Page number display & Navigation buttons -->
-		<div class="flex items-center gap-2">
-			<!-- First page - hidden on mobile -->
+		<div class="flex items-center gap-1">
 			<Button
-				variant="outline"
-				class="hidden size-8 p-0 sm:flex"
+				variant="ghost"
+				class="hidden size-7 p-0 sm:flex"
 				onclick={() => table.setPageIndex(0)}
 				disabled={!table.getCanPreviousPage()}
 			>
-				<span class="sr-only">Go to first page</span>
-				<ChevronsLeftIcon />
+				<span class="sr-only">Πρώτη σελίδα</span>
+				<ChevronsLeftIcon class="h-4 w-4" />
 			</Button>
 
-			<!-- Previous page -->
 			<Button
-				variant="outline"
-				class="size-8 p-0"
+				variant="ghost"
+				class="size-7 p-0"
 				onclick={() => table.previousPage()}
 				disabled={!table.getCanPreviousPage()}
 			>
-				<span class="sr-only">Go to previous page</span>
-				<ChevronLeftIcon />
+				<span class="sr-only">Προηγούμενη σελίδα</span>
+				<ChevronLeftIcon class="h-4 w-4" />
 			</Button>
 
-			<!-- Page number display -->
-			<div class="flex min-w-[80px] items-center justify-center text-sm font-medium sm:min-w-[100px]">
-				<span class="sm:hidden">{table.getState().pagination.pageIndex + 1}/{table.getPageCount()}</span>
-				<span class="hidden sm:inline">Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}</span>
-			</div>
-
-			<!-- Next page -->
 			<Button
-				variant="outline"
-				class="size-8 p-0"
+				variant="ghost"
+				class="size-7 p-0"
 				onclick={() => table.nextPage()}
 				disabled={!table.getCanNextPage()}
 			>
-				<span class="sr-only">Go to next page</span>
-				<ChevronRightIcon />
+				<span class="sr-only">Επόμενη σελίδα</span>
+				<ChevronRightIcon class="h-4 w-4" />
 			</Button>
 
-			<!-- Last page - hidden on mobile -->
 			<Button
-				variant="outline"
-				class="hidden size-8 p-0 sm:flex"
+				variant="ghost"
+				class="hidden size-7 p-0 sm:flex"
 				onclick={() => table.setPageIndex(table.getPageCount() - 1)}
 				disabled={!table.getCanNextPage()}
 			>
-				<span class="sr-only">Go to last page</span>
-				<ChevronsRightIcon />
+				<span class="sr-only">Τελευταία σελίδα</span>
+				<ChevronsRightIcon class="h-4 w-4" />
 			</Button>
 		</div>
 	</div>

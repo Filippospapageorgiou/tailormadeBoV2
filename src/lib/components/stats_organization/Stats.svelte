@@ -1,18 +1,27 @@
 <script lang="ts">
 	import { getAllBonusPeriods } from '$lib/api/bonus_managment/data.remote';
-	import { getAllEquipmentsOverview, getTodayTasksStats, getAllOrganizations } from '$lib/api/statistics_organization/data.remote';
-    import { getLeaderboards } from '$lib/api/statistics_organization/data.remote';
+	import {
+		getAllEquipmentsOverview,
+		getTodayTasksStats,
+		getAllOrganizations,
+		getAllRegisterClosingDate
+	} from '$lib/api/statistics_organization/data.remote';
+	import { getLeaderboards } from '$lib/api/statistics_organization/data.remote';
 	import BarChartBonus from './BarChartBonus.svelte';
 	import PieChartEquipments from './PieChartEquipments.svelte';
 	import TasksChart from './TasksChart.svelte';
 	import LeaderboardsStats from './LeaderboardsStats.svelte';
-    import CustomMap from './CustomMap.svelte';
+	import CustomMap from './CustomMap.svelte';
+	import BarChartRegisterClosing from './BarChartRegisterClosing.svelte';
 
 	let query = getAllBonusPeriods();
 	let queryTasks = getTodayTasksStats();
 	let queryEquipments = getAllEquipmentsOverview();
 	let queryLeaderboards = getLeaderboards();
 	let queryAllOrgs = getAllOrganizations();
+	let queryRegisterClosings = getAllRegisterClosingDate({
+		date: new Date().toISOString().split('T')[0] // '2026-02-12'
+	});
 
 	let isLoading = $state(false);
 	async function handleRefresh() {
@@ -27,9 +36,17 @@
 		await queryEquipments.refresh();
 		isLoadingEq = false;
 	}
+
+	let isLoadingRegister = $state(false);
+	async function handleRefreshRegister() {
+		isLoadingRegister = true;
+		await queryRegisterClosings.refresh();
+		isLoadingRegister = false;
+	}
 </script>
 
 <div class="mx-4 flex flex-col gap-4 h-full">
+	<BarChartRegisterClosing data={queryRegisterClosings.current?.data} />
 	<!-- Responsive Grid -->
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
 		<!-- Bonus Chart - Full width mobile, 3 cols desktop -->

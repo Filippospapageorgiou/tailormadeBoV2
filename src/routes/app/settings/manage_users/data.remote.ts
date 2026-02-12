@@ -47,18 +47,11 @@ export const getAllUserFromOrg = query(async () => {
 		};
 	}
 
+	
 	const { data: users, error: userError } = await supabase
 		.from('profiles')
-		.select(
-			`
-                    *,
-                role_types!role_id(role_name)
-            `
-		)
+		.select('*')
 		.eq('org_id', orgId.org_id);
-
-	const flattenedUsers: Profile[] =
-		users?.map((user) => ({ ...user, role_name: user.role_types?.role_name || '' })) || [];
 
 	if (userError) {
 		console.error('Error fetching user from organization: ', userError);
@@ -82,7 +75,7 @@ export const getAllUserFromOrg = query(async () => {
 	return {
 		success: true,
 		message: 'Success reading data from database',
-		flattenedUsers,
+		users,
 		roleTypes
 	};
 });

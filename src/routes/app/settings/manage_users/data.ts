@@ -4,7 +4,7 @@ export const roles = [
         label:"Super Admin"
     },
 	{
-		value: "manager",
+		value: "admin",
 		label: "manager",
 	},
 	{
@@ -18,5 +18,9 @@ export const roles = [
 	{
 		value: "baker",
 		label: "Baker",
+	},
+	{
+		value: "register",
+		label: "register",
 	},
 ];

@@ -6,7 +6,7 @@
 	import * as Select from '$lib/components/ui/select';
 	import * as Tooltip from '$lib/components/ui/tooltip';
 	import * as Empty from '$lib/components/ui/empty/index.js';
-	import { X, RefreshCcw, Plus, Search, UserPlus, Mail, Users, Phone } from 'lucide-svelte';
+	import { X, RefreshCcw, Plus, Search, UserPlus, Mail, Users, Phone, Shield, Coffee, ChefHat, Crown } from 'lucide-svelte';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import DataTable from './data-table.svelte';
 	import { columns } from './colums';
@@ -23,8 +23,6 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 
-
-
 	// Only call auth once and store the result
 	let auth = authenticatedAccess();
 
@@ -35,13 +33,26 @@
 	});
 
 	let query = getAllUserFromOrg();
-	let profiles = $derived(query.current?.flattenedUsers);
+	let profiles = $derived(query.current?.users ?? []);
 	let invite = $state(false);
 
 	let inviteUserDialog: boolean = $state(false);
 	let inviteEmail: string = $state('');
 
 	let activeTab = $state(page.url.searchParams.get('tab') || 'users');
+
+	// Role stats derived from profiles
+	let roleStats = $derived.by(() => {
+		const stats = { managers: 0, headBaristas: 0, baristas: 0, bakersRegisters: 0};
+		for (const p of profiles) {
+			const role = p.role?.toLowerCase();
+			if (role === 'admin' || role === 'super_admin') stats.managers++;
+			else if (role === 'head_barista') stats.headBaristas++;
+			else if (role === 'barista') stats.baristas++;
+			else if (role === 'baker' || role === 'register') stats.bakersRegisters++;
+		}
+		return stats;
+	});
 
 	function handleTabChange(value: string | undefined) {
 		if (!value) return;
@@ -84,63 +95,126 @@
 	<div class="min-h-screen bg-background">
 		<main class="container mx-auto px-4 pt-6 pb-10 md:px-6 lg:px-8">
 			<!-- Header Section -->
-			<div class="mb-6 space-y-2">
-				<h1 class="text-2xl font-semibold tracking-tight md:text-3xl">
-					Διαχείριση Χρηστών & Οργανισμού
-				</h1>
-				<p class="text-sm text-muted-foreground">
-					Διαχειριστείτε τα μέλη, τους ρόλους και τα δικαιώματα του οργανισμού σας
-				</p>
+			<div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+				<div class="space-y-1">
+					<h1 class="text-2xl font-semibold tracking-tight md:text-3xl">
+						Διαχείριση Χρηστών & Οργανισμού
+					</h1>
+					<p class="text-sm text-muted-foreground">
+						Διαχειριστείτε τα μέλη, τους ρόλους και τα δικαιώματα του οργανισμού σας
+					</p>
+				</div>
+				<Button
+					variant="default"
+					size="sm"
+					class="h-9 w-fit cursor-pointer gap-2 px-4"
+					onclick={handleIviteUser}
+				>
+					<UserPlus class="h-4 w-4" />
+					<span>Πρόσκληση Χρήστη</span>
+				</Button>
 			</div>
 
 			<!-- Tabs Section -->
 			<Tabs.Root value={activeTab} onValueChange={handleTabChange} class="w-full">
-				<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-					<Tabs.List class="flex h-auto w-auto justify-start space-y-1 bg-transparent">
-						<Tabs.Trigger value="users" class="w-full cursor-pointer justify-start rounded-md border-0 bg-transparent px-4 py-3 text-base font-medium text-muted-foreground shadow-none transition-colors hover:text-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground">
-							<Users class="h-4 w-4" />
-							<span class="hover:underline">Χρήστες</span>
-						</Tabs.Trigger>
-						<Tabs.Trigger value="phone_calls" class="w-full cursor-pointer justify-start rounded-md border-0 bg-transparent px-4 py-3 text-base font-medium text-muted-foreground shadow-none transition-colors hover:text-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground">
-							<Phone class="h-4 w-4" />
-							<span class="hover:underline">Προμηθευτές - Τεχνικοί</span>
-						</Tabs.Trigger>
-					</Tabs.List>
-				</div>
+				<Tabs.List class="flex h-auto w-auto justify-start bg-transparent">
+					<Tabs.Trigger value="users" class="cursor-pointer justify-start rounded-md border-0 bg-transparent px-4 py-2.5 text-sm font-medium text-muted-foreground shadow-none transition-colors hover:text-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground">
+						<Users class="h-4 w-4" />
+						Χρήστες
+					</Tabs.Trigger>
+					<Tabs.Trigger value="phone_calls" class="cursor-pointer justify-start rounded-md border-0 bg-transparent px-4 py-2.5 text-sm font-medium text-muted-foreground shadow-none transition-colors hover:text-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground">
+						<Phone class="h-4 w-4" />
+						Προμηθευτές - Τεχνικοί
+					</Tabs.Trigger>
+				</Tabs.List>
 
-				<Tabs.Content value="users" class="mt-6 space-y-4 animate-fade-in-left">
-					<!-- Actions Bar -->
-					<div
-						class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end"
-					>
-						<div class="flex items-center gap-2">
-							<Tooltip.Provider>
-								<Tooltip.Root>
-									<Tooltip.Trigger>
-										<Button
-											variant="default"
-											size="sm"
-											class="h-9 cursor-pointer gap-2 px-4"
-											onclick={handleIviteUser}
-										>
-											<UserPlus class="h-4 w-4" />
-											<span>Πρόσκληση Χρήστη</span>
-										</Button>
-									</Tooltip.Trigger>
-									<Tooltip.Content>
-										<p>Προσκαλέστε νέο χρήστη στον οργανισμό</p>
-									</Tooltip.Content>
-								</Tooltip.Root>
-							</Tooltip.Provider>
-							<!-- Stats Badge - visible on users tab -->
-							<div class="flex items-center gap-3">
-								<Badge variant="secondary" class="text-xs">
-									{profiles?.length ?? 0} χρήστες
-								</Badge>
+				<Tabs.Content value="users" class="mt-6 space-y-6 animate-fade-in-left">
+					<!-- Stats Cards -->
+					<div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+						<!-- Total Users -->
+						<div class="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-4 transition-all duration-300 hover:shadow-md">
+							<div class="flex items-center justify-between">
+								<div class="space-y-1">
+									<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">Σύνολο</p>
+									<p class="text-2xl font-bold tabular-nums tracking-tight">{profiles.length}</p>
+								</div>
+								<div class="rounded-lg bg-primary/10 p-2.5 text-primary transition-colors group-hover:bg-primary/15">
+									<Users class="h-5 w-5" />
+								</div>
+							</div>
+							<div class="mt-2">
+								<p class="text-[11px] text-muted-foreground">Ενεργοί χρήστες</p>
+							</div>
+						</div>
+
+						<!-- Managers -->
+						<div class="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-4 transition-all duration-300 hover:shadow-md">
+							<div class="flex items-center justify-between">
+								<div class="space-y-1">
+									<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">Managers</p>
+									<p class="text-2xl font-bold tabular-nums tracking-tight">{roleStats.managers}</p>
+								</div>
+								<div class="rounded-lg bg-amber-500/10 p-2.5 text-amber-600 transition-colors group-hover:bg-amber-500/15 dark:text-amber-400">
+									<Crown class="h-5 w-5" />
+								</div>
+							</div>
+							<div class="mt-2">
+								<div class="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+									<div
+										class="h-full rounded-full bg-amber-500 transition-all duration-500"
+										style="width: {profiles.length ? (roleStats.managers / profiles.length) * 100 : 0}%"
+									></div>
+								</div>
+							</div>
+						</div>
+
+						<!-- Baristas -->
+						<div class="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-4 transition-all duration-300 hover:shadow-md">
+							<div class="flex items-center justify-between">
+								<div class="space-y-1">
+									<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">Baristas & Head baristas</p>
+									<p class="text-2xl font-bold tabular-nums tracking-tight">{roleStats.baristas + roleStats.headBaristas}</p>
+								</div>
+								<div class="rounded-lg bg-emerald-500/10 p-2.5 text-emerald-600 transition-colors group-hover:bg-emerald-500/15 dark:text-emerald-400">
+									<Coffee class="h-5 w-5" />
+								</div>
+							</div>
+							<div class="mt-2">
+								<div class="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+									<div
+										class="h-full rounded-full bg-emerald-500 transition-all duration-500"
+										style="width: {profiles.length ? ((roleStats.baristas + roleStats.headBaristas) / profiles.length) * 100 : 0}%"
+									></div>
+								</div>
+							</div>
+						</div>
+
+						<!-- Bakers -->
+						<div class="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-4 transition-all duration-300 hover:shadow-md">
+							<div class="flex items-center justify-between">
+								<div class="space-y-1">
+									<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">Bakers & register</p>
+									<p class="text-2xl font-bold tabular-nums tracking-tight">{roleStats.bakersRegisters}</p>
+								</div>
+								<div class="rounded-lg bg-orange-500/10 p-2.5 text-orange-600 transition-colors group-hover:bg-orange-500/15 dark:text-orange-400">
+									<ChefHat class="h-5 w-5" />
+								</div>
+							</div>
+							<div class="mt-2">
+								<div class="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+									<div
+										class="h-full rounded-full bg-orange-500 transition-all duration-500"
+										style="width: {profiles.length ? (roleStats.bakersRegisters / profiles.length) * 100 : 0}%"
+									></div>
+								</div>
 							</div>
 						</div>
 					</div>
-					<DataTable data={query.current?.flattenedUsers ?? []} {columns} />
+
+					<!-- Data Table wrapped in card -->
+					<div class="rounded-xl border border-border/60 bg-card">
+						<DataTable data={query.current?.users ?? []} {columns} />
+					</div>
 				</Tabs.Content>
 
 				<Tabs.Content value="phone_calls" class="mt-6 animate-fade-in-left">

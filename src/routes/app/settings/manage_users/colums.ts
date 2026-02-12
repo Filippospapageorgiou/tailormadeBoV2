@@ -51,7 +51,7 @@ export const columns: ColumnDef<Profile>[] = [
 		header: 'phone'
 	},
 	{
-		accessorKey: 'role_name',
+		accessorKey: 'role',
 		header: 'Role',
 		cell: ({ row }) => {
 			const badgeSnippet = createRawSnippet<[{ roleName: string; badgeColor: string }]>(
@@ -65,7 +65,7 @@ export const columns: ColumnDef<Profile>[] = [
 				}
 			);
 			return renderSnippet(badgeSnippet, {
-				roleName: row.original.role_name,
+				roleName: row.original.role,
 				badgeColor: row.original.badge_color || '#3b82f6'
 			});
 		},
@@ -103,7 +103,7 @@ export const columns: ColumnDef<Profile>[] = [
 				id: row.original.id,
 				username: row.original.username,
 				role_id: row.original.role_id,
-				role_name: row.original.role_name,
+				role_name: row.original.role,
 				badge_color: row.original.badge_color,
 				can_close_register: row.original.can_close_register,
 				is_manager: row.original.is_manager

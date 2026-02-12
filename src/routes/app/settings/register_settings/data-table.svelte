@@ -41,6 +41,7 @@
 		// svelte-ignore state_referenced_locally
 		columns,
 		getCoreRowModel: getCoreRowModel(),
+		// svelte-ignore state_referenced_locally
 		getPaginationRowModel: manualPagination ? undefined : getPaginationRowModel(),
 		getSortedRowModel: getSortedRowModel(),
 		getFilteredRowModel: getFilteredRowModel(),
@@ -87,7 +88,7 @@
 
 <div class="space-y-4">
 	<!-- Table -->
-	<div class="rounded-md">
+	<div class="p-2 rounded-md">
 		<Table.Root>
 			<Table.Header>
 				{#each table.getHeaderGroups() as headerGroup (headerGroup.id)}
