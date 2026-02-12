@@ -224,13 +224,13 @@
 
 	<!-- ADD ORGANIZATION MODAL -->
 	<Modal.Root bind:open={openAddOrgModal}>
-		<Modal.Content class="flex h-[85dvh] max-h-[95dvh] flex-col sm:h-auto">
+		<Modal.Content class="flex flex-col sm:h-auto">
 			<Modal.Header>
 				<Modal.Title>Δημιουργία νέου οργανισμού</Modal.Title>
 				<Modal.Description>Συμπληρώστε τα στοιχεία του νέου οργανισμού</Modal.Description>
 			</Modal.Header>
 
-			<ScrollArea class="h-[65dvh] w-full sm:h-auto sm:max-h-[60dvh]">
+			<ScrollArea class="h-[65dvh] w-full sm:h-auto">
 				<form
 					class="space-y-6 px-1 py-4"
 					{...createOrganization.enhance(async ({ form, submit }) => {
