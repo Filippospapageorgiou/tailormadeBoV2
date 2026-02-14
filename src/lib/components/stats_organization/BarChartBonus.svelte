@@ -6,7 +6,7 @@
 	import { BarChart } from 'layerchart';
 	import Badge from '$lib/components/ui/badge/badge.svelte';
 
-	let { bonusPeriods = [] } = $props();
+	let { bonusPeriods = [],  } = $props();
 
 	// Format percentage
 	function formatPercentage(value: number): string {

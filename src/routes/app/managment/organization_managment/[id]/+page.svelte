@@ -1,17 +1,18 @@
 <script lang="ts">
 	import type { PageProps } from './types';
 	import { goto } from '$app/navigation';
-	import { toast } from 'svelte-sonner';
-	import * as Card from '$lib/components/ui/card';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import * as Select from '$lib/components/ui/select/index.js';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
+	import * as Avatar from '$lib/components/ui/avatar/index.js';
+
 	import { differenceInDays, parseISO } from 'date-fns';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
 	import Badge from '$lib/components/ui/badge/badge.svelte';
 	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
+	import Separator from '$lib/components/ui/separator/separator.svelte';
 	import {
 		ArrowLeft,
 		Users,
@@ -20,7 +21,6 @@
 		Phone,
 		MapPin,
 		Globe,
-		Calendar,
 		UserPlus,
 		Building2,
 		CheckCircle,
@@ -31,7 +31,6 @@
 		TrendingUp,
 		TrendingDown,
 		DollarSign,
-		Clock,
 		Package
 	} from 'lucide-svelte';
 	import { inviteUserToOrg } from './data.remote';
@@ -62,7 +61,7 @@
 	// Format date
 	function formatDate(dateString: string | null): string {
 		if (!dateString) return '—';
-		return new Date(dateString).toLocaleDateString('en-US', {
+		return new Date(dateString).toLocaleDateString('el-GR', {
 			year: 'numeric',
 			month: 'long',
 			day: 'numeric'
@@ -71,7 +70,7 @@
 
 	function formatShortDate(dateString: string | null): string {
 		if (!dateString) return '—';
-		return new Date(dateString).toLocaleDateString('en-US', {
+		return new Date(dateString).toLocaleDateString('el-GR', {
 			year: 'numeric',
 			month: 'short',
 			day: 'numeric'
@@ -98,32 +97,6 @@
 
 	function getQuarterLabel(quarter: number, year: number): string {
 		return `Q${quarter} ${year}`;
-	}
-
-	function getStatusColor(status: string): string {
-		switch (status) {
-			case 'operational':
-				return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
-			case 'maintenance':
-				return 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300';
-			case 'out_of_service':
-				return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
-			default:
-				return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
-		}
-	}
-
-	function getStatusLabel(status: string): string {
-		switch (status) {
-			case 'operational':
-				return 'Operational';
-			case 'maintenance':
-				return 'Maintenance';
-			case 'out_of_service':
-				return 'Out of Service';
-			default:
-				return status;
-		}
 	}
 
 	// Get selected role name for display
@@ -185,62 +158,82 @@
 	function isPeriodExpanded(periodId: number): boolean {
 		return expandedPeriods.has(periodId);
 	}
+
+	function getInitials(name: string): string {
+		return name
+			.split(' ')
+			.map((n) => n[0])
+			.join('')
+			.toUpperCase()
+			.slice(0, 2);
+	}
 </script>
 
 <div class="min-h-screen bg-background">
 	<main class="container mx-auto max-w-6xl px-4 py-6 md:px-6">
 		<!-- Header -->
-		<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+		<div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 			<div class="flex items-center gap-4">
 				<Button
-					variant="outline"
+					variant="ghost"
 					size="icon"
 					onclick={handleBack}
-					class="rounded-lg border border-border hover:bg-muted"
+					class="h-9 w-9 shrink-0"
+					aria-label="Go back"
 				>
 					<ArrowLeft class="h-4 w-4" />
 				</Button>
-				<div>
-					<div class="flex items-center gap-3">
-						<h1 class="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
-							{organization.store_name || 'Unnamed Organization'}
-						</h1>
-						{#if organization.status}
-							<Badge
-								class="border-none bg-green-600/10 text-green-600 dark:bg-green-400/10 dark:text-green-400"
-							>
-								<span class="mr-1 size-1.5 rounded-full bg-green-600 dark:bg-green-400"></span>
-								active
-							</Badge>
-						{:else}
-							<Badge class="border-none bg-destructive/10 text-destructive">
-								<span class="mr-1 size-1.5 rounded-full bg-destructive"></span>
-								inactive
-							</Badge>
-						{/if}
+
+				<div class="flex items-center gap-3.5">
+					<div
+						class="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary"
+					>
+						<Building2 class="h-5 w-5" />
 					</div>
-					<p class="mt-1 text-sm text-muted-foreground">
-						<Calendar class="mr-1 inline h-3 w-3" />
-						Created {formatDate(organization.created_at)}
-					</p>
+					<div>
+						<div class="flex items-center gap-2.5">
+							<h1 class="text-2xl font-semibold tracking-tight text-foreground">
+								{organization.store_name || 'Unnamed Organization'}
+							</h1>
+							{#if organization.status}
+								<Badge variant="secondary" class="gap-1.5 font-normal">
+									<span class="size-1.5 rounded-full bg-green-500"></span>
+									Active
+								</Badge>
+							{:else}
+								<Badge variant="secondary" class="gap-1.5 font-normal text-destructive">
+									<span class="size-1.5 rounded-full bg-destructive"></span>
+									Inactive
+								</Badge>
+							{/if}
+						</div>
+						<p class="mt-0.5 text-sm text-muted-foreground">
+							Created {formatDate(organization.created_at)}
+						</p>
+					</div>
 				</div>
 			</div>
 
 			<div class="flex items-center gap-2">
-				<Button variant="outline" onclick={() => goto(`/app/organization_managment`)} class="gap-2">
-					<Settings class="h-4 w-4" />
+				<Button
+					variant="outline"
+					onclick={() => goto(`/app/organization_managment`)}
+					size="sm"
+					class="h-9 cursor-pointer gap-2"
+				>
+					<Settings class="h-3.5 w-3.5" />
 					<span class="hidden sm:inline">Edit</span>
 				</Button>
-				<Button onclick={openInviteDialog} class="gap-2">
-					<UserPlus class="h-4 w-4" />
-					<span class="hidden sm:inline">Invite User</span>
+				<Button onclick={openInviteDialog} size="sm" class="h-9 cursor-pointer gap-2">
+					<UserPlus class="h-3.5 w-3.5" />
+					<span class="hidden sm:inline">Invite</span>
 				</Button>
 			</div>
 		</div>
 
 		<!-- Tabs -->
 		<Tabs.Root bind:value={activeTab} class="w-full">
-			<Tabs.List class="mb-6 grid w-full grid-cols-3">
+			<Tabs.List class="mb-8 grid w-full grid-cols-3">
 				<Tabs.Trigger value="overview" class="gap-2">
 					<Building2 class="h-4 w-4" />
 					<span class="hidden sm:inline">Overview</span>
@@ -248,603 +241,644 @@
 				<Tabs.Trigger value="equipment" class="gap-2">
 					<Wrench class="h-4 w-4" />
 					<span class="hidden sm:inline">Equipment</span>
-					<Badge variant="secondary" class="ml-1 hidden sm:inline-flex"
-						>{stats.equipmentCount}</Badge
-					>
+					{#if stats.equipmentCount > 0}
+						<Badge variant="secondary" class="ml-1 hidden sm:inline-flex"
+							>{stats.equipmentCount}</Badge
+						>
+					{/if}
 				</Tabs.Trigger>
 				<Tabs.Trigger value="bonus" class="gap-2">
 					<DollarSign class="h-4 w-4" />
-					<span class="hidden sm:inline">Bonus History</span>
-					<Badge variant="secondary" class="ml-1 hidden sm:inline-flex">{bonusHistory.length}</Badge
-					>
+					<span class="hidden sm:inline">Bonus</span>
+					{#if bonusHistory.length > 0}
+						<Badge variant="secondary" class="ml-1 hidden sm:inline-flex"
+							>{bonusHistory.length}</Badge
+						>
+					{/if}
 				</Tabs.Trigger>
 			</Tabs.List>
 
-			<!-- Overview Tab -->
-			<Tabs.Content value="overview" class="space-y-6">
-				<!-- Stats Cards Grid -->
-				<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-					<!-- Employees Card -->
-					<Card.Root class="relative overflow-hidden rounded-2xl p-6 backdrop-blur-xl">
-						<div
-							class="absolute inset-0 -z-10 bg-gradient-to-br from-blue-500/20 via-card/80 to-indigo-500/30"
-						></div>
-						<div
-							class="absolute -top-16 -right-16 -z-10 h-32 w-32 rounded-full bg-blue-500/25 blur-3xl"
-						></div>
+			<!-- ====== OVERVIEW TAB ====== -->
+			<Tabs.Content value="overview" class="space-y-10">
+				<!-- Stats Row -->
+				<div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+					<div
+						class="group relative overflow-hidden rounded-xl border border-border/50 p-5 transition-all duration-300 hover:shadow-sm"
+					>
 						<div class="flex items-center justify-between">
-							<div>
-								<p class="text-sm font-medium text-muted-foreground">Employees</p>
-								<p class="mt-1 text-3xl font-bold tracking-tight">{stats.employeeCount}</p>
-								<p class="mt-1 text-xs text-muted-foreground">team members</p>
+							<div class="space-y-1">
+								<p
+									class="text-xs font-medium uppercase tracking-wide text-muted-foreground"
+								>
+									Employees
+								</p>
+								<p class="text-2xl font-bold tabular-nums tracking-tight">
+									{stats.employeeCount}
+								</p>
 							</div>
-							<div class="rounded-xl bg-blue-500/10 p-3">
-								<Users class="h-6 w-6 text-blue-600 dark:text-blue-400" />
-							</div>
-						</div>
-					</Card.Root>
-
-					<!-- Equipment Card -->
-					<Card.Root class="relative overflow-hidden rounded-2xl p-6 backdrop-blur-xl">
-						<div
-							class="absolute inset-0 -z-10 bg-gradient-to-br from-purple-500/20 via-card/80 to-pink-500/30"
-						></div>
-						<div
-							class="absolute -top-16 -right-16 -z-10 h-32 w-32 rounded-full bg-purple-500/25 blur-3xl"
-						></div>
-						<div class="flex items-center justify-between">
-							<div>
-								<p class="text-sm font-medium text-muted-foreground">Equipment</p>
-								<p class="mt-1 text-3xl font-bold tracking-tight">{stats.equipmentCount}</p>
-								<p class="mt-1 text-xs text-muted-foreground">total items</p>
-							</div>
-							<div class="rounded-xl bg-purple-500/10 p-3">
-								<Wrench class="h-6 w-6 text-purple-600 dark:text-purple-400" />
-							</div>
-						</div>
-					</Card.Root>
-
-					<!-- Active Equipment Card -->
-					<Card.Root class="relative overflow-hidden rounded-2xl p-6 backdrop-blur-xl">
-						<div
-							class="absolute inset-0 -z-10 bg-gradient-to-br from-green-500/20 via-card/80 to-emerald-500/30"
-						></div>
-						<div
-							class="absolute -top-16 -right-16 -z-10 h-32 w-32 rounded-full bg-green-500/25 blur-3xl"
-						></div>
-						<div class="flex items-center justify-between">
-							<div>
-								<p class="text-sm font-medium text-muted-foreground">Operational</p>
-								<p class="mt-1 text-3xl font-bold tracking-tight">{stats.activeEquipment}</p>
-								<p class="mt-1 text-xs text-muted-foreground">working items</p>
-							</div>
-							<div class="rounded-xl bg-green-500/10 p-3">
-								<CheckCircle class="h-6 w-6 text-green-600 dark:text-green-400" />
-							</div>
-						</div>
-					</Card.Root>
-
-					<!-- Maintenance Card -->
-					<Card.Root class="relative overflow-hidden rounded-2xl p-6 backdrop-blur-xl">
-						<div
-							class="absolute inset-0 -z-10 bg-gradient-to-br from-amber-500/20 via-card/80 to-orange-500/30"
-						></div>
-						<div
-							class="absolute -top-16 -right-16 -z-10 h-32 w-32 rounded-full bg-amber-500/25 blur-3xl"
-						></div>
-						<div class="flex items-center justify-between">
-							<div>
-								<p class="text-sm font-medium text-muted-foreground">Maintenance</p>
-								<p class="mt-1 text-3xl font-bold tracking-tight">{stats.maintenanceEquipment}</p>
-								<p class="mt-1 text-xs text-muted-foreground">needs attention</p>
-							</div>
-							<div class="rounded-xl bg-amber-500/10 p-3">
-								<AlertTriangle class="h-6 w-6 text-amber-600 dark:text-amber-400" />
-							</div>
-						</div>
-					</Card.Root>
-				</div>
-
-				<!-- Organization Details & Invite Cards -->
-				<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-					<!-- Contact Information -->
-					<Card.Root class="relative overflow-hidden rounded-2xl p-6 backdrop-blur-xl">
-						<div
-							class="absolute inset-0 -z-10 bg-gradient-to-br from-primary/20 via-card/80 to-secondary/30"
-						></div>
-						<Card.Header class="p-0 pb-4">
-							<Card.Title class="flex items-center gap-2 text-lg">
-								<Building2 class="h-5 w-5" />
-								Organization Details
-							</Card.Title>
-						</Card.Header>
-						<Card.Content class="space-y-4 p-0">
-							<div class="flex items-start gap-3">
-								<Mail class="mt-0.5 h-4 w-4 text-muted-foreground" />
-								<div>
-									<p class="text-xs font-medium text-muted-foreground">Email</p>
-									<p class="text-sm">{organization.email || '—'}</p>
-								</div>
-							</div>
-							<div class="flex items-start gap-3">
-								<Phone class="mt-0.5 h-4 w-4 text-muted-foreground" />
-								<div>
-									<p class="text-xs font-medium text-muted-foreground">Phone</p>
-									<p class="text-sm">{organization.phone || '—'}</p>
-								</div>
-							</div>
-							<div class="flex items-start gap-3">
-								<Globe class="mt-0.5 h-4 w-4 text-muted-foreground" />
-								<div>
-									<p class="text-xs font-medium text-muted-foreground">Country</p>
-									<p class="text-sm">{organization.country || '—'}</p>
-								</div>
-							</div>
-							<div class="flex items-start gap-3">
-								<MapPin class="mt-0.5 h-4 w-4 text-muted-foreground" />
-								<div>
-									<p class="text-xs font-medium text-muted-foreground">Location</p>
-									<p class="text-sm">{organization.location || '—'}</p>
-								</div>
-							</div>
-						</Card.Content>
-					</Card.Root>
-
-					<!-- Invite User Card -->
-					<Card.Root class="relative overflow-hidden rounded-2xl p-6 backdrop-blur-xl">
-						<div
-							class="absolute inset-0 -z-10 bg-gradient-to-br from-cyan-500/20 via-card/80 to-teal-500/30"
-						></div>
-						<Card.Header class="p-0 pb-4">
-							<Card.Title class="flex items-center gap-2 text-lg">
-								<UserPlus class="h-5 w-5" />
-								Invite Team Member
-							</Card.Title>
-							<Card.Description>
-								Invite the first admin to manage this organization.
-							</Card.Description>
-						</Card.Header>
-						<Card.Content class="p-0">
-							{#if stats.employeeCount === 0}
-								<div class="rounded-lg border border-dashed border-amber-500/50 bg-amber-500/5 p-4">
-									<p class="text-sm text-amber-700 dark:text-amber-400">
-										<AlertTriangle class="mr-2 inline h-4 w-4" />
-										This organization has no members yet.
-									</p>
-								</div>
-							{:else}
-								<div class="rounded-lg border border-dashed border-green-500/50 bg-green-500/5 p-4">
-									<p class="text-sm text-green-700 dark:text-green-400">
-										<CheckCircle class="mr-2 inline h-4 w-4" />
-										{stats.employeeCount} member{stats.employeeCount > 1 ? 's' : ''}
-									</p>
-								</div>
-							{/if}
-							<Button onclick={openInviteDialog} class="mt-4 w-full gap-2">
-								<UserPlus class="h-4 w-4" />
-								Send Invitation
-							</Button>
-						</Card.Content>
-					</Card.Root>
-				</div>
-
-				<!-- Team Members Preview -->
-				{#if employees.length > 0}
-					<Card.Root class="relative overflow-hidden rounded-2xl p-6 backdrop-blur-xl">
-						<div
-							class="absolute inset-0 -z-10 bg-gradient-to-br from-slate-500/10 via-card/90 to-zinc-500/20"
-						></div>
-						<Card.Header class="p-0 pb-4">
-							<Card.Title class="flex items-center gap-2 text-lg">
+							<div class="rounded-lg bg-primary/10 p-2.5 text-primary">
 								<Users class="h-5 w-5" />
-								Team Members
-							</Card.Title>
-						</Card.Header>
-						<Card.Content class="p-0">
-							<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+							</div>
+						</div>
+					</div>
+
+					<div
+						class="group relative overflow-hidden rounded-xl border border-border/50 p-5 transition-all duration-300 hover:shadow-sm"
+					>
+						<div class="flex items-center justify-between">
+							<div class="space-y-1">
+								<p
+									class="text-xs font-medium uppercase tracking-wide text-muted-foreground"
+								>
+									Equipment
+								</p>
+								<p class="text-2xl font-bold tabular-nums tracking-tight">
+									{stats.equipmentCount}
+								</p>
+							</div>
+							<div class="rounded-lg bg-primary/10 p-2.5 text-primary">
+								<Package class="h-5 w-5" />
+							</div>
+						</div>
+					</div>
+
+					<div
+						class="group relative overflow-hidden rounded-xl border border-border/50 p-5 transition-all duration-300 hover:shadow-sm"
+					>
+						<div class="flex items-center justify-between">
+							<div class="space-y-1">
+								<p
+									class="text-xs font-medium uppercase tracking-wide text-muted-foreground"
+								>
+									Operational
+								</p>
+								<p class="text-2xl font-bold tabular-nums tracking-tight">
+									{stats.activeEquipment}
+								</p>
+							</div>
+							<div class="rounded-lg bg-green-500/10 p-2.5 text-green-600 dark:text-green-400">
+								<CheckCircle class="h-5 w-5" />
+							</div>
+						</div>
+					</div>
+
+					<div
+						class="group relative overflow-hidden rounded-xl border border-border/50 p-5 transition-all duration-300 hover:shadow-sm"
+					>
+						<div class="flex items-center justify-between">
+							<div class="space-y-1">
+								<p
+									class="text-xs font-medium uppercase tracking-wide text-muted-foreground"
+								>
+									Maintenance
+								</p>
+								<p class="text-2xl font-bold tabular-nums tracking-tight">
+									{stats.maintenanceEquipment}
+								</p>
+							</div>
+							<div
+								class="rounded-lg bg-amber-500/10 p-2.5 text-amber-600 dark:text-amber-400"
+							>
+								<AlertTriangle class="h-5 w-5" />
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Organization Details -->
+				<section>
+					<h2 class="mb-4 text-sm font-medium uppercase tracking-wider text-muted-foreground">
+						Organization Details
+					</h2>
+					<div class="rounded-xl border border-border/50">
+						<div class="grid grid-cols-1 sm:grid-cols-2">
+							<div class="flex items-center gap-3.5 px-5 py-4">
+								<div
+									class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted/60"
+								>
+									<Mail class="h-4 w-4 text-muted-foreground" />
+								</div>
+								<div class="min-w-0">
+									<p class="text-xs font-medium text-muted-foreground">Email</p>
+									<p class="truncate text-sm">{organization.email || '—'}</p>
+								</div>
+							</div>
+							<div
+								class="flex items-center gap-3.5 border-t border-border/50 px-5 py-4 sm:border-t-0 sm:border-l"
+							>
+								<div
+									class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted/60"
+								>
+									<Phone class="h-4 w-4 text-muted-foreground" />
+								</div>
+								<div class="min-w-0">
+									<p class="text-xs font-medium text-muted-foreground">Phone</p>
+									<p class="truncate text-sm">{organization.phone || '—'}</p>
+								</div>
+							</div>
+						</div>
+						<Separator class="opacity-50" />
+						<div class="grid grid-cols-1 sm:grid-cols-2">
+							<div class="flex items-center gap-3.5 px-5 py-4">
+								<div
+									class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted/60"
+								>
+									<Globe class="h-4 w-4 text-muted-foreground" />
+								</div>
+								<div class="min-w-0">
+									<p class="text-xs font-medium text-muted-foreground">Country</p>
+									<p class="truncate text-sm">{organization.country || '—'}</p>
+								</div>
+							</div>
+							<div
+								class="flex items-center gap-3.5 border-t border-border/50 px-5 py-4 sm:border-t-0 sm:border-l"
+							>
+								<div
+									class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted/60"
+								>
+									<MapPin class="h-4 w-4 text-muted-foreground" />
+								</div>
+								<div class="min-w-0">
+									<p class="text-xs font-medium text-muted-foreground">Location</p>
+									<p class="truncate text-sm">{organization.location || '—'}</p>
+								</div>
+							</div>
+						</div>
+					</div>
+				</section>
+
+				<!-- Team Members -->
+				<section>
+					<div class="mb-4 flex items-center justify-between">
+						<h2 class="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+							Team Members
+						</h2>
+						{#if employees.length > 0}
+							<span class="text-xs tabular-nums text-muted-foreground">
+								{employees.length} member{employees.length > 1 ? 's' : ''}
+							</span>
+						{/if}
+					</div>
+
+					{#if employees.length > 0}
+						<div class="rounded-xl border border-border/50 overflow-hidden">
+							<div class="divide-y divide-border/50">
 								{#each employees as employee}
 									<div
-										class="flex items-center gap-3 rounded-lg border border-border/50 bg-card/50 p-3"
+										class="flex items-center gap-3.5 px-5 py-3.5 transition-colors hover:bg-muted/30"
 									>
-										<img
-											src={employee.image_url || '/default-avatar.png'}
-											alt={employee.username}
-											class="h-10 w-10 rounded-full object-cover dark:bg-white"
-										/>
+										<Avatar.Root class="h-9 w-9 dark:bg-white">
+											<Avatar.Image
+												src={employee.image_url || undefined}
+												alt={employee.username}
+											/>
+											<Avatar.Fallback class="text-xs font-medium">
+												{getInitials(employee.username)}
+											</Avatar.Fallback>
+										</Avatar.Root>
 										<div class="min-w-0 flex-1">
 											<p class="truncate text-sm font-medium">{employee.username}</p>
-											<p class="truncate text-xs text-muted-foreground">{employee.email}</p>
+											<p class="truncate text-xs text-muted-foreground">
+												{employee.email}
+											</p>
 										</div>
-										<Badge
-											variant="secondary"
-											style="background-color: {employee.badge_color || '#3b82f6'}; color: white;"
-											class="text-xs"
-										>
+										<Badge variant="secondary" class="shrink-0 text-xs font-normal">
 											{employee.role_name}
 										</Badge>
 									</div>
 								{/each}
 							</div>
-						</Card.Content>
-					</Card.Root>
+						</div>
+					{:else}
+						<div
+							class="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/50 py-14 text-center"
+						>
+							<div
+								class="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-muted"
+							>
+								<Users class="h-6 w-6 text-muted-foreground" />
+							</div>
+							<p class="text-sm font-medium text-foreground">No team members yet</p>
+							<p class="mt-1 text-xs text-muted-foreground">
+								Invite someone to get started
+							</p>
+							<Button
+								onclick={openInviteDialog}
+								variant="outline"
+								size="sm"
+								class="mt-5 gap-2"
+							>
+								<UserPlus class="h-3.5 w-3.5" />
+								Invite First Member
+							</Button>
+						</div>
+					{/if}
+				</section>
+			</Tabs.Content>
+
+			<!-- ====== EQUIPMENT TAB ====== -->
+			<Tabs.Content value="equipment" class="space-y-6">
+				{#if equipment.length === 0}
+					<div
+						class="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/50 py-16 text-center"
+					>
+						<div
+							class="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-muted"
+						>
+							<Wrench class="h-6 w-6 text-muted-foreground" />
+						</div>
+						<p class="text-sm font-medium text-foreground">No equipment registered</p>
+						<p class="mt-1 text-xs text-muted-foreground">
+							This organization has no registered equipment.
+						</p>
+					</div>
+				{:else}
+					<div class="rounded-xl border border-border/50 overflow-hidden">
+						<div class="overflow-x-auto">
+							<table class="w-full">
+								<thead>
+									<tr class="border-b border-border/50 bg-muted/30">
+										<th
+											class="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground"
+											>Name</th
+										>
+										<th
+											class="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground"
+											>Model</th
+										>
+										<th
+											class="hidden px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground sm:table-cell"
+											>Serial</th
+										>
+										<th
+											class="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground"
+											>Status</th
+										>
+										<th
+											class="hidden px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground md:table-cell"
+											>Last Service</th
+										>
+										<th
+											class="hidden px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground md:table-cell"
+											>Next Service</th
+										>
+										<th
+											class="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground"
+											>Due</th
+										>
+									</tr>
+								</thead>
+								<tbody class="divide-y divide-border/30">
+									{#each equipment as item}
+										<tr class="transition-colors hover:bg-muted/20">
+											<td class="px-5 py-3.5">
+												<div class="flex items-center gap-3">
+													{#if item.image_url}
+														<img
+															src={item.image_url}
+															alt={item.name}
+															class="h-8 w-8 rounded-lg object-cover"
+															width="32"
+															height="32"
+														/>
+													{:else}
+														<div
+															class="flex h-8 w-8 items-center justify-center rounded-lg bg-muted"
+														>
+															<Wrench class="h-3.5 w-3.5 text-muted-foreground" />
+														</div>
+													{/if}
+													<span class="text-sm font-medium">{item.name}</span>
+												</div>
+											</td>
+											<td class="px-5 py-3.5 text-sm text-muted-foreground"
+												>{item.model || '—'}</td
+											>
+											<td
+												class="hidden px-5 py-3.5 font-mono text-xs text-muted-foreground sm:table-cell"
+												>{item.serial_number || '—'}</td
+											>
+											<td class="px-5 py-3.5">
+												{#if item.status === 'operational'}
+													<Badge
+														variant="secondary"
+														class="gap-1.5 text-xs font-normal text-green-600 dark:text-green-400"
+													>
+														<span class="size-1.5 rounded-full bg-green-500"></span>
+														Operational
+													</Badge>
+												{:else if item.status === 'maintenance'}
+													<Badge
+														variant="secondary"
+														class="gap-1.5 text-xs font-normal text-amber-600 dark:text-amber-400"
+													>
+														<span class="size-1.5 rounded-full bg-amber-500"></span>
+														Maintenance
+													</Badge>
+												{:else}
+													<Badge
+														variant="secondary"
+														class="gap-1.5 text-xs font-normal text-red-600 dark:text-red-400"
+													>
+														<span class="size-1.5 rounded-full bg-red-500"></span>
+														Out of Service
+													</Badge>
+												{/if}
+											</td>
+											<td
+												class="hidden px-5 py-3.5 text-sm text-muted-foreground md:table-cell"
+												>{formatShortDate(item.last_service_date)}</td
+											>
+											<td
+												class="hidden px-5 py-3.5 text-sm text-muted-foreground md:table-cell"
+												>{formatShortDate(item.next_service_date)}</td
+											>
+											<td class="px-5 py-3.5 text-right">
+												{#if item.next_service_date}
+													{@const daysUntil = differenceInDays(
+														parseISO(item.next_service_date),
+														new Date()
+													)}
+													{#if daysUntil < 0}
+														<span
+															class="text-xs font-medium text-red-600 dark:text-red-400"
+														>
+															{Math.abs(daysUntil)}d overdue
+														</span>
+													{:else if daysUntil <= 7}
+														<span
+															class="text-xs font-medium text-amber-600 dark:text-amber-400"
+														>
+															{daysUntil}d
+														</span>
+													{:else}
+														<span class="text-xs text-muted-foreground">
+															{daysUntil}d
+														</span>
+													{/if}
+												{:else}
+													<span class="text-xs text-muted-foreground">—</span>
+												{/if}
+											</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+						</div>
+					</div>
 				{/if}
 			</Tabs.Content>
 
-			<!-- Equipment Tab -->
-			<Tabs.Content value="equipment" class="space-y-6">
-				<Card.Root class="relative overflow-hidden rounded-2xl backdrop-blur-xl">
-					<div
-						class="absolute inset-0 -z-10 bg-gradient-to-br from-purple-500/10 via-card/90 to-pink-500/10"
-					></div>
-					<Card.Header>
-						<Card.Title class="flex items-center gap-2">
-							<Package class="h-5 w-5" />
-							Equipment List
-						</Card.Title>
-						<Card.Description>All equipment registered to this organization</Card.Description>
-					</Card.Header>
-					<Card.Content>
-						{#if equipment.length === 0}
-							<div class="flex flex-col items-center justify-center py-12 text-center">
-								<Wrench class="h-12 w-12 text-muted-foreground/50" />
-								<p class="mt-4 text-lg font-medium text-muted-foreground">No equipment found</p>
-								<p class="text-sm text-muted-foreground">
-									This organization has no registered equipment.
-								</p>
-							</div>
-						{:else}
-							<div class="overflow-x-auto">
-								<table class="w-full">
-									<thead>
-										<tr class="border-b border-border/50">
-											<th
-												class="px-4 py-3 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase"
-												>Name</th
-											>
-											<th
-												class="px-4 py-3 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase"
-												>Model</th
-											>
-											<th
-												class="px-4 py-3 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase"
-												>Serial Number</th
-											>
-											<th
-												class="px-4 py-3 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase"
-												>Status</th
-											>
-											<th
-												class="px-4 py-3 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase"
-												>Last Service</th
-											>
-											<th
-												class="px-4 py-3 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase"
-												>Next Service</th
-											>
-											<th
-												class="px-4 py-3 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase"
-												>Overdue</th
-											>
-										</tr>
-									</thead>
-									<tbody class="divide-y divide-border/30">
-										{#each equipment as item}
-											<tr class="transition-colors hover:bg-muted/30">
-												<td class="px-4 py-3">
-													<div class="flex items-center gap-3">
-														{#if item.image_url}
-															<img
-																src={item.image_url}
-																alt={item.name}
-																class="h-8 w-8 rounded object-cover"
-															/>
-														{:else}
-															<div
-																class="flex h-8 w-8 items-center justify-center rounded bg-muted"
-															>
-																<Wrench class="h-4 w-4 text-muted-foreground" />
-															</div>
-														{/if}
-														<span class="font-medium">{item.name}</span>
-													</div>
-												</td>
-												<td class="px-4 py-3 text-sm text-muted-foreground">{item.model || '—'}</td>
-												<td class="px-4 py-3 font-mono text-sm text-muted-foreground"
-													>{item.serial_number || '—'}</td
-												>
-												<td class="px-4 py-3">
-													<Badge class={getStatusColor(item.status)}>
-														{getStatusLabel(item.status)}
-													</Badge>
-												</td>
-												<td class="px-4 py-3 text-sm text-muted-foreground"
-													>{formatShortDate(item.last_service_date)}</td
-												>
-												<td class="px-4 py-3 text-sm text-muted-foreground"
-													>{formatShortDate(item.next_service_date)}</td
-												>
-												<td class="px-4 py-3 text-sm">
-													{#if item.next_service_date}
-														{@const daysUntil = differenceInDays(
-															parseISO(item.next_service_date),
-															new Date()
-														)}
-														{#if daysUntil < 0}
-															<span class="font-medium text-red-600 dark:text-red-400">
-																{Math.abs(daysUntil)} days overdue
-															</span>
-														{:else if daysUntil === 0}
-															<span class="font-medium text-amber-600 dark:text-amber-400">
-																Today
-															</span>
-														{:else if daysUntil <= 7}
-															<span class="font-medium text-amber-600 dark:text-amber-400">
-																{daysUntil} days
-															</span>
-														{:else if daysUntil <= 30}
-															<span class="text-muted-foreground">
-																{daysUntil} days
-															</span>
-														{:else}
-															<span class="text-muted-foreground">
-																{daysUntil} days
-															</span>
-														{/if}
-													{:else}
-														<span class="text-muted-foreground">—</span>
-													{/if}
-												</td>
-											</tr>
-										{/each}
-									</tbody>
-								</table>
-							</div>
-						{/if}
-					</Card.Content>
-				</Card.Root>
-			</Tabs.Content>
-
-			<!-- Bonus History Tab -->
-			<Tabs.Content value="bonus" class="space-y-6">
+			<!-- ====== BONUS HISTORY TAB ====== -->
+			<Tabs.Content value="bonus" class="space-y-4">
 				{#if bonusHistory.length === 0}
-					<Card.Root class="relative overflow-hidden rounded-2xl p-6 backdrop-blur-xl">
+					<div
+						class="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/50 py-16 text-center"
+					>
 						<div
-							class="absolute inset-0 -z-10 bg-gradient-to-br from-amber-500/10 via-card/90 to-orange-500/10"
-						></div>
-						<div class="flex flex-col items-center justify-center py-12 text-center">
-							<DollarSign class="h-12 w-12 text-muted-foreground/50" />
-							<p class="mt-4 text-lg font-medium text-muted-foreground">No bonus history</p>
-							<p class="text-sm text-muted-foreground">
-								No bonus payments have been recorded for this organization.
-							</p>
+							class="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-muted"
+						>
+							<DollarSign class="h-6 w-6 text-muted-foreground" />
 						</div>
-					</Card.Root>
+						<p class="text-sm font-medium text-foreground">No bonus history</p>
+						<p class="mt-1 text-xs text-muted-foreground">
+							No bonus payments have been recorded yet.
+						</p>
+					</div>
 				{:else}
-					<div class="space-y-4">
-						{#each bonusHistory as historyItem}
-							{@const isExpanded = isPeriodExpanded(historyItem.period.id)}
-							<Card.Root class="relative overflow-hidden rounded-2xl backdrop-blur-xl">
-								<div
-									class="absolute inset-0 -z-10 bg-gradient-to-br from-emerald-500/10 via-card/90 to-teal-500/10"
-								></div>
-
-								<!-- Quarter Summary Header -->
-								<button
-									class="w-full p-6 text-left transition-colors hover:bg-muted/20"
-									onclick={() => togglePeriodExpansion(historyItem.period.id)}
-								>
-									<div class="flex items-center justify-between">
-										<div class="flex items-center gap-4">
-											<div
-												class="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10"
-											>
-												<DollarSign class="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
-											</div>
-											<div>
-												<h3 class="text-lg font-semibold">
-													{getQuarterLabel(historyItem.period.quarter, historyItem.period.year)}
-												</h3>
-												<p class="text-sm text-muted-foreground">
-													vs {getQuarterLabel(
-														historyItem.period.comparison_quarter,
-														historyItem.period.comparison_year
-													)}
+					{#each bonusHistory as historyItem}
+						{@const isExpanded = isPeriodExpanded(historyItem.period.id)}
+						<div class="rounded-xl border border-border/50 overflow-hidden">
+							<!-- Quarter Summary Header -->
+							<button
+								class="w-full px-5 py-4 text-left transition-colors hover:bg-muted/20"
+								onclick={() => togglePeriodExpansion(historyItem.period.id)}
+							>
+								<div class="flex items-center justify-between">
+									<div class="flex items-center gap-4">
+										<div
+											class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"
+										>
+											<DollarSign class="h-4.5 w-4.5" />
+										</div>
+										<div>
+											<h3 class="text-sm font-semibold">
+												{getQuarterLabel(
+													historyItem.period.quarter,
+													historyItem.period.year
+												)}
+											</h3>
+											<p class="text-xs text-muted-foreground">
+												vs {getQuarterLabel(
+													historyItem.period.comparison_quarter,
+													historyItem.period.comparison_year
+												)}
+											</p>
+										</div>
+										<Badge variant="secondary" class="text-xs font-normal">
+											{historyItem.period.status}
+										</Badge>
+									</div>
+									<div class="flex items-center gap-5">
+										<div class="hidden gap-6 sm:flex">
+											<div class="text-right">
+												<p class="text-xs text-muted-foreground">Pool</p>
+												<p class="text-sm font-semibold tabular-nums">
+													{formatCurrency(historyItem.orgData.total_bonus_pool)}
 												</p>
 											</div>
-											<Badge
-												class={historyItem.period.status === 'published'
-													? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-													: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300'}
-											>
-												{historyItem.period.status}
-											</Badge>
-										</div>
-										<div class="flex items-center gap-6">
-											<!-- Summary Stats -->
-											<div class="hidden gap-6 sm:flex">
-												<div class="text-right">
-													<p class="text-xs text-muted-foreground">Total Pool</p>
-													<p class="font-semibold text-emerald-600 dark:text-emerald-400">
-														{formatCurrency(historyItem.orgData.total_bonus_pool)}
-													</p>
-												</div>
-												<div class="text-right">
-													<p class="text-xs text-muted-foreground">Employees Paid</p>
-													<p class="font-semibold">{historyItem.payouts.length}</p>
-												</div>
-												<div class="text-right">
-													<p class="text-xs text-muted-foreground">Change</p>
-													<p
-														class={`font-semibold ${historyItem.orgData.percentage_change >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
-													>
-														{formatPercentage(historyItem.orgData.percentage_change)}
-													</p>
-												</div>
+											<div class="text-right">
+												<p class="text-xs text-muted-foreground">Paid</p>
+												<p class="text-sm font-semibold tabular-nums">
+													{historyItem.payouts.length}
+												</p>
 											</div>
-											{#if isExpanded}
-												<ChevronDown class="h-5 w-5 text-muted-foreground transition-transform" />
+											<div class="text-right">
+												<p class="text-xs text-muted-foreground">Change</p>
+												<p
+													class="text-sm font-semibold tabular-nums {historyItem.orgData.percentage_change >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}"
+												>
+													{formatPercentage(historyItem.orgData.percentage_change)}
+												</p>
+											</div>
+										</div>
+										{#if isExpanded}
+											<ChevronDown class="h-4 w-4 text-muted-foreground" />
+										{:else}
+											<ChevronRight class="h-4 w-4 text-muted-foreground" />
+										{/if}
+									</div>
+								</div>
+
+								<!-- Mobile Summary -->
+								<div class="mt-3 grid grid-cols-3 gap-4 sm:hidden">
+									<div>
+										<p class="text-xs text-muted-foreground">Pool</p>
+										<p class="text-sm font-semibold tabular-nums">
+											{formatCurrency(historyItem.orgData.total_bonus_pool)}
+										</p>
+									</div>
+									<div>
+										<p class="text-xs text-muted-foreground">Paid</p>
+										<p class="text-sm font-semibold tabular-nums">
+											{historyItem.payouts.length}
+										</p>
+									</div>
+									<div>
+										<p class="text-xs text-muted-foreground">Change</p>
+										<p
+											class="text-sm font-semibold tabular-nums {historyItem.orgData.percentage_change >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}"
+										>
+											{formatPercentage(historyItem.orgData.percentage_change)}
+										</p>
+									</div>
+								</div>
+							</button>
+
+							<!-- Expanded Content -->
+							{#if isExpanded}
+								<div class="border-t border-border/50 px-5 py-5">
+									<!-- Org Data Summary -->
+									<div
+										class="mb-6 grid grid-cols-2 gap-4 rounded-lg border border-border/50 p-4 sm:grid-cols-4"
+									>
+										<div>
+											<p class="text-xs text-muted-foreground">Current Kilos</p>
+											<p class="text-sm font-semibold tabular-nums">
+												{formatNumber(historyItem.orgData.current_kilos)} kg
+											</p>
+										</div>
+										<div>
+											<p class="text-xs text-muted-foreground">Previous Kilos</p>
+											<p class="text-sm font-semibold tabular-nums">
+												{formatNumber(historyItem.orgData.previous_kilos)} kg
+											</p>
+										</div>
+										<div>
+											<p class="text-xs text-muted-foreground">Difference</p>
+											<p
+												class="flex items-center gap-1 text-sm font-semibold tabular-nums {historyItem.orgData.kilo_difference >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}"
+											>
+												{#if historyItem.orgData.kilo_difference >= 0}
+													<TrendingUp class="h-3.5 w-3.5" />
+												{:else}
+													<TrendingDown class="h-3.5 w-3.5" />
+												{/if}
+												{formatNumber(Math.abs(historyItem.orgData.kilo_difference))} kg
+											</p>
+										</div>
+										<div>
+											<p class="text-xs text-muted-foreground">Above Network Avg</p>
+											{#if historyItem.orgData.above_network_average}
+												<Badge
+													variant="secondary"
+													class="mt-1 gap-1 border-0 bg-green-500/10 text-xs font-normal text-green-600 hover:bg-green-500/20 dark:text-green-400"
+												>
+													<CheckCircle class="h-3 w-3" /> Yes
+												</Badge>
 											{:else}
-												<ChevronRight class="h-5 w-5 text-muted-foreground transition-transform" />
+												<Badge variant="secondary" class="mt-1 text-xs font-normal"
+													>No</Badge
+												>
 											{/if}
 										</div>
 									</div>
 
-									<!-- Mobile Summary Stats -->
-									<div class="mt-4 grid grid-cols-3 gap-4 sm:hidden">
-										<div>
-											<p class="text-xs text-muted-foreground">Total Pool</p>
-											<p class="font-semibold text-emerald-600 dark:text-emerald-400">
-												{formatCurrency(historyItem.orgData.total_bonus_pool)}
-											</p>
-										</div>
-										<div>
-											<p class="text-xs text-muted-foreground">Employees</p>
-											<p class="font-semibold">{historyItem.payouts.length}</p>
-										</div>
-										<div>
-											<p class="text-xs text-muted-foreground">Change</p>
-											<p
-												class={`font-semibold ${historyItem.orgData.percentage_change >= 0 ? 'text-green-600' : 'text-red-600'}`}
-											>
-												{formatPercentage(historyItem.orgData.percentage_change)}
-											</p>
-										</div>
-									</div>
-								</button>
-
-								<!-- Expanded Content -->
-								{#if isExpanded}
-									<div class="border-t border-border/50 p-6">
-										<!-- Org Data Summary -->
-										<div
-											class="mb-6 grid grid-cols-2 gap-4 rounded-lg bg-muted/30 p-4 sm:grid-cols-4"
-										>
-											<div>
-												<p class="text-xs text-muted-foreground">Current Kilos</p>
-												<p class="font-semibold">
-													{formatNumber(historyItem.orgData.current_kilos)} kg
-												</p>
-											</div>
-											<div>
-												<p class="text-xs text-muted-foreground">Previous Kilos</p>
-												<p class="font-semibold">
-													{formatNumber(historyItem.orgData.previous_kilos)} kg
-												</p>
-											</div>
-											<div>
-												<p class="text-xs text-muted-foreground">Difference</p>
-												<p
-													class={`flex items-center gap-1 font-semibold ${historyItem.orgData.kilo_difference >= 0 ? 'text-green-600' : 'text-red-600'}`}
-												>
-													{#if historyItem.orgData.kilo_difference >= 0}
-														<TrendingUp class="h-4 w-4" />
-													{:else}
-														<TrendingDown class="h-4 w-4" />
-													{/if}
-													{formatNumber(Math.abs(historyItem.orgData.kilo_difference))} kg
-												</p>
-											</div>
-											<div>
-												<p class="text-xs text-muted-foreground">Above Network Avg</p>
-												<p class="font-semibold">
-													{#if historyItem.orgData.above_network_average}
-														<Badge
-															class="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
-															>Yes</Badge
+									<!-- Employee Payouts -->
+									<h4
+										class="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground"
+									>
+										Employee Payouts
+									</h4>
+									{#if historyItem.payouts.length === 0}
+										<p class="text-sm text-muted-foreground">
+											No employee payouts for this period.
+										</p>
+									{:else}
+										<div class="overflow-x-auto rounded-lg border border-border/50">
+											<table class="w-full">
+												<thead>
+													<tr class="border-b border-border/50 bg-muted/20">
+														<th
+															class="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground"
+															>Employee</th
 														>
-													{:else}
-														<Badge
-															class="bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300"
-															>No</Badge
+														<th
+															class="hidden px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground sm:table-cell"
+															>Hours</th
 														>
-													{/if}
-												</p>
-											</div>
-										</div>
-
-										<!-- Employee Payouts Table -->
-										<h4 class="mb-3 font-medium">Employee Payouts</h4>
-										{#if historyItem.payouts.length === 0}
-											<p class="text-sm text-muted-foreground">
-												No employee payouts for this period.
-											</p>
-										{:else}
-											<div class="overflow-x-auto">
-												<table class="w-full">
-													<thead>
-														<tr class="border-b border-border/50">
-															<th
-																class="px-4 py-2 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase"
-																>Employee</th
-															>
-															<th
-																class="px-4 py-2 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase"
-																>Hours Worked</th
-															>
-															<th
-																class="px-4 py-2 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase"
-																>Shifts</th
-															>
-															<th
-																class="px-4 py-2 text-left text-xs font-medium tracking-wider text-muted-foreground uppercase"
-																>Share %</th
-															>
-															<th
-																class="px-4 py-2 text-right text-xs font-medium tracking-wider text-muted-foreground uppercase"
-																>Bonus Amount</th
-															>
-														</tr>
-													</thead>
-													<tbody class="divide-y divide-border/30">
-														{#each historyItem.payouts as payout}
-															<tr class="transition-colors hover:bg-muted/20">
-																<td class="px-4 py-3">
-																	<div class="flex items-center gap-3">
-																		<img
-																			src={payout.employee?.image_url || '/default-avatar.png'}
+														<th
+															class="hidden px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground sm:table-cell"
+															>Shifts</th
+														>
+														<th
+															class="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground"
+															>Share</th
+														>
+														<th
+															class="px-4 py-2.5 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground"
+															>Amount</th
+														>
+													</tr>
+												</thead>
+												<tbody class="divide-y divide-border/30">
+													{#each historyItem.payouts as payout}
+														<tr class="transition-colors hover:bg-muted/20">
+															<td class="px-4 py-3">
+																<div class="flex items-center gap-3">
+																	<Avatar.Root class="h-7 w-7 dark:bg-white">
+																		<Avatar.Image
+																			src={payout.employee?.image_url || undefined}
 																			alt={payout.employee?.username || 'Employee'}
-																			class="h-8 w-8 rounded-full object-cover"
 																		/>
-																		<div>
-																			<p class="font-medium">
-																				{payout.employee?.username || 'Unknown'}
-																			</p>
-																			<p class="text-xs text-muted-foreground">
-																				{payout.employee?.email || ''}
-																			</p>
-																		</div>
+																		<Avatar.Fallback class="text-[10px] font-medium">
+																			{getInitials(
+																				payout.employee?.username || '??'
+																			)}
+																		</Avatar.Fallback>
+																	</Avatar.Root>
+																	<div class="min-w-0">
+																		<p class="truncate text-sm font-medium">
+																			{payout.employee?.username || 'Unknown'}
+																		</p>
+																		<p
+																			class="hidden truncate text-xs text-muted-foreground sm:block"
+																		>
+																			{payout.employee?.email || ''}
+																		</p>
 																	</div>
-																</td>
-																<td class="px-4 py-3 text-sm">
-																	<div class="flex items-center gap-1 text-muted-foreground">
-																		<Clock class="h-3 w-3" />
-																		{payout.hours_worked?.toFixed(1) || '0'} hrs
-																	</div>
-																</td>
-																<td class="px-4 py-3 text-sm text-muted-foreground"
-																	>{payout.total_shifts_in_pool}</td
-																>
-																<td class="px-4 py-3 text-sm text-muted-foreground"
-																	>{payout.percentage_share?.toFixed(1) || '0'}%</td
-																>
-																<td class="px-4 py-3 text-right">
-																	<span
-																		class="font-semibold text-emerald-600 dark:text-emerald-400"
-																	>
-																		{formatCurrency(payout.bonus_amount)}
-																	</span>
-																</td>
-															</tr>
-														{/each}
-													</tbody>
-												</table>
-											</div>
-										{/if}
-									</div>
-								{/if}
-							</Card.Root>
-						{/each}
-					</div>
+																</div>
+															</td>
+															<td
+																class="hidden px-4 py-3 text-sm tabular-nums text-muted-foreground sm:table-cell"
+															>
+																{payout.hours_worked?.toFixed(1) || '0'}h
+															</td>
+															<td
+																class="hidden px-4 py-3 text-sm tabular-nums text-muted-foreground sm:table-cell"
+															>
+																{payout.total_shifts_in_pool}
+															</td>
+															<td
+																class="px-4 py-3 text-sm tabular-nums text-muted-foreground"
+															>
+																{payout.percentage_share?.toFixed(1) || '0'}%
+															</td>
+															<td class="px-4 py-3 text-right">
+																<span class="text-sm font-semibold tabular-nums">
+																	{formatCurrency(payout.bonus_amount)}
+																</span>
+															</td>
+														</tr>
+													{/each}
+												</tbody>
+											</table>
+										</div>
+									{/if}
+								</div>
+							{/if}
+						</div>
+					{/each}
 				{/if}
 			</Tabs.Content>
 		</Tabs.Root>
@@ -865,6 +899,7 @@
 				<Input
 					id="invite-email"
 					type="email"
+					autocomplete="email"
 					bind:value={inviteEmail}
 					placeholder="user@example.com"
 					disabled={isInviting}
@@ -892,7 +927,11 @@
 		</div>
 
 		<Dialog.Footer>
-			<Button variant="outline" onclick={() => (inviteDialogOpen = false)} disabled={isInviting}>
+			<Button
+				variant="outline"
+				onclick={() => (inviteDialogOpen = false)}
+				disabled={isInviting}
+			>
 				Cancel
 			</Button>
 			<Button
@@ -902,7 +941,7 @@
 			>
 				{#if isInviting}
 					<Spinner class="h-4 w-4" />
-					Sending...
+					Sending…
 				{:else}
 					<Mail class="h-4 w-4" />
 					Send Invitation

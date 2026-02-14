@@ -4,18 +4,15 @@
 	import { goto } from "$app/navigation";
 	import { onMount } from 'svelte';
 	import { CalendarCheck } from 'lucide-svelte';
-	
+
 	onMount(() => {
-		// Disable scrolling on body
 		document.body.style.overflow = 'hidden';
-		// Prevent iOS Safari bounce scrolling
 		document.body.style.position = 'fixed';
 		document.body.style.width = '100%';
 		document.body.style.top = `-${window.scrollY}px`;
-		
+
 		const scrollY = window.scrollY;
-		
-		// Re-enable scrolling when component unmounts
+
 		return () => {
 			document.body.style.overflow = '';
 			document.body.style.position = '';
@@ -26,12 +23,12 @@
 	});
 </script>
 
-<div class="fixed backdrop-blur-sm w-full h-full flex items-center justify-center z-50">
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
 	<Empty.Root>
 		<Empty.Header>
 			<Empty.Media variant="default">
-				<div class="rounded-full bg-[#8B6B4A]/10 p-3">
-					<CalendarCheck class="h-8 w-8 text-[#8B6B4A]" />
+				<div class="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10">
+					<CalendarCheck class="h-7 w-7 text-primary" />
 				</div>
 			</Empty.Media>
 			<Empty.Title>Το Ταμείο Έχει Ήδη Κλείσει Σήμερα</Empty.Title>
@@ -40,9 +37,9 @@
 			</Empty.Description>
 		</Empty.Header>
 		<Empty.Content>
-			<Button 
-				onclick={() => goto('/app/')} 
-				class="cursor-pointer" 
+			<Button
+				onclick={() => goto('/app/')}
+				class="cursor-pointer"
 				size="sm"
 			>
 				Πίσω στην Εφαρμογή

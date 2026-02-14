@@ -19,9 +19,11 @@
 	let queryEquipments = getAllEquipmentsOverview();
 	let queryLeaderboards = getLeaderboards();
 	let queryAllOrgs = getAllOrganizations();
-	let queryRegisterClosings = getAllRegisterClosingDate({
-		date: new Date().toISOString().split('T')[0] // '2026-02-12'
-	});
+
+	let queryDate = $state(new Date().toISOString().split('T')[0]);
+	let queryRegisterClosings = $derived(getAllRegisterClosingDate({
+		date: queryDate
+	}));
 
 	let isLoading = $state(false);
 	async function handleRefresh() {
@@ -46,7 +48,6 @@
 </script>
 
 <div class="mx-4 flex flex-col gap-4 h-full">
-	<BarChartRegisterClosing data={queryRegisterClosings.current?.data} />
 	<!-- Responsive Grid -->
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
 		<!-- Bonus Chart - Full width mobile, 3 cols desktop -->

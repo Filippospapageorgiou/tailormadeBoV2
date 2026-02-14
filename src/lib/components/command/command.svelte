@@ -163,12 +163,7 @@
 			</Command.Item>
 			<Command.Item onSelect={() => gotohref('/app/managment/recipes_settings')}>
 				<Coffee class="me-2 size-4" />
-				<span>Συνταγές</span>
-                <ArrowRightIcon class="ml-auto size-3.5 text-muted-foreground" />
-			</Command.Item>
-			<Command.Item onSelect={() => gotohref('/app/managment/ingridients_settings')}>
-				<Cog class="me-2 size-4" />
-				<span>Συστατικά</span>
+				<span>Συνταγές & Συστατικά</span>
                 <ArrowRightIcon class="ml-auto size-3.5 text-muted-foreground" />
 			</Command.Item>
 			<Command.Item onSelect={() => gotohref('/app/managment/blog_settings')}>

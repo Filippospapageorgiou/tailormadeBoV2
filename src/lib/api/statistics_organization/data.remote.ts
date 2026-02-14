@@ -92,8 +92,6 @@ export const getAllRegisterClosingDate = query(dayliRegisterSchema, async ({ dat
 		const { data, error } = await supabase
 			.rpc('get_daily_register_closings', { p_date: date });
 
-		console.log('data from rpc function: ',data);	
-
 		if (error){
 			console.error('[getAllRegisterClosingDate] error fetching daily register data: ', error);
 			return {

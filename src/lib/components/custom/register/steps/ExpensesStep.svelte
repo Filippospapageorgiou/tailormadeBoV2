@@ -39,50 +39,52 @@
 	];
 </script>
 
-<Card.Root class="border-border shadow-sm">
-	<Card.Header>
-		<div class="flex items-center justify-between">
-			<div class="flex items-center gap-2">
-				<div class="rounded-full bg-primary/10 p-2">
+<Card.Root class="rounded-xl border-border/60 shadow-sm">
+	<Card.Header class="pb-4">
+		<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+			<div class="flex items-center gap-3">
+				<div class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
 					<Receipt class="h-5 w-5 text-primary" />
 				</div>
 				<div>
-					<Card.Title class="text-xl text-foreground">Έξοδα Ημέρας</Card.Title>
-					<Card.Description>Καταχωρήστε τα έξοδα της ημέρας</Card.Description>
+					<Card.Title class="text-lg font-semibold text-foreground">Έξοδα Ημέρας</Card.Title>
+					<Card.Description class="text-sm">Καταχωρήστε τα έξοδα της ημέρας</Card.Description>
 				</div>
 			</div>
-			<Badge variant="outline" class="text-sm">
-				Σύνολο: €{sales.totalExpenses.toFixed(2)}
-			</Badge>
+			{#if sales.expenses.length > 0}
+				<Badge variant="secondary" class="tabular-nums">
+					Σύνολο: €{sales.totalExpenses.toFixed(2)}
+				</Badge>
+			{/if}
 		</div>
 	</Card.Header>
 
 	<Card.Content class="space-y-4">
 		{#if sales.expenses.length > 0}
 			{#each sales.expenses as expense, index}
-				<div class="rounded-lg border border-border bg-card p-4 shadow-sm">
-					<div class="mb-3 flex items-center justify-between">
-						<h4 class="text-sm font-semibold text-foreground">Έξοδο #{index + 1}</h4>
+				<div class="rounded-lg border border-border/60 bg-muted/30 p-4 transition-colors hover:bg-muted/50">
+					<div class="mb-4 flex items-center justify-between">
+						<span class="text-sm font-medium text-foreground">Έξοδο #{index + 1}</span>
 						<Button
 							variant="ghost"
 							size="sm"
 							onclick={() => removeExpense(index)}
-							class="h-8 w-8 p-0 text-red-500 hover:bg-red-50 hover:text-red-600"
+							class="h-8 w-8 p-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
 						>
 							<Trash2 class="h-4 w-4" />
 						</Button>
 					</div>
 
-					<div class="grid gap-4 md:grid-cols-2">
+					<div class="grid gap-4 sm:grid-cols-2">
 						<!-- Category -->
-						<div class="space-y-2">
+						<div class="space-y-1.5">
 							<Label for="category_{index}" class="text-sm text-muted-foreground">Κατηγορία *</Label>
 							<Select.Root
 								type="single"
 								name="paymentMethods"
 								bind:value={expense.expense_category}
 							>
-								<Select.Trigger class="w-full sm:w-[260px]">
+								<Select.Trigger class="w-full">
 									{expenseCategories.find((f) => f.value === expense.expense_category)?.label ??
 										'Διάλεξε κατηγορία'}
 								</Select.Trigger>
@@ -100,7 +102,7 @@
 						</div>
 
 						<!-- Amount -->
-						<div class="space-y-2">
+						<div class="space-y-1.5">
 							<Label for="expense_amount_{index}" class="text-sm text-muted-foreground">Ποσό *</Label>
 							<Input
 								id="expense_amount_{index}"
@@ -114,7 +116,7 @@
 						</div>
 
 						<!-- Description (full width) -->
-						<div class="space-y-2 md:col-span-2">
+						<div class="space-y-1.5 sm:col-span-2">
 							<Label for="description_{index}" class="text-sm text-muted-foreground">Περιγραφή *</Label>
 							<Input
 								id="description_{index}"
@@ -133,7 +135,7 @@
 		<Button
 			onclick={addExpense}
 			variant="outline"
-			class="w-full border-dashed border-primary text-primary hover:bg-primary/5"
+			class="w-full border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-colors"
 		>
 			<Plus class="mr-2 h-4 w-4" />
 			Προσθήκη Εξόδου

@@ -61,9 +61,9 @@
 <Dialog.Root bind:open>
 	<Dialog.Content class="max-h-[90vh] overflow-y-auto sm:max-w-[600px]">
 		<Dialog.Header>
-			<div class="flex items-center gap-2">
-				<div class="rounded-full bg-[#8B6B4A]/10 p-2">
-					<Building2 class="h-5 w-5 text-[#8B6B4A]" />
+			<div class="flex items-center gap-3">
+				<div class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+					<Building2 class="h-5 w-5 text-primary" />
 				</div>
 				<div>
 					<Dialog.Title>Προσθήκη Προμηθευτή</Dialog.Title>
@@ -73,7 +73,7 @@
 		</Dialog.Header>
 
 		<form
-			class="space-y-4 py-4"
+			class="space-y-5 py-4"
 			{...createSupplierForm.enhance(async ({ form, submit }) => {
 				open = false;
 				showProgress('Προσθήκη προμηθευτή....');
@@ -95,7 +95,7 @@
 		>
 			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 				<!-- Name -->
-				<div class="space-y-2 sm:col-span-2">
+				<div class="space-y-1.5 sm:col-span-2">
 					<Label for="supplier-name">Όνομα Προμηθευτή *</Label>
 					<Input
 						id="supplier-name"
@@ -107,7 +107,7 @@
 				</div>
 
 				<!-- AFM -->
-				<div class="space-y-2">
+				<div class="space-y-1.5">
 					<Label for="supplier-afm">ΑΦΜ *</Label>
 					<Input
 						id="supplier-afm"
@@ -119,7 +119,7 @@
 				</div>
 
 				<!-- Phone -->
-				<div class="space-y-2">
+				<div class="space-y-1.5">
 					<Label for="supplier-phone">Τηλέφωνο</Label>
 					<Input
 						id="supplier-phone"
@@ -130,7 +130,7 @@
 				</div>
 
 				<!-- Email -->
-				<div class="space-y-2 sm:col-span-2">
+				<div class="space-y-1.5 sm:col-span-2">
 					<Label for="supplier-email">Email</Label>
 					<Input
 						id="supplier-email"
@@ -142,7 +142,7 @@
 				</div>
 
 				<!-- Address -->
-				<div class="space-y-2 sm:col-span-2">
+				<div class="space-y-1.5 sm:col-span-2">
 					<Label for="supplier-address">Διεύθυνση</Label>
 					<Input
 						id="supplier-address"
@@ -153,7 +153,7 @@
 				</div>
 
 				<!-- Contact Person -->
-				<div class="space-y-2">
+				<div class="space-y-1.5">
 					<Label for="supplier-contact">Υπεύθυνος Επικοινωνίας</Label>
 					<Input
 						id="supplier-contact"
@@ -164,7 +164,7 @@
 				</div>
 
 				<!-- Payment Terms -->
-				<div class="space-y-2">
+				<div class="space-y-1.5">
 					<Label for="supplier-payment">Όροι Πληρωμής</Label>
 					<Input
 						id="supplier-payment"
@@ -175,7 +175,7 @@
 				</div>
 
 				<!-- Notes -->
-				<div class="space-y-2 sm:col-span-2">
+				<div class="space-y-1.5 sm:col-span-2">
 					<Label for="supplier-notes">Σημειώσεις</Label>
 					<Textarea
 						id="supplier-notes"
@@ -188,8 +188,8 @@
 				</div>
 			</div>
 
-			<div class="rounded-md p-3 text-xs text-muted-foreground">
-				<p class="font-medium">Σημείωση:</p>
+			<div class="rounded-lg border border-border/40 bg-muted/50 p-3 text-xs text-muted-foreground">
+				<p class="font-medium text-foreground">Σημείωση:</p>
 				<ul class="mt-1 list-disc space-y-1 pl-4">
 					<li>* Υποχρεωτικά πεδία</li>
 					<li>Το ΑΦΜ πρέπει να είναι μοναδικό</li>
@@ -198,8 +198,8 @@
 
 			<Dialog.Footer>
 				<Button variant="outline" type="button" onclick={() => (open = false)}>Ακύρωση</Button>
-				<Button type="submit" class="cursor-pointer">
-					<Plus class="mr-2 h-4 w-4" />
+				<Button type="submit" class="cursor-pointer gap-2">
+					<Plus class="h-4 w-4" />
 					Προσθήκη
 				</Button>
 			</Dialog.Footer>

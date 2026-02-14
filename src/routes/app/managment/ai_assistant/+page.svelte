@@ -173,11 +173,10 @@
 {:else}
 	<div class="flex h-full flex-col bg-background">
 		{#if chat.messages.length === 0}
-			<!-- Empty state - Claude style with your colors -->
+			<!-- Empty state -->
 			<div class="flex flex-1 flex-col items-center justify-center px-4">
-				<!-- Greeting with Shimmer -->
+				<!-- Greeting -->
 				<div class="mb-10 flex flex-col items-center gap-4 text-center">
-					<!-- Animated Icon -->
 					<div class="flex size-16 items-center justify-center rounded-2xl bg-primary/10">
 						<Sparkles class="size-8 text-primary" />
 					</div>
@@ -218,18 +217,16 @@
 						<PromptInputBody>
 							<PromptInputTextarea
 								bind:value={input}
-								placeholder="Γράψε / για εντολές"
+								placeholder="Γράψε ένα μήνυμα..."
 								class="min-h-[52px] resize-none border-0 bg-transparent px-4 py-4 text-foreground placeholder:text-muted-foreground focus:ring-0"
 							/>
 						</PromptInputBody>
 						<PromptInputToolbar class="flex items-center justify-between px-3 pb-3">
 							<div class="flex w-full items-center justify-between">
-								<div class="flex items-center gap-2 text-sm text-muted-foreground">
-									<span class="bg-mute">Press enter</span>
-								</div>
+								<span class="text-xs text-muted-foreground">Enter για αποστολή</span>
 								<PromptInputSubmit
 									disabled={!input.trim()}
-									class="flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground transition-all hover:bg-primary/90 "
+									class="flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground transition-all hover:bg-primary/90"
 								>
 									<ArrowUp class="size-4" />
 								</PromptInputSubmit>
@@ -255,63 +252,61 @@
 		{:else}
 			<!-- Chat view -->
 			<div class="flex-1 overflow-y-auto">
-				<div class="mx-auto max-w-3xl px-4 py-8">
+				<div class="mx-auto max-w-4xl px-4 py-8 sm:px-6">
 					<div class="space-y-6">
 						{#each chat.messages as message (message.id)}
-							<div class="flex gap-3 {message.role === 'user' ? 'flex-row-reverse' : ''}">
+							<div class="flex gap-3 {message.role === 'user' ? 'justify-end' : ''}">
 								<!-- Avatar -->
-								<div class="flex-shrink-0 pt-0.5">
-									{#if message.role === 'user'}
-										{#if profile?.imageUrl}
-											<img
-												src={profile.imageUrl}
-												alt={profile.username}
-												class="size-8 rounded-full object-cover ring-2 ring-background"
-											/>
-										{:else}
-											<div
-												class="flex size-8 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground"
-											>
-												{profile ? getInitials(profile.username) : 'U'}
-											</div>
-										{/if}
-									{:else}
+								{#if message.role !== 'user'}
+									<div class="flex-shrink-0 pt-1">
 										<div class="flex size-8 items-center justify-center rounded-full bg-primary/10">
 											<BotIcon class="size-4 text-primary" />
 										</div>
-									{/if}
-								</div>
+									</div>
+								{/if}
 
 								<!-- Content -->
-								<div
-									class="max-w-[85%] min-w-0 {message.role === 'user'
-										? 'flex flex-col items-end'
-										: ''}"
-								>
-									{#if message.role === 'user'}
-										<div
-											class="rounded-2xl rounded-tr-md bg-primary px-4 py-2.5 text-sm text-primary-foreground"
-										>
-											{getMessageText(message)}
+								{#if message.role === 'user'}
+									<div class="max-w-[75%] min-w-0">
+										<div class="flex items-start gap-3 justify-end">
+											<div
+												class="rounded-2xl rounded-tr-md bg-primary px-4 py-2.5 text-sm leading-relaxed text-primary-foreground"
+											>
+												{getMessageText(message)}
+											</div>
+											<div class="flex-shrink-0 pt-0.5">
+												{#if profile?.imageUrl}
+													<img
+														src={profile.imageUrl}
+														alt={profile.username}
+														class="size-8 rounded-full object-cover ring-2 ring-background"
+													/>
+												{:else}
+													<div
+														class="flex size-8 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground"
+													>
+														{profile ? getInitials(profile.username) : 'U'}
+													</div>
+												{/if}
+											</div>
 										</div>
-									{:else}
-										<Message from="assistant">
-											<MessageContent>
+									</div>
+								{:else}
+									<div class="min-w-0 flex-1">
+										<Message from="assistant" class="max-w-full">
+											<MessageContent class="w-full max-w-full">
 												{#each message.parts as part, partIndex (partIndex)}
 													{#if isTextPart(part)}
 														<MessageResponse content={part.text} />
-														<!-- Replace the tool display section (around line 230-250) with this: -->
 													{:else if part.type === 'tool-queryDatabase' || part.type === 'tool-invocation'}
 														{@const tool = asSqlTool(part)}
 														{#if tool.input}
-															<div
-																class="my-4 w-full max-w-[340px] overflow-hidden sm:max-w-[500px] md:max-w-[700px]"
-															>
+															<div class="my-4 w-full overflow-hidden">
 																<Tool
 																	class="overflow-hidden rounded-xl border border-border/50 bg-muted/50 backdrop-blur-sm"
 																>
 																	<ToolHeader
-																		type={`${tool.input?.explanation?.slice(0, 30) ?? 'ανάλυση δεδομένων'}...`}
+																		type={`${tool.input?.explanation?.slice(0, 40) ?? 'ανάλυση δεδομένων'}...`}
 																		state={tool.output ? 'output-available' : getToolState(part)}
 																	/>
 																	<ToolContent>
@@ -320,7 +315,6 @@
 																</Tool>
 															</div>
 
-															<!-- Thinking indicator BELOW the tool -->
 															{#if !tool.output}
 																<div class="flex items-center gap-3 py-3">
 																	<Loader class="size-4 text-primary" />
@@ -369,8 +363,8 @@
 												</MessageActions>
 											</MessageToolbar>
 										</Message>
-									{/if}
-								</div>
+									</div>
+								{/if}
 							</div>
 						{/each}
 
@@ -397,8 +391,8 @@
 			</div>
 
 			<!-- Bottom input when in chat -->
-			<div class="sticky bottom-0 border-t border-border/50 bg-background">
-				<div class="mx-auto max-w-3xl px-4 py-4">
+			<div class="border-t border-border/50 bg-background/80 backdrop-blur-sm">
+				<div class="mx-auto max-w-4xl px-4 py-3 sm:px-6">
 					<PromptInput
 						onSubmit={(data) => handleSubmit({ text: data.text! })}
 						class="overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm"
@@ -412,12 +406,10 @@
 						</PromptInputBody>
 						<PromptInputToolbar class="flex items-center justify-between px-3 pb-3">
 							<div class="flex w-full items-center justify-between">
-								<div class="flex items-center gap-2 text-sm text-muted-foreground">
-									<span class="bg-mute">Press enter</span>
-								</div>
+								<span class="text-xs text-muted-foreground">Enter για αποστολή</span>
 								<PromptInputSubmit
 									disabled={!input.trim()}
-									class="flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground transition-all hover:bg-primary/90 "
+									class="flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground transition-all hover:bg-primary/90"
 								>
 									<ArrowUp class="size-4" />
 								</PromptInputSubmit>

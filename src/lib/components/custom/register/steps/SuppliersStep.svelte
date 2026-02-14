@@ -31,7 +31,7 @@
 		$inspect(sales.supplierPayments);
 	});
 
-	
+
 
 	let { suppliers = [], suppliersLoading, onSuccess }: Props = $props();
 
@@ -61,57 +61,54 @@
 	];
 </script>
 
-<Card.Root class="border-border px-4 shadow-sm sm:px-6 lg:px-8">
-	<Card.Header>
+<Card.Root class="rounded-xl border-border/60 shadow-sm">
+	<Card.Header class="pb-4">
 		<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-			<div class="flex items-center gap-2">
-				<div class="rounded-full bg-primary/10 p-2">
+			<div class="flex items-center gap-3">
+				<div class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
 					<Package class="h-5 w-5 text-primary" />
 				</div>
 				<div>
-					<Card.Title class="text-lg text-foreground sm:text-xl">Πληρωμές Προμηθευτών</Card.Title>
-					<Card.Description class="text-sm sm:text-base">
+					<Card.Title class="text-lg font-semibold text-foreground">Πληρωμές Προμηθευτών</Card.Title>
+					<Card.Description class="text-sm">
 						Καταχωρήστε τις πληρωμές προς προμηθευτές
 					</Card.Description>
 				</div>
 			</div>
 			{#if sales.supplierPayments.length > 0}
-				<Badge variant="outline" class="text-sm">
+				<Badge variant="secondary" class="tabular-nums">
 					Σύνολο: €{sales.totalSupplierPayments.toFixed(2)}
 				</Badge>
 			{/if}
 		</div>
 	</Card.Header>
 
-	<Card.Content class="space-y-5">
+	<Card.Content class="space-y-4">
 		{#if sales.supplierPayments.length > 0}
 			{#each sales.supplierPayments as payment, index}
-				<div class="rounded-lg border border-border bg-card p-4 shadow-sm sm:p-5">
-					<div class="mb-3 flex items-center justify-between">
-						<h4 class="text-sm font-semibold text-foreground">Πληρωμή #{index + 1}</h4>
+				<div class="rounded-lg border border-border/60 bg-muted/30 p-4 transition-colors hover:bg-muted/50 sm:p-5">
+					<div class="mb-4 flex items-center justify-between">
+						<span class="text-sm font-medium text-foreground">Πληρωμή #{index + 1}</span>
 						<Button
 							variant="ghost"
 							size="sm"
 							onclick={() => removePayment(index)}
-							class="h-8 w-8 p-0 text-red-500 hover:bg-red-50 hover:text-red-600"
+							class="h-8 w-8 p-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
 						>
 							<Trash2 class="h-4 w-4" />
 						</Button>
 					</div>
 
-					<!-- Responsive grid -->
 					<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 						<!-- Supplier Name -->
-						<div class="space-y-2">
-							<div class="flex items-center justify-between">
-								<Label class="text-sm text-muted-foreground">Όνομα Προμηθευτή *</Label>
-							</div>
+						<div class="space-y-1.5">
+							<Label class="text-sm text-muted-foreground">Όνομα Προμηθευτή *</Label>
 							{#if suppliersLoading}
 								<Skeleton class="h-10 w-full rounded-md" />
 							{:else}
 							<div class="flex flex-row gap-2">
 								<Select.Root type="single" name="supplierName" bind:value={payment.supplier_name}>
-									<Select.Trigger class="w-full sm:w-[360px]">
+									<Select.Trigger class="w-full">
 										{suppliers.find((s) => s.name === payment.supplier_name)?.name ??
 											'Διάλεξε προμηθευτή'}
 									</Select.Trigger>
@@ -131,9 +128,9 @@
 									<Tooltip.Root>
 										<Tooltip.Trigger>
 											<Button
-												variant="ghost"
-												size="sm"
-												class="h-6 w-6 p-0 text-primary hover:bg-primary/10 hover:text-primary"
+												variant="outline"
+												size="icon"
+												class="h-9 w-9 shrink-0"
 												onclick={() => (addSupplierDialogOpen = true)}
 											>
 												<Plus class="h-4 w-4" />
@@ -149,7 +146,7 @@
 						</div>
 
 						<!-- Amount -->
-						<div class="space-y-2">
+						<div class="space-y-1.5">
 							<Label class="text-sm text-muted-foreground">Ποσό *</Label>
 							<Input
 								type="number"
@@ -162,10 +159,10 @@
 						</div>
 
 						<!-- Payment Method -->
-						<div class="space-y-2 sm:col-span-2 md:col-span-1">
+						<div class="space-y-1.5">
 							<Label class="text-sm text-muted-foreground">Τρόπος Πληρωμής</Label>
 							<Select.Root type="single" name="paymentMethods" bind:value={payment.payment_method}>
-							<Select.Trigger class="w-[240px]">
+							<Select.Trigger class="w-full">
 								{paymentMethods.find((f) => f.value === payment.payment_method)?.label ??
 									'Διάλεξε μέθοδο πληρωμής'}
 							</Select.Trigger>
@@ -183,7 +180,7 @@
 						</div>
 
 						<!-- Invoice Number -->
-						<div class="space-y-2">
+						<div class="space-y-1.5">
 							<Label class="text-sm text-muted-foreground">Αριθμός Παραστατικού</Label>
 							<div class="relative">
 								<FileText class="absolute top-3 left-3 h-4 w-4 text-muted-foreground" />
@@ -197,7 +194,7 @@
 						</div>
 
 						<!-- Notes (full width) -->
-						<div class="space-y-2 sm:col-span-2">
+						<div class="space-y-1.5 sm:col-span-2">
 							<Label class="text-sm text-muted-foreground">Σημειώσεις</Label>
 							<Input
 								type="text"
@@ -214,7 +211,7 @@
 		<Button
 			onclick={addPayment}
 			variant="outline"
-			class="w-full border-dashed border-primary text-primary hover:bg-primary/10"
+			class="w-full border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-colors"
 		>
 			<Plus class="mr-2 h-4 w-4" />
 			Προσθήκη Πληρωμής

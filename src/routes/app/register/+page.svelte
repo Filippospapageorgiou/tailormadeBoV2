@@ -157,7 +157,7 @@
 				}
 
 				showProgress('Υποβολή κλεισίματος ταμείου...');
-				
+
 				await submit();
 
 				if (dailyRegisterForm.result?.success) {
@@ -166,7 +166,7 @@
 						dailyRegisterForm.result?.message || 'Το ταμείο έκλεισε επιτυχώς'
 					);
 					goto('/app/')
-				} 
+				}
 				if(dailyRegisterForm?.result?.success === false){
 					showFailToast('Σφάλφμα',dailyRegisterForm?.result?.message);
 				}
@@ -180,13 +180,13 @@
 				value={JSON.stringify(prepareSubmissionData())}
 			/>
 
-			<main class="container mx-auto px-4 py-8 md:px-6">
+			<main class="container mx-auto max-w-6xl px-4 py-8 md:px-6">
 				<!-- Header -->
-				<div class="mb-12">
-					<h1 class="font-mono text-4xl tracking-wider">
-						ΗΜΕΡΗΣΙΟ ΚΛΕΙΣΙΜΟ ΤΑΜΕΙΟΥ
+				<div class="mb-8">
+					<h1 class="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+						Ημερήσιο Κλείσιμο Ταμείου
 					</h1>
-					<p class="mt-2 text-sm text-muted-foreground">
+					<p class="mt-1.5 text-sm text-muted-foreground">
 						Καταγραφή ημερήσιας χρηματικής διακίνησης {date || ''}
 					</p>
 				</div>
@@ -194,7 +194,7 @@
 				<RegisterProgressBar bind:currentStep {totalSteps} />
 
 				<!-- Form Container -->
-				<div class="grid gap-8 px-4 lg:grid-cols-3">
+				<div class="grid gap-6 lg:grid-cols-3 lg:gap-8">
 					<!-- Main Form Area -->
 					<div class="lg:col-span-2">
 						{#if currentStep === 1}
@@ -215,7 +215,7 @@
 				</div>
 
 				<!-- Navigation Controls -->
-				<div class="mt-12 flex items-center justify-between gap-4">
+				<div class="mt-8 flex items-center justify-between rounded-xl border border-border/40 bg-card p-4 shadow-sm">
 					<Button
 						type="button"
 						onclick={handlePrevStep}
@@ -224,16 +224,15 @@
 						size="lg"
 						class="gap-2"
 					>
-						<ChevronLeft class="h-5 w-5" />
-						Προηγούμενο
+						<ChevronLeft class="h-4 w-4" />
+						<span class="hidden sm:inline">Προηγούμενο</span>
 					</Button>
 
-					<div class="text-center">
-						<p class="text-sm text-neutral-600">
-							Βήμα <span class="font-semibold text-muted-foreground">{currentStep}</span> από
-							<span class="font-semibold">{totalSteps}</span>
-						</p>
-					</div>
+					<p class="text-sm text-muted-foreground">
+						Βήμα <span class="font-semibold tabular-nums text-foreground">{currentStep}</span>
+						<span class="text-muted-foreground/60">/</span>
+						<span class="font-semibold tabular-nums text-foreground">{totalSteps}</span>
+					</p>
 
 					{#if currentStep === totalSteps}
 						<Button
@@ -241,8 +240,8 @@
 							size="lg"
 							class="gap-2"
 						>
-							<CheckCheck class="h-5 w-5" />
-							Υποβολή Κλεισίματος
+							<CheckCheck class="h-4 w-4" />
+							Υποβολή
 						</Button>
 					{:else}
 						<Button
@@ -251,8 +250,8 @@
 							size="lg"
 							class="gap-2"
 						>
-							Επόμενο
-							<ChevronRight class="h-5 w-5" />
+							<span class="hidden sm:inline">Επόμενο</span>
+							<ChevronRight class="h-4 w-4" />
 						</Button>
 					{/if}
 				</div>

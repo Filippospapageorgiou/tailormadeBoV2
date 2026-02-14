@@ -10,7 +10,6 @@
 		Globe,
 		Wrench,
 		Network,
-		Refrigerator,
 		Book,
 		Users,
 		Calendar,
@@ -162,14 +161,9 @@
 						icon: Boxes
 					},
 					{
-						title: 'Συνταγές',
+						title: 'Συνταγές & Συστατικά',
 						url: '/app/managment/recipes_settings',
 						icon: Coffee
-					},
-					{
-						title: 'Συστατικά',
-						url: '/app/managment/ingridients_settings',
-						icon: Refrigerator
 					},
 					{
 						title: 'Blog',
@@ -226,14 +220,14 @@
 								class="flex aspect-square size-10 items-center justify-center overflow-hidden rounded-lg"
 							>
 								<img
-									src="/knowHow.png"
+									src="/icon.png"
 									alt="Tailor Made Coffee Roasters"
 									class="size-10 object-cover"
 								/>
 							</div>
 							<div class="grid flex-1 text-left text-sm leading-tight">
-								<span class="truncate font-medium">KNOWHOW</span>
-								<span class="truncate text-xs">TECHNOLOGIES.</span>
+								<span class="truncate font-medium">TAILOR MADE & VENETIS</span>
+								<span class="truncate text-xs">ENTEPRISE.</span>
 							</div>
 						</button>
 					{/snippet}

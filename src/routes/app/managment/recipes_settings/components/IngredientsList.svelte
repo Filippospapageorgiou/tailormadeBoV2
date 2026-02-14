@@ -1,6 +1,10 @@
 <script lang="ts">
-	import { getBeverageIngredients, removeIngredientFromBeverage, updateRecipeIngredient } from '../data.remote';
-	import { getIngridients } from '../../ingridients_settings/data.remote';
+	import {
+		getBeverageIngredients,
+		removeIngredientFromBeverage,
+		updateRecipeIngredient
+	} from '../data.remote';
+	import { getIngridients } from '../data.remote';
 	import type { RecipeIngredient } from '$lib/models/database.types';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
@@ -10,20 +14,19 @@
 	import * as Dialog from '$lib/components/ui/dialog';
 	import { Label } from '$lib/components/ui/label';
 	import { showProgress, hideProgress } from '$lib/stores/progress.svelte';
-	import { toast } from '$lib/stores/toast.svelte';
 	import { addIngredientToBeverage } from '../data.remote';
+	import { toast } from 'svelte-sonner';
+	import EmptyComp from '$lib/components/custom/EmptyComp.svelte';
+	import { Coffee } from '@lucide/svelte';
 
 	let { beverageId }: { beverageId: number } = $props();
 
-	
 	// svelte-ignore state_referenced_locally
 	let query = getBeverageIngredients({ beverageId: beverageId.toString() });
 	let ingredients = $derived(query.current?.ingredients ?? []);
 
-
 	let allIngredientsQuery = getIngridients();
 	let allIngredients = $derived(allIngredientsQuery.current?.ingredients ?? []);
-
 
 	let editingIngredientId = $state<number | null>(null);
 	let editFormData = $state({ quantity: 0, notes: '' });
@@ -50,7 +53,7 @@
 
 	async function handleUpdate(id: number) {
 		showProgress('Updating ingredient...');
-		
+
 		try {
 			const result = await updateRecipeIngredient({
 				id,
@@ -60,22 +63,13 @@
 
 			if (result.success) {
 				await query.refresh();
-				toast.show = true;
-				toast.status = true;
-				toast.title = 'Success';
-				toast.text = result.message;
+				toast.success(result.message);
 				cancelEdit();
 			} else {
-				toast.show = true;
-				toast.status = false;
-				toast.title = 'Error';
-				toast.text = result.message || 'Failed to update ingredient.';
+				toast.error(result?.message || 'Σφάλμα κάτα την ανανεώση');
 			}
 		} catch (error: any) {
-			toast.show = true;
-			toast.status = false;
-			toast.title = 'Error';
-			toast.text = error.message || 'An unexpected error occurred.';
+			toast.error(error);
 		} finally {
 			hideProgress();
 		}
@@ -83,7 +77,7 @@
 
 	async function handleRemove(id: number) {
 		showProgress('Removing ingredient...');
-		
+
 		try {
 			const result = await removeIngredientFromBeverage({
 				recipeIngredientId: id.toString()
@@ -91,21 +85,12 @@
 
 			if (result.success) {
 				await query.refresh();
-				toast.show = true;
-				toast.status = true;
-				toast.title = 'Success';
-				toast.text = result.message;
+				toast.success(result.message);
 			} else {
-				toast.show = true;
-				toast.status = false;
-				toast.title = 'Error';
-				toast.text = result.message || 'Failed to remove ingredient.';
+				toast.error(result?.message || 'Σφάλμα κάτα την διαγραφή');
 			}
 		} catch (error: any) {
-			toast.show = true;
-			toast.status = false;
-			toast.title = 'Error';
-			toast.text = error.message || 'An unexpected error occurred.';
+			toast.error(error);
 		} finally {
 			hideProgress();
 		}
@@ -113,14 +98,11 @@
 
 	async function handleAdd() {
 		if (!addFormData.ingredient_id || addFormData.quantity <= 0) {
-			toast.show = true;
-			toast.status = false;
-			toast.title = 'Error';
-			toast.text = 'Please select an ingredient and enter a valid quantity.';
+			toast.error('Διαλέξε κάποιο υλίκο');
 			return;
 		}
 
-		showProgress('Adding ingredient...');
+		showProgress('Προσθήκη υλικού....');
 		addingIngredient = false;
 
 		try {
@@ -133,22 +115,13 @@
 
 			if (result.success) {
 				await query.refresh();
-				toast.show = true;
-				toast.status = true;
-				toast.title = 'Success';
-				toast.text = result.message;
+				toast.success(result.message);
 				addFormData = { ingredient_id: '', quantity: 0, notes: '' };
 			} else {
-				toast.show = true;
-				toast.status = false;
-				toast.title = 'Error';
-				toast.text = result.message || 'Failed to add ingredient.';
+				toast.error(result?.message || 'Σφάλμα κάτα την πρόσθεση');
 			}
 		} catch (error: any) {
-			toast.show = true;
-			toast.status = false;
-			toast.title = 'Error';
-			toast.text = error.message || 'An unexpected error occurred.';
+			toast.error(error);
 		} finally {
 			hideProgress();
 		}
@@ -157,7 +130,9 @@
 	// Get ingredient name by ID for the select
 	let selectedIngredientName = $derived(() => {
 		if (!addFormData.ingredient_id) return 'Select ingredient';
-		const ingredient = allIngredients.find(ing => ing.id === parseInt(addFormData.ingredient_id, 10));
+		const ingredient = allIngredients.find(
+			(ing) => ing.id === parseInt(addFormData.ingredient_id, 10)
+		);
 		return ingredient ? ingredient.name : 'Select ingredient';
 	});
 </script>
@@ -194,10 +169,10 @@
 	{:else}
 		<!-- Ingredients List -->
 		<div class="space-y-2">
-			{#each ingredients as ingredient,index (ingredient.id)}
+			{#each ingredients as ingredient, index (ingredient.id)}
 				<div
 					style="animation-delay:{index * 200}ms"
-					class="rounded-md borderp-3 transition-colors animate-fade-in-down hover:bg-accent-foreground/20"
+					class="borderp-3 animate-fade-in-down rounded-md transition-colors hover:bg-accent-foreground/20"
 				>
 					{#if editingIngredientId === ingredient.id}
 						<!-- Edit Mode -->
@@ -251,7 +226,8 @@
 										{ingredient.ingredients.name}
 									</span>
 									<span class="text-sm text-primary">
-										{ingredient.quantity} {ingredient.ingredients.measurement_unit}
+										{ingredient.quantity}
+										{ingredient.ingredients.measurement_unit}
 									</span>
 								</div>
 								{#if ingredient.notes}
@@ -351,6 +327,3 @@
 		</Dialog.Footer>
 	</Dialog.Content>
 </Dialog.Root>
-
-
-

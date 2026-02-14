@@ -87,14 +87,17 @@
 </script>
 
 <div class="space-y-4">
-	<!-- Table -->
-	<div class="p-2 rounded-md">
+	<!-- Table Container -->
+	<div class="rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden">
 		<Table.Root>
 			<Table.Header>
 				{#each table.getHeaderGroups() as headerGroup (headerGroup.id)}
-					<Table.Row>
+					<Table.Row class="border-b border-border/60 bg-muted/40 hover:bg-muted/40">
 						{#each headerGroup.headers as header (header.id)}
-							<Table.Head colspan={header.colSpan}>
+							<Table.Head
+								colspan={header.colSpan}
+								class="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+							>
 								{#if !header.isPlaceholder}
 									<FlexRender
 										content={header.column.columnDef.header}
@@ -107,19 +110,23 @@
 				{/each}
 			</Table.Header>
 			<Table.Body>
-				{#each table.getRowModel().rows as row (row.id)}
-					<Table.Row data-state={row.getIsSelected() && 'selected'}>
+				{#each table.getRowModel().rows as row, i (row.id)}
+					<Table.Row
+						data-state={row.getIsSelected() && 'selected'}
+						class="border-b border-border/40 transition-colors"
+					>
 						{#each row.getVisibleCells() as cell (cell.id)}
-							<Table.Cell>
+							<Table.Cell class="px-3 py-3">
 								<FlexRender content={cell.column.columnDef.cell} context={cell.getContext()} />
 							</Table.Cell>
 						{/each}
 					</Table.Row>
 				{:else}
 					<Table.Row>
-						<Table.Cell colspan={columns.length} class="h-24 text-center">
-							<div class="flex items-center justify-center h-full">
+						<Table.Cell colspan={columns.length} class="h-32 text-center">
+							<div class="flex flex-col items-center justify-center gap-3 text-muted-foreground">
 								<Spinner />
+								<p class="text-sm">Φόρτωση δεδομένων...</p>
 							</div>
 						</Table.Cell>
 					</Table.Row>
@@ -129,17 +136,17 @@
 	</div>
 
 	<!-- Pagination Controls -->
-	<div class="flex items-center justify-between px-2 py-4">
-		<!-- Left side: Row count info -->
-		<div class="flex-1 text-sm text-muted-foreground">
-			Showing {table.getRowModel().rows.length} of {table.getFilteredRowModel().rows.length} row(s).
-		</div>
+	<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+		<!-- Left side: Row count -->
+		<p class="text-sm text-muted-foreground">
+			{table.getRowModel().rows.length} από {table.getFilteredRowModel().rows.length} εγγραφές
+		</p>
 
-		<!-- Right side: Pagination controls -->
-		<div class="flex items-center space-x-6 lg:space-x-8">
-			<!-- Rows per page selector -->
-			<div class="flex items-center space-x-2">
-				<p class="text-sm font-medium">Rows per page</p>
+		<!-- Right side: Controls -->
+		<div class="flex items-center gap-4">
+			<!-- Rows per page -->
+			<div class="flex items-center gap-2">
+				<span class="text-sm text-muted-foreground">Ανά σελίδα</span>
 				<Select.Root
 					allowDeselect={false}
 					type="single"
@@ -148,7 +155,7 @@
 						table.setPageSize(Number(value));
 					}}
 				>
-					<Select.Trigger class="h-8 w-[70px]">
+					<Select.Trigger class="h-8 w-16">
 						{String(table.getState().pagination.pageSize)}
 					</Select.Trigger>
 					<Select.Content side="top">
@@ -161,55 +168,51 @@
 				</Select.Root>
 			</div>
 
-			<!-- Page number display -->
-			<div class="flex w-[100px] items-center justify-center text-sm font-medium">
-				Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
-			</div>
+			<!-- Page indicator -->
+			<span class="text-sm tabular-nums text-muted-foreground">
+				{table.getState().pagination.pageIndex + 1} / {table.getPageCount()}
+			</span>
 
 			<!-- Navigation buttons -->
-			<div class="flex items-center space-x-2">
-				<!-- First page -->
+			<div class="flex items-center gap-1">
 				<Button
 					variant="outline"
 					class="hidden size-8 p-0 lg:flex"
 					onclick={() => table.setPageIndex(0)}
 					disabled={!table.getCanPreviousPage()}
 				>
-					<span class="sr-only">Go to first page</span>
-					<ChevronsLeftIcon />
+					<span class="sr-only">Πρώτη σελίδα</span>
+					<ChevronsLeftIcon class="h-4 w-4" />
 				</Button>
 
-				<!-- Previous page -->
 				<Button
 					variant="outline"
 					class="size-8 p-0"
 					onclick={() => table.previousPage()}
 					disabled={!table.getCanPreviousPage()}
 				>
-					<span class="sr-only">Go to previous page</span>
-					<ChevronLeftIcon />
+					<span class="sr-only">Προηγούμενη σελίδα</span>
+					<ChevronLeftIcon class="h-4 w-4" />
 				</Button>
 
-				<!-- Next page -->
 				<Button
 					variant="outline"
 					class="size-8 p-0"
 					onclick={() => table.nextPage()}
 					disabled={!table.getCanNextPage()}
 				>
-					<span class="sr-only">Go to next page</span>
-					<ChevronRightIcon />
+					<span class="sr-only">Επόμενη σελίδα</span>
+					<ChevronRightIcon class="h-4 w-4" />
 				</Button>
 
-				<!-- Last page -->
 				<Button
 					variant="outline"
 					class="hidden size-8 p-0 lg:flex"
 					onclick={() => table.setPageIndex(table.getPageCount() - 1)}
 					disabled={!table.getCanNextPage()}
 				>
-					<span class="sr-only">Go to last page</span>
-					<ChevronsRightIcon />
+					<span class="sr-only">Τελευταία σελίδα</span>
+					<ChevronsRightIcon class="h-4 w-4" />
 				</Button>
 			</div>
 		</div>
