@@ -782,3 +782,5 @@ export const TYPE_REFERENCE = {
   jsonb_columns: ['blogs.images', 'maintenance_logs.images'],
   array_columns: ['blogs.tags']
 };
+
+
