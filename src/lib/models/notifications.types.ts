@@ -5,7 +5,7 @@ export type NotificationType =
 	| 'blog_published'
 	| 'schedule_published'
 	| 'equipment_added'
-	| 'daily_tasks'
+	| 'tasks'
 	| 'shift_request_update'
 	| 'manual_published';
 

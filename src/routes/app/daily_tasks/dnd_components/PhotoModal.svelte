@@ -4,18 +4,22 @@
 	import { Camera, X, Check, RotateCcw } from 'lucide-svelte';
 	import { uploadTaskPhoto } from '../data.remote';
 	import { toast } from 'svelte-sonner';
-	import Loader from '$lib/components/ai-elements/loader/Loader.svelte';
+	import { Spinner } from '$lib/components/ui/spinner';
+
+	type Frequency = 'daily' | 'weekly' | 'monthly';
 
 	let {
 		open = $bindable(false),
 		taskId = '',
 		taskTitle = '',
+		frequency = 'daily',
 		onSuccess,
 		onCancel
 	}: {
 		open: boolean;
 		taskId: string;
 		taskTitle: string;
+		frequency?: Frequency;
 		onSuccess: () => Promise<void>;
 		onCancel: () => void;
 	} = $props();
@@ -28,7 +32,6 @@
 	function handleFileChange(e: Event) {
 		const target = e.target as HTMLInputElement;
 		const file = target.files?.[0];
-
 		if (file) {
 			selectedFile = file;
 			const reader = new FileReader();
@@ -42,9 +45,7 @@
 	function handleRetake() {
 		previewUrl = null;
 		selectedFile = null;
-		if (fileInput) {
-			fileInput.value = '';
-		}
+		if (fileInput) fileInput.value = '';
 	}
 
 	function handleCancel() {
@@ -55,29 +56,26 @@
 	function resetState() {
 		previewUrl = null;
 		selectedFile = null;
-		if (fileInput) {
-			fileInput.value = '';
-		}
+		if (fileInput) fileInput.value = '';
 	}
 
-	// Reset state when modal closes
 	$effect(() => {
-		if (!open) {
-			resetState();
-		}
+		if (!open) resetState();
 	});
 </script>
 
 <Modal.Root bind:open>
 	<Modal.Content class="sm:max-w-md">
 		<Modal.Header>
-			<Modal.Title class="flex items-center gap-2">
-				<Camera class="h-5 w-5 text-primary" />
-				Απαιτείται Φωτογραφία
+			<Modal.Title class="flex items-center gap-2.5 text-base">
+				<div class="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-500/10">
+					<Camera class="h-4 w-4 text-sky-600 dark:text-sky-400" />
+				</div>
+				Φωτογραφία απαιτείται
 			</Modal.Title>
-			<Modal.Description>
-				Για να ολοκληρώσεις την εργασία "<span class="font-semibold">{taskTitle}</span>" πρέπει να
-				τραβήξεις μια φωτογραφία.
+			<Modal.Description class="text-[13px] leading-relaxed">
+				Τράβηξε μια φωτογραφία για να ολοκληρώσεις την εργασία
+				"<span class="font-semibold text-foreground">{taskTitle}</span>".
 			</Modal.Description>
 		</Modal.Header>
 
@@ -95,13 +93,12 @@
 					await onSuccess();
 				} else {
 					toast.error(uploadTaskPhoto.result?.message || 'Σφάλμα');
-					// Don't close modal on error, let user retry
 				}
 				isUploading = false;
 			})}
 		>
-			<!-- Hidden task ID field -->
 			<input type="hidden" name="taskId" value={taskId} />
+			<input type="hidden" name="frequency" value={frequency} />
 
 			<input
 				bind:this={fileInput}
@@ -114,10 +111,9 @@
 			/>
 
 			{#if previewUrl}
-				<!-- Preview State -->
-				<div class="space-y-4">
-					<div class="relative overflow-hidden rounded-lg border">
-						<img src={previewUrl} alt="Preview" class="h-64 w-full object-cover" />
+				<div class="space-y-3">
+					<div class="relative overflow-hidden rounded-xl border border-border/30">
+						<img src={previewUrl} alt="Preview" class="h-60 w-full object-cover" />
 					</div>
 					<div class="flex gap-2">
 						<Button
@@ -127,43 +123,51 @@
 							onclick={handleRetake}
 							disabled={isUploading}
 						>
-							<RotateCcw class="mr-2 h-4 w-4" />
+							<RotateCcw class="mr-1.5 h-3.5 w-3.5" />
 							Ξανά
 						</Button>
 						<Button type="submit" class="flex-1" disabled={isUploading}>
 							{#if isUploading}
-								<Loader class="mr-2 h-4 w-4" />
+								<Spinner class="mr-1.5 h-3.5 w-3.5" />
 								Αποθήκευση...
 							{:else}
-								<Check class="mr-2 h-4 w-4" />
+								<Check class="mr-1.5 h-3.5 w-3.5" />
 								Επιβεβαίωση
 							{/if}
 						</Button>
 					</div>
 				</div>
 			{:else}
-				<!-- Capture State -->
 				<button
 					type="button"
 					onclick={() => fileInput?.click()}
-					class="flex h-64 w-full cursor-pointer flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed border-primary/30 bg-muted/30 transition-colors hover:border-primary/50 hover:bg-muted/50"
+					class="photo-capture-zone flex h-52 w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-sky-500/20 bg-sky-500/[0.03] transition-all duration-200 hover:border-sky-500/35 hover:bg-sky-500/[0.06]"
 				>
-					<div class="rounded-full bg-primary/10 p-4">
-						<Camera class="h-8 w-8 text-primary" />
+					<div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-500/10">
+						<Camera class="h-6 w-6 text-sky-600 dark:text-sky-400" />
 					</div>
 					<div class="text-center">
-						<p class="font-medium text-foreground">Τράβηξε φωτογραφία</p>
-						<p class="text-sm text-muted-foreground">Πάτα εδώ για να ανοίξεις την κάμερα</p>
+						<p class="text-sm font-semibold text-foreground">Τράβηξε φωτογραφία</p>
+						<p class="mt-0.5 text-[11px] text-muted-foreground/60">
+							Πάτα εδώ για να ανοίξεις την κάμερα
+						</p>
 					</div>
 				</button>
 			{/if}
 		</form>
 
 		<Modal.Footer>
-			<Button variant="outline" onclick={handleCancel} disabled={isUploading}>
-				<X class="mr-2 h-4 w-4" />
+			<Button variant="ghost" size="sm" onclick={handleCancel} disabled={isUploading}>
+				<X class="mr-1.5 h-3.5 w-3.5" />
 				Ακύρωση
 			</Button>
 		</Modal.Footer>
 	</Modal.Content>
 </Modal.Root>
+
+<style>
+	.photo-capture-zone {
+		-webkit-tap-highlight-color: transparent;
+		min-height: 44px;
+	}
+</style>

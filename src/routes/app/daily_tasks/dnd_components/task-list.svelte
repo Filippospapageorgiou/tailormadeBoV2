@@ -5,13 +5,23 @@
 	import Droppable from '$lib/droppable.svelte';
 	import { CollisionPriority } from '@dnd-kit/abstract';
 	import { sensors } from '$lib';
-	import { updateDayliTaskForUser } from '../data.remote';
+	import { updateTaskForUser } from '../data.remote';
 	import { toast } from 'svelte-sonner';
 	import PhotoModal from './PhotoModal.svelte';
+	import { Circle, CheckCircle2 } from 'lucide-svelte';
 
-	let { tasks, onUpdate } = $props();
+	type Frequency = 'daily' | 'weekly' | 'monthly';
 
-	// Organize tasks into the format move() expects
+	let {
+		tasks,
+		frequency = 'daily' as Frequency,
+		onUpdate
+	}: {
+		tasks: any[];
+		frequency?: Frequency;
+		onUpdate: () => void;
+	} = $props();
+
 	let groupedTasks = $derived({
 		'in-progress': tasks.filter((t: any) => !t.completed),
 		done: tasks.filter((t: any) => t.completed)
@@ -28,19 +38,15 @@
 		const targetGroup = target.data.group || target.id;
 		const isCompleted = targetGroup === 'done';
 
-		// Find the task being moved
 		const task = tasks.find((t: any) => t.id === source.id);
 
-		// If moving to "done" and task requires photo and doesn't have one yet
 		if (isCompleted && task?.task_items?.requires_photo && !task.photo_url) {
-			// Store the task for the modal
 			pendingTask = task;
 			photoModalOpen = true;
 			return;
 		}
 
-		// Normal flow - no photo required
-		await handleUpdateDayliTask(source.id, isCompleted);
+		await handleUpdateTask(source.id, isCompleted);
 	}
 
 	async function handlePhotoSuccess() {
@@ -52,19 +58,19 @@
 	function handlePhotoCancel() {
 		photoModalOpen = false;
 		pendingTask = null;
-		// Refresh to reset the visual state
 		onUpdate();
 	}
 
-	async function handleUpdateDayliTask(id: string, completed: boolean) {
+	async function handleUpdateTask(id: string, completed: boolean) {
 		if (!id) return;
 		const nowInGreece = new Date()
 			.toLocaleString('sv-SE', { timeZone: 'Europe/Athens' })
 			.replace(' ', 'T');
-		const result = await updateDayliTaskForUser({
-			id: id,
-			completed: completed,
-			completed_at: nowInGreece
+		const result = await updateTaskForUser({
+			id,
+			completed,
+			completed_at: nowInGreece,
+			frequency
 		});
 		if (result.success) {
 			await onUpdate();
@@ -72,6 +78,12 @@
 			toast.error(result.message);
 		}
 	}
+
+	const accentColors: Record<Frequency, { dot: string; border: string }> = {
+		daily: { dot: 'bg-emerald-500', border: 'border-emerald-500/15' },
+		weekly: { dot: 'bg-blue-500', border: 'border-blue-500/15' },
+		monthly: { dot: 'bg-amber-500', border: 'border-amber-500/15' }
+	};
 </script>
 
 <DragDropProvider
@@ -81,12 +93,89 @@
 	}}
 	onDragEnd={handleDragEnd}
 >
-	<div
-		class="grid animate-fade-in-down grid-cols-2 gap-2 font-game sm:gap-4"
-		style="animation-delay: {400}ms;"
-	>
-		{@render taskList('in-progress', 'In Progress', groupedTasks['in-progress'])}
-		{@render taskList('done', 'Done', groupedTasks['done'])}
+	<div class="grid grid-cols-2 gap-3 sm:gap-4">
+		<!-- In Progress Column -->
+		<Droppable
+			class="task-column group/col min-w-0 rounded-2xl border border-border/40 bg-card/50 p-2.5 pt-0 backdrop-blur-sm sm:rounded-2xl sm:p-3.5 sm:pt-0"
+			id="in-progress"
+			type="column"
+			accept="item"
+			collisionPriority={CollisionPriority.Low}
+		>
+			<div class="sticky top-0 z-10 flex items-center gap-2 bg-card/50 py-3 backdrop-blur-sm">
+				<Circle class="h-3.5 w-3.5 text-muted-foreground/50" />
+				<span class="text-xs font-semibold tracking-wide text-muted-foreground/70 uppercase">
+					Σε εξέλιξη
+				</span>
+				{#if groupedTasks['in-progress'].length > 0}
+					<span class="ml-auto text-[10px] font-bold tabular-nums text-muted-foreground/40">
+						{groupedTasks['in-progress'].length}
+					</span>
+				{/if}
+			</div>
+
+			<div class="grid min-w-0 gap-2">
+				{#each groupedTasks['in-progress'] as task, index (task.id)}
+					<TaskCard
+						{task}
+						{frequency}
+						id={task.id}
+						index={() => index}
+						group="in-progress"
+						data={{ group: 'in-progress' }}
+						type="item"
+					/>
+				{/each}
+			</div>
+
+			<!-- Drop hint when empty -->
+			{#if groupedTasks['in-progress'].length === 0}
+				<div class="flex items-center justify-center rounded-xl border border-dashed border-border/40 py-8">
+					<p class="text-[10px] text-muted-foreground/40">Σύρε εδώ</p>
+				</div>
+			{/if}
+		</Droppable>
+
+		<!-- Done Column -->
+		<Droppable
+			class="task-column group/col min-w-0 rounded-2xl border border-border/40 bg-emerald-500/[0.02] p-2.5 pt-0 dark:bg-emerald-500/[0.03] sm:rounded-2xl sm:p-3.5 sm:pt-0"
+			id="done"
+			type="column"
+			accept="item"
+			collisionPriority={CollisionPriority.Low}
+		>
+			<div class="sticky top-0 z-10 flex items-center gap-2 py-3 backdrop-blur-sm">
+				<CheckCircle2 class="h-3.5 w-3.5 text-emerald-500/60" />
+				<span class="text-xs font-semibold tracking-wide text-emerald-600/60 uppercase dark:text-emerald-400/50">
+					Ολοκληρωμένα
+				</span>
+				{#if groupedTasks['done'].length > 0}
+					<span class="ml-auto text-[10px] font-bold tabular-nums text-emerald-500/40">
+						{groupedTasks['done'].length}
+					</span>
+				{/if}
+			</div>
+
+			<div class="grid min-w-0 gap-2">
+				{#each groupedTasks['done'] as task, index (task.id)}
+					<TaskCard
+						{task}
+						{frequency}
+						id={task.id}
+						index={() => index}
+						group="done"
+						data={{ group: 'done' }}
+						type="item"
+					/>
+				{/each}
+			</div>
+
+			{#if groupedTasks['done'].length === 0}
+				<div class="flex items-center justify-center rounded-xl border border-dashed border-emerald-500/15 py-8">
+					<p class="text-[10px] text-emerald-500/30">Σύρε εδώ</p>
+				</div>
+			{/if}
+		</Droppable>
 	</div>
 
 	<DragOverlay>
@@ -96,7 +185,7 @@
 
 			{#if draggedTask}
 				<div class="max-w-2xl">
-					<TaskCard task={draggedTask} id={draggedTask.id} index={0} isOverlay />
+					<TaskCard task={draggedTask} {frequency} id={draggedTask.id} index={0} isOverlay />
 				</div>
 			{/if}
 		{/snippet}
@@ -108,37 +197,7 @@
 	bind:open={photoModalOpen}
 	taskId={pendingTask?.id ?? ''}
 	taskTitle={pendingTask?.task_items?.title ?? ''}
+	{frequency}
 	onSuccess={handlePhotoSuccess}
 	onCancel={handlePhotoCancel}
 />
-
-{#snippet taskList(id: string, title: string, columnTasks: any[])}
-	<Droppable
-		class="task-column min-w-0 overflow-hidden rounded-2xl p-2 pt-4 sm:rounded-3xl sm:p-3 sm:pt-6"
-		{id}
-		type="column"
-		accept="item"
-		collisionPriority={CollisionPriority.Low}
-	>
-		<p class="pb-2 text-xs font-semibold text-foreground/80 sm:pb-3 sm:text-lg">{title}</p>
-
-		<div class="grid min-w-0 gap-1.5 sm:gap-2">
-			{#each columnTasks as task, index (task.id)}
-				<TaskCard
-					{task}
-					id={task.id}
-					index={() => index}
-					group={id}
-					data={{ group: id }}
-					type="item"
-				/>
-			{/each}
-		</div>
-	</Droppable>
-{/snippet}
-
-<style>
-	.font-game {
-		font-family: 'Orbitron', 'Sansation', sans-serif;
-	}
-</style>

@@ -1,20 +1,11 @@
 <script lang="ts">
 	import {
-		Search,
-		Calendar,
 		Clock,
-		UserCircle,
-		Check,
 		Plus,
 		ListChecks,
-		Users,
 		LayoutTemplate,
 		PencilIcon,
-		Trash2,
-		Loader2,
-		Trash,
 		Trash2Icon,
-		Camera,
 		X
 	} from 'lucide-svelte';
 	import { Button } from '$lib/components/ui/button';
@@ -25,7 +16,7 @@
 		CardHeader,
 		CardTitle
 	} from '$lib/components/ui/card';
-	import type { TaskItem, TaskTemplateWithTasks } from '$lib/models/tasks.types';
+	import type { TaskTemplateWithTasks } from '$lib/models/tasks.types';
 	import Badge from '$lib/components/ui/badge/badge.svelte';
 	import { deleteTaskTemplate, getAllTemplatesTask } from '../data.remote';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
@@ -38,6 +29,7 @@
 	import Switch from '$lib/components/ui/switch/switch.svelte';
 	import Textarea from '$lib/components/ui/textarea/textarea.svelte';
 	import { addTaskTemplateWithTasks, updateTemplateWithTasks } from '../data.remote';
+	import * as RadioGroup from '$lib/components/ui/radio-group/index.js';
 
 	let { taskTemplatesWithTasks }: { taskTemplatesWithTasks: TaskTemplateWithTasks[] } = $props();
 
@@ -66,7 +58,8 @@
 	let addValues = $state({
 		name: '',
 		description: '',
-		is_active: 'false', // Sync boolean state
+		is_active: 'false',
+		frequency: 'daily',
 		task_items: [] as any[]
 	});
 
@@ -76,6 +69,7 @@
 		name: '',
 		description: '',
 		is_active: 'false',
+		frequency: 'daily',
 		task_items: [] as any[]
 	});
 
@@ -99,6 +93,7 @@
 			name: templateTask.name || '',
 			description: templateTask.description || '',
 			is_active: String(templateTask.is_active),
+			frequency: templateTask.frequency || 'daily',
 			task_items: templateTask.task_items.map((t) => ({
 				id: t.id,
 				title: t.title,
@@ -121,6 +116,7 @@
 			name: '',
 			description: '',
 			is_active: String(false),
+			frequency: 'daily',
 			task_items: []
 		};
 	}
@@ -131,6 +127,7 @@
 			name: '',
 			description: '',
 			is_active: String(false),
+			frequency: 'daily',
 			task_items: []
 		};
 	}
@@ -210,13 +207,13 @@
 		</Button>
 	</div>
 
-	<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+	<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
 		{#each taskTemplatesWithTasks as template (template.id)}
 			{@const totalTime = template.task_items.reduce(
 				(acc, task) => acc + (task.estimated_minutes || 0),
 				0
 			)}
-			<Card class="flex h-full flex-col rounded-2xl hover:shadow-md">
+			<Card class="flex h-full flex-col bg-gradient-to-br from-muted/50 to-transparent py-1 py-4 backdrop-blur-sm rounded-xl hover:shadow-md">
 				<CardHeader>
 					<div class="flex items-start justify-between gap-2">
 						<div class="min-w-0 flex-1">
@@ -229,12 +226,15 @@
 							<Badge
 								class="flex items-center justify-center gap-2 border-none bg-green-600/10 text-green-600"
 							>
-								<span class="size-1.5 rounded-full bg-green-600 animate-pulse repeat-infinite" aria-hidden="true"></span>
+								<span
+									class="size-1.5 animate-pulse rounded-full bg-green-600 repeat-infinite"
+									aria-hidden="true"
+								></span>
 								Ενεργό
 							</Badge>
 						{:else}
 							<Badge
-								class="flex items-center justify-center gap-2 border-none bg-destructive/10 text-destructive animate-pulse repeat-infinite"
+								class="flex animate-pulse items-center justify-center gap-2 border-none bg-destructive/10 text-destructive repeat-infinite"
 							>
 								<!-- svelte-ignore element_invalid_self_closing_tag -->
 								<span class="size-1.5 rounded-full bg-destructive" aria-hidden="true" />
@@ -253,6 +253,11 @@
 						<div class="flex items-center gap-1">
 							<Clock class="h-4 w-4" />
 							<span>{totalTime}λ</span>
+						</div>
+						<div class="flex items-center gap-1">
+							<Badge variant="secondary">
+								<span class="text-sm text-muted-foreground">{template.frequency}</span>
+							</Badge>
 						</div>
 					</div>
 
@@ -384,6 +389,30 @@
 							value={addIsActive.toString()}
 						/>
 					</div>
+
+					<RadioGroup.Root
+						class="flex items-center gap-4"
+						value={addValues.frequency}
+						onValueChange={(val) => (addValues.frequency = val)}
+					>
+						<div class="flex items-center gap-2">
+							<RadioGroup.Item value="daily" id="add-freq-daily" />
+							<Label>Ημερήσιο</Label>
+						</div>
+						<div class="flex items-center gap-2">
+							<RadioGroup.Item value="weekly" id="add-freq-weekly" />
+							<Label>Εβδομαδιαίο</Label>
+						</div>
+						<div class="flex items-center gap-2">
+							<RadioGroup.Item value="monthly" id="add-freq-monthly" />
+							<Label>Μηνιαίο</Label>
+						</div>
+					</RadioGroup.Root>
+					<input
+						type="hidden"
+						{...addTaskTemplateWithTasks.fields.frequency.as('text')}
+						value={addValues.frequency}
+					/>
 				</div>
 
 				<div class="flex items-center justify-between">
@@ -532,6 +561,29 @@
 							value={editIsActive.toString()}
 						/>
 					</div>
+					<RadioGroup.Root
+						class="flex items-center gap-4"
+						value={editValues.frequency}
+						onValueChange={(val) => (editValues.frequency = val)}
+					>
+						<div class="flex items-center gap-2">
+							<RadioGroup.Item value="daily" id="edit-freq-daily" />
+							<Label>Ημερήσιο</Label>
+						</div>
+						<div class="flex items-center gap-2">
+							<RadioGroup.Item value="weekly" id="edit-freq-weekly" />
+							<Label>Εβδομαδιαίο</Label>
+						</div>
+						<div class="flex items-center gap-2">
+							<RadioGroup.Item value="monthly" id="edit-freq-monthly" />
+							<Label>Μηνιαίο</Label>
+						</div>
+					</RadioGroup.Root>
+					<input
+						type="hidden"
+						{...updateTemplateWithTasks.fields.frequency.as('text')}
+						value={editValues.frequency}
+					/>
 				</div>
 
 				<Label class="text-base">Εργασίες ({editValues.task_items.length})</Label>

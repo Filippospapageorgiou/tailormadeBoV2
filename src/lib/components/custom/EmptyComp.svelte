@@ -13,7 +13,7 @@
 		icon?: Component<{ class?: string }>;
 
 		// Primary action
-		primaryLabel: string;
+		primaryLabel?: string;
 		onPrimaryClick?: () => void;
 		primaryIcon?: Component<{ class?: string }>;
 

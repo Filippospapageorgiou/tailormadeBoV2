@@ -50,7 +50,7 @@
 		blog_published: FileText,
 		schedule_published: Calendar,
 		equipment_added: Wrench,
-		daily_tasks: ClipboardList,
+		tasks: ClipboardList,
 		shift_request_update: RefreshCw,
 		manual_published:Boxes
 	};

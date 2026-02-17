@@ -427,7 +427,7 @@
 							{/if}
 
 							<!-- Footer with Toggle -->
-							<div class="flex items-center justify-between border-t pt-4">
+							<div class="flex items-center justify-between border-t border-border/50 pt-4">
 								<div class="flex items-center gap-2">
 									<Switch
 										checked={contact.is_active}

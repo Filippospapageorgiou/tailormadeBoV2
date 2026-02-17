@@ -63,7 +63,7 @@
 
 <div
 	style="animation-delay: {index * 80}ms; animation-fill-mode: backwards;"
-	class="group animate-fade-in-down overflow-hidden rounded-xl border bg-background/70 shadow-sm backdrop-blur-sm transition-all duration-300 hover:shadow-md dark:bg-background/50 {borderColor}"
+	class="group animate-fade-in-down overflow-hidden border bg-gradient-to-br from-muted/50 to-transparent backdrop-blur-sm rounded-xl {borderColor}"
 >
 	<!-- Hero Image -->
 	<div class="relative h-48 w-full overflow-hidden sm:h-52">

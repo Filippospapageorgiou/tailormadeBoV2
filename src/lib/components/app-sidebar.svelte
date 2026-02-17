@@ -43,7 +43,7 @@
 				isActive: false
 			},
 			{
-				title: 'Καθημερινές Εργασίες',
+				title: 'Tasks',
 				url: '/app/daily_tasks',
 				icon: Network,
 				isActive: false

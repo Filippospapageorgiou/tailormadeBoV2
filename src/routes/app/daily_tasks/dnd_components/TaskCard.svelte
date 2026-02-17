@@ -1,185 +1,214 @@
 <script lang="ts">
 	import { useSortable } from '@dnd-kit-svelte/svelte/sortable';
-	import { Clock, Timer, Camera, GripVertical, ChevronRight } from 'lucide-svelte';
+	import { Clock, Timer, Camera, GripVertical, ChevronRight, CheckCircle2 } from 'lucide-svelte';
 	import TaskDetailDrawer from './TaskDetailDrawer.svelte';
 
-	// Props we receive - following YOUR example structure
-	let { task, isOverlay = false, id, index, ...rest } = $props();
+	type Frequency = 'daily' | 'weekly' | 'monthly';
 
-	// The magic hook that makes this draggable
+	let {
+		task,
+		frequency = 'daily',
+		isOverlay = false,
+		id,
+		index,
+		...rest
+	}: {
+		task: any;
+		frequency?: Frequency;
+		isOverlay?: boolean;
+		id: string;
+		index: any;
+		[key: string]: any;
+	} = $props();
+
 	// svelte-ignore state_referenced_locally
 	const { ref, isDragging } = useSortable({ id, index, ...rest });
 
-	// Drawer state for mobile detail view
 	let drawerOpen = $state(false);
 
 	function handleCardTap(e: MouseEvent) {
-		// Only open drawer if not clicking on drag handle
 		const target = e.target as HTMLElement;
 		if (target.closest('[data-drag-handle]')) return;
-
-		// Open drawer on mobile only (we check via media query in CSS, but this works for tap)
 		drawerOpen = true;
 	}
+
+	const accentBorder: Record<Frequency, string> = {
+		daily: 'border-l-emerald-400 dark:border-l-emerald-600',
+		weekly: 'border-l-blue-400 dark:border-l-blue-600',
+		monthly: 'border-l-amber-400 dark:border-l-amber-600'
+	};
 </script>
 
-<div class="relative w-full min-w-0 select-none" {@attach ref}>
-	<!-- Original element - becomes invisible during drag but maintains dimensions -->
+<div class="task-card-wrapper relative w-full min-w-0 select-none" {@attach ref}>
 	<div class="w-full min-w-0" class:invisible={isDragging.current && !isOverlay}>
-		<!-- Desktop: Full card -->
-		<div class="glass-task-card hidden cursor-grab rounded-2xl p-4 active:cursor-grabbing sm:block">
-			<div class="flex items-start gap-3">
-				<!-- Drag handle -->
-				<div class="mt-1 text-muted-foreground/60" data-drag-handle>
-					<GripVertical class="h-5 w-5" />
+
+		<!-- ═══ Desktop Card ═══ -->
+		<div
+			class="task-card group hidden cursor-grab rounded-xl border border-l-[3px] transition-all duration-200 active:cursor-grabbing sm:block
+				{task.completed
+					? 'border-emerald-200/40 bg-emerald-50/30 dark:border-emerald-500/10 dark:bg-emerald-500/[0.04] ' + accentBorder[frequency]
+					: 'border-border/50 bg-card hover:border-border/80 hover:shadow-sm ' + accentBorder[frequency]}"
+		>
+			<div class="flex items-start gap-2.5 p-3">
+				<!-- Drag handle: subtle, appears on hover -->
+				<div
+					class="mt-1 shrink-0 cursor-grab opacity-0 transition-opacity duration-200 group-hover:opacity-100 active:cursor-grabbing"
+					data-drag-handle
+				>
+					<GripVertical class="h-3.5 w-3.5 text-muted-foreground/30" />
 				</div>
 
-				<div class="flex-1 min-w-0">
-					<!-- Task Title -->
-					<h3 class="mb-1.5 flex items-center gap-2 font-semibold text-foreground/90">
+				<!-- Content -->
+				<div class="min-w-0 flex-1">
+					<!-- Title row -->
+					<div class="flex items-start gap-2">
 						{#if task.completed}
-							<span class="text-emerald-500">✓</span>
-						{:else}
-							<span class="text-muted-foreground/50">○</span>
+							<CheckCircle2 class="mt-px h-4 w-4 shrink-0 text-emerald-500 task-check-icon" />
 						{/if}
-						<span class="truncate">{task.task_items.title}</span>
-					</h3>
+						<h3
+							class="text-[13px] font-semibold leading-snug transition-all duration-300
+								{task.completed
+									? 'text-muted-foreground/50 line-through decoration-muted-foreground/20'
+									: 'text-foreground'}"
+						>
+							{task.task_items.title}
+						</h3>
+					</div>
 
-					<!-- Task Description -->
-					<p class="mb-3 text-sm leading-relaxed text-muted-foreground/70">
-						{task.task_items.description}
-					</p>
+					<!-- Description (only when not completed) -->
+					{#if task.task_items.description && !task.completed}
+						<p class="mt-1.5 line-clamp-2 text-[11px] leading-relaxed text-muted-foreground/60">
+							{task.task_items.description}
+						</p>
+					{/if}
 
-					<!-- Badges -->
-					<div class="flex flex-wrap items-center gap-2">
+					<!-- Metadata chips -->
+					<div class="mt-2 flex flex-wrap items-center gap-1.5">
 						{#if task.task_items.scheduled_time}
-							<span
-								class="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary dark:bg-primary/15"
-							>
-								<Clock class="h-3 w-3" />
+							<span class="inline-flex items-center gap-1 rounded-md bg-primary/8 px-1.5 py-0.5 text-[10px] font-semibold text-primary dark:bg-primary/12">
+								<Clock class="h-2.5 w-2.5" />
 								{task.task_items.scheduled_time.slice(0, 5)}
 							</span>
 						{/if}
 
 						{#if task.task_items.estimated_minutes > 0}
-							<span
-								class="inline-flex items-center gap-1.5 rounded-full bg-chart-2/10 px-2.5 py-1 text-xs font-medium text-chart-2 dark:bg-chart-2/15"
-							>
-								<Timer class="h-3 w-3" />
-								{task.task_items.estimated_minutes} min
+							<span class="inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">
+								<Timer class="h-2.5 w-2.5" />
+								{task.task_items.estimated_minutes}′
 							</span>
 						{/if}
 
 						{#if task.task_items.requires_photo}
-							<span
-								class="inline-flex items-center gap-1.5 rounded-full bg-sky-500/10 px-2.5 py-1 text-xs font-medium text-sky-600 dark:bg-sky-500/15 dark:text-sky-400"
-							>
-								<Camera class="h-3 w-3" />
-								Photo
+							<span class="inline-flex items-center gap-1 rounded-md bg-sky-500/8 px-1.5 py-0.5 text-[10px] font-semibold text-sky-600 dark:bg-sky-500/12 dark:text-sky-400">
+								<Camera class="h-2.5 w-2.5" />
+								Φωτο
 							</span>
+						{/if}
+
+						{#if task.photo_url}
+							<img
+								src={task.photo_url}
+								alt="Evidence"
+								class="h-5 w-5 rounded border border-border/40 object-cover shadow-sm"
+							/>
 						{/if}
 					</div>
 				</div>
 			</div>
 		</div>
 
-		<!-- Mobile: Compact card -->
+		<!-- ═══ Mobile Card ═══ -->
 		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div
-			class="glass-task-card block w-full cursor-grab overflow-hidden rounded-xl p-2 active:cursor-grabbing sm:hidden"
+			class="task-card-mobile block w-full cursor-grab overflow-hidden rounded-xl border border-l-[3px] transition-all duration-200 active:cursor-grabbing active:scale-[0.98] sm:hidden
+				{task.completed
+					? 'border-emerald-200/30 bg-emerald-50/20 dark:border-emerald-500/10 dark:bg-emerald-500/[0.03] ' + accentBorder[frequency]
+					: 'border-border/40 bg-card ' + accentBorder[frequency]}"
 			onclick={handleCardTap}
 		>
-			<div class="flex min-w-0 items-center gap-1.5">
-				<!-- Drag handle - smaller on mobile -->
-				<div class="shrink-0 text-muted-foreground/50" data-drag-handle>
-					<GripVertical class="h-3.5 w-3.5" />
+			<div class="flex min-w-0 items-center gap-2 p-2.5">
+				<!-- Drag handle (always visible on mobile for touch) -->
+				<div class="shrink-0 touch-none" data-drag-handle>
+					<GripVertical class="h-3.5 w-3.5 text-muted-foreground/25" />
 				</div>
 
 				<!-- Status indicator -->
-				<div class="shrink-0">
-					{#if task.completed}
-						<span class="text-xs text-emerald-500">✓</span>
-					{:else}
-						<span class="text-xs text-muted-foreground/40">○</span>
-					{/if}
-				</div>
+				{#if task.completed}
+					<CheckCircle2 class="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+				{/if}
 
-				<!-- Title - truncated -->
-				<h3 class="min-w-0 flex-1 truncate text-xs font-medium text-foreground/90">
+				<!-- Title -->
+				<h3
+					class="min-w-0 flex-1 truncate text-xs font-medium transition-all duration-300
+						{task.completed
+							? 'text-muted-foreground/40 line-through decoration-muted-foreground/15'
+							: 'text-foreground'}"
+				>
 					{task.task_items.title}
 				</h3>
 
-				<!-- Quick badge - show time if available, otherwise duration -->
-				{#if task.task_items.scheduled_time}
-					<span
-						class="shrink-0 rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-medium text-primary dark:bg-primary/15"
-					>
-						{task.task_items.scheduled_time.slice(0, 5)}
-					</span>
-				{:else if task.task_items.estimated_minutes > 0}
-					<span
-						class="shrink-0 rounded-full bg-chart-2/10 px-1.5 py-0.5 text-[9px] font-medium text-chart-2 dark:bg-chart-2/15"
-					>
-						{task.task_items.estimated_minutes}m
-					</span>
-				{/if}
+				<!-- Right side info -->
+				<div class="flex shrink-0 items-center gap-1.5">
+					{#if task.task_items.scheduled_time}
+						<span class="rounded-md bg-primary/6 px-1.5 py-0.5 text-[9px] font-semibold tabular-nums text-primary dark:bg-primary/10">
+							{task.task_items.scheduled_time.slice(0, 5)}
+						</span>
+					{/if}
 
-				<!-- Photo indicator if required -->
-				{#if task.task_items.requires_photo}
-					<Camera class="h-3 w-3 shrink-0 text-sky-500/70" />
-				{/if}
+					{#if task.task_items.estimated_minutes > 0 && !task.task_items.scheduled_time}
+						<span class="rounded-md bg-muted px-1.5 py-0.5 text-[9px] font-semibold tabular-nums text-muted-foreground">
+							{task.task_items.estimated_minutes}′
+						</span>
+					{/if}
 
-				<!-- Chevron to indicate tappable -->
-				<ChevronRight class="h-3.5 w-3.5 shrink-0 text-muted-foreground/30" />
+					{#if task.task_items.requires_photo}
+						<Camera class="h-3 w-3 text-sky-500/50" />
+					{/if}
+
+					{#if task.photo_url}
+						<img src={task.photo_url} alt="" class="h-5 w-5 rounded border border-border/30 object-cover" />
+					{/if}
+
+					<ChevronRight class="h-3 w-3 text-muted-foreground/20" />
+				</div>
 			</div>
 		</div>
 	</div>
 
-	<!-- Drag placeholder - shows in original position while dragging -->
+	<!-- Drag placeholder -->
 	{#if !isOverlay && isDragging.current}
 		<div class="absolute inset-0 flex items-center justify-center">
-			<div
-				class="flex h-full w-full items-center justify-center rounded-xl border-2 border-dashed border-primary/50 bg-primary/5 sm:rounded-2xl"
-			>
-				<span class="text-xs font-medium text-primary/70 sm:text-sm">Moving...</span>
+			<div class="flex h-full w-full items-center justify-center rounded-xl border-2 border-dashed border-primary/25 bg-primary/[0.03]">
+				<span class="text-[10px] font-medium text-primary/40">Μετακίνηση...</span>
 			</div>
 		</div>
 	{/if}
 </div>
 
 <!-- Mobile detail drawer -->
-<TaskDetailDrawer bind:open={drawerOpen} {task} />
+<TaskDetailDrawer bind:open={drawerOpen} {task} {frequency} />
 
 <style>
-	.glass-task-card {
-		background: rgba(255, 255, 255, 0.03);
-		border: 1px solid rgba(255, 255, 255, 0.08);
-		backdrop-filter: blur(10px);
-		box-shadow:
-			0 2px 8px rgba(0, 0, 0, 0.06),
-			inset 0 1px 0 rgba(255, 255, 255, 0.05);
-		transition: all 0.2s ease;
+	/* Check icon entrance */
+	:global(.task-check-icon) {
+		animation: check-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 	}
 
-	.glass-task-card:hover {
-		background: rgba(255, 255, 255, 0.05);
-		border-color: rgba(212, 165, 116, 0.2);
+	@keyframes check-pop {
+		0% {
+			transform: scale(0);
+			opacity: 0;
+		}
+		100% {
+			transform: scale(1);
+			opacity: 1;
+		}
 	}
 
-	/* Light mode adjustments */
-	:global(.light) .glass-task-card,
-	:global(:root:not(.dark)) .glass-task-card {
-		background: rgba(255, 255, 255, 0.6);
-		border: 1px solid rgba(0, 0, 0, 0.06);
-		box-shadow:
-			0 2px 8px rgba(0, 0, 0, 0.04),
-			inset 0 1px 0 rgba(255, 255, 255, 0.8);
-	}
-
-	:global(.light) .glass-task-card:hover,
-	:global(:root:not(.dark)) .glass-task-card:hover {
-		background: rgba(255, 255, 255, 0.8);
-		border-color: rgba(212, 165, 116, 0.25);
+	/* Mobile touch targets */
+	.task-card-mobile {
+		-webkit-tap-highlight-color: transparent;
+		min-height: 44px;
 	}
 </style>

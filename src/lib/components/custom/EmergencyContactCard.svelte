@@ -112,7 +112,7 @@
 
 		<!-- Department & Notes -->
 		{#if contact.department || contact.notes}
-			<div class="space-y-2 border-t pt-2">
+			<div class="space-y-2 border-t border-border/50 pt-2">
 				{#if contact.department}
 					<p class="text-xs text-muted-foreground">
 						<span class="font-medium">Τμήμα:</span> {contact.department}

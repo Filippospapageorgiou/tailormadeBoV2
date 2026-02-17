@@ -9,8 +9,39 @@ import {
 } from '$lib/supabase/queries';
 import {
 	type TaskTemplateWithTasks,
-	type UserDailyTask
+	type UserDailyTask,
+	type UserWeeklyTask,
+	type UserMonthlyTask
 } from '$lib/models/tasks.types';
+
+//========================= FUNCTIONS =====================
+async function createTaskNotification(
+	supabase: ReturnType<typeof createServerClient>,
+	params: {
+		user_id: string;
+		org_id: number | null;
+		title: string;
+		message: string;
+	}
+) {
+	try {
+		const { error } = await supabase.from('notifications').insert({
+			org_id: params.org_id,
+			user_id: params.user_id,
+			type: 'tasks',
+			title: params.title,
+			message: params.message,
+			reference_url: `/app/daily_tasks`
+		});
+
+		if (error) {
+			console.error('[createTaskNotification] Error:', error);
+		}
+	} catch (err) {
+		console.error('[createTaskNotification] Error:', err);
+	}
+}
+
 // ======================== AUTH ACCESS CHECK ==============
 
 export const authenticatedAccess = query(async () => {
@@ -71,8 +102,6 @@ export const getAllUsers = query(z.string(), async (selectedDate) => {
 			...user,
 			dailyTasks: userWithTasks.get(user.id) || []
 		}));
-
-		
 
 		return {
 			users: usersWithTasksArray ?? [],
@@ -135,12 +164,12 @@ export const getAllUsersWithTasks = query(z.string(), async (selectedDate) => {
 		});
 
 		// Convert map to array format if needed
-		const usersWithTasksArray = users.map((user) => ({
-			...user,
-			dailyTasks: userWithTasks.get(user.id) || []
-		}))
-		.filter((user) => user.dailyTasks.length > 0);
-		
+		const usersWithTasksArray = users
+			.map((user) => ({
+				...user,
+				dailyTasks: userWithTasks.get(user.id) || []
+			}))
+			.filter((user) => user.dailyTasks.length > 0);
 
 		return {
 			users: usersWithTasksArray ?? [],
@@ -157,6 +186,187 @@ export const getAllUsersWithTasks = query(z.string(), async (selectedDate) => {
 	}
 });
 
+// ======================== WEEKLY USERS QUERIES ========================
+
+// Add this helper function at the top of data.remote.ts:
+
+function getWeekSearchRange(dateStr: string): { rangeStart: string; rangeEnd: string } {
+	const d = new Date(dateStr);
+	const sixDaysBefore = new Date(d);
+	sixDaysBefore.setDate(d.getDate() - 6);
+	return {
+		rangeStart: sixDaysBefore.toISOString().split('T')[0],
+		rangeEnd: dateStr
+	};
+}
+
+export const getAllUsersWeekly = query(z.string(), async (weekStartDate) => {
+	const supabase = createServerClient();
+	try {
+		const org_id = await getUserOrgId();
+		const users = await getAllProfilesSameOrg(org_id);
+
+		// FIX: Use range query instead of exact match
+		const { rangeStart, rangeEnd } = getWeekSearchRange(weekStartDate);
+
+		const { data: weeklyTasks, error } = await supabase
+			.from('user_weekly_tasks')
+			.select(`*, task_items (*)`)
+			.gte('week_start_date', rangeStart)
+			.lte('week_start_date', rangeEnd)
+			.in(
+				'user_id',
+				users.map((u) => u.id)
+			);
+
+		if (error) {
+			console.error('[getAllUsersWeekly] Error:', error);
+			return { users: [], success: false, message: 'Σφάλμα κάτα την ανάκτηση δεδομένων' };
+		}
+
+		const userWithTasks = new Map<string, UserWeeklyTask[]>();
+		users.forEach((user) => userWithTasks.set(user.id, []));
+		weeklyTasks?.forEach((task) => {
+			const userTasks = userWithTasks.get(task.user_id) || [];
+			userTasks.push(task);
+			userWithTasks.set(task.user_id, userTasks);
+		});
+
+		const usersWithTasksArray = users.map((user) => ({
+			...user,
+			weeklyTasks: userWithTasks.get(user.id) || []
+		}));
+
+		return { users: usersWithTasksArray ?? [], success: true, message: 'Επιτυχία' };
+	} catch (err) {
+		console.error('[getAllUsersWeekly] Error:', err);
+		return { users: [], success: false, message: 'Σφάλμα κάτα την ανάκτηση δεδομένων' };
+	}
+});
+
+export const getAllUsersWithWeeklyTasks = query(z.string(), async (weekStartDate) => {
+	const supabase = createServerClient();
+	try {
+		const org_id = await getUserOrgId();
+		const users = await getAllProfilesSameOrg(org_id);
+
+		// FIX: Use range query instead of exact match
+		const { rangeStart, rangeEnd } = getWeekSearchRange(weekStartDate);
+
+		const { data: weeklyTasks, error } = await supabase
+			.from('user_weekly_tasks')
+			.select(`*, task_items (*)`)
+			.gte('week_start_date', rangeStart)
+			.lte('week_start_date', rangeEnd)
+			.in(
+				'user_id',
+				users.map((u) => u.id)
+			);
+
+		if (error) {
+			console.error('[getAllUsersWithWeeklyTasks] Error:', error);
+			return { users: [], success: false, message: 'Σφάλμα κάτα την ανάκτηση δεδομένων' };
+		}
+
+		const userWithTasks = new Map<string, UserWeeklyTask[]>();
+		users.forEach((user) => userWithTasks.set(user.id, []));
+		weeklyTasks?.forEach((task) => {
+			const userTasks = userWithTasks.get(task.user_id) || [];
+			userTasks.push(task);
+			userWithTasks.set(task.user_id, userTasks);
+		});
+
+		const usersWithTasksArray = users
+			.map((user) => ({ ...user, weeklyTasks: userWithTasks.get(user.id) || [] }))
+			.filter((user) => user.weeklyTasks.length > 0);
+
+		return { users: usersWithTasksArray ?? [], success: true, message: 'Επιτυχία' };
+	} catch (err) {
+		console.error('[getAllUsersWithWeeklyTasks] Error:', err);
+		return { users: [], success: false, message: 'Σφάλμα κάτα την ανάκτηση δεδομένων' };
+	}
+});
+
+// ======================== MONTHLY USERS QUERIES ========================
+
+export const getAllUsersMonthly = query(z.string(), async (monthDate) => {
+	const supabase = createServerClient();
+	try {
+		const org_id = await getUserOrgId();
+		const users = await getAllProfilesSameOrg(org_id);
+
+		const { data: monthlyTasks, error } = await supabase
+			.from('user_monthly_tasks')
+			.select(`*, task_items (*)`)
+			.eq('month_date', monthDate)
+			.in(
+				'user_id',
+				users.map((u) => u.id)
+			);
+
+		if (error) {
+			console.error('[getAllUsersMonthly] Error:', error);
+			return { users: [], success: false, message: 'Σφάλμα κάτα την ανάκτηση δεδομένων' };
+		}
+
+		const userWithTasks = new Map<string, UserMonthlyTask[]>();
+		users.forEach((user) => userWithTasks.set(user.id, []));
+		monthlyTasks?.forEach((task) => {
+			const userTasks = userWithTasks.get(task.user_id) || [];
+			userTasks.push(task);
+			userWithTasks.set(task.user_id, userTasks);
+		});
+
+		const usersWithTasksArray = users.map((user) => ({
+			...user,
+			monthlyTasks: userWithTasks.get(user.id) || []
+		}));
+
+		return { users: usersWithTasksArray ?? [], success: true, message: 'Επιτυχία' };
+	} catch (err) {
+		console.error('[getAllUsersMonthly] Error:', err);
+		return { users: [], success: false, message: 'Σφάλμα κάτα την ανάκτηση δεδομένων' };
+	}
+});
+
+export const getAllUsersWithMonthlyTasks = query(z.string(), async (monthDate) => {
+	const supabase = createServerClient();
+	try {
+		const org_id = await getUserOrgId();
+		const users = await getAllProfilesSameOrg(org_id);
+
+		const { data: monthlyTasks, error } = await supabase
+			.from('user_monthly_tasks')
+			.select(`*, task_items (*)`)
+			.eq('month_date', monthDate)
+			.in(
+				'user_id',
+				users.map((u) => u.id)
+			);
+
+		if (error) {
+			console.error('[getAllUsersWithMonthlyTasks] Error:', error);
+			return { users: [], success: false, message: 'Σφάλμα κάτα την ανάκτηση δεδομένων' };
+		}
+
+		const userWithTasks = new Map<string, UserMonthlyTask[]>();
+		users.forEach((user) => userWithTasks.set(user.id, []));
+		monthlyTasks?.forEach((task) => {
+			const userTasks = userWithTasks.get(task.user_id) || [];
+			userTasks.push(task);
+			userWithTasks.set(task.user_id, userTasks);
+		});
+
+		const usersWithTasksArray = users
+			.map((user) => ({ ...user, monthlyTasks: userWithTasks.get(user.id) || [] }))
+			.filter((user) => user.monthlyTasks.length > 0);
+
+		return { users: usersWithTasksArray ?? [], success: true, message: 'Επιτυχία' };
+	} catch (err) {
+		console.error('[getAllUsersWithMonthlyTasks] Error:', err);
+		return { users: [], success: false, message: 'Σφάλμα κάτα την ανάκτηση δεδομένων' };
+	}
+});
 
 export const getAllTemplatesTask = query(async () => {
 	const supabase = createServerClient();
@@ -434,6 +644,7 @@ const TaskTemplateSchemaWithTasks = z.object({
 		.string()
 		.optional()
 		.transform((val) => val === 'true' || 'false'),
+	frequency: z.string().optional(),
 	task_items: z.array(TaskItemSchemaForTemplate).default([])
 });
 
@@ -447,6 +658,7 @@ export const addTaskTemplateWithTasks = form(TaskTemplateSchemaWithTasks, async 
 			description: data.description,
 			is_active: data.is_active,
 			org_id: profile.org_id,
+			frequency: data.frequency,
 			created_by: profile.id
 		})
 		.select()
@@ -480,7 +692,8 @@ export const updateTemplateWithTasks = form(TaskTemplateSchemaWithTasks, async (
 		.update({
 			name: data.name,
 			description: data.description,
-			is_active: data.is_active
+			is_active: data.is_active,
+			frequency: data.frequency
 		})
 		.eq('id', data.id);
 
@@ -555,6 +768,13 @@ export const addUserDailyTasks = command(addUserDailyTasksSchema, async (data) =
 				message: 'Σφάλμα κατά την δημιουργία tasks'
 			};
 		}
+		const org_id = await getUserOrgId();
+		await createTaskNotification(supabase, {
+			user_id: data.user_id,
+			org_id: org_id,
+			title: 'Νέες εργασίες ανατέθηκαν',
+			message: `Σου ανατέθηκαν ${data.task_item_ids.length} νέες ημερήσιες εργασίες για ${data.task_date}.`
+		});
 
 		return {
 			success: true, // Fixed typo: suceess -> success
@@ -638,17 +858,18 @@ export const addCustomDayliTask = command(addCustomDayliTaskSchema, async (data)
 	}
 });
 
-
 export const deleteDailyTask = command(DeleteItemSchema, async (data) => {
 	const supabase = createServerClient();
 	try {
 		// First, fetch the task to check if it has a photo
 		const { data: task, error: fetchError } = await supabase
 			.from('user_daily_tasks')
-			.select(`
+			.select(
+				`
 				*,
 				task_items (requires_photo)
-			`)
+			`
+			)
 			.eq('id', data.id)
 			.single();
 
@@ -697,6 +918,281 @@ export const deleteDailyTask = command(DeleteItemSchema, async (data) => {
 		return { success: true, message: 'Επιτυχής διαγραφή εργασίας' };
 	} catch (err) {
 		console.error('[deleteDailyTask] Error:', err);
+		return { success: false, message: 'Σφάλμα κατά την επικοινωνία' };
+	}
+});
+
+// ======================== WEEKLY TASK ACTIONS ========================
+
+const addUserWeeklyTasksSchema = z.object({
+	user_id: z.string(),
+	task_item_ids: z.array(z.string()).default([]),
+	week_start_date: z.string(),
+	assigned_by: z.string(),
+	notes: z.string()
+});
+
+export const addUserWeeklyTasks = command(addUserWeeklyTasksSchema, async (data) => {
+	const supabase = createServerClient();
+	try {
+		const rowsToInsert = data.task_item_ids.map((task_id) => ({
+			user_id: data.user_id,
+			task_item_id: task_id,
+			week_start_date: data.week_start_date,
+			assigned_by: data.assigned_by,
+			notes: data.notes
+		}));
+
+		const { error: insertError } = await supabase.from('user_weekly_tasks').insert(rowsToInsert);
+
+		if (insertError) {
+			console.error('[addUserWeeklyTasks] Error:', insertError);
+			return { success: false, message: 'Σφάλμα κατά την δημιουργία εβδομαδιαίων tasks' };
+		}
+
+		const org_id = await getUserOrgId();
+		await createTaskNotification(supabase, {
+			user_id: data.user_id,
+			org_id: org_id,
+			title: 'Νέες εργασίες ανατέθηκαν',
+			message: `Σου ανατέθηκαν ${data.task_item_ids.length} νέες εβδομαδίαιες εργασίες για ${ data.week_start_date}.`
+		});
+
+		return { success: true, message: 'Επιτυχία στην πρόσθεση εβδομαδιαίων εργασιών' };
+	} catch (error) {
+		console.error('[addUserWeeklyTasks] Error:', error);
+		return { success: false, message: 'Σφάλμα κατά την δημιουργία εβδομαδιαίων tasks' };
+	}
+});
+
+const addCustomWeeklyTaskSchema = z.object({
+	user_id: z.string(),
+	week_start_date: z.string(),
+	title: z.string(),
+	description: z.string(),
+	scheduled_time: z.string(),
+	estimated_minutes: z.number(),
+	requires_photo: z.boolean()
+});
+
+export const addCustomWeeklyTask = command(addCustomWeeklyTaskSchema, async (data) => {
+	const supabase = createAdminClient();
+	const user = await getUserProfile();
+	try {
+		const { data: task, error: insertError } = await supabase
+			.from('task_items')
+			.insert({
+				title: data.title,
+				description: data.description,
+				requires_photo: data.requires_photo,
+				estimated_minutes: data.estimated_minutes,
+				scheduled_time: data.scheduled_time
+			})
+			.select()
+			.single();
+
+		if (insertError) {
+			console.error('[addCustomWeeklyTask] Error:', insertError);
+			return { success: false, message: 'Σφάλμα κάτα την πρόσθεση εργασίας' };
+		}
+
+		if (task) {
+			const { error: insertErrorUser } = await supabase.from('user_weekly_tasks').insert({
+				user_id: data.user_id,
+				task_item_id: task.id,
+				week_start_date: data.week_start_date,
+				assigned_by: user.id
+			});
+
+			if (insertErrorUser) {
+				console.error('[addCustomWeeklyTask] Error:', insertErrorUser);
+				return { success: false, message: 'Σφάλμα κάτα την πρόσθεση εργασίας' };
+			}
+		}
+
+		return { success: true, message: 'Η εβδομαδιαία εργασία προστέθηκε με επιτυχία.' };
+	} catch (err) {
+		console.error('[addCustomWeeklyTask] Error:', err);
+		return { success: false, message: 'Σφάλμα κάτα την πρόσθεση εργασίας' };
+	}
+});
+
+export const deleteWeeklyTask = command(DeleteItemSchema, async (data) => {
+	const supabase = createServerClient();
+	try {
+		const { data: task, error: fetchError } = await supabase
+			.from('user_weekly_tasks')
+			.select(`*, task_items (requires_photo)`)
+			.eq('id', data.id)
+			.single();
+
+		if (fetchError) {
+			console.error('[deleteWeeklyTask] Fetch Error:', fetchError);
+			return { success: false, message: 'Σφάλμα κατά την ανάκτηση της εργασίας' };
+		}
+
+		if (task?.photo_url) {
+			const bucketPath = task.photo_url.split('/daily-task-photos/')[1];
+			if (bucketPath) {
+				await supabase.storage.from('daily-task-photos').remove([bucketPath]);
+			}
+		}
+
+		const { error, count } = await supabase
+			.from('user_weekly_tasks')
+			.delete({ count: 'exact' })
+			.eq('id', data.id);
+
+		if (error) {
+			console.error('[deleteWeeklyTask] DB Error:', error);
+			return { success: false, message: 'Σφάλμα βάσης δεδομένων' };
+		}
+
+		if (count === 0) {
+			return { success: false, message: 'Η εργασία δεν βρέθηκε ή δεν έχετε δικαίωμα διαγραφής' };
+		}
+
+		return { success: true, message: 'Επιτυχής διαγραφή εβδομαδιαίας εργασίας' };
+	} catch (err) {
+		console.error('[deleteWeeklyTask] Error:', err);
+		return { success: false, message: 'Σφάλμα κατά την επικοινωνία' };
+	}
+});
+
+// ======================== MONTHLY TASK ACTIONS ========================
+
+const addUserMonthlyTasksSchema = z.object({
+	user_id: z.string(),
+	task_item_ids: z.array(z.string()).default([]),
+	month_date: z.string(),
+	assigned_by: z.string(),
+	notes: z.string()
+});
+
+export const addUserMonthlyTasks = command(addUserMonthlyTasksSchema, async (data) => {
+	const supabase = createServerClient();
+	try {
+		const rowsToInsert = data.task_item_ids.map((task_id) => ({
+			user_id: data.user_id,
+			task_item_id: task_id,
+			month_date: data.month_date,
+			assigned_by: data.assigned_by,
+			notes: data.notes
+		}));
+
+		const { error: insertError } = await supabase.from('user_monthly_tasks').insert(rowsToInsert);
+
+		if (insertError) {
+			console.error('[addUserMonthlyTasks] Error:', insertError);
+			return { success: false, message: 'Σφάλμα κατά την δημιουργία μηνιαίων tasks' };
+		}
+
+		const org_id = await getUserOrgId();
+		await createTaskNotification(supabase, {
+			user_id: data.user_id,
+			org_id: org_id,
+			title: 'Νέες εργασίες ανατέθηκαν',
+			message: `Σου ανατέθηκαν ${data.task_item_ids.length} νέες μηναίες εργασίες για ${ data.month_date}.`
+		});
+
+
+		return { success: true, message: 'Επιτυχία στην πρόσθεση μηνιαίων εργασιών' };
+	} catch (error) {
+		console.error('[addUserMonthlyTasks] Error:', error);
+		return { success: false, message: 'Σφάλμα κατά την δημιουργία μηνιαίων tasks' };
+	}
+});
+
+const addCustomMonthlyTaskSchema = z.object({
+	user_id: z.string(),
+	month_date: z.string(),
+	title: z.string(),
+	description: z.string(),
+	scheduled_time: z.string(),
+	estimated_minutes: z.number(),
+	requires_photo: z.boolean()
+});
+
+export const addCustomMonthlyTask = command(addCustomMonthlyTaskSchema, async (data) => {
+	const supabase = createAdminClient();
+	const user = await getUserProfile();
+	try {
+		const { data: task, error: insertError } = await supabase
+			.from('task_items')
+			.insert({
+				title: data.title,
+				description: data.description,
+				requires_photo: data.requires_photo,
+				estimated_minutes: data.estimated_minutes,
+				scheduled_time: data.scheduled_time
+			})
+			.select()
+			.single();
+
+		if (insertError) {
+			console.error('[addCustomMonthlyTask] Error:', insertError);
+			return { success: false, message: 'Σφάλμα κάτα την πρόσθεση εργασίας' };
+		}
+
+		if (task) {
+			const { error: insertErrorUser } = await supabase.from('user_monthly_tasks').insert({
+				user_id: data.user_id,
+				task_item_id: task.id,
+				month_date: data.month_date,
+				assigned_by: user.id
+			});
+
+			if (insertErrorUser) {
+				console.error('[addCustomMonthlyTask] Error:', insertErrorUser);
+				return { success: false, message: 'Σφάλμα κάτα την πρόσθεση εργασίας' };
+			}
+		}
+
+		return { success: true, message: 'Η μηνιαία εργασία προστέθηκε με επιτυχία.' };
+	} catch (err) {
+		console.error('[addCustomMonthlyTask] Error:', err);
+		return { success: false, message: 'Σφάλμα κάτα την πρόσθεση εργασίας' };
+	}
+});
+
+export const deleteMonthlyTask = command(DeleteItemSchema, async (data) => {
+	const supabase = createServerClient();
+	try {
+		const { data: task, error: fetchError } = await supabase
+			.from('user_monthly_tasks')
+			.select(`*, task_items (requires_photo)`)
+			.eq('id', data.id)
+			.single();
+
+		if (fetchError) {
+			console.error('[deleteMonthlyTask] Fetch Error:', fetchError);
+			return { success: false, message: 'Σφάλμα κατά την ανάκτηση της εργασίας' };
+		}
+
+		if (task?.photo_url) {
+			const bucketPath = task.photo_url.split('/daily-task-photos/')[1];
+			if (bucketPath) {
+				await supabase.storage.from('daily-task-photos').remove([bucketPath]);
+			}
+		}
+
+		const { error, count } = await supabase
+			.from('user_monthly_tasks')
+			.delete({ count: 'exact' })
+			.eq('id', data.id);
+
+		if (error) {
+			console.error('[deleteMonthlyTask] DB Error:', error);
+			return { success: false, message: 'Σφάλμα βάσης δεδομένων' };
+		}
+
+		if (count === 0) {
+			return { success: false, message: 'Η εργασία δεν βρέθηκε ή δεν έχετε δικαίωμα διαγραφής' };
+		}
+
+		return { success: true, message: 'Επιτυχής διαγραφή μηνιαίας εργασίας' };
+	} catch (err) {
+		console.error('[deleteMonthlyTask] Error:', err);
 		return { success: false, message: 'Σφάλμα κατά την επικοινωνία' };
 	}
 });

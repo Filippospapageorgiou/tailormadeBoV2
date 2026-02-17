@@ -47,6 +47,7 @@
 	import ArrowUp from 'lucide-svelte/icons/arrow-up';
 	import { getProfileContext } from '$lib/stores/profile.svelte';
 	import { BotIcon } from 'lucide-svelte';
+	import { Cog } from '@lucide/svelte';
 
 	interface TextPart {
 		type: 'text';
@@ -83,8 +84,8 @@
 	const suggestions = [
 		{
 			icon: TrendingUp,
-			text: 'Πωλήσεις εβδομάδας',
-			query: 'Ποιες είναι οι συνολικές πωλήσεις σε όλα τα καταστήματα αυτή την εβδομάδα;'
+			text: 'Συνολίκα Bonus',
+			query: 'Ποια είναι τα bonus του τελευταίου τριμήνου'
 		},
 		{
 			icon: Users,
@@ -93,8 +94,8 @@
 		},
 		{
 			icon: BarChart3,
-			text: 'Κορυφαία καταστήματα',
-			query: 'Ποια καταστήματα έχουν τις υψηλότερες πωλήσεις αυτόν τον μήνα;'
+			text: 'Tasks σημέρα',
+			query: 'Ποια καταστήματα έχουν αναθέσει tasks σήμερα'
 		},
 		{
 			icon: Calendar,
@@ -102,9 +103,9 @@
 			query: 'Δείξε μου τα σημερινά προγράμματα προσωπικού σε όλους τους οργανισμούς'
 		},
 		{
-			icon: DollarSign,
-			text: 'Πρόσφατα έξοδα',
-			query: 'Ποια είναι τα πρόσφατα έξοδα που έχουν καταγραφεί στο σύστημα;'
+			icon: Cog,
+			text: 'Καταστάση εξοπλισμού',
+			query: 'Ποια είναι οι καταστάση εξόπλισμου στον δικτύο μας κατηγοροποιήσε τα'
 		}
 	];
 

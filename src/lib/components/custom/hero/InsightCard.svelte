@@ -19,7 +19,26 @@
 
 	let data = $derived(queryTasksBonus.current?.data);
 	let todayTasks = $derived(data?.todayTasks);
+	let weeklyTasks = $derived(data?.weeklyTasks);
+	let monthlyTasks = $derived(data?.monthlyTasks);
 	let bonuses = $derived(data?.bonuses);
+
+	// Combined totals across all frequencies
+	let allTasks = $derived((() => {
+		if (!todayTasks || !weeklyTasks || !monthlyTasks) return null;
+		const total = todayTasks.totalTasks + weeklyTasks.totalTasks + monthlyTasks.totalTasks;
+		const completed =
+			todayTasks.completedTasks + weeklyTasks.completedTasks + monthlyTasks.completedTasks;
+		const pending =
+			todayTasks.pendingTasks + weeklyTasks.pendingTasks + monthlyTasks.pendingTasks;
+		return {
+			hasTasks: total > 0,
+			totalTasks: total,
+			completedTasks: completed,
+			pendingTasks: pending,
+			completionPercentage: total > 0 ? Math.round((completed / total) * 100) : 0
+		};
+	})());
 
 	// Animation state for the ring
 	let animatedPercentage = $state(0);
@@ -33,20 +52,17 @@
 
 	// Animate the ring when data loads
 	$effect(() => {
-		if (todayTasks && !isLoaded) {
+		if (allTasks && !isLoaded) {
 			isLoaded = true;
-			const target = todayTasks.completionPercentage;
-			const duration = 1500; // 1.5 seconds
+			const target = allTasks.completionPercentage;
+			const duration = 1500;
 			const startTime = performance.now();
 
 			function animate(currentTime: number) {
 				const elapsed = currentTime - startTime;
 				const progress = Math.min(elapsed / duration, 1);
-
-				// Easing function (ease-out-cubic)
 				const eased = 1 - Math.pow(1 - progress, 3);
 				animatedPercentage = Math.round(target * eased);
-
 				if (progress < 1) {
 					requestAnimationFrame(animate);
 				}
@@ -69,12 +85,12 @@
 
 	let mainProgress = $derived(getCircleProgress(animatedPercentage));
 
-	// Secondary rings based on tasks
+	// Secondary rings based on combined tasks
 	let completedRatio = $derived(
-		todayTasks?.totalTasks ? todayTasks.completedTasks / todayTasks.totalTasks : 0
+		allTasks?.totalTasks ? allTasks.completedTasks / allTasks.totalTasks : 0
 	);
 	let pendingRatio = $derived(
-		todayTasks?.totalTasks ? todayTasks.pendingTasks / todayTasks.totalTasks : 0
+		allTasks?.totalTasks ? allTasks.pendingTasks / allTasks.totalTasks : 0
 	);
 
 	// Format currency
@@ -108,19 +124,25 @@
 				<Activity class="h-4 w-4 text-primary" />
 				<h3 class="font-tailormade font-medium text-foreground/90">Insights</h3>
 			</div>
-			<p class="text-xs text-muted-foreground/70">Εργασίες & Bonus</p>
+			<p class="text-xs text-muted-foreground/70">Όλες οι εργασίες & Bonus</p>
 		</div>
 
 		<!-- Tabs -->
 		<Tabs value={activeTab} onValueChange={(v) => (activeTab = v)} class="w-full">
 			<TabsList class="grid w-full grid-cols-2 bg-muted/40 dark:bg-muted/30 p-1">
-				<TabsTrigger value="performance" class="text-xs font-normal data-[state=active]:bg-background data-[state=active]:shadow-sm">
+				<TabsTrigger
+					value="performance"
+					class="text-xs font-normal data-[state=active]:bg-background data-[state=active]:shadow-sm"
+				>
 					<span class="flex items-center gap-1.5">
 						<Target class="h-3 w-3" />
 						Εργασίες
 					</span>
 				</TabsTrigger>
-				<TabsTrigger value="trends" class="text-xs font-normal data-[state=active]:bg-background data-[state=active]:shadow-sm">
+				<TabsTrigger
+					value="trends"
+					class="text-xs font-normal data-[state=active]:bg-background data-[state=active]:shadow-sm"
+				>
 					<span class="flex items-center gap-1.5">
 						<Award class="h-3 w-3" />
 						Bonus
@@ -130,7 +152,7 @@
 
 			<!-- Tasks Tab -->
 			<TabsContent value="performance" class="mt-4 space-y-4">
-				{#if !todayTasks}
+				{#if !allTasks}
 					<!-- Loading state -->
 					<div class="flex items-center gap-4">
 						<div class="h-32 w-32 animate-pulse rounded-full bg-muted/20"></div>
@@ -140,14 +162,14 @@
 							<div class="h-14 animate-pulse rounded-lg bg-muted/20"></div>
 						</div>
 					</div>
-				{:else if !todayTasks.hasTasks}
-					<!-- No tasks today -->
+				{:else if !allTasks.hasTasks}
+					<!-- No tasks -->
 					<div
 						class="flex h-40 flex-col items-center justify-center rounded-lg border border-border/30 bg-muted/20 text-center"
 					>
 						<CheckCircle2 class="mb-2 h-8 w-8 text-emerald-500/40 dark:text-emerald-400/40" />
-						<p class="text-sm text-muted-foreground/70">Δεν έχεις εργασίες σήμερα!</p>
-						<p class="text-xs text-muted-foreground/50">Απόλαυσε τη μέρα σου</p>
+						<p class="text-sm text-muted-foreground/70">Δεν έχεις εργασίες!</p>
+						<p class="text-xs text-muted-foreground/50">Δεν υπάρχουν ανατεθειμένες εργασίες</p>
 					</div>
 				{:else}
 					<div class="flex items-center gap-4">
@@ -174,7 +196,10 @@
 									fill="transparent"
 									class="text-emerald-500/50 dark:text-emerald-400/50 transition-all duration-1000 ease-out"
 									stroke-dasharray={2 * Math.PI * 42}
-									stroke-dashoffset={2 * Math.PI * 42 * (1 - completedRatio * (animatedPercentage / 100))}
+									stroke-dashoffset={2 *
+										Math.PI *
+										42 *
+										(1 - completedRatio * (animatedPercentage / 100))}
 									stroke-linecap="round"
 								/>
 								<!-- Pending ring (amber) -->
@@ -187,14 +212,17 @@
 									fill="transparent"
 									class="text-amber-500/35 dark:text-amber-400/35 transition-all duration-1000 ease-out"
 									stroke-dasharray={2 * Math.PI * 32}
-									stroke-dashoffset={2 * Math.PI * 32 * (1 - pendingRatio * (animatedPercentage / 100))}
+									stroke-dashoffset={2 *
+										Math.PI *
+										32 *
+										(1 - pendingRatio * (animatedPercentage / 100))}
 									stroke-linecap="round"
 								/>
 								<!-- Primary progress ring -->
 								<circle
 									cx="60"
 									cy="60"
-									r={52}
+									r={mainProgress.radius}
 									stroke="currentColor"
 									stroke-width="8"
 									fill="transparent"
@@ -204,9 +232,11 @@
 									stroke-linecap="round"
 								/>
 							</svg>
-							<!-- Center text with animation -->
+							<!-- Center text -->
 							<div class="absolute inset-0 flex flex-col items-center justify-center">
-								<span class="font-tailormade text-2xl font-semibold tabular-nums text-foreground/90">
+								<span
+									class="font-tailormade text-2xl font-semibold tabular-nums text-foreground/90"
+								>
 									{animatedPercentage}%
 								</span>
 								<span class="text-[10px] text-muted-foreground/60">ολοκλήρωση</span>
@@ -227,11 +257,14 @@
 										<Target class="h-3.5 w-3.5 text-sky-600 dark:text-sky-400" />
 									</div>
 									<div class="flex flex-col">
-										<span class="text-xs font-normal text-foreground/80">Σημερινές Εργασίες</span>
-										<span class="text-[10px] text-muted-foreground/60">Συνολικά tasks</span>
+										<span class="text-xs font-normal text-foreground/80">Σύνολο Εργασιών</span>
+										<span class="text-[10px] text-muted-foreground/60">Ημ. · Εβδ. · Μήνας</span>
 									</div>
 								</div>
-								<span class="font-tailormade text-sm font-semibold text-sky-600 dark:text-sky-400 tabular-nums">{todayTasks.totalTasks}</span>
+								<span
+									class="font-tailormade text-sm font-semibold text-sky-600 dark:text-sky-400 tabular-nums"
+									>{allTasks.totalTasks}</span
+								>
 							</div>
 
 							<!-- Completed Tasks -->
@@ -250,7 +283,10 @@
 										<span class="text-[10px] text-muted-foreground/60">Έτοιμα tasks</span>
 									</div>
 								</div>
-								<span class="font-tailormade text-sm font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums">{todayTasks.completedTasks}</span>
+								<span
+									class="font-tailormade text-sm font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums"
+									>{allTasks.completedTasks}</span
+								>
 							</div>
 
 							<!-- Pending Tasks -->
@@ -269,7 +305,10 @@
 										<span class="text-[10px] text-muted-foreground/60">Απομένουν</span>
 									</div>
 								</div>
-								<span class="font-tailormade text-sm font-semibold text-amber-600 dark:text-amber-400 tabular-nums">{todayTasks.pendingTasks}</span>
+								<span
+									class="font-tailormade text-sm font-semibold text-amber-600 dark:text-amber-400 tabular-nums"
+									>{allTasks.pendingTasks}</span
+								>
 							</div>
 						</div>
 					</div>
@@ -320,7 +359,9 @@
 						style="animation-delay: 100ms; animation-fill-mode: backwards;"
 					>
 						<p class="text-xs text-emerald-600/80 dark:text-emerald-400/80">Συνολικά Bonus</p>
-						<p class="font-tailormade text-2xl font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums">
+						<p
+							class="font-tailormade text-2xl font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums"
+						>
 							{formatCurrency(bonuses.totalEarned)}
 						</p>
 					</div>
@@ -340,14 +381,19 @@
 											<Calendar class="h-4 w-4 text-primary" />
 										</div>
 										<div class="flex flex-col">
-											<span class="font-tailormade text-sm font-medium text-foreground/90">{bonus.year}</span>
+											<span class="font-tailormade text-sm font-medium text-foreground/90"
+												>{bonus.year}</span
+											>
 											<span class="text-[10px] text-muted-foreground/60">
-												{bonus.totalShifts} βάρδιες <span class="text-muted-foreground/40">•</span> {bonus.hoursWorked} ώρες
+												{bonus.totalShifts} βάρδιες <span class="text-muted-foreground/40">•</span>
+												{bonus.hoursWorked} ώρες
 											</span>
 										</div>
 									</div>
 									<div class="text-right">
-										<p class="font-tailormade text-sm font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums">
+										<p
+											class="font-tailormade text-sm font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums"
+										>
 											{formatCurrency(bonus.bonusAmount)}
 										</p>
 										<p class="text-[10px] text-muted-foreground/60">

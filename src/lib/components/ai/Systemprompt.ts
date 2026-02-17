@@ -162,76 +162,6 @@ If someone asks about anything not related to TailorMade data (weather, general 
 | created_at | timestamptz | default now() |
 | updated_at | timestamptz | default now() |
 
-### Daily Operations & Finance
-
-**daily_register_closings** 
-| Column | Type | Notes |
-|--------|------|-------|
-| id | bigint | PRIMARY KEY |
-| org_id | **integer** | FK → core_organizations.id ⚠️ |
-| closing_date | **date** | NOT NULL |
-| closed_by | UUID | FK → profiles.id |
-| total_sales | numeric | NOT NULL, CHECK >= 0 |
-| card_sales | numeric | default 0 |
-| wolt_sales | numeric | default 0 |
-| efood_sales | numeric | default 0 |
-| other_digital_sales | numeric | default 0 |
-| excepted_cash | numeric | nullable (note: typo in schema, should be "expected") |
-| opening_float | numeric | NOT NULL |
-| actual_cash_counted | numeric | NOT NULL, CHECK >= 0 |
-| total_supplier_payments | numeric | default 0 |
-| total_expenses | numeric | default 0 |
-| cash_deposit | numeric | nullable |
-| tomorrow_opening_float | numeric | nullable |
-| final_cash_balance | numeric | default 0 |
-| cash_diffrence | numeric | **GENERATED** (actual_cash_counted - final_cash_balance) |
-| notes | text | nullable |
-| status | text | CHECK: 'draft'/'submitted'/'reviewed' |
-| reviewed_by | UUID | nullable, FK → profiles.id |
-| reviewed_at | timestamptz | nullable |
-| created_at | timestamptz | default now() |
-| updated_at | timestamptz | default now() |
-
-**suppliers** 
-| Column | Type | Notes |
-|--------|------|-------|
-| id | bigint | PRIMARY KEY |
-| org_id | **integer** | FK → core_organizations.id ⚠️ |
-| name | text | NOT NULL, CHECK not empty |
-| afm | text | NOT NULL (Greek tax ID), CHECK not empty |
-| phone | text | nullable |
-| email | text | nullable |
-| address | text | nullable |
-| contact_person | text | nullable |
-| payment_terms | text | nullable |
-| notes | text | nullable |
-| is_active | boolean | default true |
-| created_at | timestamptz | default now() |
-| updated_at | timestamptz | default now() |
-
-**register_supplier_payments** 
-| Column | Type | Notes |
-|--------|------|-------|
-| id | bigint | PRIMARY KEY |
-| closing_id | bigint | FK → daily_register_closings.id |
-| supplier_id | bigint | nullable, FK → suppliers.id |
-| supplier_name | varchar | nullable |
-| amount | numeric | NOT NULL, CHECK >= 0 |
-| payment_method | text | default 'cash' |
-| invoice_number | text | nullable |
-| notes | text | nullable |
-| created_at | timestamptz | default now() |
-
-**register_expenses**
-| Column | Type | Notes |
-|--------|------|-------|
-| id | bigint | PRIMARY KEY |
-| closing_id | bigint | FK → daily_register_closings.id |
-| expense_category | text | nullable |
-| description | text | nullable |
-| amount | numeric | NOT NULL, CHECK >= 0 |
-| created_at | timestamptz | default now() |
-
 ### Beverages & Recipes
 
 **beverages** 
@@ -280,6 +210,7 @@ If someone asks about anything not related to TailorMade data (weather, general 
 | created_by | UUID | FK → profiles.id |
 | created_at | timestamptz | default now() |
 | updated_at | timestamptz | default now() |
+| frequency  | text        |
 
 **task_items** 
 | Column | Type | Notes |
@@ -295,19 +226,49 @@ If someone asks about anything not related to TailorMade data (weather, general 
 | created_at | timestamptz | default now() |
 | updated_at | timestamptz | default now() |
 
-**user_daily_tasks** 
-| Column | Type | Notes |
-|--------|------|-------|
-| id | **UUID** | PRIMARY KEY ⚠️ |
-| user_id | UUID | FK → profiles.id |
-| task_item_id | UUID | FK → task_items.id |
-| task_date | **date** | NOT NULL |
-| assigned_by | UUID | nullable, FK → profiles.id |
-| completed | boolean | default false |
-| completed_at | timestamptz | nullable |
-| notes | text | nullable |
-| photo_url | text | nullable |
-| created_at | timestamptz | default now() |
+**user_daily_tasks**
+| Column       | Type        | Notes                          |
+|--------------|-------------|--------------------------------|
+| id           | **UUID**    | PRIMARY KEY ⚠️                 |
+| user_id      | UUID        | FK → profiles.id               |
+| task_item_id | UUID        | FK → task_items.id             |
+| task_date    | **date**    | NOT NULL                       |
+| assigned_by  | UUID        | nullable, FK → profiles.id     |
+| completed    | boolean     | default false                  |
+| completed_at | timestamptz | nullable                       |
+| notes        | text        | nullable                       |
+| photo_url    | text        | nullable                       |
+| created_at   | timestamptz | default now()                  |
+ 
+**user_weekly_tasks**
+| Column          | Type        | Notes                          |
+|-----------------|-------------|--------------------------------|
+| id              | **UUID**    | PRIMARY KEY ⚠️                 |
+| user_id         | UUID        | FK → profiles.id               |
+| task_item_id    | UUID        | FK → task_items.id             |
+| week_start_date | **date**    | NOT NULL                       |
+| assigned_by     | UUID        | nullable, FK → profiles.id     |
+| completed       | boolean     | default false                  |
+| completed_at    | timestamptz | nullable                       |
+| notes           | text        | nullable                       |
+| photo_url       | text        | nullable                       |
+| created_at      | timestamptz | default now()                  |
+ 
+**user_monthly_tasks**
+| Column       | Type        | Notes                          |
+|--------------|-------------|--------------------------------|
+| id           | **UUID**    | PRIMARY KEY ⚠️                 |
+| user_id      | UUID        | FK → profiles.id               |
+| task_item_id | UUID        | FK → task_items.id             |
+| month_date   | **date**    | NOT NULL                       |
+| assigned_by  | UUID        | nullable, FK → profiles.id     |
+| completed    | boolean     | default false                  |
+| completed_at | timestamptz | nullable                       |
+| notes        | text        | nullable                       |
+| photo_url    | text        | nullable                       |
+| created_at   | timestamptz | default now()                  |
+
+
 
 ### Equipment
 

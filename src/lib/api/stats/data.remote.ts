@@ -176,28 +176,30 @@ export const getAllStatsForCards = query(async (): Promise<StatsResponse> => {
 	}
 });
 
+interface TaskSummary {
+	hasTasks: boolean;
+	totalTasks: number;
+	completedTasks: number;
+	pendingTasks: number;
+	completionPercentage: number;
+	tasks: Array<{
+		id: string;
+		title: string;
+		description: string | null;
+		scheduled_time: string | null;
+		requires_photo: boolean;
+		completed: boolean;
+		completed_at: string | null;
+	}>;
+}
+
 interface TasksAndBonusesResponse {
 	success: boolean;
 	message?: string;
 	data?: {
-		// Tasks για σήμερα
-		todayTasks: {
-			hasTasks: boolean;
-			totalTasks: number;
-			completedTasks: number;
-			pendingTasks: number;
-			completionPercentage: number;
-			tasks: Array<{
-				id: string;
-				title: string;
-				description: string | null;
-				scheduled_time: string | null;
-				requires_photo: boolean;
-				completed: boolean;
-				completed_at: string | null;
-			}>;
-		};
-		// Top 5 bonuses του χρήστη (μόνο published periods)
+		todayTasks: TaskSummary;
+		weeklyTasks: TaskSummary;
+		monthlyTasks: TaskSummary;
 		bonuses: {
 			hasBonuses: boolean;
 			totalEarned: number;
@@ -211,6 +213,16 @@ interface TasksAndBonusesResponse {
 				totalShifts: number;
 			}>;
 		};
+	};
+}
+
+function getWeekSearchRange(dateStr: string): { rangeStart: string; rangeEnd: string } {
+	const d = new Date(dateStr);
+	const sixDaysBefore = new Date(d);
+	sixDaysBefore.setDate(d.getDate() - 6);
+	return {
+		rangeStart: sixDaysBefore.toISOString().split('T')[0],
+		rangeEnd: dateStr
 	};
 }
 
@@ -230,36 +242,51 @@ export const getTasksAndBonuses = query(async (): Promise<TasksAndBonusesRespons
 		const orgId = profile.org_id;
 		const userId = profile.id;
 
-		// Σημερινή ημερομηνία (format: YYYY-MM-DD)
-		const today = new Date().toISOString().split('T')[0];
+		const today = new Date();
+		const todayStr = today.toISOString().split('T')[0];
+
+		const { rangeStart, rangeEnd } = getWeekSearchRange(todayStr);
+
+		// Month start
+		const monthStartStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
+
+		const taskSelect = `
+			id,
+			completed,
+			completed_at,
+			task_items (
+				title,
+				description,
+				scheduled_time,
+				requires_photo
+			)
+		`;
 
 		// 🔄 Parallel fetching
-		const [tasksResult, bonusesResult] = await Promise.all([
-			// 1️⃣ Tasks για σήμερα
+		const [dailyResult, weeklyResult, monthlyResult, bonusesResult] = await Promise.all([
 			supabase
 				.from('user_daily_tasks')
-				.select(
-					`
-					id,
-					completed,
-					completed_at,
-					task_items (
-						title,
-						description,
-						scheduled_time,
-						requires_photo
-					)
-				`
-				)
+				.select(taskSelect)
 				.eq('user_id', userId)
-				.eq('task_date', today)
+				.eq('task_date', todayStr)
 				.order('task_items(scheduled_time)', { ascending: true }),
 
-			// 2️⃣ Top 5 bonuses (μόνο published periods)
+			supabase
+				.from('user_weekly_tasks')
+				.select(taskSelect)
+				.eq('user_id', userId)
+				.gte('week_start_date', rangeStart)
+			.	lte('week_start_date', rangeEnd),
+
+			supabase
+				.from('user_monthly_tasks')
+				.select(taskSelect)
+				.eq('user_id', userId)
+				.eq('month_date', monthStartStr),
+
 			supabase
 				.from('bonus_employee_payouts')
-				.select(
-					`
+				.select(`
 					id,
 					bonus_amount,
 					hours_worked,
@@ -276,8 +303,7 @@ export const getTasksAndBonuses = query(async (): Promise<TasksAndBonusesRespons
 							status
 						)
 					)
-				`
-				)
+				`)
 				.eq('user_id', userId)
 				.eq('bonus_organization_data.org_id', orgId)
 				.eq('bonus_organization_data.bonus_periods.status', 'published')
@@ -285,51 +311,47 @@ export const getTasksAndBonuses = query(async (): Promise<TasksAndBonusesRespons
 				.limit(5)
 		]);
 
-		// Error handling
-		if (tasksResult.error) {
-			console.error('[getTasksAndBonuses] Tasks error:', tasksResult.error);
-			throw tasksResult.error;
+		if (dailyResult.error) throw dailyResult.error;
+		if (weeklyResult.error) console.error('[getTasksAndBonuses] Weekly tasks error:', weeklyResult.error);
+		if (monthlyResult.error) console.error('[getTasksAndBonuses] Monthly tasks error:', monthlyResult.error);
+		if (bonusesResult.error) console.error('[getTasksAndBonuses] Bonuses error:', bonusesResult.error);
+
+		// Helper to process tasks
+		function processTasks(tasks: any[]) {
+			const completedCount = tasks.filter((t) => t.completed).length;
+			const processed = tasks
+				.map((task) => ({
+					id: task.id,
+					title: task.task_items?.title || 'Άγνωστο task',
+					description: task.task_items?.description || null,
+					scheduled_time: task.task_items?.scheduled_time || null,
+					requires_photo: task.task_items?.requires_photo || false,
+					completed: task.completed,
+					completed_at: task.completed_at
+				}))
+				.sort((a, b) => {
+					if (!a.scheduled_time) return 1;
+					if (!b.scheduled_time) return -1;
+					return a.scheduled_time.localeCompare(b.scheduled_time);
+				});
+
+			return {
+				hasTasks: tasks.length > 0,
+				totalTasks: tasks.length,
+				completedTasks: completedCount,
+				pendingTasks: tasks.length - completedCount,
+				completionPercentage:
+					tasks.length > 0 ? Math.round((completedCount / tasks.length) * 100) : 0,
+				tasks: processed
+			};
 		}
 
-		// Bonus error is not critical - user might not have any bonuses
-		if (bonusesResult.error) {
-			console.error('[getTasksAndBonuses] Bonuses error:', bonusesResult.error);
-			// Don't throw, just continue with empty bonuses
-		}
-
-		// 📊 Process tasks data
-		const tasks = tasksResult.data || [];
-		const completedCount = tasks.filter((t) => t.completed).length;
-		const pendingCount = tasks.length - completedCount;
-
-		const processedTasks = tasks.map((task) => ({
-			id: task.id,
-			title: (task.task_items as any)?.title || 'Άγνωστο task',
-			description: (task.task_items as any)?.description || null,
-			scheduled_time: (task.task_items as any)?.scheduled_time || null,
-			requires_photo: (task.task_items as any)?.requires_photo || false,
-			completed: task.completed,
-			completed_at: task.completed_at
-		}));
-
-		// Sort by scheduled_time
-		processedTasks.sort((a, b) => {
-			if (!a.scheduled_time) return 1;
-			if (!b.scheduled_time) return -1;
-			return a.scheduled_time.localeCompare(b.scheduled_time);
-		});
-
-		// 📊 Process bonuses data
+		// 📊 Process bonuses
 		const bonuses = bonusesResult.data || [];
-		let totalEarned = 0;
-
 		const processedBonuses = bonuses
 			.map((bonus) => {
 				const amount = parseFloat(bonus.bonus_amount as string) || 0;
-				totalEarned += amount;
-
 				const periodData = (bonus.bonus_organization_data as any)?.bonus_periods;
-
 				return {
 					periodId: periodData?.id || 0,
 					quarter: periodData?.quarter || 0,
@@ -341,28 +363,17 @@ export const getTasksAndBonuses = query(async (): Promise<TasksAndBonusesRespons
 					totalShifts: bonus.total_shifts_in_pool || 0
 				};
 			})
-			// Sort by year DESC, then quarter DESC
-			.sort((a, b) => {
-				if (b.yearNum !== a.yearNum) return b.yearNum - a.yearNum;
-				return b.quarter - a.quarter;
-			})
-			.slice(0, 5); // Take top 5
+			.sort((a, b) => b.yearNum !== a.yearNum ? b.yearNum - a.yearNum : b.quarter - a.quarter)
+			.slice(0, 5);
 
-		// Recalculate total from sorted/sliced results
-		totalEarned = processedBonuses.reduce((sum, b) => sum + b.bonusAmount, 0);
+		const totalEarned = processedBonuses.reduce((sum, b) => sum + b.bonusAmount, 0);
 
 		return {
 			success: true,
 			data: {
-				todayTasks: {
-					hasTasks: tasks.length > 0,
-					totalTasks: tasks.length,
-					completedTasks: completedCount,
-					pendingTasks: pendingCount,
-					completionPercentage:
-						tasks.length > 0 ? Math.round((completedCount / tasks.length) * 100) : 0,
-					tasks: processedTasks
-				},
+				todayTasks: processTasks(dailyResult.data || []),
+				weeklyTasks: processTasks(weeklyResult.data || []),
+				monthlyTasks: processTasks(monthlyResult.data || []),
 				bonuses: {
 					hasBonuses: bonuses.length > 0,
 					totalEarned: Math.round(totalEarned * 100) / 100,

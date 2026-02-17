@@ -124,7 +124,7 @@
 			<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 				{#each Array(6) as _, i}
 					<div
-						class="overflow-hidden rounded-xl border shadow-sm"
+						class="overflow-hidden rounded-xl border border-border/50 shadow-sm"
 						style="animation-delay: {i * 100}ms;"
 					>
 						<!-- Top Bar with Action Buttons -->
