@@ -28,15 +28,9 @@ export const getMyAssignedOrgs = query(async () => {
     .from("trainer_org_assigments")
     .select(
       `
-      id,
-      org_id,
+      *,
       core_organizations!trainer_org_assigments_org_id_fkey (
-        id,
-        store_name,
-        email,
-        phone,
-        status,
-        location
+        *
       )
     `
     )
@@ -48,7 +42,9 @@ export const getMyAssignedOrgs = query(async () => {
     throw error(500, "Failed to fetch assigned organizations");
   }
 
-  return assignments ?? [];
+  return {
+    assignments: assignments ?? []
+  }
 });
 
 /**
@@ -283,7 +279,7 @@ export const getMyEvaluations = query(async () => {
       id,
       org_id,
       visit_date,
-      status,
+      submit,
       overall_rating,
       submitted_at,
       created_at,
@@ -302,7 +298,9 @@ export const getMyEvaluations = query(async () => {
     throw error(500, "Failed to fetch evaluations");
   }
 
-  return evaluations ?? [];
+    return {
+      evaluations: evaluations ?? []
+    };
 });
 
 // ============================================================

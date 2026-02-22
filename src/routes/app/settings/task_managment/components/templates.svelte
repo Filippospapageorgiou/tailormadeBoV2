@@ -213,28 +213,27 @@
 				(acc, task) => acc + (task.estimated_minutes || 0),
 				0
 			)}
-			<Card class="flex h-full flex-col bg-gradient-to-br from-muted/50 to-transparent py-1 py-4 backdrop-blur-sm rounded-xl hover:shadow-md">
-				<CardHeader>
+			<Card
+				class="flex h-full flex-col overflow-hidden rounded-xl bg-gradient-to-br from-muted/50 to-transparent py-4 backdrop-blur-sm hover:shadow-md"
+			>
+				<CardHeader class="pb-2">
 					<div class="flex items-start justify-between gap-2">
-						<div class="min-w-0 flex-1">
-							<CardTitle class="truncate text-base">{template.name}</CardTitle>
-							<CardDescription class="line-clamp-2 min-h-[2.5rem]">
-								{template.description}
-							</CardDescription>
-						</div>
+						<CardTitle class="min-w-0 flex-1 truncate text-base leading-tight">
+							{#if template.name}
+								{template.name.length > 25 ? template.name.slice(0, 25) + '...' : template.name}
+							{/if}
+						</CardTitle>
 						{#if template.is_active}
 							<Badge
-								class="flex items-center justify-center gap-2 border-none bg-green-600/10 text-green-600"
+								class="ml-auto flex shrink-0 items-center gap-2 border-none bg-green-600/10 whitespace-nowrap text-green-600"
 							>
-								<span
-									class="size-1.5 animate-pulse rounded-full bg-green-600 repeat-infinite"
-									aria-hidden="true"
+								<span class="size-1.5 animate-pulse rounded-full bg-green-600" aria-hidden="true"
 								></span>
 								Ενεργό
 							</Badge>
 						{:else}
 							<Badge
-								class="flex animate-pulse items-center justify-center gap-2 border-none bg-destructive/10 text-destructive repeat-infinite"
+								class="ml-auto flex shrink-0 items-center gap-2 border-none bg-destructive/10 whitespace-nowrap text-destructive"
 							>
 								<!-- svelte-ignore element_invalid_self_closing_tag -->
 								<span class="size-1.5 rounded-full bg-destructive" aria-hidden="true" />
@@ -242,6 +241,9 @@
 							</Badge>
 						{/if}
 					</div>
+					<CardDescription class="mt-1 line-clamp-2 overflow-hidden break-words text-ellipsis">
+						{template.description}
+					</CardDescription>
 				</CardHeader>
 
 				<CardContent class="flex flex-1 flex-col justify-between space-y-4">
