@@ -8,7 +8,16 @@
 	import { Label } from '$lib/components/ui/label/index.js';
 	import Badge from '$lib/components/ui/badge/badge.svelte';
 	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
-	import { Building2, User, Lock, Mail, CheckCircle, AlertCircle, Sparkles, LogIn } from 'lucide-svelte';
+	import {
+		Building2,
+		User,
+		Lock,
+		Mail,
+		CheckCircle,
+		AlertCircle,
+		Sparkles,
+		LogIn
+	} from 'lucide-svelte';
 	import { toast } from 'svelte-sonner';
 	import * as Password from '$lib/components/ui/password';
 
@@ -34,7 +43,9 @@
 
 	// Check if passwords match
 	let passwordsMatch = $derived(password === confirmPassword && password.length >= 6);
-	let formValid = $derived(username.trim().length >= 2 && full_name.trim().length >= 2 && passwordsMatch);
+	let formValid = $derived(
+		username.trim().length >= 2 && full_name.trim().length >= 2 && passwordsMatch
+	);
 
 	// Handle form errors
 	$effect(() => {
@@ -77,7 +88,7 @@
 					<p class="mb-6 text-sm text-muted-foreground">
 						Μπορείς τώρα να συνδεθείς με τα στοιχεία που δημιούργησες.
 					</p>
-					
+
 					<Button
 						href="/auth/login"
 						class="gap-2 bg-gradient-to-r from-green-600 to-emerald-600 px-8 py-3 text-white shadow-lg hover:from-green-700 hover:to-emerald-700"
@@ -139,34 +150,39 @@
 							<h1
 								class="font-[family-name:var(--font-tailormade)] text-xl font-bold text-foreground sm:text-2xl lg:text-3xl"
 							>
-								Γίνε μέλος της ομάδας
+								{data.inviteType === 'trainer' ? 'Join as a Trainer' : 'Γίνε μέλος της ομάδας'}
 							</h1>
 							<p class="mt-1 text-sm text-muted-foreground sm:text-base">
-								Ολοκλήρωσε τη δημιουργία του λογαριασμού σου
+								{data.inviteType === 'trainer'
+									? 'Set up your trainer account'
+									: 'Ολοκλήρωσε τη δημιουργία του λογαριασμού σου'}
 							</p>
 						</div>
 
 						<!-- Invitation Details Grid -->
 						<div class="mb-4 grid gap-2 sm:mb-6 sm:grid-cols-2 sm:gap-3">
-							<div
-								class="flex items-center gap-2.5 rounded-lg bg-stone-50 p-3 transition-colors hover:bg-stone-100 sm:gap-3 sm:rounded-xl sm:p-4 dark:bg-stone-800/60 dark:hover:bg-stone-800"
-							>
+							<!-- In the Invitation Details Grid section -->
+							{#if data.invitation.organization}
 								<div
-									class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-stone-200 sm:h-10 sm:w-10 sm:rounded-lg dark:bg-stone-700"
+									class="flex items-center gap-2.5 rounded-lg bg-stone-50 p-3 transition-colors hover:bg-stone-100 sm:gap-3 sm:rounded-xl sm:p-4 dark:bg-stone-800/60 dark:hover:bg-stone-800"
 								>
-									<Building2 class="h-4 w-4 text-stone-600 sm:h-5 sm:w-5 dark:text-stone-400" />
-								</div>
-								<div class="min-w-0">
-									<p
-										class="text-[10px] font-medium tracking-wide text-muted-foreground uppercase sm:text-[11px]"
+									<div
+										class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-stone-200 sm:h-10 sm:w-10 sm:rounded-lg dark:bg-stone-700"
 									>
-										Οργανισμός
-									</p>
-									<p class="truncate text-sm font-medium text-foreground sm:text-base">
-										{data.invitation.organization.name}
-									</p>
+										<Building2 class="h-4 w-4 text-stone-600 sm:h-5 sm:w-5 dark:text-stone-400" />
+									</div>
+									<div class="min-w-0">
+										<p
+											class="text-[10px] font-medium tracking-wide text-muted-foreground uppercase sm:text-[11px]"
+										>
+											Οργανισμός
+										</p>
+										<p class="truncate text-sm font-medium text-foreground sm:text-base">
+											{data.invitation.organization.name}
+										</p>
+									</div>
 								</div>
-							</div>
+							{/if}
 
 							<div
 								class="flex items-center gap-2.5 rounded-lg bg-stone-50 p-3 transition-colors hover:bg-stone-100 sm:gap-3 sm:rounded-xl sm:p-4 dark:bg-stone-800/60 dark:hover:bg-stone-800"
@@ -247,7 +263,8 @@
 											Υπάρχει ήδη λογαριασμός με αυτό το email. Παρακαλώ
 											<a
 												href="/auth/login"
-												class="font-medium underline underline-offset-2 hover:no-underline">
+												class="font-medium underline underline-offset-2 hover:no-underline"
+											>
 												συνδέσου
 											</a>.
 										</p>
@@ -269,6 +286,7 @@
 								class="space-y-3 sm:space-y-5"
 							>
 								<input type="hidden" name="token" value={data.invitation.token} />
+								<input type="hidden" name="inviteType" value={data.inviteType} />
 
 								<div class="space-y-1.5 sm:space-y-2">
 									<Label for="username" class="text-xs font-medium sm:text-sm"
@@ -291,10 +309,9 @@
 										/>
 									</div>
 								</div>
-								
+
 								<div class="space-y-1.5 sm:space-y-2">
-									<Label for="full_name" class="text-xs font-medium sm:text-sm"
-										>Ονοματεπώνυμο</Label
+									<Label for="full_name" class="text-xs font-medium sm:text-sm">Ονοματεπώνυμο</Label
 									>
 									<div class="relative">
 										<User

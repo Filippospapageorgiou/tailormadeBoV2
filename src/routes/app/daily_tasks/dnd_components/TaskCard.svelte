@@ -140,7 +140,7 @@
 
 				<!-- Title -->
 				<h3
-					class="min-w-0 flex-1 truncate text-xs font-medium transition-all duration-300
+					class="min-w-0 flex-1 text-xs font-medium transition-all duration-300
 						{task.completed
 							? 'text-muted-foreground/40 line-through decoration-muted-foreground/15'
 							: 'text-foreground'}"

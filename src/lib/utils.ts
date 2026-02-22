@@ -1,5 +1,14 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import crypto from 'crypto';
+
+/**
+ * Generate a secure random token for invitations
+ */
+export function generateSecureToken(): string {
+	return crypto.randomBytes(32).toString('hex');
+}
+
 
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));

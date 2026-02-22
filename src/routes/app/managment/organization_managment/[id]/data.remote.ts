@@ -4,14 +4,7 @@ import { createServerClient } from '$lib/supabase/server';
 import { getUserProfileWithRoleCheck } from '$lib/supabase/queries';
 import { sendOrganizationInvitation, resendOrganizationInvitation } from '$lib/emails/organization-invitations';
 import { z } from 'zod/v4';
-import crypto from 'crypto';
-
-/**
- * Generate a secure random token for invitations
- */
-function generateSecureToken(): string {
-	return crypto.randomBytes(32).toString('hex');
-}
+import { generateSecureToken } from '$lib/utils';
 
 /**
  * Authenticated access check - verifies user has super_admin role

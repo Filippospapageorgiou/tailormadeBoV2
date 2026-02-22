@@ -151,6 +151,11 @@
 						icon: Award
 					},
 					{
+						title: 'Διαχείρηση trainers',
+						url: '/app/managment/trainers',
+						icon: Slack
+					},
+					{
 						title: 'Ai βοήθος',
 						url: '/app/managment/ai_assistant',
 						icon: Bot
@@ -184,7 +189,7 @@
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
 	import type { ComponentProps } from 'svelte';
 	import { getProfileContext } from '$lib/stores/profile.svelte';
-	import { Bot, Boxes } from '@lucide/svelte';
+	import { Bot, Boxes, Slack } from '@lucide/svelte';
 	import { goto } from '$app/navigation';
 	import Settings from '$lib/animated/icons/settings.svelte';
 
