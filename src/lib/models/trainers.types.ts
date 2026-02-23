@@ -58,7 +58,7 @@ export interface StoreEvaluation {
   visit_date: string; // date
   store_managers: string[]; // uuid[]
   baristas_on_duty: string[]; // uuid[]
-  status: EvaluationStatus;
+  submit : EvaluationStatus;
   overall_rating: number | null;
   overall_comments: string | null;
   admin_notes: string | null;

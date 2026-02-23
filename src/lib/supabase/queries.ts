@@ -122,6 +122,12 @@ export async function getProfileByUUId(id: string): Promise<Profile> {
 	return profile;
 }
 
+export async function getAuthContext() {
+  const supabase = createServerClient();
+  const user = await requireAuthenticatedUser();
+  return { supabase, user };
+}
+
 /**
  * Get user profile with role validation
  * Ensures user has required role_id (1 = admin, 2 = manager, etc.)

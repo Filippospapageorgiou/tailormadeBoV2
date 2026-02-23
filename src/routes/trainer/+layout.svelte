@@ -17,6 +17,9 @@
 		GraduationCap
 	} from 'lucide-svelte';
 	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
+	import { setAssignmentStore } from '$lib/stores/assignedOrg.svelte';
+
+	let assignmentStore = setAssignmentStore(null); // initialize empty
 
 	let { children } = $props();
 

@@ -18,9 +18,16 @@
 		TrendingUp,
 		MapPin
 	} from 'lucide-svelte';
-	import { getMyAssignedOrgs, getMyEvaluations } from '$lib/api/trainers/trainer_evalution/data.remote.js';
+	import {
+		getMyAssignedOrgs,
+		getMyEvaluations
+	} from '$lib/api/trainers/trainer_evalution/data.remote.js';
 	import type { EvaluationStatus } from '$lib/models/trainers.types.js';
 	import TrainerMap from '$lib/components/trainer/TrainerMap.svelte';
+	import { setAssignmentStore, getAssignmentStore } from '$lib/stores/assignedOrg.svelte.js';
+
+	
+	let assignmentStore = getAssignmentStore();
 
 	let { data } = $props();
 	let user = getProfileContext();
@@ -30,6 +37,11 @@
 
 	// Shape returned by getMyAssignedOrgs
 	type AssignedOrg = {
+		trainer_id: string;
+		assigned_by: string;
+		is_active: boolean;
+		created_at: string;
+		updated_at: string;
 		id: number;
 		org_id: number;
 		visit_date: string;
@@ -40,8 +52,8 @@
 			phone: string | null;
 			status: boolean;
 			location: string | null;
-			latitude:number;
-			longitude:number;
+			latitude: number;
+			longitude: number;
 		} | null;
 	};
 
@@ -61,8 +73,12 @@
 		} | null;
 	};
 
-	let assignedOrgs = $derived((assignedOrgsQuery?.current?.assignments ?? []) as unknown as AssignedOrg[]);
-	let recentEvaluations = $derived((evaluationsQuery?.current?.evaluations ?? []) as unknown as EvaluationListItem[]);
+	let assignedOrgs = $derived(
+		(assignedOrgsQuery?.current?.assignments ?? []) as unknown as AssignedOrg[]
+	);
+	let recentEvaluations = $derived(
+		(evaluationsQuery?.current?.evaluations ?? []) as unknown as EvaluationListItem[]
+	);
 
 	// Derive stats from the evaluations list — no extra server call needed
 	let stats = $derived({
@@ -118,19 +134,48 @@
 	};
 
 	const statusConfig: Record<EvaluationStatus, StatusConfig> = {
-		draft:    { label: 'Πρόχειρο',       variant: 'secondary',    icon: FileText,    color: 'text-muted-foreground' },
-		submitted:{ label: 'Υποβλήθηκε',     variant: 'default',      icon: Clock,       color: 'text-primary'          },
-		reviewed: { label: 'Ελέγχθηκε',      variant: 'outline',      icon: CheckCircle2,color: 'text-emerald-600'       },
-		reopened: { label: 'Επαναστάλθηκε',  variant: 'destructive',  icon: ArrowRight,  color: 'text-destructive'      }
+		draft: {
+			label: 'Πρόχειρο',
+			variant: 'secondary',
+			icon: FileText,
+			color: 'text-muted-foreground'
+		},
+		submitted: { label: 'Υποβλήθηκε', variant: 'default', icon: Clock, color: 'text-primary' },
+		reviewed: {
+			label: 'Ελέγχθηκε',
+			variant: 'outline',
+			icon: CheckCircle2,
+			color: 'text-emerald-600'
+		},
+		reopened: {
+			label: 'Επαναστάλθηκε',
+			variant: 'destructive',
+			icon: ArrowRight,
+			color: 'text-destructive'
+		}
 	};
 
 	// Loading state: current is undefined before first response
 	let orgsLoading = $derived(assignedOrgsQuery?.current === undefined);
 	let evalsLoading = $derived(evaluationsQuery?.current === undefined);
+
+	function handleNewEval(org: AssignedOrg) {
+		assignmentStore.setTrainerAssignmentOrg({
+			id: org.id,
+			trainer_id: org.trainer_id,
+			org_id: org.org_id,
+			assigned_by: org.assigned_by,
+			is_active: org.is_active,
+			created_at: org.created_at,
+			updated_at: org.updated_at,
+			visit_date: org.visit_date
+		});
+
+		goto(`/trainer/evaluations/new`);
+	}
 </script>
 
 <div class="flex flex-1 flex-col gap-6 p-4 pt-6">
-
 	<!-- Greeting header -->
 	<div class="flex items-start justify-between">
 		<div class="flex items-center gap-3">
@@ -143,22 +188,14 @@
 				<h1 class="text-xl font-semibold">{user.username}</h1>
 			</div>
 		</div>
-
-		<Button onclick={() => goto('/trainer/evaluations/new')} class="hidden gap-2 sm:flex">
-			<Plus class="h-4 w-4" />
-			Νέα Αξιολόγηση
-		</Button>
 	</div>
 
 	<!-- Stat cards -->
 	<div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-		{#each [
-			{ label: 'Σύνολο',       value: stats.total,     icon: ClipboardList, color: 'text-foreground',    bg: 'bg-muted/50'       },
-			{ label: 'Πρόχειρα',     value: stats.draft,     icon: FileText,      color: 'text-muted-foreground', bg: 'bg-muted/30'    },
-			{ label: 'Υποβληθέντα',  value: stats.submitted, icon: Clock,         color: 'text-primary',       bg: 'bg-primary/10'     },
-			{ label: 'Ελεγμένα',     value: stats.reviewed,  icon: CheckCircle2,  color: 'text-emerald-600',   bg: 'bg-emerald-500/10' }
-		] as stat}
-			<Card.Root class="relative overflow-hidden rounded-2xl border border-border/40 bg-card/60 p-4 backdrop-blur-sm">
+		{#each [{ label: 'Σύνολο', value: stats.total, icon: ClipboardList, color: 'text-foreground', bg: 'bg-muted/50' }, { label: 'Πρόχειρα', value: stats.draft, icon: FileText, color: 'text-muted-foreground', bg: 'bg-muted/30' }, { label: 'Υποβληθέντα', value: stats.submitted, icon: Clock, color: 'text-primary', bg: 'bg-primary/10' }, { label: 'Ελεγμένα', value: stats.reviewed, icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-500/10' }] as stat}
+			<Card.Root
+				class="relative overflow-hidden rounded-2xl border border-border/40 bg-card/60 p-4 backdrop-blur-sm"
+			>
 				<div class="flex items-start justify-between">
 					<div>
 						<p class="text-xs text-muted-foreground">{stat.label}</p>
@@ -176,11 +213,14 @@
 
 	<!-- Main grid -->
 	<div class="grid grid-cols-1 gap-4 lg:grid-cols-5">
-
 		<!-- Assigned Organizations -->
 		<div class="lg:col-span-3">
-			<Card.Root class="relative h-full overflow-hidden rounded-2xl border border-border/40 bg-card/60 backdrop-blur-sm">
-				<div class="absolute -top-20 -right-20 -z-10 h-48 w-48 rounded-full bg-primary/8 blur-3xl"></div>
+			<Card.Root
+				class="relative h-full overflow-hidden rounded-2xl border border-border/40 bg-card/60 backdrop-blur-sm"
+			>
+				<div
+					class="absolute -top-20 -right-20 -z-10 h-48 w-48 rounded-full bg-primary/8 blur-3xl"
+				></div>
 
 				<Card.Header class="pb-3">
 					<div class="flex items-center gap-2">
@@ -207,15 +247,17 @@
 							{@const orgId = org.org_id}
 							{@const draft = hasDraft(orgId)}
 							{@const lastVisit = lastVisitDate(orgId)}
+							<!-- svelte-ignore a11y_click_events_have_key_events -->
 							<div
 								style="animation-delay: {i * 60}ms; animation-fill-mode: backwards;"
-								class="group animate-fade-in-down flex cursor-pointer items-center gap-3 rounded-xl border border-border/30 bg-background/50 p-3 transition-all hover:border-primary/20 hover:bg-primary/5"
-								onclick={() => goto(`/trainer/evaluations/new?org=${orgId}`)}
+								class="group flex animate-fade-in-down cursor-pointer items-center gap-3 rounded-xl border border-border/30 bg-background/50 p-3 transition-all hover:border-primary/20 hover:bg-primary/5"
+								onclick={() => handleNewEval(org)}
 								role="button"
 								tabindex="0"
-								onkeydown={(e) => e.key === 'Enter' && goto(`/trainer/evaluations/new?org=${orgId}`)}
 							>
-								<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-sm font-semibold text-muted-foreground">
+								<div
+									class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-sm font-semibold text-muted-foreground"
+								>
 									{getInitials(storeName)}
 								</div>
 
@@ -264,8 +306,12 @@
 
 		<!-- Recent Evaluations -->
 		<div class="lg:col-span-2">
-			<Card.Root class="relative h-full overflow-hidden rounded-2xl border border-border/40 bg-card/60 backdrop-blur-sm">
-				<div class="absolute -bottom-20 -left-20 -z-10 h-48 w-48 rounded-full bg-emerald-500/8 blur-3xl"></div>
+			<Card.Root
+				class="relative h-full overflow-hidden rounded-2xl border border-border/40 bg-card/60 backdrop-blur-sm"
+			>
+				<div
+					class="absolute -bottom-20 -left-20 -z-10 h-48 w-48 rounded-full bg-emerald-500/8 blur-3xl"
+				></div>
 
 				<Card.Header class="pb-3">
 					<div class="flex items-center gap-2">
@@ -289,7 +335,7 @@
 							{@const cfg = statusConfig[ev.submit]}
 							<button
 								style="animation-delay: {i * 60}ms; animation-fill-mode: backwards;"
-								class="animate-fade-in-down flex w-full cursor-pointer items-center gap-3 rounded-xl border border-border/30 bg-background/50 p-3 text-left transition-all hover:border-primary/20 hover:bg-primary/5"
+								class="flex w-full animate-fade-in-down cursor-pointer items-center gap-3 rounded-xl border border-border/30 bg-background/50 p-3 text-left transition-all hover:border-primary/20 hover:bg-primary/5"
 								onclick={() => goto(`/trainer/evaluations/${ev.id}`)}
 							>
 								<div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted">
@@ -338,15 +384,12 @@
 				</Card.Content>
 			</Card.Root>
 		</div>
-
 	</div>
 
 	<!-- Map Section -->
 	{#if !orgsLoading}
 		{@const pendingOrgs = assignedOrgs.filter(
-			(o) =>
-				o.core_organizations?.latitude &&
-				o.core_organizations?.longitude 
+			(o) => o.core_organizations?.latitude && o.core_organizations?.longitude
 		)}
 		{#if pendingOrgs.length > 0}
 			<div class="space-y-3">
@@ -378,14 +421,4 @@
 			</div>
 		{/if}
 	{/if}
-
-	<!-- Mobile CTA -->
-	<Button
-		onclick={() => goto('/trainer/evaluations/new')}
-		class="flex gap-2 sm:hidden"
-		size="lg"
-	>
-		<Plus class="h-4 w-4" />
-		Νέα Αξιολόγηση
-	</Button>
 </div>

@@ -39,8 +39,7 @@
 	const statusColors: Record<EquipmentStatus, string> = {
 		operational:
 			'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/20',
-		maintenance:
-			'bg-orange-500/10 text-orange-600 dark:text-orange-400 ring-1 ring-orange-500/20',
+		maintenance: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 ring-1 ring-orange-500/20',
 		broken: 'bg-red-500/10 text-red-600 dark:text-red-400 ring-1 ring-red-500/20'
 	};
 
@@ -63,14 +62,18 @@
 
 <div
 	style="animation-delay: {index * 80}ms; animation-fill-mode: backwards;"
-	class="group animate-fade-in-down overflow-hidden border bg-gradient-to-br from-muted/50 to-transparent backdrop-blur-sm rounded-xl {borderColor}"
+	class="group animate-fade-in-down overflow-hidden rounded-xl border bg-gradient-to-br from-muted/50 to-transparent backdrop-blur-sm {borderColor}"
 >
 	<!-- Hero Image -->
 	<div class="relative h-48 w-full overflow-hidden sm:h-52">
 		<img
-			src={equipment.image_url || '/placeholder.svg'}
+			src={equipment.image_url}
+			loading="lazy"
+			decoding="async"
+			width="400"
+			height="250"
+			class="h-full w-full object-cover"
 			alt={equipment.name}
-			class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
 		/>
 		<div
 			class="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent"
@@ -130,9 +133,7 @@
 		<!-- Service Health -->
 		{#if equipment.next_service_date}
 			<div class="space-y-2.5 rounded-lg bg-muted/30 p-3 dark:bg-muted/15">
-				<span
-					class="text-[10px] font-semibold tracking-widest text-muted-foreground/70 uppercase"
-				>
+				<span class="text-[10px] font-semibold tracking-widest text-muted-foreground/70 uppercase">
 					Service Status
 				</span>
 
@@ -171,7 +172,7 @@
 						variant="ghost"
 						size="sm"
 						class="h-8 gap-1.5 text-xs font-medium text-orange-600 hover:bg-orange-500/10 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
-						onclick={(e:any) => {
+						onclick={(e: any) => {
 							e.stopPropagation();
 							modalOpen = !modalOpen;
 						}}
@@ -184,9 +185,7 @@
 			</div>
 		{:else}
 			<div class="rounded-lg bg-muted/30 p-3 dark:bg-muted/15">
-				<span
-					class="text-[10px] font-semibold tracking-widest text-muted-foreground/70 uppercase"
-				>
+				<span class="text-[10px] font-semibold tracking-widest text-muted-foreground/70 uppercase">
 					Service Status
 				</span>
 				<p class="mt-1.5 text-xs text-muted-foreground/60">No service date scheduled</p>

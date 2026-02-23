@@ -311,7 +311,7 @@ const deleteBlogSchema = z.object({
 		)
 });
 
-export const deleteBlog = query(deleteBlogSchema, async ({ blogId }) => {
+export const deleteBlog = command(deleteBlogSchema, async ({ blogId }) => {
 	const supabase = createServerClient();
 
 	try {

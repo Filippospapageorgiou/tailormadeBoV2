@@ -184,9 +184,13 @@
 	<!-- Hero Image -->
 	<div class="relative h-48 w-full overflow-hidden sm:h-52">
 		<img
-			src={equipment.image_url || '/placeholder.svg'}
+			src={equipment.image_url}
+			loading="lazy"
+			decoding="async"
+			width="400"
+			height="250"
+			class="h-full w-full object-cover"
 			alt={equipment.name}
-			class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
 		/>
 		<div
 			class="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent"
