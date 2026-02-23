@@ -10,13 +10,44 @@
 
 	let { children } = $props();
 
+	const routeLabels: Record<string, string> = {
+		// Top level
+		blog: 'Ιστολόγιο',
+		daily_tasks: 'Καθημερινές Εργασίες',
+		equipment: 'Εξοπλισμός',
+		legal: 'Νομικά',
+		manifesto: 'Καταστατικό',
+		manuals: 'Εγχειρίδια',
+		profile: 'Προφίλ',
+		recipes: 'Συνταγές',
+		register: 'Εγγραφή',
+		schedule: 'Πρόγραμμα',
+
+		// Management
+		managment: 'Διαχείριση',
+		ai_assistant: 'Βοηθός AI',
+		blog_settings: 'Ρυθμίσεις Ιστολογίου',
+		bonus_managment: 'Διαχείριση Μπόνους',
+		organization_managment: 'Διαχείριση Οργανισμού',
+		recipes_settings: 'Ρυθμίσεις Συνταγών',
+		trainers: 'Εκπαιδευτές',
+
+		// Settings
+		settings: 'Ρυθμίσεις',
+		equipment_settings: 'Ρυθμίσεις Εξοπλισμού',
+		manage_users: 'Διαχείριση Χρηστών',
+		register_settings: 'Ρυθμίσεις Εγγραφής',
+		schedule_settings: 'Ρυθμίσεις Προγράμματος',
+		task_managment: 'Διαχείριση Εργασιών'
+	};
+
 	let breadcrumbs = $derived(() => {
 		const pathSegments = page.url.pathname.split('/').filter(Boolean);
 		let cumulativePath = '';
 		return pathSegments.map((segment) => {
 			cumulativePath += `/${segment}`;
-			const name = segment.charAt(0).toUpperCase() + segment.slice(1);
-			return { name, href: cumulativePath };
+			const label = routeLabels[segment] ?? segment.charAt(0).toUpperCase() + segment.slice(1);
+			return { name: label, href: cumulativePath };
 		});
 	});
 </script>

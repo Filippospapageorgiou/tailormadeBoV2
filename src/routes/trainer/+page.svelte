@@ -15,10 +15,12 @@
 		Star,
 		CalendarDays,
 		FileText,
-		TrendingUp
+		TrendingUp,
+		MapPin
 	} from 'lucide-svelte';
 	import { getMyAssignedOrgs, getMyEvaluations } from '$lib/api/trainers/trainer_evalution/data.remote.js';
 	import type { EvaluationStatus } from '$lib/models/trainers.types.js';
+	import TrainerMap from '$lib/components/trainer/TrainerMap.svelte';
 
 	let { data } = $props();
 	let user = getProfileContext();
@@ -38,6 +40,8 @@
 			phone: string | null;
 			status: boolean;
 			location: string | null;
+			latitude:number;
+			longitude:number;
 		} | null;
 	};
 
@@ -334,7 +338,46 @@
 				</Card.Content>
 			</Card.Root>
 		</div>
+
 	</div>
+
+	<!-- Map Section -->
+	{#if !orgsLoading}
+		{@const pendingOrgs = assignedOrgs.filter(
+			(o) =>
+				o.core_organizations?.latitude &&
+				o.core_organizations?.longitude 
+		)}
+		{#if pendingOrgs.length > 0}
+			<div class="space-y-3">
+				<!-- Section header -->
+				<div class="flex items-center justify-between">
+					<div class="flex items-start gap-3">
+						<div class="rounded-lg bg-primary/10 p-2">
+							<MapPin class="h-4 w-4 text-primary" />
+						</div>
+						<div>
+							<h2 class="text-sm font-semibold">Εκκρεμείς Επισκέψεις</h2>
+							<p class="text-xs text-muted-foreground">
+								Καταστήματα που σου έχουν ανατεθεί και δεν έχουν αξιολογηθεί ακόμα.
+							</p>
+						</div>
+					</div>
+					<div class="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
+						<div class="size-2 animate-pulse rounded-full bg-primary"></div>
+						<span>{pendingOrgs.length} εκκρεμεί</span>
+					</div>
+				</div>
+
+				<!-- Map -->
+				<div
+					class="h-[460px] overflow-hidden rounded-2xl border border-border/40 bg-card/60 shadow-sm lg:h-[560px]"
+				>
+					<TrainerMap assignedOrgs={pendingOrgs} evaluations={recentEvaluations} />
+				</div>
+			</div>
+		{/if}
+	{/if}
 
 	<!-- Mobile CTA -->
 	<Button

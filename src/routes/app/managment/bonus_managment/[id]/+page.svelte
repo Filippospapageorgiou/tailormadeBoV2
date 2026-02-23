@@ -125,7 +125,7 @@
 
 		isExporting = true;
 		try {
-			const response = await fetch(`/app/bonus_managment/${period.id}/api/export`, {
+			const response = await fetch(`/app/managment/bonus_managment/${period.id}/api/export`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ periodId: period.id })
@@ -181,7 +181,7 @@
 				variant="ghost"
 				size="sm"
 				class="mb-4 gap-2"
-				onclick={() => goto('/app/bonus_managment')}
+				onclick={() => goto('/app/managment/bonus_managment')}
 			>
 				<ArrowLeft class="h-4 w-4" />
 				Πίσω στις Περιόδους

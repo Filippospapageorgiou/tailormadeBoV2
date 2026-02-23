@@ -16,6 +16,7 @@
 		ChevronRight,
 		GraduationCap
 	} from 'lucide-svelte';
+	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
 
 	let { children } = $props();
 
@@ -55,7 +56,8 @@
 		const labelMap: Record<string, string> = {
 			trainer: 'Trainer',
 			evaluations: 'Αξιολογήσεις',
-			new: 'Νέα Αξιολόγηση'
+			new: 'Νέα Αξιολόγηση',
+			profile: 'Προφίλ'
 		};
 
 		const segments = page.url.pathname.split('/').filter(Boolean);
@@ -72,6 +74,32 @@
 			};
 		});
 	});
+
+	let isLoggingOut = $state(false);
+	async function handleLogout() {
+		if (isLoggingOut) {
+			return true;
+		}
+
+		isLoggingOut = true;
+		try {
+			const response = await fetch('/auth/api/logout', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				}
+			});
+
+			if (!response.ok) {
+				throw new Error('Error logging out');
+			}
+
+			window.location.reload();
+		} catch (error) {
+			console.error('Logout failed:', error);
+			isLoggingOut = false;
+		}
+	}
 </script>
 
 <div class="flex min-h-screen flex-col bg-background font-[Sansation,sans-serif]">
@@ -160,7 +188,7 @@
 				</DropdownMenu.Trigger>
 
 				<DropdownMenu.Content align="end" class="w-52">
-					<div class="px-3 py-2">
+					<div class="px-1 py-2">
 						<p class="text-sm font-medium">{user.username}</p>
 						<p class="text-xs text-muted-foreground">{user.email ?? 'Trainer'}</p>
 					</div>
@@ -170,14 +198,21 @@
 						Προφίλ
 					</DropdownMenu.Item>
 					<DropdownMenu.Separator />
-					<form method="POST" action="/auth/logout" use:enhance>
-						<DropdownMenu.Item class="text-destructive focus:text-destructive">
-							<button type="submit" class="flex w-full items-center">
-								<LogOut class="mr-2 h-4 w-4" />
-								Αποσύνδεση
-							</button>
-						</DropdownMenu.Item>
-					</form>
+					<DropdownMenu.Item>
+					<LogOut />
+					<button
+						onclick={handleLogout}
+						disabled={isLoggingOut}
+						class="flex w-full cursor-pointer items-center gap-2 text-start"
+					>
+						{#if isLoggingOut}
+							<Spinner />
+						{/if}
+						<span>
+							{isLoggingOut ? 'Logging out...' : 'Log out'}
+						</span>
+					</button>
+				</DropdownMenu.Item>
 				</DropdownMenu.Content>
 			</DropdownMenu.Root>
 		</div>
