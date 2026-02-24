@@ -8,8 +8,7 @@
 
 	const evaluationId = $derived(Number(page.params.id));
 	// svelte-ignore state_referenced_locally
-		let evalQuery = getEvaluationById({ evaluationId });
-
+	let evalQuery = getEvaluationById({ evaluationId });
 	let result = $derived(evalQuery.current);
 	let isLoading = $derived(evalQuery.current === undefined);
 </script>

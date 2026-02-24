@@ -609,6 +609,77 @@ export const submitEvaluationFinal = command(submitEvaluationFinalSchema, async 
 // ============================================================
 
 
+// ============================================================
+// LOAD: Full evaluation detail (all related tables)
+// ============================================================
+
+const getEvaluationByIdSchema = z.object({
+	evaluationId: z.number().int().positive()
+});
+
+export const getEvaluationById = query(getEvaluationByIdSchema, async ({ evaluationId }) => {
+	const supabase = createAdminClient();
+
+	const { data: evaluation, error: evalError } = await supabase
+		.from('store_evaluations')
+		.select(`
+			*,
+			core_organizations!store_evaluations_org_id_fkey (*),
+			trainer:profiles!store_evaluations_trainer_id_fkey (id, full_name, email, image_url, username),
+			evaluation_section_items (*),
+			evaluation_barista_training (*),
+			equipment_evaluations (
+				*,
+				equipment (id, name, model,image_url),
+				equipment_check_items (*)
+			),
+			evaluation_photos (*),
+			evaluation_summary_actions (*)
+		`)
+		.eq('id', evaluationId)
+		.single();
+
+	if (evalError || !evaluation) {
+		console.error('[getEvaluationById] Error:', evalError);
+		throw error(404, 'Evaluation not found');
+	}
+
+	// Fetch staff profiles for store managers and baristas
+	const allStaffIds = [
+		...(evaluation.store_managers ?? []),
+		...(evaluation.baristas_on_duty ?? []),
+	].filter(Boolean) as string[];
+
+	let staffProfiles: { id: string; full_name: string; image_url: string | null }[] = [];
+	if (allStaffIds.length > 0) {
+		const { data: staff } = await supabase
+			.from('profiles')
+			.select('id, full_name, image_url')
+			.in('id', allStaffIds);
+		staffProfiles = staff ?? [];
+	}
+
+	// Generate signed URLs (1h) — bucket is private so getPublicUrl won't work
+	const photosRow = (evaluation.evaluation_photos as any[])?.[0] ?? null;
+	const rawPhotos: any[] = photosRow?.photos ?? [];
+	const photoItemsWithUrls = await Promise.all(
+		rawPhotos.map(async (p: any) => {
+			const { data: signed } = await supabase.storage
+				.from('evaluation-photos')
+				.createSignedUrl(p.storage_path, 3600);
+			return { ...p, url: signed?.signedUrl ?? '' };
+		})
+	);
+
+	return {
+		evaluation: evaluation as any,
+		staffProfiles,
+		photoItemsWithUrls,
+	};
+});
+
+// ============================================================
+
 const orgIdEquipment = z.object({
 	orgId: z.number().positive().int()
 });

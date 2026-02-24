@@ -5,14 +5,13 @@
 	import { deleteEvaluation } from '$lib/api/trainers/trainer_evalution/data.remote';
 	import DeleteConfirmDialog from '$lib/components/Reusable/DeleteConfirmDialog.svelte';
 	import { toast } from 'svelte-sonner';
+	import { goto } from '$app/navigation';
 
 	let {
 		id,
-		onview,
-		onedit,
+		onedit
 	}: {
 		id: number;
-		onview?: (id: number) => void;
 		onedit?: (id: number) => void;
 	} = $props();
 
@@ -58,7 +57,7 @@
 	<DropdownMenu.Content align="end">
 		<DropdownMenu.Group>
 			<DropdownMenu.Label>Ενέργειες</DropdownMenu.Label>
-			<DropdownMenu.Item onclick={() => onview?.(id)} class="gap-2">
+			<DropdownMenu.Item onclick={() => goto(`/app/managment/trainers/${id}`)} class="gap-2">
 				<Eye class="h-4 w-4" />
 				Προβολή
 			</DropdownMenu.Item>
