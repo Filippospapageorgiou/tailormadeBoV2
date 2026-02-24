@@ -4,26 +4,10 @@
 // ============================================
 
 // ---------- Enums / Literals ----------
+import type { EvaluationSection } from "./evalution_section_const.types";
+
 
 export type EvaluationStatus = "draft" | "submitted" | "reviewed" | "reopened";
-
-export type ActionCategory =
-  | "equipment"
-  | "technical_service"
-  | "training"
-  | "general";
-
-export type ActionPriority = "low" | "medium" | "high" | "critical";
-
-export type EvaluationSectionKey =
-  | "espresso_machine"
-  | "grinders"
-  | "equipment_consumables"
-  | "cleanliness"
-  | "barista_training"
-  | "photo_documentation"
-  | "summary_actions";
-
 // ---------- Trainer Org Assignments ----------
 
 export interface TrainerOrgAssignment {
@@ -93,196 +77,113 @@ export interface StoreEvaluationUpdate {
   updated_at?: string;
 }
 
-// ---------- Evaluation Sections ----------
-
-export interface EvaluationSection {
-  id: number;
-  evaluation_id: number;
-  section_key: EvaluationSectionKey;
-  rating: string | null;
-  notes: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface EvaluationSectionInsert {
-  evaluation_id: number;
-  section_key: EvaluationSectionKey;
-  rating?: string | null;
-  notes?: string | null;
-}
-
-export interface EvaluationSectionUpdate {
-  rating?: string | null;
-  notes?: string | null;
-  updated_at?: string;
-}
-
-// ---------- Evaluation Check Items ----------
-
-export interface EvaluationCheckItem {
-  id: number;
-  evaluation_id: number;
-  section_key: EvaluationSectionKey;
-  item_key: string;
-  checked: boolean;
-  value_text: string | null;
-  value_numeric: number | null;
-  notes: string | null;
-  created_at: string;
-}
-
-export interface EvaluationCheckItemInsert {
-  evaluation_id: number;
-  section_key: EvaluationSectionKey;
-  item_key: string;
-  checked?: boolean;
-  value_text?: string | null;
-  value_numeric?: number | null;
-  notes?: string | null;
-}
-
-export interface EvaluationCheckItemUpdate {
-  checked?: boolean;
-  value_text?: string | null;
-  value_numeric?: number | null;
-  notes?: string | null;
-}
 
 // ---------- Evaluation Machine Data ----------
 
-export interface EvaluationMachineData {
-  id: number;
-  evaluation_id: number;
-  equipment_id: number | null;
-  checked: boolean;
-  value_text: string | null;
-  value_numeric: number | null;
-  notes: string | null;
-  created_at: string;
+// ─── Equipment Evaluation ────────────────────────────────────────────────────
+// One record per piece of equipment within a store evaluation.
+// Holds the overall score and notes for that equipment.
+
+export interface EquipmentEvaluation {
+  id: number
+  evaluation_id: number       // FK → store_evaluations.id
+  equipment_id: number | null // FK → equipment.id
+  score: number | null
+  notes: string | null
+  created_at: string | null
 }
 
-export interface EvaluationMachineDataInsert {
-  evaluation_id: number;
-  equipment_id?: number | null;
-  checked?: boolean;
-  value_text?: string | null;
-  value_numeric?: number | null;
-  notes?: string | null;
+
+// ─── Equipment Check Item ─────────────────────────────────────────────────────
+// Many detail rows per equipment evaluation.
+// Each row represents a single check point the trainer evaluated.
+
+export interface EquipmentCheckItem {
+  id: number
+  equipment_eval_id: number   // FK → equipment_evaluations.id
+  check_name: string
+  value_text: string | null
+  value_numeric: number | null
+  passed: boolean | null
+  notes: string | null
+  created_at: string | null
 }
 
-export interface EvaluationMachineDataUpdate {
-  equipment_id?: number | null;
-  checked?: boolean;
-  value_text?: string | null;
-  value_numeric?: number | null;
-  notes?: string | null;
+export interface EquipmentEvaluationWithChecks extends EquipmentEvaluation {
+  equipment_check_items: EquipmentCheckItem[]
 }
 
-// ---------- Evaluation Photos ----------
 
-export interface EvaluationPhoto {
-  id: number;
-  evaluation_id: number;
-  section_key: EvaluationSectionKey;
-  photo_url: string;
-  photo_label: string | null;
-  caption: string | null;
-  display_order: number;
-  created_at: string;
+export interface EvaluationSectionItem {
+	id: number
+	evaluation_id: number        // FK → store_evaluations.id
+	section: EvaluationSection   // 'cleanliness' | 'knowledge' | 'training'
+	item_key: string             // stable identifier e.g. 'coffee_post_clean'
+	item_label: string           // display label (can be edited by trainer)
+	checked: boolean             // did the trainer evaluate this item
+	score: number | null         // score for this item
+	notes: string | null
+	created_at: string | null
 }
 
-export interface EvaluationPhotoInsert {
-  evaluation_id: number;
-  section_key: EvaluationSectionKey;
-  photo_url: string;
-  photo_label?: string | null;
-  caption?: string | null;
-  display_order?: number;
+export interface EvaluationSectionItemInsert {
+	evaluation_id: number
+	section: EvaluationSection
+	item_key: string
+	item_label: string
+	checked?: boolean
+	score?: number | null
+	notes?: string | null
 }
 
-export interface EvaluationPhotoUpdate {
-  photo_label?: string | null;
-  caption?: string | null;
-  display_order?: number;
+export interface EvaluationSectionItemUpdate {
+	item_label?: string
+	checked?: boolean
+	score?: number | null
+	notes?: string | null
 }
 
-// ---------- Evaluation Action Items ----------
+// ─── Evaluation Barista Training ──────────────────────────────────────────────
+// One row per evaluation (UNIQUE on evaluation_id).
+// Covers section 5.2 — training done + barista info.
 
-export interface EvaluationActionItem {
-  id: number;
-  evaluation_id: number;
-  category: ActionCategory;
-  description: string;
-  priority: ActionPriority;
-  resolved: boolean;
-  resolved_at: string | null;
-  resolved_by: string | null;
-  created_at: string;
+export interface EvaluationBaristaTraining {
+	id: number
+	evaluation_id: number        // FK → store_evaluations.id (unique)
+	barista_name: string | null
+	score: number | null
+	needs_followup: boolean
+	followup_date: string | null // date string 'YYYY-MM-DD'
+	other_training: string | null
+	created_at: string | null
+	updated_at: string | null
 }
 
-export interface EvaluationActionItemInsert {
-  evaluation_id: number;
-  category: ActionCategory;
-  description: string;
-  priority?: ActionPriority;
+export interface EvaluationBaristaTrainingInsert {
+	evaluation_id: number
+	barista_name?: string | null
+	score?: number | null
+	needs_followup?: boolean
+	followup_date?: string | null
+	other_training?: string | null
 }
 
-export interface EvaluationActionItemUpdate {
-  category?: ActionCategory;
-  description?: string;
-  priority?: ActionPriority;
-  resolved?: boolean;
-  resolved_at?: string | null;
-  resolved_by?: string | null;
+export interface EvaluationBaristaTrainingUpdate {
+	barista_name?: string | null
+	score?: number | null
+	needs_followup?: boolean
+	followup_date?: string | null
+	other_training?: string | null
 }
 
-// ---------- Evaluation Water Filter ----------
+// ─── Grouped helper type ──────────────────────────────────────────────────────
+// Useful when reading back a full evaluation with all section items grouped.
 
-export interface EvaluationWaterFilter {
-  id: number;
-  evaluation_id: number;
-  last_change_date: string | null; // date
-  filter_type: string | null;
-  supplier: string | null;
-  needs_replacement: boolean;
-  created_at: string;
+export interface EvaluationSectionGroup {
+	section: EvaluationSection
+	items: EvaluationSectionItem[]
+	totalScore: number
+	checkedCount: number
 }
 
-export interface EvaluationWaterFilterInsert {
-  evaluation_id: number;
-  last_change_date?: string | null;
-  filter_type?: string | null;
-  supplier?: string | null;
-  needs_replacement?: boolean;
-}
 
-export interface EvaluationWaterFilterUpdate {
-  last_change_date?: string | null;
-  filter_type?: string | null;
-  supplier?: string | null;
-  needs_replacement?: boolean;
-}
-
-// ---------- Joined / Expanded Types ----------
-
-/** Full evaluation with all child data loaded */
-export interface StoreEvaluationFull extends StoreEvaluation {
-  sections: EvaluationSection[];
-  check_items: EvaluationCheckItem[];
-  machine_data: EvaluationMachineData[];
-  photos: EvaluationPhoto[];
-  action_items: EvaluationActionItem[];
-  water_filter: EvaluationWaterFilter | null;
-  // Expanded references
-  organization?: { id: number; store_name: string };
-  trainer?: { id: string; username: string; full_name: string | null };
-}
-
-/** Storage path helper */
-export const getEvaluationPhotoPath = (
-  orgId: number,
-  evaluationId: number,
-  sectionKey: EvaluationSectionKey,
-  fileName: string
-): string => `${orgId}/${evaluationId}/${sectionKey}/${fileName}`;

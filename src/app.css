@@ -12,6 +12,7 @@
 :root {
   /* Core System */
   --radius: 0.75rem;
+  --font-sans: "Sansation", sans-serif;
   
   /* Coffee Shop Light Theme - Tailor Made Palette */
   
@@ -239,4 +240,8 @@ button {
 
 .sidebar-menu-button:hover .user-path {
   animation: user-draw 0.4s ease-out forwards;
+}
+
+html {
+  font-family: var(--font-sans);
 }

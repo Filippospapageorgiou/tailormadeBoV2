@@ -1,12 +1,33 @@
 import { query, command } from '$app/server';
-import { createServerClient } from '$lib/supabase/server';
-import { getUserProfile, getUserProfileWithRoleCheck } from '$lib/supabase/queries';
+import { createAdminClient, createServerClient } from '$lib/supabase/server';
+import { getProfileByUUId, getUserProfile, getUserProfileWithRoleCheck } from '$lib/supabase/queries';
 import { z } from 'zod/v4';
 import { error } from '@sveltejs/kit';
+import type { Equipment } from '$lib/models/equipment.types';
 
 // ============================================================
 // AUTH - Trainer access (role_id = 3)
 // ============================================================
+
+const profileIdSchema = z.object({
+	id: z.string()
+});
+
+export const getprofileByUUID = query(profileIdSchema, async({ id })=> {
+	try{
+		let profile = await getProfileByUUId(id);
+		return {
+			success: true,
+			profile: profile
+		};
+	}catch(err){
+		console.error('[getprofileByUUID] error fetching user profile: ',err);
+		return{
+			success:false,
+			profile:null,
+		}
+	}
+})
 
 export const authenticatedAccess = query(async () => {
 	const profile = await getUserProfileWithRoleCheck([3]); // 3 = trainer
@@ -923,3 +944,41 @@ async function verifyEvaluationOwnership(
 
 	return evaluation;
 }
+
+const orgIdEquipment = z.object({
+	orgId: z.number().positive().int()
+});
+
+export const getAllOrgEquipments = query(orgIdEquipment, async ({ orgId }) => {
+	const supabase = createAdminClient();
+	try {
+		const { data: equipments, error } = await supabase
+			.from('equipment')
+			.select('*')
+			.eq('org_id',orgId)
+			.overrideTypes<Equipment[]>();
+		if (error) {
+			console.error('Error fetching equipments: ', error);
+			return {
+				success: false,
+				total: 0,
+				message: 'Error fetching equipments',
+				equipments: []
+			};
+		}
+
+		return {
+			success: true,
+			total: equipments.length || 0,
+			message: 'Equipments fetched successfully',
+			equipments
+		};
+	} catch (error) {
+		console.error('Error fetching equipments: ', error);
+		return {
+			success: false,
+			message: 'Error fetching equipments',
+			equipments: []
+		};
+	}
+});
