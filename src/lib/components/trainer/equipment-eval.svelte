@@ -91,10 +91,6 @@
 		expandedIds.delete(evalId);
 		expandedIds = new Set(expandedIds);
 	}
-
-	$effect(() => {
-		console.log('[EquipmentEvalStore]', $state.snapshot(store.equipments));
-	});
 </script>
 
 <div class="flex flex-col gap-4 py-4">
@@ -119,18 +115,6 @@
 
 	<!-- Equipment Blocks -->
 	{#if store.equipments.length === 0}
-		<button
-			onclick={() => (sheetOpen = true)}
-			class="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border/60 py-10 text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
-		>
-			<div class="rounded-full bg-muted p-3">
-				<Package class="h-6 w-6" />
-			</div>
-			<div class="text-center">
-				<p class="text-sm font-medium">Κανένας εξοπλισμός</p>
-				<p class="text-xs">Πάτα για να προσθέσεις εξοπλισμό προς αξιολόγηση</p>
-			</div>
-		</button>
 	{:else}
 		<div class="flex flex-col gap-3">
 			{#each store.equipments as evaluation (evaluation.id)}

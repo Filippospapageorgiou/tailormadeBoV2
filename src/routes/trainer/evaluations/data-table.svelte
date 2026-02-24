@@ -95,18 +95,16 @@
 					onclick: column.getToggleSortingHandler()
 				}),
 			cell: ({ row }) => {
-				const snippet = createRawSnippet<[{ formatted: string; relative: string }]>(
-					(getData) => {
-						const { formatted, relative } = getData();
-						return {
-							render: () =>
-								`<div>
+				const snippet = createRawSnippet<[{ formatted: string; relative: string }]>((getData) => {
+					const { formatted, relative } = getData();
+					return {
+						render: () =>
+							`<div>
 								<p class="text-sm font-medium">${formatted}</p>
 								<p class="text-[11px] text-muted-foreground">${relative}</p>
 							</div>`
-						};
-					}
-				);
+					};
+				});
 
 				const date = new Date(row.original.visit_date);
 				const formatted = date.toLocaleDateString('el-GR', {
@@ -162,7 +160,6 @@
 				})
 		},
 
-		// Submitted At
 		{
 			accessorKey: 'submitted_at',
 			header: ({ column }) =>
@@ -171,16 +168,22 @@
 					onclick: column.getToggleSortingHandler()
 				}),
 			cell: ({ row }) => {
-				const snippet = createRawSnippet<[string | null]>((getDate) => {
+				const snippet = createRawSnippet<[any]>((getDate) => {
 					const d = getDate();
 					if (!d) return { render: () => `<span class="text-xs text-muted-foreground">—</span>` };
-					const date = new Date(d);
+					const dateStr = typeof d === 'string' ? d : Object.values(d).join('');
+					const date = new Date(dateStr);
+					if (isNaN(date.getTime()))
+						return { render: () => `<span class="text-xs text-muted-foreground">—</span>` };
 					const formatted = date.toLocaleDateString('el-GR', {
 						day: '2-digit',
 						month: 'short',
-						year: 'numeric'
+						year: 'numeric',
+						timeZone: 'Europe/Athens'
 					});
-					return { render: () => `<span class="text-xs text-muted-foreground">${formatted}</span>` };
+					return {
+						render: () => `<span class="text-xs text-muted-foreground">${formatted}</span>`
+					};
 				});
 				return renderSnippet(snippet, row.original.submitted_at);
 			}
@@ -211,11 +214,21 @@
 		},
 		columns,
 		state: {
-			get pagination() { return pagination; },
-			get sorting() { return sorting; },
-			get columnVisibility() { return columnVisibility; },
-			get rowSelection() { return rowSelection; },
-			get columnFilters() { return columnFilters; }
+			get pagination() {
+				return pagination;
+			},
+			get sorting() {
+				return sorting;
+			},
+			get columnVisibility() {
+				return columnVisibility;
+			},
+			get rowSelection() {
+				return rowSelection;
+			},
+			get columnFilters() {
+				return columnFilters;
+			}
 		},
 		getCoreRowModel: getCoreRowModel(),
 		getPaginationRowModel: getPaginationRowModel(),
@@ -273,7 +286,7 @@
 		<div class="flex items-center gap-2">
 			<!-- Search by store -->
 			<div class="relative">
-				<Search class="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+				<Search class="absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 				<Input
 					placeholder="Αναζήτηση καταστήματος..."
 					value={(table.getColumn('store_name')?.getFilterValue() as string) ?? ''}
@@ -286,7 +299,7 @@
 			<!-- Status filter -->
 			<DropdownMenu.Root>
 				<DropdownMenu.Trigger>
-					{#snippet child({ props }: {props:any})}
+					{#snippet child({ props }: { props: any })}
 						<Button
 							{...props}
 							variant={activeStatusFilter ? 'default' : 'outline'}
@@ -324,7 +337,7 @@
 			<!-- Column visibility -->
 			<DropdownMenu.Root>
 				<DropdownMenu.Trigger>
-					{#snippet child({ props }: {props:any})}
+					{#snippet child({ props }: { props: any })}
 						<Button {...props} variant="outline" size="sm" class="h-9 gap-1.5">
 							Στήλες <ChevronDown class="h-3.5 w-3.5" />
 						</Button>
@@ -362,7 +375,7 @@
 					<Table.Row class="hover:bg-transparent">
 						{#each headerGroup.headers as header (header.id)}
 							<Table.Head
-								class="bg-muted/30 text-xs font-medium uppercase tracking-wider text-muted-foreground [&:has([role=checkbox])]:ps-3"
+								class="bg-muted/30 text-xs font-medium tracking-wider text-muted-foreground uppercase [&:has([role=checkbox])]:ps-3"
 							>
 								{#if !header.isPlaceholder}
 									<FlexRender
@@ -383,10 +396,7 @@
 					>
 						{#each row.getVisibleCells() as cell (cell.id)}
 							<Table.Cell class="py-3 [&:has([role=checkbox])]:ps-3">
-								<FlexRender
-									content={cell.column.columnDef.cell}
-									context={cell.getContext()}
-								/>
+								<FlexRender content={cell.column.columnDef.cell} context={cell.getContext()} />
 							</Table.Cell>
 						{/each}
 					</Table.Row>
@@ -426,7 +436,7 @@
 			<!-- Page size -->
 			<DropdownMenu.Root>
 				<DropdownMenu.Trigger>
-					{#snippet child({ props }: {props:any})}
+					{#snippet child({ props }: { props: any })}
 						<Button {...props} variant="outline" size="sm" class="h-8 gap-1 text-xs">
 							{pagination.pageSize} / σελίδα
 							<ChevronDown class="h-3 w-3" />
@@ -436,7 +446,9 @@
 				<DropdownMenu.Content align="end">
 					{#each [5, 10, 20, 50] as size}
 						<DropdownMenu.Item
-							onclick={() => { pagination = { ...pagination, pageSize: size, pageIndex: 0 }; }}
+							onclick={() => {
+								pagination = { ...pagination, pageSize: size, pageIndex: 0 };
+							}}
 						>
 							{size} / σελίδα
 						</DropdownMenu.Item>
@@ -447,31 +459,39 @@
 			<!-- Navigation -->
 			<div class="flex items-center gap-1">
 				<Button
-					variant="outline" size="icon" class="h-8 w-8"
+					variant="outline"
+					size="icon"
+					class="h-8 w-8"
 					onclick={() => table.setPageIndex(0)}
 					disabled={!table.getCanPreviousPage()}
 				>
 					<ChevronsLeft class="h-4 w-4" />
 				</Button>
 				<Button
-					variant="outline" size="icon" class="h-8 w-8"
+					variant="outline"
+					size="icon"
+					class="h-8 w-8"
 					onclick={() => table.previousPage()}
 					disabled={!table.getCanPreviousPage()}
 				>
 					<ChevronLeft class="h-4 w-4" />
 				</Button>
-				<span class="px-2 text-sm tabular-nums text-muted-foreground">
+				<span class="px-2 text-sm text-muted-foreground tabular-nums">
 					{currentPage} / {totalPages || 1}
 				</span>
 				<Button
-					variant="outline" size="icon" class="h-8 w-8"
+					variant="outline"
+					size="icon"
+					class="h-8 w-8"
 					onclick={() => table.nextPage()}
 					disabled={!table.getCanNextPage()}
 				>
 					<ChevronRight class="h-4 w-4" />
 				</Button>
 				<Button
-					variant="outline" size="icon" class="h-8 w-8"
+					variant="outline"
+					size="icon"
+					class="h-8 w-8"
 					onclick={() => table.setPageIndex(table.getPageCount() - 1)}
 					disabled={!table.getCanNextPage()}
 				>

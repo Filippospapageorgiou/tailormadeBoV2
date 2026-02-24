@@ -10,7 +10,7 @@
 	const store = getEvaluationSectionsContext();
 
 	// Local UI state
-	let expanded = $state(true);
+	let expanded = $state(false);
 	let newItemLabel = $state('');
 	let addingNew = $state(false);
 
@@ -23,10 +23,6 @@
 		newItemLabel = '';
 		addingNew = false;
 	}
-
-	$effect(() => {
-		console.log('[CleanlinessStore]', $state.snapshot(store.sectionItems.filter(i => i.section === 'cleanliness')));
-	});
 </script>
 
 <div class="flex flex-col gap-4 py-4">

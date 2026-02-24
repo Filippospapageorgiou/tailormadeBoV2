@@ -370,15 +370,6 @@
 						<div class="flex flex-col items-center justify-center py-10 text-muted-foreground">
 							<ClipboardList class="mb-2 h-8 w-8 opacity-30" />
 							<p class="text-sm">Δεν υπάρχουν αξιολογήσεις</p>
-							<Button
-								variant="outline"
-								size="sm"
-								class="mt-3 text-xs"
-								onclick={() => goto('/trainer/evaluations/new')}
-							>
-								<Plus class="mr-1.5 h-3 w-3" />
-								Δημιουργία
-							</Button>
 						</div>
 					{/if}
 				</Card.Content>

@@ -18,14 +18,7 @@
 	} from 'lucide-svelte';
 	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
 	import { setAssignmentStore } from '$lib/stores/assignedOrg.svelte';
-	import { setEquipmentEvalContext } from '$lib/stores/equipment-eval.svelte';
-	import { setEvaluationSectionsContext } from '$lib/stores/evaluationSections.svelte';
 
-	// This MUST be called at the top level of the script, not inside onMount
-	let evalSectionStore = setEvaluationSectionsContext();
-	evalSectionStore.init();               // loads all 23 defaults
-	evalSectionStore.initBaristaTraining(); // initializes empty barista training
-	let equipmentEvalStore = setEquipmentEvalContext();
 	let assignmentStore = setAssignmentStore(null); // initialize empty
 	let { children } = $props();
 

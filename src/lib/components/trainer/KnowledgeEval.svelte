@@ -8,7 +8,7 @@
 
 	const store = getEvaluationSectionsContext();
 
-	let expanded = $state(true);
+	let expanded = $state(false);
 	let newItemLabel = $state('');
 	let addingNew = $state(false);
 

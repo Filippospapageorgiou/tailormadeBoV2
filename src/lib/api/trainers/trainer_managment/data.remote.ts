@@ -441,6 +441,7 @@ export const getEvaluations = query(async () => {
         )
         `
 		)
+		.eq('submit','submitted')
 		.order('visit_date', { ascending: false });
 	
 	if (evalError) {
@@ -701,7 +702,8 @@ export const getTrainerManagementStats = query(async () => {
 	// Total evaluations
 	const { count: totalEvaluations } = await supabase
 		.from('store_evaluations')
-		.select('id', { count: 'exact', head: true });
+		.select('id', { count: 'exact', head: true })
+		.eq('submit','submitted');
 
 	// Pending invitations
 	const { count: pendingInvitations } = await supabase

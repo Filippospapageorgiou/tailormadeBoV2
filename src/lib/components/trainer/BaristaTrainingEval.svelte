@@ -8,7 +8,7 @@
 
 	const store = getEvaluationSectionsContext();
 
-	let expanded = $state(true);
+	let expanded = $state(false);
 	let newItemLabel = $state('');
 	let addingNew = $state(false);
 
@@ -21,13 +21,6 @@
 		newItemLabel = '';
 		addingNew = false;
 	}
-
-	$effect(() => {
-		console.log('[BaristaTrainingStore]', $state.snapshot({
-			items: store.sectionItems.filter(i => i.section === 'training'),
-			training: store.baristaTraining
-		}));
-	});
 </script>
 
 <div class="flex flex-col gap-4 py-4">

@@ -13,7 +13,7 @@
 
 </script>
 
-<div class="grid grid-cols-2 gap-4">
+<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
   <div class="flex flex-col gap-2">
     <span>Ημερομηνία επίσκεψης</span>
     <InputCalendar
