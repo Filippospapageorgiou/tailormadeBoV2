@@ -68,7 +68,7 @@
 				</div>
 				<p class="font-mono text-lg tracking-wide">Δεν βρέθηκε αξιολόγηση</p>
 				<p class="mt-1 text-sm text-muted-foreground">Η αξιολόγηση #{evaluationId} δεν υπάρχει.</p>
-				<Button class="mt-6" onclick={() => goto('/trainer/evaluations')}>
+				<Button class="mt-6" onclick={() => goto('/app/managment/trainers')}>
 					<ArrowLeft class="mr-2 h-4 w-4" />
 					Πίσω στις αξιολογήσεις
 				</Button>

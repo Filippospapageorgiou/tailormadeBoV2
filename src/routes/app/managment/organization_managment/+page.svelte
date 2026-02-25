@@ -97,7 +97,7 @@
 			</div>
 
 			<!-- Tabs Section -->
-			<Tabs.Root value="stats" class="w-full">
+			<Tabs.Root value="stats" class="w-full overflow-visible">
 				<Tabs.List class="flex h-auto w-auto justify-start bg-transparent">
 					<Tabs.Trigger
 						value="stats"
@@ -115,7 +115,7 @@
 					</Tabs.Trigger>
 				</Tabs.List>
 
-				<Tabs.Content value="stats" class="mt-6 animate-fade-in-left space-y-6">
+				<Tabs.Content value="stats" class="mt-6 animate-fade-in-left space-y-6 overflow-visible">
 					<Stats />
 				</Tabs.Content>
 

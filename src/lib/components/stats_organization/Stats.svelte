@@ -38,16 +38,9 @@
 		await queryEquipments.refresh();
 		isLoadingEq = false;
 	}
-
-	let isLoadingRegister = $state(false);
-	async function handleRefreshRegister() {
-		isLoadingRegister = true;
-		await queryRegisterClosings.refresh();
-		isLoadingRegister = false;
-	}
 </script>
 
-<div class="mx-4 flex flex-col gap-4 h-full">
+<div class="mx-4 flex flex-col gap-4 h-full overflow-visible">
 	<!-- Responsive Grid -->
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
 		<!-- Bonus Chart - Full width mobile, 3 cols desktop -->
@@ -83,7 +76,7 @@
 	</div>
 	
 	<!-- Map - Responsive height -->
-	<div class="h-[400px] md:h-[500px] lg:h-[600px] py-4">
+	<div class="h-[400px] md:h-[500px] lg:h-[600px] overflow-visible py-4">
 		<CustomMap organizations={queryAllOrgs.current?.organizations ?? []} />
 	</div>
 </div>
