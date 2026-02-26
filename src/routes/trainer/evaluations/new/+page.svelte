@@ -48,7 +48,7 @@
 	let staff: Profile[] = $derived(staffQuery.current ?? []);
 	let equipments: Equipment[] = $derived(equipmentQuery.current?.equipments ?? []);
 
-	let date = $state('');
+	let date = $state(new Date().toISOString().split('T')[0]);
 	let baristas = $state<string[]>([]);
 	let managers = $state<string[]>([]);
 	let evalFinal = $state<EvaluationSummaryActions>();

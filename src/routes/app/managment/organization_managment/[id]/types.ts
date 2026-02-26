@@ -59,17 +59,28 @@ export interface BonusHistoryItem {
 	payouts: BonusEmployeePayout[];
 }
 
+export interface TaskUserStat {
+	userId: string;
+	daily: { total: number; completed: number };
+	weekly: { total: number; completed: number };
+	monthly: { total: number; completed: number };
+}
+
 export interface PageData {
 	organization: Organization;
 	employees: Profile[];
 	equipment: Equipment[];
 	roleTypes: RoleTypes[];
 	bonusHistory: BonusHistoryItem[];
+	shiftCountByUser: Record<string, number>;
+	taskStats: TaskUserStat[];
 	stats: {
 		employeeCount: number;
 		equipmentCount: number;
 		activeEquipment: number;
 		maintenanceEquipment: number;
+		totalShifts: number;
+		schedulesCount: number;
 	};
 	profile: Profile;
 }

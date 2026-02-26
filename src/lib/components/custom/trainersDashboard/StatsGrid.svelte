@@ -79,7 +79,7 @@
 	}
 </script>
 
-<div class="flex flex-row gap-3 px-4 py-4">
+<div class="flex flex-row gap-3 py-4">
 	<!-- Stat cards — equal half -->
 	<div class="grid flex-1 grid-cols-2 gap-3">
 		{#each statCards as stat}

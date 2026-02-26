@@ -3,7 +3,17 @@ import { error } from '@sveltejs/kit';
 import { getUserProfileWithRoleCheck } from '$lib/supabase/queries';
 import type { Organization, Profile } from '$lib/models/database.types';
 import type { Equipment } from '$lib/models/equipment.types';
-import type { BonusHistoryItem, BonusEmployeePayout } from './types';
+import type { BonusHistoryItem, BonusEmployeePayout, TaskUserStat } from './types';
+
+function groupTasksByUser(tasks: Array<{ user_id: string; completed: boolean }>) {
+	const result: Record<string, { total: number; completed: number }> = {};
+	for (const t of tasks) {
+		if (!result[t.user_id]) result[t.user_id] = { total: 0, completed: 0 };
+		result[t.user_id].total++;
+		if (t.completed) result[t.user_id].completed++;
+	}
+	return result;
+}
 
 export const load: PageServerLoad = async ({ params, locals: { supabase } }) => {
 	// Only super_admin (role_id: 1) can access this
@@ -74,6 +84,51 @@ export const load: PageServerLoad = async ({ params, locals: { supabase } }) => 
 		// Fetch bonus history for this organization
 		const bonusHistory = await fetchBonusHistory(supabase, orgId);
 
+		// Prepare for task + shift queries
+		const today = new Date().toISOString().split('T')[0];
+		const monthDate = today.slice(0, 7) + '-01';
+		const todayObj = new Date();
+		const dayOfWeek = todayObj.getDay();
+		const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+		const weekStartDate = new Date(todayObj);
+		weekStartDate.setDate(todayObj.getDate() + daysToMonday);
+		const weekStartStr = weekStartDate.toISOString().split('T')[0];
+		const empIds = flattenedEmployees.map((e) => e.id);
+
+		// Parallel fetch: shifts + schedules + tasks
+		const [shiftsRes, schedulesRes, dailyRes, weeklyRes, monthlyRes] = await Promise.all([
+			supabase.from('shifts').select('user_id').eq('org_id', orgId),
+			supabase.from('weekly_schedules').select('*', { count: 'exact', head: true }).eq('org_id', orgId),
+			empIds.length > 0
+				? supabase.from('user_daily_tasks').select('user_id, completed').eq('task_date', today).in('user_id', empIds)
+				: Promise.resolve({ data: [] as any[], error: null }),
+			empIds.length > 0
+				? supabase.from('user_weekly_tasks').select('user_id, completed').gte('week_start_date', weekStartStr).lte('week_start_date', today).in('user_id', empIds)
+				: Promise.resolve({ data: [] as any[], error: null }),
+			empIds.length > 0
+				? supabase.from('user_monthly_tasks').select('user_id, completed').eq('month_date', monthDate).in('user_id', empIds)
+				: Promise.resolve({ data: [] as any[], error: null }),
+		]);
+
+		// Process shifts
+		const shiftCountByUser: Record<string, number> = {};
+		let totalShifts = 0;
+		for (const s of (shiftsRes.data ?? [])) {
+			shiftCountByUser[s.user_id] = (shiftCountByUser[s.user_id] ?? 0) + 1;
+			totalShifts++;
+		}
+
+		// Process tasks
+		const dailyByUser = groupTasksByUser(dailyRes.data ?? []);
+		const weeklyByUser = groupTasksByUser(weeklyRes.data ?? []);
+		const monthlyByUser = groupTasksByUser(monthlyRes.data ?? []);
+		const taskStats: TaskUserStat[] = flattenedEmployees.map((emp) => ({
+			userId: emp.id,
+			daily: dailyByUser[emp.id] ?? { total: 0, completed: 0 },
+			weekly: weeklyByUser[emp.id] ?? { total: 0, completed: 0 },
+			monthly: monthlyByUser[emp.id] ?? { total: 0, completed: 0 },
+		}));
+
 		// Calculate stats
 		const employeeCount = flattenedEmployees.length;
 		const equipmentCount = equipment?.length || 0;
@@ -86,11 +141,15 @@ export const load: PageServerLoad = async ({ params, locals: { supabase } }) => 
 			equipment: (equipment || []) as Equipment[],
 			roleTypes: roleTypes || [],
 			bonusHistory,
+			shiftCountByUser,
+			taskStats,
 			stats: {
 				employeeCount,
 				equipmentCount,
 				activeEquipment,
-				maintenanceEquipment
+				maintenanceEquipment,
+				totalShifts,
+				schedulesCount: schedulesRes.count ?? 0,
 			},
 			profile
 		};
