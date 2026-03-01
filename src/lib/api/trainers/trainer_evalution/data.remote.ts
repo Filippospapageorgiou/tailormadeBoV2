@@ -77,21 +77,6 @@ const getOrgStaffSchema = z.object({
 
 export const getOrgStaff = query(getOrgStaffSchema, async ({ orgId }) => {
 	const supabase = createServerClient();
-	const profile = await getUserProfileWithRoleCheck([3]);
-
-	// Verify trainer is assigned to this org
-	const { data: assignment } = await supabase
-		.from('trainer_org_assigments')
-		.select('id')
-		.eq('trainer_id', profile.id)
-		.eq('org_id', orgId)
-		.eq('is_active', true)
-		.maybeSingle();
-
-	if (!assignment) {
-		throw error(403, 'You are not assigned to this organization');
-	}
-
 	const { data: staff, error: staffError } = await supabase
 		.from('profiles')
 		.select('*')
@@ -109,7 +94,7 @@ export const getOrgStaff = query(getOrgStaffSchema, async ({ orgId }) => {
 
 
 // ============================================================
-// CREATE: Start a new evaluation (draft)
+// CREATE: Start a new evaluation
 // ============================================================
 
 const createEvaluationSchema = z.object({
@@ -122,44 +107,79 @@ const createEvaluationSchema = z.object({
 });
 
 export const createEvaluation = command(
-	createEvaluationSchema,
-	async ({ orgId, visitDate, storeManagers, baristasOnDuty, submit,overall_rating }) => {
-		const supabase = createServerClient();
-		const profile = await getUserProfileWithRoleCheck([3]);
+    createEvaluationSchema,
+    async ({ orgId, visitDate, storeManagers, baristasOnDuty, submit, overall_rating }) => {
+        const supabase = createAdminClient();
+        const profile = await getUserProfileWithRoleCheck([3]);
 
-		const { data: assignment } = await supabase
-			.from('trainer_org_assigments')
-			.select('id')
-			.eq('trainer_id', profile.id)
-			.eq('org_id', orgId)
-			.eq('is_active', true)
-			.maybeSingle();
+        const { data: evaluation, error: insertError } = await supabase
+            .from('store_evaluations')
+            .insert({
+                org_id: orgId,
+                trainer_id: profile.id,
+                visit_date: visitDate,
+                store_managers: storeManagers,
+                baristas_on_duty: baristasOnDuty,
+                submit,
+                overall_rating,
+                ...(submit === 'submitted' && {
+                    submitted_at: new Date().toLocaleString('en-US', { timeZone: 'Europe/Athens' })
+                })
+            })
+            .select('id')
+            .single();
 
-		if (!assignment) {
-			throw error(403, 'You are not assigned to this organization');
-		}
+        if (insertError) {
+            console.error('[createEvaluation] Error:', insertError);
+            throw error(500, 'Failed to create evaluation');
+        }
 
-		const { data: evaluation, error: insertError } = await supabase
-			.from('store_evaluations')
-			.insert({
-				org_id: orgId,
-				trainer_id: profile.id,
-				visit_date: visitDate,
-				store_managers: storeManagers,
-				baristas_on_duty: baristasOnDuty,
-				submit,
-				overall_rating
-			})
-			.select('id')
-			.single();
+        // If submitted, check for assignment → delete + notify
+        if (submit === 'submitted') {
+            const { data: assignment } = await supabase
+                .from('trainer_org_assigments')
+                .select('id, assigned_by')
+                .eq('trainer_id', profile.id)
+                .eq('org_id', orgId)
+                .maybeSingle();
 
-		if (insertError) {
-			console.error('[createEvaluation] Error:', insertError);
-			throw error(500, 'Failed to create evaluation');
-		}
+            if (assignment) {
+                await supabase
+                    .from('trainer_org_assigments')
+                    .delete()
+                    .eq('id', assignment.id);
 
-		return { evaluationId: evaluation.id };
-	}
+                const { data: assigner } = await supabase
+                    .from('profiles')
+                    .select('email, full_name, username')
+                    .eq('id', assignment.assigned_by)
+                    .single();
+
+                const { data: org } = await supabase
+                    .from('core_organizations')
+                    .select('store_name, location')
+                    .eq('id', orgId)
+                    .single();
+
+                if (assigner?.email && org) {
+                    const { sendEvaluationCompletionNotification } = await import(
+                        '$lib/emails/evaluation-completion-notification'
+                    );
+                    await sendEvaluationCompletionNotification({
+                        recipientEmail: assigner.email,
+                        recipientName: assigner.full_name ?? assigner.username ?? 'Διαχειριστής',
+                        trainerName: profile.full_name ?? profile.username ?? 'Trainer',
+                        storeName: org.store_name,
+                        storeLocation: org.location ?? undefined,
+                        visitDate,
+                        evaluationId: evaluation.id
+                    });
+                }
+            }
+        }
+
+        return { evaluationId: evaluation.id };
+    }
 );
 
 // ============================================================
@@ -599,6 +619,68 @@ export const submitEvaluationFinal = command(submitEvaluationFinalSchema, async 
 				evaluationId,
 			});
 		}
+	}
+
+	return { success: true };
+});
+
+// ============================================================
+// REVIEW: Admin marks evaluation as reviewed + notifies trainer
+// ============================================================
+
+const reviewEvaluationSchema = z.object({
+	evaluationId: z.number().int().positive(),
+	admin_notes: z.string().max(2000).optional().default(''),
+});
+
+export const reviewEvaluation = command(reviewEvaluationSchema, async ({ evaluationId, admin_notes }) => {
+	const supabase = createAdminClient();
+	const profile = await getUserProfileWithRoleCheck([1]); // admin only
+
+	const { data: evaluation } = await supabase
+		.from('store_evaluations')
+		.select('id, org_id, trainer_id, visit_date, submit')
+		.eq('id', evaluationId)
+		.single();
+
+	if (!evaluation) throw error(404, 'Evaluation not found');
+
+	const { error: updateError } = await supabase
+		.from('store_evaluations')
+		.update({
+			submit: 'reviewed',
+			reviewed_by: profile.id,
+			reviewed_at: new Date().toLocaleString('en-US', { timeZone: 'Europe/Athens' }),
+			admin_notes: admin_notes || null,
+		})
+		.eq('id', evaluationId);
+
+	if (updateError) {
+		console.error('[reviewEvaluation] Update error:', updateError);
+		throw error(500, 'Failed to mark evaluation as reviewed');
+	}
+
+	// Fetch trainer + org for email notification
+	const [trainerRes, orgRes] = await Promise.all([
+		supabase.from('profiles').select('email, full_name, username').eq('id', evaluation.trainer_id).single(),
+		supabase.from('core_organizations').select('store_name, location').eq('id', evaluation.org_id).single(),
+	]);
+
+	const trainer = trainerRes.data;
+	const org = orgRes.data;
+
+	if (trainer?.email && org) {
+		const { sendEvaluationReviewNotification } = await import('$lib/emails/evaluation-review-notification');
+		await sendEvaluationReviewNotification({
+			recipientEmail: trainer.email,
+			trainerName: trainer.full_name ?? trainer.username ?? 'Trainer',
+			adminName: profile.full_name ?? profile.username ?? 'Διαχειριστής',
+			storeName: org.store_name,
+			storeLocation: org.location ?? undefined,
+			visitDate: evaluation.visit_date,
+			evaluationId,
+			adminNotes: admin_notes || null,
+		});
 	}
 
 	return { success: true };

@@ -47,7 +47,7 @@
 	import ArrowUp from 'lucide-svelte/icons/arrow-up';
 	import { getProfileContext } from '$lib/stores/profile.svelte';
 	import { BotIcon } from 'lucide-svelte';
-	import { Cog } from '@lucide/svelte';
+	import { ClipboardList, Cog, Star } from '@lucide/svelte';
 
 	interface TextPart {
 		type: 'text';
@@ -106,6 +106,16 @@
 			icon: Cog,
 			text: 'Καταστάση εξοπλισμού',
 			query: 'Ποια είναι οι καταστάση εξόπλισμου στον δικτύο μας κατηγοροποιήσε τα'
+		},
+		{
+			icon: ClipboardList,
+			text: 'Αξιολογήσεις Trainer',
+			query: 'Δείξε μου όλες τις αξιολογήσεις των trainers, την κατάσταση τους και τη μέση βαθμολογία ανά κατάστημα'
+		},
+		{
+			icon: Star,
+			text: 'Αναθέσεις Trainer',
+			query: 'Ποιες είναι οι ενεργές αναθέσεις trainer σε καταστήματα και πότε είναι προγραμματισμένες οι επισκέψεις'
 		}
 	];
 

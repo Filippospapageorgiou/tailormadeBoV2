@@ -27,12 +27,12 @@
 	import type { EvaluationSummaryActions } from '$lib/models/trainers.types';
 	import EvaluationFinal from '$lib/components/trainer/evaluation-final.svelte';
 	import { Send, Save } from 'lucide-svelte';
-	import { deleteAssignment } from '$lib/api/trainers/trainer_managment/data.remote';
 	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
 	import { hideProgress, showProgress } from '$lib/stores/progress.svelte';
 	import { toast } from 'svelte-sonner';
 	import { goto } from '$app/navigation';
 	import { setEquipmentEvalContext } from '$lib/stores/equipment-eval.svelte';
+	import { page } from '$app/state';
 
 	let equipmentEvalStore = setEquipmentEvalContext();
 	let evalSectionStore = setEvaluationSectionsContext();
@@ -43,8 +43,12 @@
 	let assignmentStore = getAssignmentStore();
 	let equipmentStore = getEquipmentEvalContext();
 
-	let equipmentQuery = getAllOrgEquipments({ orgId: assignmentStore.org_id });
-	let staffQuery = getOrgStaff({ orgId: assignmentStore.org_id });
+	const orgId = $derived(
+    	Number(page.url.searchParams.get('org')) || assignmentStore.org_id
+	);
+
+	let equipmentQuery = $derived(getAllOrgEquipments({ orgId }));
+	let staffQuery = $derived(getOrgStaff({ orgId }));
 	let staff: Profile[] = $derived(staffQuery.current ?? []);
 	let equipments: Equipment[] = $derived(equipmentQuery.current?.equipments ?? []);
 
@@ -57,16 +61,16 @@
 
 	async function handleSubmit(type: 'draft' | 'submitted') {
 		type === 'draft' ? (isSubmittingDraft = true) : (isSubmitting = true);
-		showProgress('Δημιουργείτε η αξιολόγηση περιμένετε...')
+		showProgress('Δημιουργείτε η αξιολόγηση περιμένετε...');
 		try {
 			// 1. Create parent store_evaluations record → get evaluation_id
 			const { evaluationId } = await createEvaluation({
-				orgId: assignmentStore.org_id,
+				orgId: orgId,
 				visitDate: date,
 				storeManagers: managers,
 				baristasOnDuty: baristas,
 				submit: type,
-				overall_rating:evalFinal?.score || 0
+				overall_rating: evalFinal?.score || 0
 			});
 
 			// 2. Save checked section items (cleanliness / knowledge / training)
@@ -137,9 +141,6 @@
 			toast.error('Σφάλμα κάτα την δημιουργία');
 			console.error('[handleSubmit] Error saving evaluation:', err);
 		} finally {
-			if (type === 'submitted') {
-				await deleteAssignment({ assignmentId: assignmentStore.id });
-			}
 			isSubmitting = false;
 			isSubmittingDraft = false;
 			hideProgress();
@@ -155,7 +156,7 @@
 			<div class="space-y-1">
 				<h1 class="font-mono text-3xl tracking-wider md:text-4xl">Αγιολόγηση καταστήματος</h1>
 				<p class="text-xs text-muted-foreground md:text-sm">
-					Νεα αξιολογήσει για το κατάστημα με κώδικο {assignmentStore.org_id} συμπλήρωσε την φόρμα και
+					Νεα αξιολογήσει για το κατάστημα με κώδικο {orgId} συμπλήρωσε την φόρμα και
 					υπέβαλε την
 				</p>
 			</div>
@@ -166,9 +167,9 @@
 				<HeaderEval bind:date />
 				<ManagersBarista bind:managers bind:baristas employees={staff} />
 				<EquipmentEval {equipments} />
-				<BaristaTrainingEval />
-				<KnowledgeEval />
 				<CleanlinessEval />
+				<KnowledgeEval />
+				<BaristaTrainingEval />
 				<EvalutionPhotos />
 			</div>
 			<div class="flex flex-col lg:row-span-6">

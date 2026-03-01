@@ -30,7 +30,8 @@
 		Star,
 		ListChecks,
 		CalendarCheck,
-		Phone
+		Phone,
+		ChevronDown
 	} from 'lucide-svelte';
 	import { inviteUserToOrg } from './data.remote';
 	import { showFailToast, showSuccessToast } from '$lib/stores/toast.svelte';
@@ -93,13 +94,17 @@
 			}))
 	);
 
-	let topPayouts = $derived(
-		bonusHistory.length > 0
-			? [...(bonusHistory[0].payouts ?? [])]
-					.sort((a, b) => b.bonus_amount - a.bonus_amount)
-					.slice(0, 5)
-			: []
-	);
+	let expandedQuarters = $state<Set<number>>(new Set());
+
+	function toggleQuarter(periodId: number) {
+		const next = new Set(expandedQuarters);
+		if (next.has(periodId)) {
+			next.delete(periodId);
+		} else {
+			next.add(periodId);
+		}
+		expandedQuarters = next;
+	}
 
 	const bonusChartConfig = {
 		bonus: { label: 'Final Bonus (€)', color: 'var(--chart-1)' }
@@ -895,52 +900,82 @@
 							</Card.Content>
 						</Card.Root>
 
-						<!-- Top Earners (latest period) -->
+						<!-- Employee Payouts — all quarters, collapsible -->
 						<Card.Root class="overflow-hidden rounded-xl border border-border/60 bg-card">
 							<Card.Header class="px-4 pt-4 pb-2">
-								<Card.Title class="text-sm font-medium">Top Earners</Card.Title>
-								<Card.Description class="text-xs">Latest period payouts</Card.Description>
+								<Card.Title class="text-sm font-medium">Employee Payouts</Card.Title>
+								<Card.Description class="text-xs">All periods — click to expand</Card.Description>
 							</Card.Header>
 							<Card.Content class="px-0 pb-0">
-								{#if topPayouts.length === 0}
+								{#if bonusHistory.length === 0}
 									<div
 										class="flex h-[180px] items-center justify-center text-sm text-muted-foreground"
 									>
 										No payouts recorded
 									</div>
 								{:else}
-									<div class="divide-y divide-border/40">
-										{#each topPayouts as payout, i (payout.id)}
-											<div class="flex items-center gap-3 px-4 py-3">
-												<span
-													class="w-5 text-center text-sm font-bold {i === 0
-														? 'text-yellow-500'
-														: i === 1
-															? 'text-slate-400'
-															: i === 2
-																? 'text-amber-600'
-																: 'text-muted-foreground'}"
-												>
-													{i + 1}
-												</span>
-												<Avatar.Root class="h-7 w-7">
-													<Avatar.Image src={payout.employee?.image_url ?? undefined} />
-													<Avatar.Fallback class="text-[10px]">
-														{(payout.employee?.username ?? '?').slice(0, 2).toUpperCase()}
-													</Avatar.Fallback>
-												</Avatar.Root>
-												<div class="min-w-0 flex-1">
-													<p class="truncate text-sm font-medium">
-														{payout.employee?.username ?? 'Unknown'}
-													</p>
-													<p class="text-xs text-muted-foreground">
-														{payout.total_shifts_in_pool} shifts
-													</p>
+									<div class="max-h-[360px] overflow-y-auto">
+										{#each bonusHistory as item (item.period.id)}
+											<!-- Quarter header row -->
+											<button
+												class="flex w-full items-center justify-between border-b border-border/40 px-4 py-3 text-left transition-colors hover:bg-muted/50"
+												onclick={() => toggleQuarter(item.period.id)}
+											>
+												<div class="flex items-center gap-2">
+													<span class="text-sm font-medium"
+														>Q{item.period.quarter} {item.period.year}</span
+													>
+													<Badge
+														variant={item.period.status === "published" ? "default" : "secondary"}
+														class="text-[10px]"
+													>
+														{item.period.status}
+													</Badge>
+													<span class="text-xs text-muted-foreground">
+														{item.payouts.length} employees
+													</span>
 												</div>
-												<p class="text-sm font-semibold text-emerald-600">
-													€{payout.bonus_amount.toFixed(2)}
-												</p>
-											</div>
+												<div class="flex items-center gap-3">
+													<span class="text-xs font-semibold text-emerald-600"
+														>€{item.orgData.final_bonus.toFixed(2)}</span
+													>
+													<ChevronDown
+														class="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 {expandedQuarters.has(item.period.id) ? 'rotate-180' : ''}"
+													/>
+												</div>
+											</button>
+											
+											<!-- Payouts list (expanded) -->
+											{#if expandedQuarters.has(item.period.id)}
+												<div class="divide-y divide-border/30 bg-muted/20">
+													{#if item.payouts.length === 0}
+														<p class="px-6 py-3 text-xs text-muted-foreground">
+															No payouts recorded for this period
+														</p>
+													{:else}
+														{#each [...item.payouts].sort((a, b) => b.bonus_amount - a.bonus_amount) as payout, i (payout.id)}
+															<div class="flex items-center gap-3 px-6 py-2.5">
+																<span
+																	class="w-4 shrink-0 text-center text-xs font-bold {i === 0 ? 'text-yellow-500' : i === 1 ? 'text-slate-400' : i === 2 ? 'text-amber-600' : 'text-muted-foreground'}"
+																>
+																	{i + 1}
+																</span>
+																<Avatar.Root class="h-6 w-6 shrink-0">
+																	<Avatar.Image src={payout.employee?.image_url ?? undefined} class="dark:bg-white" />
+																	<Avatar.Fallback class="text-[9px]">
+																		{(payout.employee?.username ?? "?").slice(0, 2).toUpperCase()}
+																	</Avatar.Fallback>
+																</Avatar.Root>
+																<div class="min-w-0 flex-1">
+																	<p class="truncate text-xs font-medium">{payout.employee?.username ?? "Unknown"}</p>
+																	<p class="text-[10px] text-muted-foreground">{payout.total_shifts_in_pool} shifts</p>
+																</div>
+																<p class="text-xs font-semibold text-emerald-600">€{payout.bonus_amount.toFixed(2)}</p>
+															</div>
+														{/each}
+													{/if}
+												</div>
+											{/if}
 										{/each}
 									</div>
 								{/if}

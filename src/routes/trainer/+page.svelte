@@ -5,6 +5,8 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Avatar from '$lib/components/ui/avatar/index.js';
 	import Badge from '$lib/components/ui/badge/badge.svelte';
+	import * as Dialog from '$lib/components/ui/dialog/index.js';
+	import * as Select from '$lib/components/ui/select/index.js';
 	import {
 		ClipboardList,
 		Plus,
@@ -16,24 +18,28 @@
 		CalendarDays,
 		FileText,
 		TrendingUp,
-		MapPin
+		MapPin,
+		AlertTriangle
 	} from 'lucide-svelte';
 	import {
 		getMyAssignedOrgs,
 		getMyEvaluations
 	} from '$lib/api/trainers/trainer_evalution/data.remote.js';
+	import { getAllOrganizations } from '$lib/api/trainers/trainer_managment/data.remote.js';
 	import type { EvaluationStatus } from '$lib/models/trainers.types.js';
+	import type { Organization } from '$lib/models/database.types.js';
 	import TrainerMap from '$lib/components/trainer/TrainerMap.svelte';
 	import { setAssignmentStore, getAssignmentStore } from '$lib/stores/assignedOrg.svelte.js';
 
-	
 	let assignmentStore = getAssignmentStore();
 
 	let { data } = $props();
 	let user = getProfileContext();
 
+	// Queries
 	let assignedOrgsQuery = getMyAssignedOrgs();
 	let evaluationsQuery = getMyEvaluations();
+	let allOrgsQuery = getAllOrganizations();
 
 	// Shape returned by getMyAssignedOrgs
 	type AssignedOrg = {
@@ -73,14 +79,16 @@
 		} | null;
 	};
 
+	// Derived data
 	let assignedOrgs = $derived(
 		(assignedOrgsQuery?.current?.assignments ?? []) as unknown as AssignedOrg[]
 	);
 	let recentEvaluations = $derived(
 		(evaluationsQuery?.current?.evaluations ?? []) as unknown as EvaluationListItem[]
 	);
+	let allOrgs = $derived((allOrgsQuery?.current?.organizations ?? []) as Organization[]);
 
-	// Derive stats from the evaluations list — no extra server call needed
+	// Stats derived from evaluations
 	let stats = $derived({
 		total: recentEvaluations.length,
 		draft: recentEvaluations.filter((e) => e.submit === 'draft').length,
@@ -88,12 +96,17 @@
 		reviewed: recentEvaluations.filter((e) => e.submit === 'reviewed').length
 	});
 
+	// Loading states
+	let orgsLoading = $derived(assignedOrgsQuery?.current === undefined);
+	let evalsLoading = $derived(evaluationsQuery?.current === undefined);
+	let allOrgsLoading = $derived(allOrgsQuery?.current === undefined);
+
 	// Check if an org has an active draft
 	function hasDraft(orgId: number): boolean {
 		return recentEvaluations.some((e) => e.org_id === orgId && e.submit === 'draft');
 	}
 
-	// Most recent visit date for an org, derived from evaluations list
+	// Most recent visit date for an org
 	function lastVisitDate(orgId: number): string | null {
 		const visits = recentEvaluations
 			.filter((e) => e.org_id === orgId)
@@ -140,7 +153,12 @@
 			icon: FileText,
 			color: 'text-muted-foreground'
 		},
-		submitted: { label: 'Υποβλήθηκε', variant: 'default', icon: Clock, color: 'text-primary' },
+		submitted: {
+			label: 'Υποβλήθηκε',
+			variant: 'default',
+			icon: Clock,
+			color: 'text-primary'
+		},
 		reviewed: {
 			label: 'Ελέγχθηκε',
 			variant: 'outline',
@@ -155,10 +173,39 @@
 		}
 	};
 
-	// Loading state: current is undefined before first response
-	let orgsLoading = $derived(assignedOrgsQuery?.current === undefined);
-	let evalsLoading = $derived(evaluationsQuery?.current === undefined);
+	// ── Emergency modal state ──────────────────────────────────────────
+	let emergencyModalOpen = $state(false);
+	let emergencyStep = $state<1 | 2>(1);
+	let selectedOrgValue = $state('');
 
+	let selectedOrgId = $derived(selectedOrgValue ? Number(selectedOrgValue) : null);
+
+	let selectedOrg = $derived(allOrgs.find((o) => o.id === selectedOrgId) ?? null);
+
+	let triggerContent = $derived(selectedOrg?.store_name ?? 'Επέλεξε κατάστημα...');
+
+	let isAssigned = $derived(
+		selectedOrgId !== null && assignedOrgs.some((a) => a.org_id === selectedOrgId)
+	);
+
+	let selectedHasDraft = $derived(selectedOrgId !== null && hasDraft(selectedOrgId));
+
+	function openEmergencyModal() {
+		emergencyStep = 1;
+		selectedOrgValue = '';
+		emergencyModalOpen = true;
+	}
+
+	function handleEmergencyConfirm() {
+		if (!selectedOrg) return;
+		const orgId = selectedOrg.id;
+		emergencyModalOpen = false;
+		emergencyStep = 1;
+		selectedOrgValue = '';
+		goto(`/trainer/evaluations/new?org=${orgId}`);
+	}
+
+	// ── Assigned org evaluation ────────────────────────────────────────
 	function handleNewEval(org: AssignedOrg) {
 		assignmentStore.setTrainerAssignmentOrg({
 			id: org.id,
@@ -223,16 +270,28 @@
 				></div>
 
 				<Card.Header class="pb-3">
-					<div class="flex items-center gap-2">
-						<div class="rounded-lg bg-primary/10 p-2">
-							<Building2 class="h-4 w-4 text-primary" />
+					<div class="flex items-center justify-between">
+						<div class="flex items-center gap-2">
+							<div class="rounded-lg bg-primary/10 p-2">
+								<Building2 class="h-4 w-4 text-primary" />
+							</div>
+							<div>
+								<Card.Title class="text-base">Τα Καταστήματά μου</Card.Title>
+								<Card.Description class="text-xs">
+									{orgsLoading ? '...' : `${assignedOrgs.length} ανατεθειμένα`}
+								</Card.Description>
+							</div>
 						</div>
-						<div>
-							<Card.Title class="text-base">Τα Καταστήματά μου</Card.Title>
-							<Card.Description class="text-xs">
-								{orgsLoading ? '...' : `${assignedOrgs.length} ανατεθειμένα`}
-							</Card.Description>
-						</div>
+
+						<Button
+							variant="destructive"
+							size="sm"
+							class="gap-1.5 rounded-xl text-xs"
+							onclick={openEmergencyModal}
+						>
+							<AlertTriangle class="h-3.5 w-3.5" />
+							Έκτακτη
+						</Button>
 					</div>
 				</Card.Header>
 
@@ -413,3 +472,144 @@
 		{/if}
 	{/if}
 </div>
+
+<Dialog.Root bind:open={emergencyModalOpen}>
+	<Dialog.Content class="sm:max-w-md">
+		<!-- STEP 1: Select org -->
+		{#if emergencyStep === 1}
+			<Dialog.Header>
+				<Dialog.Title class="flex items-center gap-2 text-destructive">
+					<AlertTriangle class="h-5 w-5" />
+					Έκτακτη Αξιολόγηση
+				</Dialog.Title>
+				<Dialog.Description>
+					Επέλεξε το κατάστημα που θέλεις να αξιολογήσεις έκτακτα.
+				</Dialog.Description>
+			</Dialog.Header>
+
+			<div class="space-y-4 py-2">
+				<Select.Root type="single" name="emergencyOrg" bind:value={selectedOrgValue}>
+					<Select.Trigger class="w-full">
+						{triggerContent}
+					</Select.Trigger>
+					<Select.Content class="max-h-64 overflow-y-auto">
+						<Select.Group>
+							<Select.Label>Όλα τα καταστήματα</Select.Label>
+							{#each allOrgs as org (org.id)}
+								{@const assigned = assignedOrgs.some((a) => a.org_id === org.id)}
+								{@const draft = hasDraft(org.id)}
+								<Select.Item value={String(org.id)} label={org.store_name ?? 'Κατάστημα'}>
+									<div class="flex w-full items-center justify-between gap-2">
+										<span class="truncate">{org.store_name ?? 'Κατάστημα'}</span>
+										<div class="flex shrink-0 items-center gap-1">
+											{#if draft}
+												<Badge variant="secondary" class="text-[10px]">Πρόχειρο</Badge>
+											{/if}
+											{#if !assigned}
+												<Badge variant="outline" class="text-[10px] text-muted-foreground"
+													>Μη ανατεθειμένο</Badge
+												>
+											{/if}
+										</div>
+									</div>
+								</Select.Item>
+							{/each}
+						</Select.Group>
+					</Select.Content>
+				</Select.Root>
+
+				<!-- Warnings -->
+				{#if selectedOrg && !isAssigned}
+					<div
+						class="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
+					>
+						<AlertTriangle class="mt-0.5 h-4 w-4 shrink-0" />
+						<span
+							>Αυτό το κατάστημα δεν σου έχει ανατεθεί. Η αξιολόγηση θα καταγραφεί ως έκτακτη.</span
+						>
+					</div>
+				{/if}
+
+				{#if selectedHasDraft}
+					<div
+						class="flex items-start gap-2 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-700 dark:text-yellow-400"
+					>
+						<AlertTriangle class="mt-0.5 h-4 w-4 shrink-0" />
+						<span>Υπάρχει ήδη πρόχειρη αξιολόγηση για αυτό το κατάστημα. Θα δημιουργηθεί νέα.</span>
+					</div>
+				{/if}
+			</div>
+
+			<Dialog.Footer>
+				<Button variant="outline" onclick={() => (emergencyModalOpen = false)}>Άκυρο</Button>
+				<Button variant="destructive" disabled={!selectedOrg} onclick={() => (emergencyStep = 2)}>
+					Επόμενο
+					<ArrowRight class="ml-1.5 h-3.5 w-3.5" />
+				</Button>
+			</Dialog.Footer>
+
+			<!-- STEP 2: Confirm -->
+		{:else if emergencyStep === 2}
+			<Dialog.Header>
+				<Dialog.Title class="flex items-center gap-2">
+					<CheckCircle2 class="h-5 w-5 text-emerald-600" />
+					Επιβεβαίωση
+				</Dialog.Title>
+				<Dialog.Description>Έλεγξε τα στοιχεία πριν συνεχίσεις.</Dialog.Description>
+			</Dialog.Header>
+
+			<div class="space-y-3 py-2">
+				<!-- Org summary card -->
+				<div class="space-y-2 rounded-xl border border-border/50 bg-muted/30 p-4">
+					<div class="flex items-center gap-3">
+						<div
+							class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-sm font-semibold text-muted-foreground"
+						>
+							{getInitials(selectedOrg?.store_name ?? 'TM')}
+						</div>
+						<div>
+							<p class="text-sm font-medium">{selectedOrg?.store_name ?? '—'}</p>
+							{#if selectedOrg?.location}
+								<p class="text-xs text-muted-foreground">{selectedOrg.location}</p>
+							{/if}
+						</div>
+					</div>
+
+					<div class="flex items-center gap-2 pt-1 text-xs text-muted-foreground">
+						<CalendarDays class="h-3.5 w-3.5" />
+						<span
+							>Ημερομηνία επίσκεψης: <span class="font-semibold text-foreground"
+								>{formatDate(new Date().toISOString())}</span
+							></span
+						>
+					</div>
+
+					{#if !isAssigned}
+						<Badge variant="outline" class="text-[10px] text-muted-foreground"
+							>Μη ανατεθειμένο κατάστημα</Badge
+						>
+					{/if}
+				</div>
+
+				<!-- Final warning -->
+				<div
+					class="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
+				>
+					<AlertTriangle class="mt-0.5 h-4 w-4 shrink-0" />
+					<span>Είσαι σίγουρος; Η έκτακτη αξιολόγηση θα καταχωρηθεί αμέσως.</span>
+				</div>
+			</div>
+
+			<Dialog.Footer class="gap-2">
+				<Button variant="outline" onclick={() => (emergencyStep = 1)}>
+					<ArrowRight class="mr-1.5 h-3.5 w-3.5 rotate-180" />
+					Πίσω
+				</Button>
+				<Button variant="destructive" onclick={handleEmergencyConfirm}>
+					<AlertTriangle class="mr-1.5 h-3.5 w-3.5" />
+					Δημιουργία Έκτακτης
+				</Button>
+			</Dialog.Footer>
+		{/if}
+	</Dialog.Content>
+</Dialog.Root>

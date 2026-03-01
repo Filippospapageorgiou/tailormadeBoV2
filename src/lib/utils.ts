@@ -202,8 +202,6 @@ export async function geocodeAddress(address:string):Promise<{lat:number; lon:nu
   );
   
   const data = await response.json();
-
-  console.log(data);
   
   if (data.length > 0) {
     return {

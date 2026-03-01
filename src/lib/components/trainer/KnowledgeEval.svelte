@@ -20,10 +20,6 @@
 		newItemLabel = '';
 		addingNew = false;
 	}
-
-	$effect(() => {
-		console.log('[KnowledgeStore]', $state.snapshot(store.sectionItems.filter(i => i.section === 'knowledge')));
-	});
 </script>
 
 <div class="flex flex-col gap-4 py-4">

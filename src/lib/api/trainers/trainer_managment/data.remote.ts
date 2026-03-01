@@ -427,9 +427,9 @@ export const getEvaluations = query(async () => {
 	const supabase = createServerClient();
 
 	const { data: evaluations, error: evalError } = await supabase
-		.from('store_evaluations')
-		.select(
-			`*,
+    .from('store_evaluations')
+    .select(
+        `*,
         core_organizations!store_evaluations_org_id_fkey (
             *
         ),
@@ -440,9 +440,9 @@ export const getEvaluations = query(async () => {
             *
         )
         `
-		)
-		.eq('submit','submitted')
-		.order('visit_date', { ascending: false });
+    )
+    .in('submit', ['submitted', 'reviewed'])
+    .order('visit_date', { ascending: false });
 	
 	if (evalError) {
 		console.error('[getEvaluations] Error:', evalError);

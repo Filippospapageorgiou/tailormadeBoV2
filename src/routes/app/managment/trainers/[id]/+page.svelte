@@ -1,16 +1,44 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import { getEvaluationById } from '$lib/api/trainers/trainer_evalution/data.remote';
+	import { getEvaluationById, reviewEvaluation } from '$lib/api/trainers/trainer_evalution/data.remote';
 	import EvaluationDetailView from '$lib/components/trainer/EvaluationDetailView.svelte';
 	import { Button } from '$lib/components/ui/button/index.js';
-	import { ArrowLeft } from 'lucide-svelte';
+	import * as Dialog from '$lib/components/ui/dialog/index.js';
+	import { Textarea } from '$lib/components/ui/textarea/index.js';
+	import { Label } from '$lib/components/ui/label/index.js';
+	import { ArrowLeft, CheckCircle2 } from 'lucide-svelte';
+	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
+	import { showFailToast, showSuccessToast } from '$lib/stores/toast.svelte';
 
 	const evaluationId = $derived(Number(page.params.id));
 	// svelte-ignore state_referenced_locally
 	let evalQuery = getEvaluationById({ evaluationId });
 	let result = $derived(evalQuery.current);
 	let isLoading = $derived(evalQuery.current === undefined);
+
+	// Review dialog state
+	let reviewDialogOpen = $state(false);
+	let adminNotes = $state('');
+	let isReviewing = $state(false);
+
+	let isAlreadyReviewed = $derived(result?.evaluation?.submit === 'reviewed');
+
+	async function handleReview() {
+		isReviewing = true;
+		try {
+			await reviewEvaluation({ evaluationId, admin_notes: adminNotes });
+			showSuccessToast('Επιτυχία', 'Η αξιολόγηση σημάνθηκε ως εξεταστεί και ο trainer ενημερώθηκε.');
+			reviewDialogOpen = false;
+			adminNotes = '';
+			evalQuery.refresh();
+		} catch (err) {
+			console.error('[handleReview] error:', err);
+			showFailToast('Σφάλμα', 'Αποτυχία σήμανσης αξιολόγησης.');
+		} finally {
+			isReviewing = false;
+		}
+	}
 </script>
 
 <div class="min-h-screen">
@@ -81,7 +109,67 @@
 				staffProfiles={result.staffProfiles}
 				photoItemsWithUrls={result.photoItemsWithUrls}
 			/>
+
+			<!-- Review action bar -->
+			<div class="mt-6 flex justify-end">
+				{#if isAlreadyReviewed}
+					<div class="flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm font-medium text-emerald-700 dark:text-emerald-400">
+						<CheckCircle2 class="h-4 w-4 shrink-0" />
+						Εξεταστεί
+					</div>
+				{:else}
+					<Button
+						onclick={() => (reviewDialogOpen = true)}
+						class="gap-2"
+					>
+						<CheckCircle2 class="h-4 w-4" />
+						Εξετάστηκε
+					</Button>
+				{/if}
+			</div>
 		{/if}
 
 	</main>
 </div>
+
+<!-- Review dialog -->
+<Dialog.Root bind:open={reviewDialogOpen}>
+	<Dialog.Content class="sm:max-w-[480px]">
+		<Dialog.Header>
+			<Dialog.Title>Σήμανση ως Εξεταστεί</Dialog.Title>
+			<Dialog.Description>
+				Ο trainer θα ειδοποιηθεί με email ότι η αξιολόγησή του εξετάστηκε.
+			</Dialog.Description>
+		</Dialog.Header>
+
+		<div class="grid gap-3 py-4">
+			<Label for="admin-notes">Σχόλια (προαιρετικά)</Label>
+			<Textarea
+				id="admin-notes"
+				bind:value={adminNotes}
+				placeholder="Προσθέστε σχόλια ή παρατηρήσεις για τον trainer…"
+				rows={5}
+				disabled={isReviewing}
+				class="resize-none"
+			/>
+			<p class="text-xs text-muted-foreground">
+				Τα σχόλια θα συμπεριληφθούν στο email που θα λάβει ο trainer.
+			</p>
+		</div>
+
+		<Dialog.Footer>
+			<Button variant="outline" onclick={() => (reviewDialogOpen = false)} disabled={isReviewing}>
+				Ακύρωση
+			</Button>
+			<Button onclick={handleReview} disabled={isReviewing} class="gap-2">
+				{#if isReviewing}
+					<Spinner class="h-4 w-4" />
+					Αποστολή…
+				{:else}
+					<CheckCircle2 class="h-4 w-4" />
+					Επιβεβαίωση
+				{/if}
+			</Button>
+		</Dialog.Footer>
+	</Dialog.Content>
+</Dialog.Root>

@@ -20,6 +20,7 @@ export const SYSTEM_PROMPT = `You are **Max*, the AI assistant for TailorMade, a
 - Bonus system: periods, organization data, employee payouts, leaderboards
 - Content: blogs, notifications
 - Organizations: all tenant data, invitations
+- Trainer module: trainer assignments, store evaluations, section checklists, equipment evaluations, barista training, evaluation photos, summaries, trainer invitations
 </capabilities>
 
 <restrictions>
@@ -465,6 +466,127 @@ If someone asks about anything not related to TailorMade data (weather, general 
 | user_id | **UUID** | FK → 'profiles.id', NOT NULL (ON DELETE CASCADE) |
 | manual_id | **bigint** | FK → 'manuals.id', NOT NULL (ON DELETE CASCADE) |
 | read_at | **timestamptz** | default 'now()' |
+
+### Trainer Module
+
+⚠️ **TRAINER MODULE PITFALLS — READ BEFORE QUERYING:**
+1.  trainer_org_assigments  — table name has a typo (one 's' in "assigments") — use exactly this spelling
+2.  store_evaluations.submit  — the status column is named **submit** (NOT status). Values: 'draft' | 'submitted' | 'reviewed' | 'reopened'
+3.  evaluation_summary_actions.evalution_id  — typo in column name (missing 'a' in "evaluation")
+4.  store_managers  and  baristas_on_duty  are **text[] arrays** of profile UUIDs — use ANY() or @> to query
+5.  evaluation_photos.photos  is **JSONB array** — use -> / ->> to access fields
+
+**trainer_org_assigments** ⚠️ (note: typo in table name — one 's')
+| Column | Type | Notes |
+|--------|------|-------|
+| id | bigint | PRIMARY KEY, identity |
+| trainer_id | **UUID** | FK → profiles.id |
+| org_id | **bigint** | FK → core_organizations.id |
+| assigned_by | **UUID** | FK → profiles.id (admin who assigned) |
+| is_active | boolean | false = soft-deactivated |
+| visit_date | **date** | Scheduled visit date |
+| created_at | timestamptz | default now() |
+| updated_at | timestamptz | default now() |
+
+**store_evaluations** ⚠️ (status column is named 'submit', not 'status')
+| Column | Type | Notes |
+|--------|------|-------|
+| id | bigint | PRIMARY KEY, identity |
+| org_id | **bigint** | FK → core_organizations.id |
+| trainer_id | **UUID** | FK → profiles.id |
+| visit_date | **date** | Date of store visit |
+| store_managers | **text[]** | Array of profile UUIDs present |
+| baristas_on_duty | **text[]** | Array of profile UUIDs present |
+| submit | text | ⚠️ STATUS COLUMN. CHECK: 'draft'/'submitted'/'reviewed'/'reopened' |
+| overall_rating | numeric | nullable, 0–10 |
+| overall_comments | text | nullable |
+| admin_notes | text | nullable, written by admin during review |
+| reviewed_by | **UUID** | nullable, FK → profiles.id (admin reviewer) |
+| reviewed_at | text | nullable, Athens-timezone string |
+| submitted_at | text | nullable, Athens-timezone string |
+| created_at | timestamptz | default now() |
+| updated_at | timestamptz | default now() |
+
+**evaluation_section_items**
+| Column | Type | Notes |
+|--------|------|-------|
+| id | bigint | PRIMARY KEY, identity |
+| evaluation_id | bigint | FK → store_evaluations.id |
+| section | text | CHECK: 'cleanliness'/'knowledge'/'training' |
+| item_key | text | stable identifier e.g. 'coffee_post_clean' |
+| item_label | text | display label |
+| checked | boolean | whether trainer evaluated this item |
+| score | numeric | nullable |
+| notes | text | nullable |
+| created_at | timestamptz | nullable |
+
+**evaluation_barista_training** (UNIQUE on evaluation_id — one row per evaluation)
+| Column | Type | Notes |
+|--------|------|-------|
+| id | bigint | PRIMARY KEY, identity |
+| evaluation_id | bigint | FK → store_evaluations.id, UNIQUE |
+| barista_name | text | nullable |
+| score | numeric | nullable |
+| needs_followup | boolean | default false |
+| followup_date | **date** | nullable, 'YYYY-MM-DD' |
+| other_training | text | nullable |
+| created_at | timestamptz | nullable |
+| updated_at | timestamptz | nullable |
+
+**equipment_evaluations**
+| Column | Type | Notes |
+|--------|------|-------|
+| id | bigint | PRIMARY KEY, identity |
+| evaluation_id | bigint | FK → store_evaluations.id |
+| equipment_id | bigint | nullable, FK → equipment.id |
+| score | numeric | nullable |
+| notes | text | nullable |
+| created_at | timestamptz | nullable |
+
+**equipment_check_items**
+| Column | Type | Notes |
+|--------|------|-------|
+| id | bigint | PRIMARY KEY, identity |
+| equipment_eval_id | bigint | FK → equipment_evaluations.id |
+| check_name | text | NOT NULL |
+| value_text | text | nullable |
+| value_numeric | numeric | nullable |
+| passed | boolean | nullable |
+| notes | text | nullable |
+| created_at | timestamptz | nullable |
+
+**evaluation_photos** (immutable after insert — no update path)
+| Column | Type | Notes |
+|--------|------|-------|
+| id | bigint | PRIMARY KEY, identity |
+| evaluation_id | bigint | FK → store_evaluations.id |
+| photos | **jsonb** | Array of {category, storage_path, description}. Use photos->0->>'category' etc. |
+| uploaded_by | **UUID** | FK → profiles.id |
+| created_at | timestamptz | default now() |
+
+**evaluation_summary_actions** ⚠️ (column name typo: 'evalution_id' not 'evaluation_id')
+| Column | Type | Notes |
+|--------|------|-------|
+| id | bigint | PRIMARY KEY, identity |
+| evalution_id | bigint | ⚠️ TYPO in column name. FK → store_evaluations.id |
+| score | numeric | Overall score |
+| comments | text | Free-form summary comments |
+| sections | **jsonb** | Array of {label, description, priority} action items |
+| created_at | timestamptz | default now() |
+| updated_at | timestamptz | default now() |
+
+**trainer_invitations**
+| Column | Type | Notes |
+|--------|------|-------|
+| id | bigint | PRIMARY KEY, identity |
+| email | text | NOT NULL, invited trainer email |
+| token | text | UNIQUE, invite token |
+| status | text | CHECK: 'pending'/'accepted'/'expired'/'cancelled' |
+| expires_at | timestamptz | 7-day expiry from creation |
+| accepted_at | timestamptz | nullable |
+| invited_by | **UUID** | FK → profiles.id (admin who invited) |
+| created_at | timestamptz | default now() |
+| updated_at | timestamptz | default now() |
 </database_schema>
 
 <query_guidelines>
@@ -530,6 +652,8 @@ If someone asks about anything not related to TailorMade data (weather, general 
 | important_phone_calls | **integer** |
 | feedback | **integer** |
 | notifications | **integer** |
+| trainer_org_assigments | **bigint** |
+| store_evaluations | **bigint** |
 </org_id_reference>
 
 <uuid_tables>
@@ -705,7 +829,7 @@ ORDER BY total_hours DESC;
 
 ### Equipment Status Overview
 \`\`\`sql
-SELECT 
+SELECT
   o.store_name,
   e.status,
   COUNT(*) as count,
@@ -714,6 +838,71 @@ FROM equipment e
 JOIN core_organizations o ON o.id = e.org_id
 GROUP BY o.store_name, e.status
 ORDER BY o.store_name, e.status;
+\`\`\`
+
+### Trainer Evaluations — Status Overview
+\`\`\`sql
+-- ⚠️ Status column is named 'submit', not 'status'
+SELECT
+  p.full_name AS trainer,
+  o.store_name,
+  se.visit_date,
+  se.submit AS status,         -- ⚠️ column is 'submit'
+  se.overall_rating,
+  se.submitted_at
+FROM store_evaluations se
+JOIN profiles p ON p.id = se.trainer_id
+JOIN core_organizations o ON o.id = se.org_id
+ORDER BY se.visit_date DESC
+LIMIT 50;
+\`\`\`
+
+### Trainer Evaluations — Count by Status per Trainer
+\`\`\`sql
+SELECT
+  p.full_name AS trainer,
+  COUNT(*) FILTER (WHERE se.submit = 'submitted') AS submitted,
+  COUNT(*) FILTER (WHERE se.submit = 'reviewed')  AS reviewed,
+  COUNT(*) FILTER (WHERE se.submit = 'draft')     AS drafts,
+  COUNT(*) FILTER (WHERE se.submit = 'reopened')  AS reopened,
+  ROUND(AVG(se.overall_rating), 1) AS avg_rating
+FROM store_evaluations se
+JOIN profiles p ON p.id = se.trainer_id
+GROUP BY p.id, p.full_name
+ORDER BY submitted DESC;
+\`\`\`
+
+### Active Trainer Assignments
+\`\`\`sql
+-- ⚠️ Table name is trainer_org_assigments (one 's')
+SELECT
+  p.full_name AS trainer,
+  o.store_name,
+  toa.visit_date,
+  toa.is_active,
+  assigner.full_name AS assigned_by
+FROM trainer_org_assigments toa
+JOIN profiles p ON p.id = toa.trainer_id
+JOIN core_organizations o ON o.id = toa.org_id
+JOIN profiles assigner ON assigner.id = toa.assigned_by
+WHERE toa.is_active = true
+ORDER BY toa.visit_date ASC;
+\`\`\`
+
+### Evaluation Section Scores per Store
+\`\`\`sql
+SELECT
+  o.store_name,
+  esi.section,
+  COUNT(*) AS items_checked,
+  ROUND(AVG(esi.score), 2) AS avg_score
+FROM evaluation_section_items esi
+JOIN store_evaluations se ON se.id = esi.evaluation_id
+JOIN core_organizations o ON o.id = se.org_id
+WHERE esi.checked = true
+  AND esi.score IS NOT NULL
+GROUP BY o.store_name, esi.section
+ORDER BY o.store_name, esi.section;
 \`\`\`
 </examples>
 
@@ -728,6 +917,10 @@ ORDER BY o.store_name, e.status;
 6. **Greek language** - Respond in Greek unless user writes in English
 7. **Be helpful** - Suggest follow-up analyses
 8. **Admit uncertainty** - If unsure about a query result, say so
+9. **Trainer table typo** - Table is trainer_org_assigments (one 's') — never write trainer_org_assignments
+10. **Evaluation status** - store_evaluations uses column submit for status (not status) — always write se.submit = 'submitted' etc.
+11. **Summary action typo** - evaluation_summary_actions uses column evalution_id (missing 'a') — never write evaluation_id for this table
+12. **Array UUID columns** - store_evaluations.store_managers and baristas_on_duty are text[] of UUIDs — use 'uuid'::text = ANY(store_managers) to filter
 </critical_reminders>
 `;
 
@@ -779,8 +972,14 @@ export const TYPE_REFERENCE = {
   integer_org_id: ['weekly_schedules', 'shifts', 'shift_change_requests', 'daily_register_closings', 'suppliers', 'organization_invitations', 'important_phone_calls', 'feedback', 'notifications'],
   bigint_org_id: ['profiles', 'task_templates', 'equipment', 'bonus_organization_data', 'bonus_leaderboard_cache'],
   generated_columns: ['daily_register_closings.cash_diffrence', 'bonus_organization_data.kilo_difference', 'bonus_organization_data.percentage_change'],
-  jsonb_columns: ['blogs.images', 'maintenance_logs.images'],
-  array_columns: ['blogs.tags']
+  jsonb_columns: ['blogs.images', 'maintenance_logs.images', 'evaluation_photos.photos', 'evaluation_summary_actions.sections'],
+  array_columns: ['blogs.tags', 'store_evaluations.store_managers', 'store_evaluations.baristas_on_duty'],
+  trainer_module_pitfalls: {
+    table_typo: 'trainer_org_assigments (one s — not trainer_org_assignments)',
+    status_column: 'store_evaluations uses submit column (not status) for EvaluationStatus',
+    summary_typo: 'evaluation_summary_actions uses evalution_id (not evaluation_id)',
+    submit_values: ['draft', 'submitted', 'reviewed', 'reopened']
+  }
 };
 
 

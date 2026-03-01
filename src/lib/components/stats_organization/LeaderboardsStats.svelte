@@ -175,7 +175,7 @@
 
 						<!-- Avatar -->
 						<Avatar.Root class="h-7 w-7">
-							<Avatar.Image class="dark:bg-muted" src={emp.image_url} alt={emp.username} />
+							<Avatar.Image class="dark:bg-white" src={emp.image_url} alt={emp.username} />
 							<Avatar.Fallback class="text-[10px] font-medium">
 								{getInitials(emp.username)}
 							</Avatar.Fallback>

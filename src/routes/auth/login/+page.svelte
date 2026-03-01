@@ -32,7 +32,7 @@
 				>
 					<GalleryVerticalEndIcon class="size-4" />
 				</div>
-				KNOW HOW TECHNOLOGIES.
+				TAILORMADE - VENETIS ENTEPRISE.
 			</div>
 		</div>
 		<div class="relative flex flex-1 items-center justify-center overflow-hidden py-4">
