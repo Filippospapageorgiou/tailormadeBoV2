@@ -174,7 +174,7 @@
 		<!-- Header -->
 		<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
 			<div class="space-y-1">
-				<h1 class="font-mono text-3xl tracking-wider md:text-4xl">Quality control</h1>
+				<h1 class="font-mono text-3xl tracking-wider md:text-4xl">Quality Control</h1>
 				<p class="text-xs text-muted-foreground md:text-sm">
 					Νεα αξιολογήσει για το κατάστημα με κώδικο {orgId} συμπλήρωσε την φόρμα και
 					υπέβαλε την

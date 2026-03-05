@@ -15,12 +15,18 @@ export interface Blog {
 	};
 }
 
+export interface BeverageVideo {
+	url: string;
+	title?: string;
+}
+
 export interface Beverage {
 	id: number;
 	name: string;
 	description: string;
 	execution: string | null;
 	image_url: string | null;
+	video_urls: BeverageVideo[];
 	public: boolean | null;
 	created_at: string;
 	updated_at: string;

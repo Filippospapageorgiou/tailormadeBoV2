@@ -926,7 +926,7 @@
 														>Q{item.period.quarter} {item.period.year}</span
 													>
 													<Badge
-														variant={item.period.status === "published" ? "default" : "secondary"}
+														variant={item.period.status === 'published' ? 'default' : 'secondary'}
 														class="text-[10px]"
 													>
 														{item.period.status}
@@ -940,11 +940,15 @@
 														>€{item.orgData.final_bonus.toFixed(2)}</span
 													>
 													<ChevronDown
-														class="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 {expandedQuarters.has(item.period.id) ? 'rotate-180' : ''}"
+														class="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 {expandedQuarters.has(
+															item.period.id
+														)
+															? 'rotate-180'
+															: ''}"
 													/>
 												</div>
 											</button>
-											
+
 											<!-- Payouts list (expanded) -->
 											{#if expandedQuarters.has(item.period.id)}
 												<div class="divide-y divide-border/30 bg-muted/20">
@@ -956,21 +960,36 @@
 														{#each [...item.payouts].sort((a, b) => b.bonus_amount - a.bonus_amount) as payout, i (payout.id)}
 															<div class="flex items-center gap-3 px-6 py-2.5">
 																<span
-																	class="w-4 shrink-0 text-center text-xs font-bold {i === 0 ? 'text-yellow-500' : i === 1 ? 'text-slate-400' : i === 2 ? 'text-amber-600' : 'text-muted-foreground'}"
+																	class="w-4 shrink-0 text-center text-xs font-bold {i === 0
+																		? 'text-yellow-500'
+																		: i === 1
+																			? 'text-slate-400'
+																			: i === 2
+																				? 'text-amber-600'
+																				: 'text-muted-foreground'}"
 																>
 																	{i + 1}
 																</span>
 																<Avatar.Root class="h-6 w-6 shrink-0">
-																	<Avatar.Image src={payout.employee?.image_url ?? undefined} class="dark:bg-white" />
+																	<Avatar.Image
+																		src={payout.employee?.image_url ?? undefined}
+																		class="dark:bg-white"
+																	/>
 																	<Avatar.Fallback class="text-[9px]">
-																		{(payout.employee?.username ?? "?").slice(0, 2).toUpperCase()}
+																		{(payout.employee?.username ?? '?').slice(0, 2).toUpperCase()}
 																	</Avatar.Fallback>
 																</Avatar.Root>
 																<div class="min-w-0 flex-1">
-																	<p class="truncate text-xs font-medium">{payout.employee?.username ?? "Unknown"}</p>
-																	<p class="text-[10px] text-muted-foreground">{payout.total_shifts_in_pool} shifts</p>
+																	<p class="truncate text-xs font-medium">
+																		{payout.employee?.username ?? 'Unknown'}
+																	</p>
+																	<p class="text-[10px] text-muted-foreground">
+																		{payout.total_shifts_in_pool} shifts
+																	</p>
 																</div>
-																<p class="text-xs font-semibold text-emerald-600">€{payout.bonus_amount.toFixed(2)}</p>
+																<p class="text-xs font-semibold text-emerald-600">
+																	€{payout.bonus_amount.toFixed(2)}
+																</p>
 															</div>
 														{/each}
 													{/if}
@@ -1053,7 +1072,7 @@
 								</p>
 								<p class="text-3xl font-bold">
 									{avgScore.toFixed(1)}<span class="text-sm font-normal text-muted-foreground"
-										>/10</span
+										>/100</span
 									>
 								</p>
 							</div>
@@ -1065,7 +1084,7 @@
 						<div class="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
 							<div
 								class="h-full rounded-full bg-primary transition-all duration-500"
-								style="width: {(avgScore / 10) * 100}%"
+								style="width: {avgScore}%"
 							></div>
 						</div>
 					</Card.Root>
@@ -1099,7 +1118,7 @@
 											{#if ev.overall_rating !== null && ev.overall_rating !== undefined}
 												<p class="text-xl font-bold">
 													{ev.overall_rating}<span class="text-xs font-normal text-muted-foreground"
-														>/10</span
+														>/100</span
 													>
 												</p>
 											{:else}
@@ -1112,7 +1131,7 @@
 										<div class="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-muted">
 											<div
 												class="h-full rounded-full bg-primary transition-all duration-500"
-												style="width: {(ev.overall_rating / 10) * 100}%"
+												style="width: {ev.overall_rating}%"
 											></div>
 										</div>
 									{/if}

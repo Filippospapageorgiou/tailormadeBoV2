@@ -253,7 +253,7 @@
 			<!-- Header -->
 			<div class="space-y-2">
 				<h1 class="font-mono text-3xl tracking-wider md:text-4xl">
-					Εγγραφή Αναλυτικά στοιχεία
+					Real Data Analysis
 				</h1>
 				<p class="text-sm text-muted-foreground">
 					Επισκόπηση κλεισίματος ταμείου, εσόδων και εξόδων

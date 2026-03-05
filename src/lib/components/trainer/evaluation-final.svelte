@@ -138,18 +138,6 @@
 					</span>
 				</div>
 
-				<!-- Score visual bar -->
-				<div class="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-					<div
-						class="h-full rounded-full transition-all duration-300 {(evalFinal?.score ?? 0) >= 80
-							? 'bg-emerald-500'
-							: (evalFinal?.score ?? 0) >= 60
-								? 'bg-amber-500'
-								: 'bg-red-500'}"
-						style="width: {evalFinal?.score ?? 0}%"
-					></div>
-				</div>
-
 				<!-- Comments -->
 				<div class="flex flex-col gap-1">
 					<span class="text-xs text-muted-foreground">Σχόλια / Παρατηρήσεις</span>

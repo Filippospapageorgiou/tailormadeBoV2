@@ -180,7 +180,7 @@
 			<!-- Header with improved spacing -->
 			<div class="mb-8 md:mb-12">
 				<h1 class="font-mono text-3xl tracking-wider text-foreground md:text-4xl lg:text-5xl">
-					PROFILE
+					MY PROFILE
 				</h1>
 				<p class="mt-2 max-w-2xl text-sm text-muted-foreground md:text-base">
 					Διαχειριστείτε τα στοιχεία του λογαριασμού και του οργανισμού σας

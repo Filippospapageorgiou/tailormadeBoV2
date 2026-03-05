@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Beverage } from '$lib/models/database.types';
 	import { Button } from '$lib/components/ui/button';
-	import { Pencil, Trash2, ImageOff } from 'lucide-svelte';
+	import { Pencil, Trash2, ImageOff, Film } from 'lucide-svelte';
 	import * as Accordion from '$lib/components/ui/accordion';
 	import IngredientsList from './IngredientsList.svelte';
 	import EditBeverageDialog from './EditBeverageDialog.svelte';
@@ -10,6 +10,8 @@
 	import * as Tooltip from '$lib/components/ui/tooltip';
 	import Switch from '$lib/components/ui/switch/switch.svelte';
 	import { toast } from 'svelte-sonner';
+	import BeveragedVideo from './BeveragedVideo.svelte';
+	import * as Dialog from '$lib/components/ui/dialog';
 
 	let {
 		beverage,
@@ -23,6 +25,10 @@
 	let deletingBeverage = $state(false);
 	let accordionValue = $state<string[]>([]);
 	let beveragePublic = $derived(beverage?.public ?? false);
+
+	let videoCount = $derived((beverage.video_urls ?? []).length);
+
+	let managingVideos = $state(false);
 
 	function openEditDialog() {
 		editingBeverage = true;
@@ -111,6 +117,23 @@
 						</Tooltip.Content>
 					</Tooltip.Root>
 				</Tooltip.Provider>
+				<Tooltip.Provider>
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							<Button
+								variant="ghost"
+								size="icon"
+								class="h-8 w-8 cursor-pointer hover:bg-primary/10 hover:text-primary"
+								onclick={() => (managingVideos = true)}
+							>
+								<Film class="h-4 w-4" />
+							</Button>
+						</Tooltip.Trigger>
+						<Tooltip.Content>
+							<p>Διαχείριση βίντεο</p>
+						</Tooltip.Content>
+					</Tooltip.Root>
+				</Tooltip.Provider>
 			</div>
 		</div>
 	</div>
@@ -156,6 +179,18 @@
 				</p>
 			</div>
 		{/if}
+
+		<!-- Video Count Badge -->
+		{#if videoCount > 0}
+			<div class="mb-1 flex items-center gap-1.5">
+				<div class="flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-primary">
+					<Film class="h-3 w-3" />
+					<span class="text-[11px] font-medium">
+						{videoCount} βίντεο
+					</span>
+				</div>
+			</div>
+		{/if}
 	</div>
 
 	<!-- Accordion: Ingredients -->
@@ -179,5 +214,25 @@
 	</Accordion.Root>
 </div>
 
+<Dialog.Root bind:open={managingVideos}>
+	<Dialog.Content class="sm:max-w-[500px]">
+		<Dialog.Header>
+			<Dialog.Title class="flex items-center gap-2">
+				<Film class="h-5 w-5 text-primary" />
+				Διαχείριση Βίντεο
+			</Dialog.Title>
+			<Dialog.Description>
+				Προσθέστε, επεξεργαστείτε ή διαγράψτε βίντεο για το ρόφημα.
+			</Dialog.Description>
+		</Dialog.Header>
+		<div class="py-2">
+			<BeveragedVideo
+				beverageId={beverage.id}
+				videos={beverage.video_urls ?? []}
+				{onUpdate}
+			/>
+		</div>
+	</Dialog.Content>
+</Dialog.Root>
 <EditBeverageDialog bind:open={editingBeverage} {beverage} {onUpdate} />
 <DeleteBeverageDialog bind:open={deletingBeverage} {beverage} {onUpdate} />

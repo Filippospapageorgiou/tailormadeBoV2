@@ -283,12 +283,14 @@ const deleteBeverageSchema = z.object({
 export const deleteBeverage = query(deleteBeverageSchema, async ({ beverageId }) => {
 	const supabase = createServerClient();
 
+	// Fetch beverage to clean up image + videos
 	const { data: currentBeverage } = await supabase
 		.from('beverages')
-		.select('image_url')
+		.select('image_url, video_urls')
 		.eq('id', beverageId)
 		.single();
 
+	// Delete beverage image from storage
 	if (
 		currentBeverage?.image_url &&
 		currentBeverage.image_url.includes('beverages') &&
@@ -297,6 +299,21 @@ export const deleteBeverage = query(deleteBeverageSchema, async ({ beverageId })
 		const oldPath = currentBeverage.image_url.split('/beverages/')[1];
 		if (oldPath) {
 			await supabase.storage.from('beverages').remove([oldPath]);
+		}
+	}
+
+	// Delete all videos from storage
+	const videoUrls = (currentBeverage?.video_urls ?? []) as { url: string; title?: string }[];
+	if (videoUrls.length > 0) {
+		const videoPaths = videoUrls
+			.map((v) => {
+				const parts = v.url.split('/recipe-videos/');
+				return parts[1] ? decodeURIComponent(parts[1]) : null;
+			})
+			.filter(Boolean) as string[];
+
+		if (videoPaths.length > 0) {
+			await supabase.storage.from('recipe-videos').remove(videoPaths);
 		}
 	}
 
@@ -541,10 +558,9 @@ export const tooglebeverage = command(toogleSchema, async (data) => {
 			};
 		}
 
-
-		return{
-			success:true,
-			message:'Επιτυχής ενημέρωση ροφήματος'
+		return {
+			success: true,
+			message: 'Επιτυχής ενημέρωση ροφήματος'
 		};
 	} catch (err) {
 		console.error('[tooglebeverage] Error toogling beverage: ', err);
@@ -555,7 +571,231 @@ export const tooglebeverage = command(toogleSchema, async (data) => {
 	}
 });
 
+/*
+#####################################################
+			BEVERAGE VIDEOS
+#####################################################
+*/
 
+const MAX_BEVERAGE_VIDEOS = 4;
+
+const uploadBeverageVideoSchema = z.object({
+	beverageId: z.string()
+		.transform((val) => parseInt(val, 10))
+		.pipe(z.number().int().positive()),
+	title: z.string().min(1, { error: 'Video title is required' }),
+	video: z.instanceof(File)
+		.refine((file) => file.size > 0, 'File cannot be empty.')
+		.refine((file) => file.size < 100 * 1024 * 1024, 'File size must be less than 100MB.')
+		.refine((file) =>
+			['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo'].includes(file.type),
+			'Only video files (MP4, WebM, MOV, AVI) are allowed.'
+		)
+});
+
+export const uploadBeverageVideo = form(
+	uploadBeverageVideoSchema,
+	async ({ beverageId, title, video }) => {
+		const supabase = createServerClient();
+
+		try {
+			// Get current video_urls
+			const { data: currentBeverage, error: fetchError } = await supabase
+				.from('beverages')
+				.select('video_urls')
+				.eq('id', beverageId)
+				.single();
+
+			if (fetchError) {
+				console.error('Error fetching beverage:', fetchError);
+				return { success: false, message: 'Failed to fetch beverage data.' };
+			}
+
+			const currentVideos = (currentBeverage?.video_urls ?? []) as {
+				url: string;
+				title: string;
+			}[];
+
+			if (currentVideos.length >= MAX_BEVERAGE_VIDEOS) {
+				return {
+					success: false,
+					message: `Μπορείτε να ανεβάσετε μέχρι ${MAX_BEVERAGE_VIDEOS} βίντεο ανά ρόφημα.`
+				};
+			}
+
+			// Upload video to recipe-videos bucket at {beverage_id}/videos/
+			const fileExt = video.name.split('.').pop();
+			const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+			const filePath = `${beverageId}/videos/${fileName}`;
+
+			const { data: uploadData, error: uploadError } = await supabase.storage
+				.from('recipe-videos')
+				.upload(filePath, video, {
+					cacheControl: '3600',
+					upsert: false
+				});
+
+			if (uploadError) {
+				console.error('Error uploading video:', uploadError);
+				return { success: false, message: 'Σφάλμα κάτα το ανέβασμα βίντεο.' };
+			}
+
+			// Get public URL
+			const { data: urlData } = supabase.storage
+				.from('recipe-videos')
+				.getPublicUrl(uploadData.path);
+
+			const newVideo = { url: urlData.publicUrl, title };
+			const updatedVideos = [...currentVideos, newVideo];
+
+			// Update beverages table
+			const { error: updateError } = await supabase
+				.from('beverages')
+				.update({ video_urls: updatedVideos })
+				.eq('id', beverageId);
+
+			if (updateError) {
+				// Rollback: delete uploaded video
+				await supabase.storage.from('recipe-videos').remove([filePath]);
+				console.error('Error updating beverage video_urls:', updateError);
+				return { success: false, message: 'Σφάλμα κάτα την ενημέρωση ροφήματος.' };
+			}
+
+			return {
+				success: true,
+				message: 'Το βίντεο ανέβηκε επιτυχώς',
+				video: newVideo,
+				videos: updatedVideos
+			};
+		} catch (err) {
+			console.error('Unexpected error uploading video:', err);
+			return { success: false, message: 'Unexpected error uploading video.' };
+		}
+	}
+);
+
+const deleteBeverageVideoSchema = z.object({
+	beverageId: z.number().int().positive(),
+	videoUrl: z.string().url()
+});
+
+export const deleteBeverageVideo = command(
+	deleteBeverageVideoSchema,
+	async ({ beverageId, videoUrl }) => {
+		const supabase = createServerClient();
+
+		try {
+			// Get current video_urls
+			const { data: currentBeverage, error: fetchError } = await supabase
+				.from('beverages')
+				.select('video_urls')
+				.eq('id', beverageId)
+				.single();
+
+			if (fetchError) {
+				console.error('Error fetching beverage:', fetchError);
+				return { success: false, message: 'Failed to fetch beverage data.' };
+			}
+
+			const currentVideos = (currentBeverage?.video_urls ?? []) as {
+				url: string;
+				title: string;
+			}[];
+
+			// Remove video from array
+			const updatedVideos = currentVideos.filter((v) => v.url !== videoUrl);
+
+			// Delete from storage
+			const parts = videoUrl.split('/recipe-videos/');
+			const storagePath = parts[1] ? decodeURIComponent(parts[1]) : null;
+
+			if (storagePath) {
+				const { error: storageError } = await supabase.storage
+					.from('recipe-videos')
+					.remove([storagePath]);
+
+				if (storageError) {
+					console.error('Error deleting video from storage:', storageError);
+					// Continue anyway to update DB
+				}
+			}
+
+			// Update beverages table
+			const { error: updateError } = await supabase
+				.from('beverages')
+				.update({ video_urls: updatedVideos })
+				.eq('id', beverageId);
+
+			if (updateError) {
+				console.error('Error updating beverage video_urls:', updateError);
+				return { success: false, message: 'Σφάλμα κάτα την διαγραφή βίντεο.' };
+			}
+
+			return {
+				success: true,
+				message: 'Το βίντεο διαγράφηκε επιτυχώς',
+				videos: updatedVideos
+			};
+		} catch (err) {
+			console.error('Unexpected error deleting video:', err);
+			return { success: false, message: 'Unexpected error deleting video.' };
+		}
+	}
+);
+
+const updateBeverageVideoTitleSchema = z.object({
+	beverageId: z.number().int().positive(),
+	videoUrl: z.string().url(),
+	newTitle: z.string().min(1, { error: 'Title is required' })
+});
+
+export const updateBeverageVideoTitle = command(
+	updateBeverageVideoTitleSchema,
+	async ({ beverageId, videoUrl, newTitle }) => {
+		const supabase = createServerClient();
+
+		try {
+			const { data: currentBeverage, error: fetchError } = await supabase
+				.from('beverages')
+				.select('video_urls')
+				.eq('id', beverageId)
+				.single();
+
+			if (fetchError) {
+				console.error('Error fetching beverage:', fetchError);
+				return { success: false, message: 'Failed to fetch beverage data.' };
+			}
+
+			const currentVideos = (currentBeverage?.video_urls ?? []) as {
+				url: string;
+				title: string;
+			}[];
+
+			const updatedVideos = currentVideos.map((v) =>
+				v.url === videoUrl ? { ...v, title: newTitle } : v
+			);
+
+			const { error: updateError } = await supabase
+				.from('beverages')
+				.update({ video_urls: updatedVideos })
+				.eq('id', beverageId);
+
+			if (updateError) {
+				console.error('Error updating video title:', updateError);
+				return { success: false, message: 'Σφάλμα κάτα την ενημέρωση τίτλου βίντεο.' };
+			}
+
+			return {
+				success: true,
+				message: 'Ο τίτλος ενημερώθηκε επιτυχώς',
+				videos: updatedVideos
+			};
+		} catch (err) {
+			console.error('Unexpected error updating video title:', err);
+			return { success: false, message: 'Unexpected error updating video title.' };
+		}
+	}
+);
 
 /*
 #####################################################
