@@ -50,7 +50,7 @@
 				<ArrowLeft class="h-4 w-4" />
 			</Button>
 			<div>
-				<h1 class="font-mono text-3xl tracking-wider md:text-4xl">Αξιολόγηση</h1>
+				<h1 class="font-mono text-3xl tracking-wider md:text-4xl">Quality Control</h1>
 				<p class="text-xs text-muted-foreground">
 					#{evaluationId} · Λεπτομέρειες αξιολόγησης καταστήματος
 				</p>

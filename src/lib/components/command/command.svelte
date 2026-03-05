@@ -16,6 +16,7 @@
 	import * as Command from '$lib/components/ui/command/index.js';
 	import { getProfileContext } from '$lib/stores/profile.svelte';
 	import { goto } from '$app/navigation';
+	import { Award, Slack } from '@lucide/svelte';
 
     const profile = getProfileContext();
 	let open = $state(false);   
@@ -83,11 +84,6 @@
 			<Command.Item onSelect={() => gotohref('/app/daily_tasks')}>
 				<Network class="me-2 size-4" />
 				<span>Καθημερινές Εργασίες</span>
-                <ArrowRightIcon class="ml-auto size-3.5 text-muted-foreground" />
-			</Command.Item>
-			<Command.Item onSelect={() =>gotohref('/app/manifesto')}>
-				<BookOpen class="me-2 size-4" />
-				<span>Μανιφέστο</span>
                 <ArrowRightIcon class="ml-auto size-3.5 text-muted-foreground" />
 			</Command.Item>
 			<Command.Item onSelect={() => gotohref('/app/blog')}>
@@ -159,6 +155,16 @@
 			<Command.Item onSelect={() => gotohref('/app/managment/organization_managment')}>
 				<BookOpen class="me-2 size-4" />
 				<span>Πίνακας Ελένχου</span>
+                <ArrowRightIcon class="ml-auto size-3.5 text-muted-foreground" />
+			</Command.Item>
+			<Command.Item onSelect={() => gotohref('/app/managment/trainers')}>
+				<Slack class="me-2 size-4" />
+				<span>Διαχείρηση Trainers</span>
+                <ArrowRightIcon class="ml-auto size-3.5 text-muted-foreground" />
+			</Command.Item>
+			<Command.Item onSelect={() => gotohref('/app/managment/bonus_managment')}>
+				<Award class="me-2 size-4" />
+				<span>Διαχείρηση Bonus</span>
                 <ArrowRightIcon class="ml-auto size-3.5 text-muted-foreground" />
 			</Command.Item>
 			<Command.Item onSelect={() => gotohref('/app/managment/recipes_settings')}>

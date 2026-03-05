@@ -27,7 +27,7 @@
 		{
 			title: 'Συνολικές αξιολογήσεις',
 			value: stats.current?.totalEvaluations ?? '—',
-			description: 'Ολοκληρωμένες αξιολογήσεις',
+			description: 'Μη επαληθεύσιμες αξιολογήσεις',
 			iconName: 'gitBranch' as const,
 			trend: undefined
 		}

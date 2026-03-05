@@ -11,6 +11,7 @@
 		saveEquipments,
 		saveSummary,
 		savePhotos,
+		saveFifoCoffee,
 		getOrgStaff
 	} from '$lib/api/trainers/trainer_evalution/data.remote';
 	import { uploadEvaluationPhotos } from '$lib/api/trainers/eval_photos/photos_funcs';
@@ -21,6 +22,8 @@
 	import BaristaTrainingEval from '$lib/components/trainer/BaristaTrainingEval.svelte';
 	import KnowledgeEval from '$lib/components/trainer/KnowledgeEval.svelte';
 	import { setEvaluationPhotosContext } from '$lib/stores/EvalutionPhotos.svelte';
+	import { setFifoCoffeeContext, getFifoCoffeeContext, computeFifoScore } from '$lib/stores/fifo-coffee.svelte';
+	import FifoCoffeeEval from '$lib/components/trainer/FifoCoffeeEval.svelte';
 	import EvalutionPhotos from '$lib/components/trainer/EvalutionPhotos.svelte';
 	import ManagersBarista from '$lib/components/trainer/managers-barista.svelte';
 	import type { Profile } from '$lib/models/database.types';
@@ -37,6 +40,7 @@
 	let equipmentEvalStore = setEquipmentEvalContext();
 	let evalSectionStore = setEvaluationSectionsContext();
 	let EvalutionPhotosContext = setEvaluationPhotosContext();
+	let fifoCoffeeStore = setFifoCoffeeContext();
 	evalSectionStore.init();
 	evalSectionStore.initBaristaTraining();
 
@@ -51,7 +55,7 @@
 	let staffQuery = $derived(getOrgStaff({ orgId }));
 	let staff: Profile[] = $derived(staffQuery.current ?? []);
 	let equipments: Equipment[] = $derived(equipmentQuery.current?.equipments ?? []);
-
+	let finalScore:number = $state(0);
 	let date = $state(new Date().toISOString().split('T')[0]);
 	let baristas = $state<string[]>([]);
 	let managers = $state<string[]>([]);
@@ -70,7 +74,7 @@
 				storeManagers: managers,
 				baristasOnDuty: baristas,
 				submit: type,
-				overall_rating: evalFinal?.score || 0
+				overall_rating: finalScore
 			});
 
 			// 2. Save checked section items (cleanliness / knowledge / training)
@@ -119,14 +123,30 @@
 				});
 			}
 
-			// 5. Upload photo files to storage, then save metadata row
+			// 5. Save FIFO coffee data
+			const fifoItems = fifoCoffeeStore.items
+				.filter((i) => i.roast_date)
+				.map((i) => {
+					const { score, status } = computeFifoScore(i.roast_date);
+					return {
+						coffee_type: i.coffee_type,
+						roast_date: i.roast_date,
+						score,
+						status
+					};
+				});
+			if (fifoItems.length > 0) {
+				await saveFifoCoffee({ evaluation_id: evaluationId, items: fifoItems });
+			}
+
+			// 7. Upload photo files to storage, then save metadata row
 			const photoList = EvalutionPhotosContext.toUploadList();
 			if (photoList.length > 0) {
 				const uploadedPaths = await uploadEvaluationPhotos(evaluationId, photoList);
 				await savePhotos({ evaluation_id: evaluationId, photos: uploadedPaths });
 			}
 
-			// 6. Save final summary & action points
+			// 8. Save final summary & action points
 			if (evalFinal) {
 				await saveSummary({
 					evaluation_id: evaluationId,
@@ -154,7 +174,7 @@
 		<!-- Header -->
 		<div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
 			<div class="space-y-1">
-				<h1 class="font-mono text-3xl tracking-wider md:text-4xl">Αγιολόγηση καταστήματος</h1>
+				<h1 class="font-mono text-3xl tracking-wider md:text-4xl">Quality control</h1>
 				<p class="text-xs text-muted-foreground md:text-sm">
 					Νεα αξιολογήσει για το κατάστημα με κώδικο {orgId} συμπλήρωσε την φόρμα και
 					υπέβαλε την
@@ -169,11 +189,12 @@
 				<EquipmentEval {equipments} />
 				<CleanlinessEval />
 				<KnowledgeEval />
+				<FifoCoffeeEval />
 				<BaristaTrainingEval />
 				<EvalutionPhotos />
 			</div>
 			<div class="flex flex-col lg:row-span-6">
-				<EvalutionRadar {evalFinal} />
+				<EvalutionRadar {evalFinal} bind:finalScore />
 				<EvaluationFinal bind:evalFinal />
 
 				<!-- Submit actions -->

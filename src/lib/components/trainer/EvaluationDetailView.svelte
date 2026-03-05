@@ -15,10 +15,13 @@
 		MapPin,
 		ChevronDown,
 		ChevronUp,
-		GraduationCap
+		GraduationCap,
+		TrendingUp,
+		Clock
 	} from 'lucide-svelte';
 	import { SECTION_META } from '$lib/models/evalution_section_const.types';
 	import { PHOTO_CATEGORY_LABELS } from '$lib/models/trainers.types';
+	import { FIFO_COFFEE_LABELS } from '$lib/stores/fifo-coffee.svelte';
 	import EvalRadarStatic from './EvalRadarStatic.svelte';
 	import ImagePreviewModal from '../custom/ImagePreviewModal.svelte';
 	import * as Collapsible from '$lib/components/ui/collapsible/index.js';
@@ -45,7 +48,9 @@
 	const baristaTraining = $derived((evaluation?.evaluation_barista_training ?? [])[0] ?? null);
 	const equipmentEvals = $derived(evaluation?.equipment_evaluations ?? []);
 	const summary = $derived((evaluation?.evaluation_summary_actions ?? [])[0] ?? null);
-	const overallScore = $derived(summary?.score ?? evaluation?.overall_rating ?? null);
+	const fifoCoffeeItems = $derived(evaluation?.evaluation_fifo_coffee ?? []);
+	// overall_rating is the M.O. of all radar categories saved at submission time
+	const overallScore = $derived(evaluation?.overall_rating ?? null);
 
 	// ─── Helpers ───────────────────────────────────────────────────────────────
 	function getStaffName(id: string): string {
@@ -140,12 +145,22 @@
 						(eqScores.reduce((a: number, b: number) => a + b, 0) / eqScores.length / 5) * 100
 					)
 				: 0;
+		const fifoScores = fifoCoffeeItems
+			.map((i: any) => i.score)
+			.filter((s: any) => s !== null && s !== undefined) as number[];
+		const fifoAvg =
+			fifoScores.length > 0
+				? Math.round(
+						(fifoScores.reduce((a: number, b: number) => a + b, 0) / fifoScores.length / 5) * 100
+					)
+				: 0;
 		return [
 			{ category: 'Καθαριότητα', score: sectionScore('cleanliness') },
 			{ category: 'Γνώσεις', score: sectionScore('knowledge') },
 			{ category: 'Εκπαίδευση', score: sectionScore('training') },
 			{ category: 'Εξοπλισμός', score: eqAvg },
-			{ category: 'Τελικό', score: overallScore ?? 0 }
+			{ category: 'FIFO Coffee', score: fifoAvg },
+			{ category: 'Managment', score: overallScore ?? 0 }
 		];
 	});
 
@@ -419,6 +434,72 @@
 					</div>
 				</div>
 			{/if}
+
+			<!-- ─ FIFO Coffee Card ─────────────────────────── -->
+			{#if fifoCoffeeItems.length > 0}
+				{@const fifoAvgScore = Math.round(
+					fifoCoffeeItems.reduce((sum: number, i: any) => sum + (i.score ?? 0), 0) /
+						fifoCoffeeItems.length /
+						5 * 100
+				)}
+				<div class="rounded-xl border border-border/60 bg-card">
+					<div class="flex items-center justify-between border-b border-border/40 px-4 py-3">
+						<div class="flex items-center gap-2">
+							<Coffee class="h-4 w-4 text-muted-foreground" />
+							<span class="font-mono text-xs tracking-widest text-muted-foreground uppercase">
+								FIFO Coffee
+							</span>
+						</div>
+						<span
+							class="rounded-full border px-2 py-0.5 font-mono text-xs font-medium {scoreBgBorder(fifoAvgScore)}"
+						>
+							{fifoAvgScore}%
+						</span>
+					</div>
+					<div class="divide-y divide-border/30">
+						{#each fifoCoffeeItems as item}
+							{@const statusCls =
+								item.status === 'peak'
+									? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+									: item.status === 'too_fresh'
+										? 'border-blue-500/40 bg-blue-500/10 text-blue-600 dark:text-blue-400'
+										: item.status === 'expired'
+											? 'border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-400'
+											: 'border-border/50 bg-muted/40 text-muted-foreground'}
+							<div class="flex items-center gap-3 px-4 py-2.5">
+								{#if item.status === 'peak'}
+									<TrendingUp class="h-4 w-4 shrink-0 text-emerald-500" />
+								{:else if item.status === 'too_fresh'}
+									<Clock class="h-4 w-4 shrink-0 text-blue-500" />
+								{:else if item.status === 'expired'}
+									<AlertTriangle class="h-4 w-4 shrink-0 text-red-500" />
+								{:else}
+									<Coffee class="h-4 w-4 shrink-0 text-muted-foreground" />
+								{/if}
+								<span class="flex-1 text-sm font-medium">
+									{FIFO_COFFEE_LABELS[item.coffee_type as keyof typeof FIFO_COFFEE_LABELS] ?? item.coffee_type}
+								</span>
+								<span class="text-xs text-muted-foreground">{formatDate(item.roast_date)}</span>
+								<span
+									class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium {statusCls}"
+								>
+									{item.status === 'peak'
+										? 'Peak'
+										: item.status === 'too_fresh'
+											? 'Πολύ Φρέσκο'
+											: item.status === 'expired'
+												? 'Ληγμένο'
+												: '—'}
+								</span>
+								<span class="font-mono text-xs font-semibold {scoreColor((item.score / 5) * 100)}">
+									{item.score}/5
+								</span>
+							</div>
+						{/each}
+					</div>
+				</div>
+			{/if}
+
 			{#if photoItemsWithUrls.length > 0}
 				<Collapsible.Root class="rounded-xl border border-border/60 bg-card">
 					<Collapsible.Trigger
@@ -493,6 +574,7 @@
 					<div class="divide-y divide-border/30">
 						{#each equipmentEvals as eq}
 							{@const checkItems = eq.equipment_check_items ?? []}
+							{@const imageUrl = eq.equipment.image_url}
 							{@const equipScore = eq.score !== null ? Math.round((eq.score / 5) * 100) : null}
 							<div>
 								<!-- Equipment header row -->
@@ -598,7 +680,7 @@
 					<div class="flex items-center gap-2 border-b border-border/40 px-4 py-3">
 						<FileText class="h-4 w-4 text-muted-foreground" />
 						<span class="font-mono text-xs tracking-widest text-muted-foreground uppercase">
-							Τελική Αξιολόγηση
+							Managment control
 						</span>
 					</div>
 					<div class="space-y-4 p-4">
@@ -670,3 +752,4 @@
 		</div>
 	</div>
 </div>
+

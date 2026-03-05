@@ -1,6 +1,5 @@
 <script lang="ts">
 	import type { Equipment } from '$lib/models/equipment.types';
-	import type { EquipmentEvaluationWithChecks } from '$lib/models/trainers.types';
 	import { getEquipmentEvalContext } from '$lib/stores/equipment-eval.svelte';
 	import * as Sheet from '$lib/components/ui/sheet/index.js';
 	import * as InputGroup from '$lib/components/ui/input-group/index.js';

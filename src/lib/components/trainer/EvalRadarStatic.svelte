@@ -14,17 +14,13 @@
     finalScore: number | null;
   } = $props();
 
-  const overallScore = $derived(
-    chartData.length > 0
-      ? Math.round(chartData.reduce((sum, d) => sum + d.score, 0) / chartData.length)
-      : 0
-  );
-
   const overallColor = $derived(
-    (finalScore ?? 0) >= 80 ? 'text-emerald-500'
-    : (finalScore ?? 0) >= 60 ? 'text-amber-500'
+    finalScore === null ? 'text-muted-foreground' 
+    : finalScore >= 80 ? 'text-emerald-500'
+    : finalScore >= 60 ? 'text-amber-500'
     : 'text-red-500'
   );
+
 
   const chartConfig = {
     score: { label: "Score %", color: "var(--chart-1)" },
@@ -40,7 +36,7 @@
         </div>
         <div>
           <Card.Title class="text-base font-semibold tracking-tight">
-            Επισκόπηση Αξιολόγησης
+            Επισκόπηση Quality Control
           </Card.Title>
           <Card.Description class="text-xs">
             Σκορ ανά κατηγορία · % του μέγιστου δυνατού
@@ -48,9 +44,9 @@
         </div>
       </div>
       <div class="flex flex-col items-end gap-0.5">
-        <span class="text-2xl font-bold tabular-nums {overallColor}">{finalScore ?? 0}%</span>
-        <span class="text-[10px] text-muted-foreground">Τελικό Score</span>
-        <span class="text-[10px] text-muted-foreground/50">μ.ο. κατηγοριών {overallScore}%</span>
+        <span class="text-2xl font-bold tabular-nums {overallColor}">{finalScore}%</span>
+        <span class="text-[10px] text-muted-foreground">Management Evaluation</span>
+        <span class="text-[10px] text-muted-foreground/50">μ.ο. κατηγοριών</span>
       </div>
     </div>
   </Card.Header>

@@ -93,7 +93,7 @@
 				<ClipboardList class="h-4 w-4 text-primary" />
 			</div>
 			<div>
-				<h4 class="text-lg font-semibold tracking-tight">Σύνοψη & Ενέργειες</h4>
+				<h4 class="text-lg font-semibold tracking-tight">Managment control</h4>
 				<p class="text-xs text-muted-foreground">
 					Συνολικό score · {evalFinal?.sections?.length ?? 0} σημεία δράσης
 				</p>
@@ -117,7 +117,7 @@
 			<!-- Score + Comments card -->
 			<div class="flex flex-col gap-3 rounded-xl border border-border/60 bg-card/80 p-3">
 				<p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-					Αξιολόγηση
+					Quality Control
 				</p>
 
 				<!-- Overall score -->

@@ -404,6 +404,47 @@ export const getMyEvaluations = query(async () => {
 });
 
 // ============================================================
+// SAVE: FIFO Coffee dates & scores
+// ============================================================
+
+const saveFifoCoffeeSchema = z.object({
+	evaluation_id: z.number().int().positive(),
+	items: z.array(z.object({
+		coffee_type: z.enum(['espresso', 'filter', 'organic_decaf', 'greek_coffee']),
+		roast_date: z.string().nullable(),
+		score: z.number().int().min(0).max(5),
+		status: z.enum(['peak', 'too_fresh', 'expired', 'unknown']),
+	})),
+});
+
+export const saveFifoCoffee = command(saveFifoCoffeeSchema, async ({ evaluation_id, items }) => {
+	const supabase = createServerClient();
+
+	const rows = items
+		.filter((i) => i.roast_date)
+		.map((i) => ({
+			evaluation_id,
+			coffee_type: i.coffee_type,
+			roast_date: i.roast_date,
+			score: i.score,
+			status: i.status,
+		}));
+
+	if (rows.length === 0) return { success: true, count: 0 };
+
+	const { error: insertError } = await supabase
+		.from('evaluation_fifo_coffee')
+		.insert(rows);
+
+	if (insertError) {
+		console.error('[saveFifoCoffee] Error:', insertError);
+		throw error(500, 'Failed to save FIFO coffee data');
+	}
+
+	return { success: true, count: rows.length };
+});
+
+// ============================================================
 // SUBMIT: Finalize evaluation
 // ============================================================
 
@@ -716,7 +757,8 @@ export const getEvaluationById = query(getEvaluationByIdSchema, async ({ evaluat
 				equipment_check_items (*)
 			),
 			evaluation_photos (*),
-			evaluation_summary_actions (*)
+			evaluation_summary_actions (*),
+			evaluation_fifo_coffee (*)
 		`)
 		.eq('id', evaluationId)
 		.single();

@@ -7,12 +7,14 @@
   import ActivityIcon from "@lucide/svelte/icons/activity";
   import { getEvaluationSectionsContext } from '$lib/stores/evaluationSections.svelte';
   import { getEquipmentEvalContext } from '$lib/stores/equipment-eval.svelte';
+  import { getFifoCoffeeContext } from '$lib/stores/fifo-coffee.svelte';
   import type { EvaluationSummaryActions } from '$lib/models/trainers.types';
 
-  let { evalFinal }: { evalFinal?: EvaluationSummaryActions } = $props();
+  let { evalFinal, finalScore=$bindable() }: { evalFinal?: EvaluationSummaryActions, finalScore:number } = $props();
 
   const sectionsStore = getEvaluationSectionsContext();
   const equipmentStore = getEquipmentEvalContext();
+  const fifoStore = getFifoCoffeeContext();
 
   // Normalize a raw score to 0–100 based on (itemCount × max 5 per item)
   function normalize(score: number, itemCount: number): number {
@@ -46,18 +48,30 @@
           : 0
       },
       {
-        category: 'Τελικό',
+        category: 'FIFO Coffee',
+        score: fifoStore.sectionScore
+      },
+      {
+        category: 'Managment',
         score: evalFinal?.score ?? 0
       },
     ];
   });
 
-  const overallScore = $derived(
-    Math.round(chartData.reduce((sum, d) => sum + d.score, 0) / chartData.length)
-  );
+  const overallScore = $derived.by(() => {
+    const active = chartData.filter(d => d.score > 0);
+    if (!active.length) return 0;
+    return Math.round(active.reduce((sum, d) => sum + d.score, 0) / active.length);
+  });
+
+  $effect(() => {
+    if(overallScore){
+      finalScore = overallScore;
+    }
+  })
 
   const overallColor = $derived.by(() => {
-    const s = evalFinal?.score ?? 0;
+    const s = finalScore ?? 0;
     return s >= 80 ? 'text-emerald-500' : s >= 60 ? 'text-amber-500' : 'text-red-500';
   });
 
@@ -83,9 +97,8 @@
         </div>
       </div>
       <div class="flex flex-col items-end gap-0.5">
-        <span class="text-2xl font-bold tabular-nums {overallColor}">{evalFinal?.score ?? 0}%</span>
-        <span class="text-[10px] text-muted-foreground">Τελικό Score</span>
-        <span class="text-[10px] text-muted-foreground/50">μ.ο. κατηγοριών {overallScore}%</span>
+        <span class="text-2xl font-bold tabular-nums {overallColor}">{finalScore}%</span>
+        <span class="text-[10px] text-muted-foreground">M.O κατηγοριών Score</span>
       </div>
     </div>
   </Card.Header>

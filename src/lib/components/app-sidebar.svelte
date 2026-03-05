@@ -49,12 +49,6 @@
 				isActive: false
 			},
 			{
-				title: 'Μανιφέστο',
-				url: '/app/manifesto',
-				icon: BookOpenIcon,
-				isActive: false
-			},
-			{
 				title: 'Blog',
 				url: '/app/blog',
 				icon: NotebookPen,
