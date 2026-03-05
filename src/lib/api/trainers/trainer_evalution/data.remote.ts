@@ -410,7 +410,7 @@ export const getMyEvaluations = query(async () => {
 const saveFifoCoffeeSchema = z.object({
 	evaluation_id: z.number().int().positive(),
 	items: z.array(z.object({
-		coffee_type: z.enum(['espresso', 'filter', 'organic_decaf', 'greek_coffee']),
+		coffee_type: z.enum(['espresso', 'filter', 'organic', 'decaf', 'greek_coffee', 'instant']),
 		roast_date: z.string().nullable(),
 		score: z.number().int().min(0).max(5),
 		status: z.enum(['peak', 'too_fresh', 'expired', 'unknown']),

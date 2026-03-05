@@ -27,7 +27,7 @@
 		{
 			title: 'Συνολικές αξιολογήσεις',
 			value: stats.current?.totalEvaluations ?? '—',
-			description: 'Μη επαληθεύσιμες αξιολογήσεις',
+			description: 'Η Εκκρεμείς αναθέσεις',
 			iconName: 'gitBranch' as const,
 			trend: undefined
 		}

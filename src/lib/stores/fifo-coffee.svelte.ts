@@ -7,13 +7,15 @@ import { getContext, setContext } from 'svelte';
 
 const FIFO_COFFEE_KEY = Symbol('fifo_coffee');
 
-export type FifoCoffeeType = 'espresso' | 'filter' | 'organic_decaf' | 'greek_coffee';
+export type FifoCoffeeType = 'espresso' | 'filter' | 'organic' | 'decaf' | 'greek_coffee' | 'instant';
 
 export const FIFO_COFFEE_LABELS: Record<FifoCoffeeType, string> = {
 	espresso: 'Espresso',
 	filter: 'Filter',
-	organic_decaf: 'Organic Decaf',
-	greek_coffee: 'Ελληνικός Καφές'
+	organic: 'Organic',
+	decaf: 'Decaf',
+	greek_coffee: 'Ελληνικός Καφές',
+	instant: 'Instant Coffee'
 };
 
 export type FifoCoffeeStatus = 'peak' | 'too_fresh' | 'expired' | 'unknown';
@@ -46,8 +48,10 @@ export class FifoCoffeeStore {
 	items = $state<FifoCoffeeItem[]>([
 		{ coffee_type: 'espresso', roast_date: '' },
 		{ coffee_type: 'filter', roast_date: '' },
-		{ coffee_type: 'organic_decaf', roast_date: '' },
-		{ coffee_type: 'greek_coffee', roast_date: '' }
+		{ coffee_type: 'organic', roast_date: '' },
+		{ coffee_type: 'decaf', roast_date: '' },
+		{ coffee_type: 'greek_coffee', roast_date: '' },
+		{ coffee_type: 'instant', roast_date: '' }
 	]);
 
 	// 0–100 for radar chart (average of scored items)

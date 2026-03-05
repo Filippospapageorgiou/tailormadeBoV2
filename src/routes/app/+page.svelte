@@ -181,13 +181,6 @@
 			</div>
 		{/if}
 	</div>
-
-	<!-- Footer Branding -->
-	<div class="text-center pt-2">
-		<p class="text-xs text-muted-foreground/50">
-			ⓒ TAILORMADE · CRAFTING EXCEPTIONAL COFFEE EXPERIENCES
-		</p>
-	</div>
 </div>
 
 <!-- Terms Dialog -->

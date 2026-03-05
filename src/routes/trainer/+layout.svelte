@@ -227,8 +227,9 @@
 
 	<!-- Footer -->
 	<footer class="py-4 text-center">
-		<p class="text-xs text-muted-foreground/50">
-			ⓒ TAILORMADE · TRAINER PORTAL
+		<p class="py-4 text-center text-xs text-muted-foreground/50">
+			© 2026 Filippos Papageorgiou · Platform Development · Confidential - All Rights Reserved
+			<span>TRAINER PORTAL</span>	
 		</p>
 	</footer>
 </div>

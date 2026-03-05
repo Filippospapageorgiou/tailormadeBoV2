@@ -152,6 +152,93 @@ export const updateProfile = form(updateProfileSchema, async ({ username, avatar
 });
 
 
+export const getProfileStats = query(async () => {
+	const supabase = createServerClient();
+	const user = await requireAuthenticatedUser();
+	const uid = user.id;
+
+	// 1. Shifts — total + breakdown by type and category
+	const { data: shifts } = await supabase
+		.from('shifts')
+		.select('shift_type, shift_category')
+		.eq('user_id', uid);
+
+	const shiftTypeCounts: Record<string, number> = {};
+	const shiftCategoryCounts: Record<string, number> = {};
+	for (const s of shifts ?? []) {
+		shiftTypeCounts[s.shift_type] = (shiftTypeCounts[s.shift_type] ?? 0) + 1;
+		if (s.shift_category) {
+			shiftCategoryCounts[s.shift_category] = (shiftCategoryCounts[s.shift_category] ?? 0) + 1;
+		}
+	}
+
+	// 2. Bonuses — all payouts with period info
+	const { data: payouts } = await supabase
+		.from('bonus_employee_payouts')
+		.select(`
+			bonus_amount,
+			hours_worked,
+			total_shifts_in_pool,
+			created_at,
+			bonus_organization_data (
+				period_id,
+				bonus_periods ( quarter, year, status )
+			)
+		`)
+		.eq('user_id', uid)
+		.order('created_at', { ascending: false });
+
+	const totalBonusEarned = (payouts ?? []).reduce((sum, p) => sum + (p.bonus_amount ?? 0), 0);
+	const bonusHistory = (payouts ?? []).map((p) => {
+		const orgData = p.bonus_organization_data as any;
+		const period = orgData?.bonus_periods;
+		return {
+			amount: p.bonus_amount ?? 0,
+			hours_worked: p.hours_worked ?? 0,
+			quarter: period?.quarter ?? null,
+			year: period?.year ?? null,
+			status: period?.status ?? null
+		};
+	});
+
+	// 3. Tasks completed
+	const [{ count: dailyDone }, { count: weeklyDone }, { count: monthlyDone }] = await Promise.all([
+		supabase
+			.from('user_daily_tasks')
+			.select('*', { count: 'exact', head: true })
+			.eq('user_id', uid)
+			.eq('completed', true),
+		supabase
+			.from('user_weekly_tasks')
+			.select('*', { count: 'exact', head: true })
+			.eq('user_id', uid)
+			.eq('completed', true),
+		supabase
+			.from('user_monthly_tasks')
+			.select('*', { count: 'exact', head: true })
+			.eq('user_id', uid)
+			.eq('completed', true)
+	]);
+	return {
+		shifts: {
+			total: (shifts ?? []).length,
+			byType: shiftTypeCounts,
+			byCategory: shiftCategoryCounts
+		},
+		bonuses: {
+			total: totalBonusEarned,
+			count: (payouts ?? []).length,
+			history: bonusHistory
+		},
+		tasks: {
+			daily: dailyDone ?? 0,
+			weekly: weeklyDone ?? 0,
+			monthly: monthlyDone ?? 0,
+			total: (dailyDone ?? 0) + (weeklyDone ?? 0) + (monthlyDone ?? 0)
+		}
+	};
+});
+
 export const getAllPhoneContactsProfile = query(async () => {
 	const supabase = createServerClient();
 

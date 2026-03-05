@@ -12,13 +12,24 @@
 		Users,
 		UserCheck,
 		PhoneIcon,
-		Building2
+		Building2,
+		CalendarDays,
+		DollarSign,
+		ListChecks,
+		Sun,
+		Sunset,
+		Moon,
+		Clock3,
+		TrendingUp,
+		Briefcase,
+		Palmtree,
+		HeartPulse
 	} from 'lucide-svelte';
 	import * as Avatar from '$lib/components/ui/avatar/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge/index.js';
-	import { updateProfile, getAllPhoneContactsProfile } from './data.remote.js';
+	import { updateProfile, getAllPhoneContactsProfile, getProfileStats } from './data.remote.js';
 	import { getProfileContext } from '$lib/stores/profile.svelte.js';
 	import { showSuccessToast, showFailToast } from '$lib/stores/toast.svelte';
 	import * as Modal from '$lib/components/ui/modal';
@@ -29,6 +40,10 @@
 	import Separator from '$lib/components/ui/separator/separator.svelte';
 	import EmergencyContactCard from '$lib/components/custom/EmergencyContactCard.svelte';
 	import { ScrollArea } from '$lib/components/ui/scroll-area';
+	import { ChartLine } from '@lucide/svelte';
+	import { PieChart, ArcChart, Text, BarChart } from 'layerchart';
+	import { scaleBand } from 'd3-scale';
+	import * as Chart from '$lib/components/ui/chart/index.js';
 
 
 	let { data } = $props();
@@ -44,6 +59,9 @@
 
 	let contactsQuery = getAllPhoneContactsProfile();
 	let contacts = $derived(contactsQuery.current?.contacts ?? []);
+
+	let statsQuery = getProfileStats();
+	let stats = $derived(statsQuery.current);
 
 	function getInitials(name: string) {
 		return name
@@ -81,6 +99,71 @@
 			editingBackgroundImage = profile.image_url;
 		}
 	});
+
+	const shiftTypeChartConfig = {
+		work: { label: 'Εργασία', color: 'hsl(217 70% 60%)' },
+		day_off: { label: 'Ρεπό', color: 'hsl(152 60% 45%)' },
+		sick_leave: { label: 'Αναρρωτική', color: 'hsl(0 72% 51%)' },
+		vacation: { label: 'Άδεια', color: 'hsl(38 92% 50%)' }
+	} satisfies Chart.ChartConfig;
+
+	const shiftCategoryChartConfig = {
+		morning: { label: 'Πρωινό', color: 'hsl(45 93% 55%)' },
+		afternoon: { label: 'Απογευματινό', color: 'hsl(25 90% 55%)' },
+		evening: { label: 'Βραδινό', color: 'hsl(243 70% 60%)' },
+		'part-time': { label: 'Μερική', color: 'hsl(280 65% 60%)' }
+	} satisfies Chart.ChartConfig;
+
+	const taskChartConfig = {
+		daily: { label: 'Ημερήσια', color: 'hsl(152 60% 45%)' },
+		weekly: { label: 'Εβδομαδιαία', color: 'hsl(217 70% 60%)' },
+		monthly: { label: 'Μηνιαία', color: 'hsl(38 92% 50%)' }
+	} satisfies Chart.ChartConfig;
+
+	const bonusChartConfig = {
+		amount: { label: 'Bonus (€)', color: 'var(--chart-1)' }
+	} satisfies Chart.ChartConfig;
+
+	let shiftTypePieData = $derived.by(() => {
+		if (!stats) return [];
+		return [
+			{ type: 'work', count: stats.shifts.byType['work'] ?? 0, color: shiftTypeChartConfig.work.color },
+			{ type: 'day_off', count: stats.shifts.byType['day_off'] ?? 0, color: shiftTypeChartConfig.day_off.color },
+			{ type: 'sick_leave', count: stats.shifts.byType['sick_leave'] ?? 0, color: shiftTypeChartConfig.sick_leave.color },
+			{ type: 'vacation', count: stats.shifts.byType['vacation'] ?? 0, color: shiftTypeChartConfig.vacation.color }
+		].filter((d) => d.count > 0);
+	});
+
+	let shiftCategoryPieData = $derived.by(() => {
+		if (!stats) return [];
+		return [
+			{ cat: 'morning', count: stats.shifts.byCategory['morning'] ?? 0, color: shiftCategoryChartConfig.morning.color },
+			{ cat: 'afternoon', count: stats.shifts.byCategory['afternoon'] ?? 0, color: shiftCategoryChartConfig.afternoon.color },
+			{ cat: 'evening', count: stats.shifts.byCategory['evening'] ?? 0, color: shiftCategoryChartConfig.evening.color },
+			{ cat: 'part-time', count: stats.shifts.byCategory['part-time'] ?? 0, color: shiftCategoryChartConfig['part-time'].color }
+		].filter((d) => d.count > 0);
+	});
+
+	let taskArcData = $derived.by(() => {
+		if (!stats) return [];
+		return [
+			{ key: 'daily', label: 'Ημερήσια', value: stats.tasks.daily, color: taskChartConfig.daily.color },
+			{ key: 'weekly', label: 'Εβδομαδιαία', value: stats.tasks.weekly, color: taskChartConfig.weekly.color },
+			{ key: 'monthly', label: 'Μηνιαία', value: stats.tasks.monthly, color: taskChartConfig.monthly.color }
+		];
+	});
+
+	let bonusBarData = $derived.by(() => {
+		if (!stats) return [];
+		return [...stats.bonuses.history]
+			.reverse()
+			.map((p) => ({
+				period: p.quarter ? `Q${p.quarter} '${String(p.year ?? '').slice(-2)}` : '—',
+				amount: p.amount
+			}));
+	});
+
+	let taskTotal = $derived(stats?.tasks.total ?? 0);
 
 	function formatDate(dateString: string) {
 		return new Date(dateString).toLocaleDateString('el-GR', {
@@ -133,6 +216,13 @@
 							>
 								<Phone class="mr-2 h-5 w-5" />
 								<span class="hover:underline">Τηλέφωνα & Τεχνικοί</span>
+							</Tabs.Trigger>
+							<Tabs.Trigger
+								value="stats"
+								class="w-full cursor-pointer justify-start rounded-md border-0 bg-transparent px-4 py-3 text-base font-medium text-muted-foreground shadow-none transition-colors hover:text-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground"
+							>
+								<ChartLine class="mr-2 h-5 w-5" />
+								<span class="hover:underline">Στατιστικά</span>
 							</Tabs.Trigger>
 						</Tabs.List>
 					</aside>
@@ -543,6 +633,332 @@
 								</ScrollArea>
 							{/if}
 						</div>
+					</Tabs.Content>
+					<Tabs.Content value="stats" class="flex-1 animate-fade-in-up">
+						{#if statsQuery.loading}
+							<div class="space-y-4">
+								{#each Array(4) as _}
+									<div class="animate-pulse rounded-xl border bg-card p-5">
+										<div class="mb-3 h-4 w-32 rounded bg-muted"></div>
+										<div class="h-8 w-24 rounded bg-muted"></div>
+									</div>
+								{/each}
+							</div>
+						{:else if stats}
+							<div class="space-y-8">
+								<!-- Header -->
+								<div>
+									<h2 class="text-lg font-bold text-foreground md:text-xl">Στατιστικά</h2>
+									<p class="mt-1 text-sm text-muted-foreground">Σύνοψη της δραστηριότητάς σου</p>
+								</div>
+
+								<!-- Summary Cards -->
+								<div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+									<div class="rounded-xl border border-border/60 bg-card p-4">
+										<div class="mb-2 flex items-center gap-2 text-muted-foreground">
+											<CalendarDays class="h-4 w-4" />
+											<span class="text-xs font-medium uppercase tracking-wide">Βάρδιες</span>
+										</div>
+										<p class="text-2xl font-bold text-foreground">{stats.shifts.total}</p>
+									</div>
+									<div class="rounded-xl border border-border/60 bg-card p-4">
+										<div class="mb-2 flex items-center gap-2 text-muted-foreground">
+											<Briefcase class="h-4 w-4" />
+											<span class="text-xs font-medium uppercase tracking-wide">Εργασία</span>
+										</div>
+										<p class="text-2xl font-bold text-foreground">{stats.shifts.byType['work'] ?? 0}</p>
+									</div>
+									<div class="rounded-xl border border-border/60 bg-card p-4">
+										<div class="mb-2 flex items-center gap-2 text-muted-foreground">
+											<DollarSign class="h-4 w-4" />
+											<span class="text-xs font-medium uppercase tracking-wide">Bonus</span>
+										</div>
+										<p class="text-2xl font-bold text-foreground">{stats.bonuses.total.toFixed(2)}€</p>
+									</div>
+									<div class="rounded-xl border border-border/60 bg-card p-4">
+										<div class="mb-2 flex items-center gap-2 text-muted-foreground">
+											<ListChecks class="h-4 w-4" />
+											<span class="text-xs font-medium uppercase tracking-wide">Tasks</span>
+										</div>
+										<p class="text-2xl font-bold text-foreground">{stats.tasks.total}</p>
+									</div>
+								</div>
+
+								<!-- Shift Breakdown with Charts -->
+								<div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+									<!-- By Type - Pie Chart -->
+									<div class="rounded-xl border border-border/60 bg-card p-5">
+										<h3 class="mb-4 text-sm font-semibold text-foreground">Τύπος Βάρδιας</h3>
+										{#if shiftTypePieData.length > 0}
+											<div class="flex items-center gap-6">
+												<div class="flex-shrink-0">
+													<Chart.Container config={shiftTypeChartConfig} class="aspect-square h-[140px] w-[140px]">
+														<PieChart
+															data={shiftTypePieData}
+															key="type"
+															value="count"
+															c="color"
+															innerRadius={40}
+															props={{
+																pie: {
+																	motion: 'tween'
+																}
+															}}
+														>
+															{#snippet tooltip()}
+																<Chart.Tooltip hideLabel indicator="line" />
+															{/snippet}
+														</PieChart>
+													</Chart.Container>
+												</div>
+												<div class="flex flex-col gap-2 flex-1">
+													{#each [
+														{ key: 'work', label: 'Εργασία', icon: Briefcase, color: 'bg-blue-500' },
+														{ key: 'day_off', label: 'Ρεπό', icon: Palmtree, color: 'bg-green-500' },
+														{ key: 'sick_leave', label: 'Αναρρωτική', icon: HeartPulse, color: 'bg-red-500' },
+														{ key: 'vacation', label: 'Άδεια', icon: Sun, color: 'bg-amber-500' }
+													] as t}
+														{@const count = stats.shifts.byType[t.key] ?? 0}
+														{#if count > 0}
+															<div class="flex items-center gap-2">
+																<div class="h-2.5 w-2.5 rounded-full {t.color}"></div>
+																<span class="text-xs flex-1 text-muted-foreground">{t.label}</span>
+																<span class="text-xs font-semibold text-foreground">{count}</span>
+															</div>
+														{/if}
+													{/each}
+												</div>
+											</div>
+										{:else}
+											<div class="flex h-[140px] items-center justify-center text-sm text-muted-foreground">
+												Δεν υπάρχουν δεδομένα
+											</div>
+										{/if}
+									</div>
+
+									<!-- By Category - Pie Chart -->
+									<div class="rounded-xl border border-border/60 bg-card p-5">
+										<h3 class="mb-4 text-sm font-semibold text-foreground">Κατηγορία Βάρδιας</h3>
+										{#if shiftCategoryPieData.length > 0}
+											<div class="flex items-center gap-6">
+												<div class="flex-shrink-0">
+													<Chart.Container config={shiftCategoryChartConfig} class="aspect-square h-[140px] w-[140px]">
+														<PieChart
+															data={shiftCategoryPieData}
+															key="cat"
+															value="count"
+															c="color"
+															innerRadius={40}
+															props={{
+																pie: {
+																	motion: 'tween'
+																}
+															}}
+														>
+															{#snippet tooltip()}
+																<Chart.Tooltip hideLabel indicator="line" />
+															{/snippet}
+														</PieChart>
+													</Chart.Container>
+												</div>
+												<div class="flex flex-col gap-2 flex-1">
+													{#each [
+														{ key: 'morning', label: 'Πρωινό', icon: Sun, color: 'bg-yellow-400' },
+														{ key: 'afternoon', label: 'Απογευματινό', icon: Sunset, color: 'bg-orange-400' },
+														{ key: 'evening', label: 'Βραδινό', icon: Moon, color: 'bg-indigo-500' },
+														{ key: 'part-time', label: 'Μερική', icon: Clock3, color: 'bg-purple-500' }
+													] as c}
+														{@const count = stats.shifts.byCategory[c.key] ?? 0}
+														{#if count > 0}
+															<div class="flex items-center gap-2">
+																<div class="h-2.5 w-2.5 rounded-full {c.color}"></div>
+																<span class="text-xs flex-1 text-muted-foreground">{c.label}</span>
+																<span class="text-xs font-semibold text-foreground">{count}</span>
+															</div>
+														{/if}
+													{/each}
+												</div>
+											</div>
+										{:else}
+											<div class="flex h-[140px] items-center justify-center text-sm text-muted-foreground">
+												Δεν υπάρχουν δεδομένα
+											</div>
+										{/if}
+									</div>
+								</div>
+
+								<!-- Tasks Completed - ArcChart -->
+								<div class="rounded-xl border border-border/60 bg-card p-5">
+									<h3 class="mb-4 text-sm font-semibold text-foreground">Tasks Ολοκληρωμένα</h3>
+									{#if taskTotal > 0}
+										<div class="flex items-center gap-8">
+											<div class="flex-shrink-0">
+												<Chart.Container config={taskChartConfig} class="aspect-square h-[160px] w-[160px]">
+													<ArcChart
+														value="value"
+														outerRadius={-10}
+														innerRadius={-20}
+														padding={14}
+														range={[180, -180]}
+														maxValue={taskTotal}
+														series={taskArcData.map((d) => ({
+															key: d.key,
+															color: d.color,
+															data: [d],
+															label: d.label
+														}))}
+														props={{
+															arc: {
+																track: { class: 'fill-muted/30' },
+																motion: 'tween'
+															}
+														}}
+														tooltip={false}
+													>
+														{#snippet belowMarks()}
+															<circle cx="0" cy="0" r="42" class="fill-card/80" />
+														{/snippet}
+
+														{#snippet aboveMarks()}
+															<Text
+																value="{taskTotal}"
+																textAnchor="middle"
+																verticalAnchor="middle"
+																class="fill-foreground text-2xl! font-bold"
+																dy={-4}
+															/>
+															<Text
+																value="Σύνολο"
+																textAnchor="middle"
+																verticalAnchor="middle"
+																class="fill-muted-foreground text-xs!"
+																dy={16}
+															/>
+														{/snippet}
+													</ArcChart>
+												</Chart.Container>
+											</div>
+											<div class="flex flex-1 flex-col gap-4">
+												{#each taskArcData as task}
+													<div class="flex items-center gap-3">
+														<div class="h-3 w-3 rounded-full" style="background-color: {task.color}"></div>
+														<div class="flex-1">
+															<div class="flex items-center justify-between">
+																<span class="text-sm font-medium">{task.label}</span>
+																<span class="text-base font-bold">{task.value}</span>
+															</div>
+															<div class="mt-1 h-1.5 w-full rounded-full bg-muted">
+																<div
+																	class="h-1.5 rounded-full transition-all duration-500"
+																	style="width: {taskTotal > 0 ? (task.value / taskTotal) * 100 : 0}%; background-color: {task.color}"
+																></div>
+															</div>
+														</div>
+													</div>
+												{/each}
+											</div>
+										</div>
+									{:else}
+										<div class="grid grid-cols-3 divide-x divide-border/40">
+											<div class="pr-4 text-center">
+												<p class="text-2xl font-bold text-foreground">{stats.tasks.daily}</p>
+												<p class="mt-1 text-xs text-muted-foreground">Ημερήσια</p>
+											</div>
+											<div class="px-4 text-center">
+												<p class="text-2xl font-bold text-foreground">{stats.tasks.weekly}</p>
+												<p class="mt-1 text-xs text-muted-foreground">Εβδομαδιαία</p>
+											</div>
+											<div class="pl-4 text-center">
+												<p class="text-2xl font-bold text-foreground">{stats.tasks.monthly}</p>
+												<p class="mt-1 text-xs text-muted-foreground">Μηνιαία</p>
+											</div>
+										</div>
+									{/if}
+								</div>
+
+								<!-- Bonus History - Bar Chart + List -->
+								{#if stats.bonuses.history.length > 0}
+									<div class="rounded-xl border border-border/60 bg-card p-5">
+										<div class="mb-4 flex items-center justify-between">
+											<h3 class="text-sm font-semibold text-foreground">Ιστορικό Bonus</h3>
+											<span class="text-xs text-muted-foreground">{stats.bonuses.count} περίοδοι</span>
+										</div>
+
+										<!-- Bar Chart -->
+										{#if bonusBarData.length > 1}
+											<div class="mb-6">
+												<Chart.Container config={bonusChartConfig} class="h-[180px] w-full">
+													<BarChart
+														data={bonusBarData}
+														xScale={scaleBand().padding(0.6)}
+														x="period"
+														axis="x"
+														seriesLayout="group"
+														series={[
+															{
+																key: 'amount',
+																label: bonusChartConfig.amount.label,
+																color: bonusChartConfig.amount.color
+															}
+														]}
+														props={{
+															xAxis: {
+																format: (d: string) => d,
+																tickLabelProps: {
+																	class: 'text-[10px] fill-muted-foreground'
+																}
+															},
+															bars: {
+																radius: 3,
+																class: 'transition-opacity hover:opacity-80'
+															}
+														}}
+													>
+														{#snippet tooltip()}
+															<Chart.Tooltip>
+																{#snippet formatter({ value })}
+																	<span class="font-medium">{Number(value).toFixed(2)}€</span>
+																{/snippet}
+															</Chart.Tooltip>
+														{/snippet}
+													</BarChart>
+												</Chart.Container>
+											</div>
+										{/if}
+
+										<!-- List -->
+										<div class="space-y-2">
+											{#each stats.bonuses.history as payout}
+												<div class="flex items-center justify-between rounded-lg border border-border/40 bg-muted/30 px-4 py-3">
+													<div class="flex items-center gap-3">
+														<TrendingUp class="h-4 w-4 text-muted-foreground" />
+														<div>
+															<p class="text-sm font-medium text-foreground">
+																{payout.quarter ? `Q${payout.quarter}` : '—'} {payout.year ?? ''}
+															</p>
+															<p class="text-xs text-muted-foreground">{payout.hours_worked}h worked</p>
+														</div>
+													</div>
+													<div class="text-right">
+														<p class="text-sm font-semibold text-foreground">{payout.amount.toFixed(2)}€</p>
+														{#if payout.status}
+															<span class="text-xs {payout.status === 'published' ? 'text-green-500' : 'text-muted-foreground'}">
+																{payout.status}
+															</span>
+														{/if}
+													</div>
+												</div>
+											{/each}
+										</div>
+									</div>
+								{/if}
+							</div>
+						{:else}
+							<div class="flex flex-col items-center justify-center rounded-xl border border-dashed py-16">
+								<TrendingUp class="mb-3 h-10 w-10 text-muted-foreground/40" />
+								<p class="text-sm text-muted-foreground">Δεν υπάρχουν διαθέσιμα στατιστικά</p>
+							</div>
+						{/if}
 					</Tabs.Content>
 				</Tabs.Root>
 			</div>

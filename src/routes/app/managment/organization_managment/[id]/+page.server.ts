@@ -97,7 +97,7 @@ export const load: PageServerLoad = async ({ params, locals: { supabase } }) => 
 
 		// Parallel fetch: shifts + schedules + tasks
 		const [shiftsRes, schedulesRes, dailyRes, weeklyRes, monthlyRes] = await Promise.all([
-			supabase.from('shifts').select('user_id').eq('org_id', orgId),
+			supabase.from('shifts').select('user_id').eq('org_id', orgId).eq('shift_type','work'),
 			supabase.from('weekly_schedules').select('*', { count: 'exact', head: true }).eq('org_id', orgId),
 			empIds.length > 0
 				? supabase.from('user_daily_tasks').select('user_id, completed').eq('task_date', today).in('user_id', empIds)

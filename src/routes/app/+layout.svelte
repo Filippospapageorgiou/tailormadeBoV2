@@ -96,5 +96,8 @@
 			</div>
 		</header>
 		{@render children?.()}
+		<p class="py-4 text-center text-xs text-muted-foreground/50">
+			© 2026 Filippos Papageorgiou · Platform Development · Confidential - All Rights Reserved
+		</p>
 	</Sidebar.Inset>
 </Sidebar.Provider>
