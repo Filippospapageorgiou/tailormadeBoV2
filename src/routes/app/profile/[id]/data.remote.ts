@@ -173,20 +173,22 @@ export const getProfileStats = query(async () => {
 	}
 
 	// 2. Bonuses — all payouts with period info
+	//only published
 	const { data: payouts } = await supabase
-		.from('bonus_employee_payouts')
-		.select(`
-			bonus_amount,
-			hours_worked,
-			total_shifts_in_pool,
-			created_at,
-			bonus_organization_data (
-				period_id,
-				bonus_periods ( quarter, year, status )
-			)
-		`)
-		.eq('user_id', uid)
-		.order('created_at', { ascending: false });
+	.from('bonus_employee_payouts')
+	.select(`
+		bonus_amount,
+		hours_worked,
+		total_shifts_in_pool,
+		created_at,
+		bonus_organization_data!inner (
+			period_id,
+			bonus_periods!inner ( quarter, year, status )
+		)
+	`)
+	.eq('user_id', uid)
+	.eq('bonus_organization_data.bonus_periods.status', 'published')
+	.order('created_at', { ascending: false });
 
 	const totalBonusEarned = (payouts ?? []).reduce((sum, p) => sum + (p.bonus_amount ?? 0), 0);
 	const bonusHistory = (payouts ?? []).map((p) => {

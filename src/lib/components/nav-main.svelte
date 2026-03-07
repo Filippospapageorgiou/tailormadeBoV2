@@ -5,6 +5,7 @@
 	import { getProfileContext } from '$lib/stores/profile.svelte';
 	import { useSidebar } from '$lib/components/ui/sidebar/index.js';
 	import { page } from '$app/state';
+	import { orgHasFeature, type FEATURE_ACCESS } from '$lib/config/feature-access';
 
 	let user = getProfileContext();
 	const sidebar = useSidebar();
@@ -64,7 +65,9 @@
 		title: string;
 		url: string;
 		requiresSuperAdmin?: boolean;
+		feature?: keyof typeof FEATURE_ACCESS;
 	}): boolean {
+		if (item.feature && !orgHasFeature(user.orgId, item.feature)) return false;
 		if (!item.requiresSuperAdmin) return true;
 		return user.role_id === 1 || user.role_id === 2;
 	}

@@ -64,7 +64,8 @@
 				title: 'Ταμείο',
 				url: '/app/register',
 				icon: EuroIcon,
-				isActive: false
+				isActive: false,
+				feature:'register' as const
 			},
 			{
 				title: 'Πρόγραμμα',
@@ -103,7 +104,8 @@
 						title: 'Ταμείο',
 						url: '/app/settings/register_settings',
 						icon: Landmark,
-						isActive: false
+						isActive: false,
+						feature:'register' as const
 					},
 					{
 						title: 'Tasks',
