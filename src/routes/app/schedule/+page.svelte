@@ -24,7 +24,7 @@
 	// Query derived state
 	let query = $derived(getCurrentSchedule({ weekStartDate, next, prev }));
 	let { data } = $props();
-	let user = $derived(data.user);
+	let user = $derived(data.profile);
 
 	// Modal states
 	let isDetailsModalOpen = $state(false);
@@ -55,7 +55,7 @@
 
 		const startDate = new Date(schedule.week_start_date);
 		const today = new Date().toISOString().split('T')[0];
-		
+
 		const greekDays = {
 			short: ['Δευ', 'Τρι', 'Τετ', 'Πεμ', 'Παρ', 'Σαβ', 'Κυρ'],
 			full: ['Δευτέρα', 'Τρίτη', 'Τετάρτη', 'Πέμπτη', 'Παρασκευή', 'Σάββατο', 'Κυριακή']
@@ -84,9 +84,8 @@
 	let stats = $derived.by(() => {
 		const totalShifts = shifts.length;
 		const totalEmployees = employees.length;
-		const coverage = totalEmployees > 0 
-			? Math.round((totalShifts / (totalEmployees * 7)) * 100) 
-			: 0;
+		const coverage =
+			totalEmployees > 0 ? Math.round((totalShifts / (totalEmployees * 7)) * 100) : 0;
 		return { totalShifts, totalEmployees, coverage };
 	});
 
@@ -98,7 +97,7 @@
 			const shiftInfo = await getShfitInfo({ id: shiftId });
 			if (shiftInfo.success && shiftInfo.shift) {
 				selectedShiftData = shiftInfo.shift;
-				if(selectedShiftData?.user_id){
+				if (selectedShiftData?.user_id) {
 					isSameUser = selectedShiftData.user_id === user?.id;
 				}
 			}
@@ -189,14 +188,14 @@
 									</Badge>
 								{/if}
 							</div>
-							<p class="text-lg text-muted-foreground flex items-center gap-2">
+							<p class="flex items-center gap-2 text-lg text-muted-foreground">
 								<Calendar class="h-4 w-4" />
 								{formatWeekRange(schedule.week_start_date, schedule.week_end_date)}
 							</p>
 						</div>
 
 						<!-- Stats Cards (Desktop) -->
-						<div class="hidden md:flex gap-4 text-sm">
+						<div class="hidden gap-4 text-sm md:flex">
 							<div class="rounded-lg bg-muted px-4 py-2 text-center">
 								<div class="font-semibold text-foreground">{stats.totalEmployees}</div>
 								<div class="text-xs text-muted-foreground">Εργαζόμενοι</div>
@@ -213,14 +212,16 @@
 					</div>
 
 					<!-- Controls Bar -->
-					<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-border/50 bg-card p-4 shadow-sm">
+					<div
+						class="flex flex-col gap-4 rounded-xl border border-border/50 bg-card p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+					>
 						<!-- Filter Status -->
 						<div class="flex items-center gap-2">
 							{#if selectedEmployeeId}
 								<div class="flex items-center gap-2" in:fly={{ x: -10 }}>
 									<Filter class="h-4 w-4 text-primary" />
 									<span class="text-sm font-medium">
-										Φίλτρο: {employees.find(e => e.id === selectedEmployeeId)?.username}
+										Φίλτρο: {employees.find((e) => e.id === selectedEmployeeId)?.username}
 									</span>
 									<Button variant="ghost" size="sm" class="h-6 px-2" onclick={resetFilters}>
 										<RotateCcw class="h-3 w-3" />
@@ -232,7 +233,7 @@
 						</div>
 
 						<!-- Navigation -->
-						<div class="flex items-center justify-between sm:justify-end gap-2">
+						<div class="flex items-center justify-between gap-2 sm:justify-end">
 							<Button
 								variant="outline"
 								size="sm"
@@ -243,7 +244,7 @@
 								<ChevronLeft class="h-4 w-4" />
 								<span class="hidden sm:inline">Προηγούμενη</span>
 							</Button>
-							
+
 							<Button
 								variant="outline"
 								size="sm"
@@ -258,7 +259,7 @@
 					</div>
 
 					<!-- Schedule Grid -->
-					<div class="rounded-xl border border-border/50 bg-card shadow-sm overflow-hidden">
+					<div class="overflow-hidden rounded-xl border border-border/50 bg-card shadow-sm">
 						<ShiftGrid
 							{weekDays}
 							{employees}
@@ -272,14 +273,20 @@
 				</div>
 			{:else}
 				<!-- Empty State -->
-				<div class="flex min-h-[500px] items-center justify-center rounded-2xl border border-dashed bg-muted/30 p-12" in:fade>
-					<div class="text-center max-w-md">
-						<div class="mx-auto h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+				<div
+					class="flex min-h-[500px] items-center justify-center rounded-2xl border border-dashed bg-muted/30 p-12"
+					in:fade
+				>
+					<div class="max-w-md text-center">
+						<div
+							class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted"
+						>
 							<Calendar class="h-8 w-8 text-muted-foreground" />
 						</div>
 						<h3 class="text-xl font-semibold text-foreground">Δεν υπάρχει διαθέσιμο πρόγραμμα</h3>
 						<p class="mt-2 text-muted-foreground">
-							Δεν έχει δημοσιευτεί πρόγραμμα για αυτή την εβδομάδα. Επικοινωνήστε με τον διαχειριστή.
+							Δεν έχει δημοσιευτεί πρόγραμμα για αυτή την εβδομάδα. Επικοινωνήστε με τον
+							διαχειριστή.
 						</p>
 						<Button variant="outline" class="mt-6" onclick={handlePrevWeek}>
 							Προηγούμενη εβδομάδα
@@ -289,9 +296,14 @@
 			{/if}
 		{:catch error}
 			<!-- Error State -->
-			<div class="flex min-h-[500px] items-center justify-center rounded-2xl border border-destructive/50 bg-destructive/5 p-12" in:fade>
-				<div class="text-center max-w-md">
-					<div class="mx-auto h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
+			<div
+				class="flex min-h-[500px] items-center justify-center rounded-2xl border border-destructive/50 bg-destructive/5 p-12"
+				in:fade
+			>
+				<div class="max-w-md text-center">
+					<div
+						class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10"
+					>
 						<Calendar class="h-8 w-8 text-destructive" />
 					</div>
 					<h3 class="text-xl font-semibold text-foreground">Σφάλμα φόρτωσης</h3>

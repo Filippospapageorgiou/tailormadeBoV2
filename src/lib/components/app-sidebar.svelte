@@ -31,48 +31,48 @@
 				isActive: false,
 				items: [
 					{
-				title: 'Συνταγές',
-				url: '/app/recipes',
-				icon: Coffee,
-				isActive: false
-			},
-			{
-				title: 'Εξοπλισμός',
-				url: '/app/equipment',
-				icon: Cog,
-				isActive: false
-			},
-			{
-				title: 'Tasks',
-				url: '/app/daily_tasks',
-				icon: Network,
-				isActive: false
-			},
-			{
-				title: 'Blog',
-				url: '/app/blog',
-				icon: NotebookPen,
-				isActive: false
-			},
-			{
-				title: 'Manuals',
-				url: '/app/manuals',
-				icon: Boxes,
-				isActive:false
-			},
-			{
-				title: 'Ταμείο',
-				url: '/app/register',
-				icon: EuroIcon,
-				isActive: false,
-				feature:'register' as const
-			},
-			{
-				title: 'Πρόγραμμα',
-				url: '/app/schedule',
-				icon: CalendarRange,
-				isActive: false
-			},
+						title: 'Συνταγές',
+						url: '/app/recipes',
+						icon: Coffee,
+						isActive: false
+					},
+					{
+						title: 'Εξοπλισμός',
+						url: '/app/equipment',
+						icon: Cog,
+						isActive: false
+					},
+					{
+						title: 'Tasks',
+						url: '/app/daily_tasks',
+						icon: Network,
+						isActive: false
+					},
+					{
+						title: 'Blog',
+						url: '/app/blog',
+						icon: NotebookPen,
+						isActive: false
+					},
+					{
+						title: 'Manuals',
+						url: '/app/manuals',
+						icon: Boxes,
+						isActive: false
+					},
+					{
+						title: 'Ταμείο',
+						url: '/app/register',
+						icon: EuroIcon,
+						isActive: false,
+						feature: 'register' as const
+					},
+					{
+						title: 'Πρόγραμμα',
+						url: '/app/schedule',
+						icon: CalendarRange,
+						isActive: false
+					}
 				]
 			},
 			{
@@ -105,7 +105,7 @@
 						url: '/app/settings/register_settings',
 						icon: Landmark,
 						isActive: false,
-						feature:'register' as const
+						feature: 'register' as const
 					},
 					{
 						title: 'Tasks',
@@ -117,12 +117,12 @@
 			}
 		],
 		navSecondary: [
-			{
+			/*{
 				title: 'legal',
 				url: '/app/legal',
 				icon: LifeBuoyIcon,
 				isActive: false
-			},
+			},*/
 			{
 				title: 'Feedback',
 				url: '#',
