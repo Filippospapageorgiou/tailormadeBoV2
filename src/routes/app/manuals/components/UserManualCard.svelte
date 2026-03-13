@@ -3,15 +3,14 @@
 	import { MANUAL_CATEGORY_LABELS } from '$lib/models/manuals.types';
 	import { Badge } from '$lib/components/ui/badge';
 	import { BookOpen, CheckCircle2, User, Calendar, ChevronRight } from 'lucide-svelte';
+	import { goto } from '$app/navigation';
 
 	let {
 		manual,
-		index = 0,
-		onSelect
+		index = 0
 	}: {
 		manual: ManualWithDetails;
 		index?: number;
-		onSelect?: (manual: ManualWithDetails) => void;
 	} = $props();
 
 	function formatDate(dateString: string | null | undefined) {
@@ -49,8 +48,8 @@
 		dark:bg-background/50 {manual.is_read ? 'opacity-65' : ''}"
 	role="button"
 	tabindex="0"
-	onclick={() => onSelect?.(manual)}
-	onkeydown={(e) => e.key === 'Enter' && onSelect?.(manual)}
+	onclick={() => goto(`/app/manuals/${manual.id}`)}
+	onkeydown={(e) => e.key === 'Enter' && goto(`/app/manuals/${manual.id}`)}
 >
 	<!-- Hero Image -->
 	<div class="relative h-48 w-full overflow-hidden sm:h-44">

@@ -13,6 +13,7 @@
 	import { Switch } from '$lib/components/ui/switch/index.js';
 	import { toast } from 'svelte-sonner';
 	import DeleteConfirmDialog from '$lib/components/Reusable/DeleteConfirmDialog.svelte';
+	import { getGlobalProfileStore } from '$lib/stores/profile.svelte';
 
 	let {
 		id,
@@ -41,6 +42,8 @@
 	// Badge color dialog state
 	let badgeColorDialogOpen = $state(false);
 	let selectedBadgeColor = $derived(badge_color || '#3b82f6');
+
+	let profile = getGlobalProfileStore();
 
 	function handleEditClick() {
 		selectedRoleId = String(role_id);
@@ -181,21 +184,21 @@
 <Dialog.Root bind:open={editDialogOpen}>
 	<Dialog.Content class="sm:max-w-[425px]">
 		<Dialog.Header>
-			<Dialog.Title>Edit User Role</Dialog.Title>
+			<Dialog.Title>Τροποποιήση δικαιώματα χρήστη</Dialog.Title>
 			<Dialog.Description>
-				Update the role for <span class="font-semibold">{username}</span>. Changes will take effect
-				immediately.
+				Ενημέρωση ρόλου για τον <span class="font-semibold">{username}</span>. Οι αλλαγές θα γίνουν
+				άμεσα
 			</Dialog.Description>
 		</Dialog.Header>
 		<div class="grid gap-4 py-4">
 			<div class="grid grid-cols-4 items-center gap-4">
-				<Label class="text-right">Current Role</Label>
+				<Label class="text-right">Τρέχουσα θέση</Label>
 				<div class="col-span-3">
 					<span class="text-sm text-muted-foreground">{role_name}</span>
 				</div>
 			</div>
 			<div class="grid grid-cols-4 items-center gap-4">
-				<Label class="text-right">New Role</Label>
+				<Label class="text-right">Νέος ρόλος</Label>
 				<div class="col-span-3">
 					<Select.Root type="single" bind:value={selectedRoleId}>
 						<Select.Trigger class="w-full">
@@ -205,7 +208,7 @@
 							<Select.Group>
 								<Select.Label>Roles</Select.Label>
 								{#each roleTypes as roleType (roleType.id)}
-									{#if roleType.id !== 1}
+									{#if roleType.id !== 1 && roleType.id !== 3}
 										<Select.Item value={String(roleType.id)} label={roleType.role_name}>
 											{roleType.role_name}
 										</Select.Item>
@@ -215,13 +218,17 @@
 						</Select.Content>
 					</Select.Root>
 				</div>
-				<div class="col-span-3 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-					<Label class="sm:text-right">Authorize to close register</Label>
-					<Switch bind:checked={can_close_register} />
-				</div>
+				{#if profile?.orgId === 1}
+					<div
+						class="col-span-3 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+					>
+						<Label class="sm:text-right">Authorize to close register</Label>
+						<Switch bind:checked={can_close_register} />
+					</div>
+				{/if}
 
 				<div class="col-span-3 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-					<Label class="sm:text-right">Is Manager</Label>
+					<Label class="sm:text-right">Υπεύθυνος βάρδιας</Label>
 					<Switch bind:checked={is_manager} />
 				</div>
 			</div>
@@ -247,10 +254,9 @@
 >
 	{#snippet children()}
 		Είστε σίγουροι ότι θέλετε να διαγράψετε τον χρήστη
-        <span class="font-medium">«{username}»</span>?
+		<span class="font-medium">«{username}»</span>?
 		<br />
-		<br /> Ο χρήστης θα διαγραφεί μόνιμα
-        από το σύστημα πιστοποίησης και τη βάση δεδομένων.
+		<br /> Ο χρήστης θα διαγραφεί μόνιμα από το σύστημα πιστοποίησης και τη βάση δεδομένων.
 	{/snippet}
 </DeleteConfirmDialog>
 

@@ -59,7 +59,6 @@
 		shiftChanges.current?.shiftRequests || []
 	);
 
-
 	// Data from queries
 	let schedule = $derived(scheduleQuery?.current?.schedule ?? null);
 	let employees = $derived(scheduleQuery?.current?.employees ?? []);
@@ -250,7 +249,6 @@
 		}
 	}
 
-
 	// Refresh shift requests
 	async function refreshRequests() {
 		await shiftChanges.refresh();
@@ -337,8 +335,8 @@
 
 			<!-- Action bar -->
 			<div
-				class="animate-fade-in slide-in-from-top-4 flex flex-wrap items-center justify-between gap-3
-				 rounded-xl border border-border/50 black:border-white/5 black:bg-gradient-to-br black:from-white/[0.02] black:to-transparent p-4 black:backdrop-blur-sm duration-500"
+				class="black:border-white/5 black:bg-gradient-to-br black:from-white/[0.02] black:to-transparent black:backdrop-blur-sm flex animate-fade-in
+				 flex-wrap items-center justify-between gap-3 rounded-xl border border-border/50 p-4 duration-500 slide-in-from-top-4"
 				style="animation-delay: 100ms;"
 			>
 				<div class="flex items-center gap-2">
@@ -346,10 +344,7 @@
 						<Tooltip.Provider>
 							<Tooltip.Root>
 								<Tooltip.Trigger>
-									<Button
-										onclick={() => (bulkAddModalOpen = true)}
-										variant="outline"
-									>
+									<Button onclick={() => (bulkAddModalOpen = true)} variant="outline">
 										<Users class="h-4 w-4" />
 										<span class="hidden sm:inline">Μαζική Προσθήκη</span>
 									</Button>
@@ -396,11 +391,14 @@
 						/>
 					{/if}
 				</div>
-
 			</div>
 
 			<!-- Shift Requests -->
-			<ShiftRequests {shiftRequests} loading={shiftChanges?.loading ?? true}   onSuccess={refreshRequests} />
+			<ShiftRequests
+				{shiftRequests}
+				loading={shiftChanges?.loading ?? true}
+				onSuccess={refreshRequests}
+			/>
 
 			<!-- Shift Modal -->
 			<ShiftModal
