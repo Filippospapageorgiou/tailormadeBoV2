@@ -2,13 +2,16 @@
 import { query } from '$app/server';
 import { createServerClient } from '$lib/supabase/server';
 import type { Equipment } from '$lib/models/equipment.types';
+import { getUserOrgId } from '$lib/supabase/queries';
 
 export const getAllEquipments = query(async () => {
 	const supabase = createServerClient();
+	const orgId = await getUserOrgId();
 	try {
 		const { data: equipments, error } = await supabase
 			.from('equipment')
 			.select('*')
+			.eq('org_id', orgId)
 			.order('id', { ascending: false })
 			.overrideTypes<Equipment[]>();
 
