@@ -22,14 +22,21 @@ export interface Equipment {
 
 export interface MaintenanceLog {
 	id: number;
-	equipment_id: number;
-	user_id: string; // UUID
+	equipment_id: number | null; // null για emergency faults
+	user_id: string;
 	issue_description: string;
 	action_taken: string | null;
-	status_after: EquipmentStatus | null;
+	status_after: 'operational' | 'broken' | 'maintenance' | null;
 	cost: number;
 	created_at: string;
 	images: string[] | null;
+	// Emergency fault fields
+	org_id: number | null;
+	is_emergency: boolean;
+	title: string | null;
+	status: 'open' | 'in_progress' | 'resolved';
+	resolved_at: string | null;
+	resolved_by: string | null; // UUID
 }
 
 // --- Joined Types (For UI Display) ---

@@ -10,22 +10,72 @@ import { type MaintenanceLog, type EquipmentWithLogs } from '$lib/models/equipme
  */
 const sanitizePath = (str: string) => {
 	const greekMap: Record<string, string> = {
-		'Α': 'A', 'Β': 'B', 'Γ': 'G', 'Δ': 'D', 'Ε': 'E', 'Ζ': 'Z', 'Η': 'H', 'Θ': 'TH',
-		'Ι': 'I', 'Κ': 'K', 'Λ': 'L', 'Μ': 'M', 'Ν': 'N', 'Ξ': 'X', 'Ο': 'O', 'Π': 'P',
-		'Ρ': 'R', 'Σ': 'S', 'Τ': 'T', 'Υ': 'Y', 'Φ': 'F', 'Χ': 'CH', 'Ψ': 'PS', 'Ω': 'O',
-		'α': 'a', 'β': 'b', 'γ': 'g', 'δ': 'd', 'ε': 'e', 'ζ': 'z', 'η': 'h', 'θ': 'th',
-		'ι': 'i', 'κ': 'k', 'λ': 'l', 'μ': 'm', 'ν': 'n', 'ξ': 'x', 'ο': 'o', 'π': 'p',
-		'ρ': 'r', 'σ': 's', 'τ': 't', 'υ': 'y', 'φ': 'f', 'χ': 'ch', 'ψ': 'ps', 'ω': 'o',
-		'ς': 's', 'ϊ': 'i', 'ϋ': 'y', 'ό': 'o', 'ύ': 'u', 'ώ': 'w', 'ή': 'h', 'έ': 'e', 'ί': 'i'
+		Α: 'A',
+		Β: 'B',
+		Γ: 'G',
+		Δ: 'D',
+		Ε: 'E',
+		Ζ: 'Z',
+		Η: 'H',
+		Θ: 'TH',
+		Ι: 'I',
+		Κ: 'K',
+		Λ: 'L',
+		Μ: 'M',
+		Ν: 'N',
+		Ξ: 'X',
+		Ο: 'O',
+		Π: 'P',
+		Ρ: 'R',
+		Σ: 'S',
+		Τ: 'T',
+		Υ: 'Y',
+		Φ: 'F',
+		Χ: 'CH',
+		Ψ: 'PS',
+		Ω: 'O',
+		α: 'a',
+		β: 'b',
+		γ: 'g',
+		δ: 'd',
+		ε: 'e',
+		ζ: 'z',
+		η: 'h',
+		θ: 'th',
+		ι: 'i',
+		κ: 'k',
+		λ: 'l',
+		μ: 'm',
+		ν: 'n',
+		ξ: 'x',
+		ο: 'o',
+		π: 'p',
+		ρ: 'r',
+		σ: 's',
+		τ: 't',
+		υ: 'y',
+		φ: 'f',
+		χ: 'ch',
+		ψ: 'ps',
+		ω: 'o',
+		ς: 's',
+		ϊ: 'i',
+		ϋ: 'y',
+		ό: 'o',
+		ύ: 'u',
+		ώ: 'w',
+		ή: 'h',
+		έ: 'e',
+		ί: 'i'
 	};
 
 	return str
 		.split('')
-		.map(char => greekMap[char] || char)
+		.map((char) => greekMap[char] || char)
 		.join('')
 		.normalize('NFD')
 		.replace(/[\u0300-\u036f]/g, '')
-		.replace(/\s+/g, '-') 
+		.replace(/\s+/g, '-')
 		.replace(/[^a-zA-Z0-9\-_]/g, '')
 		.toLowerCase();
 };
@@ -47,16 +97,17 @@ export const getAllEquipments = query(async () => {
 			.from('equipment')
 			.select(
 				`
-				*,
-				maintenance_logs (
-					*,
-					profiles (
-						username,
-						role,
-						image_url
-					)
-				)
-			`
+        *,
+        maintenance_logs (
+            *,
+            profiles!maintenance_logs_user_id_fkey (
+                username,
+                role,
+                image_url,
+                phone
+            )
+        )
+    `
 			)
 			.eq('org_id', org_id)
 			.overrideTypes<EquipmentWithLogs[]>();
