@@ -217,7 +217,7 @@
 				class="flex h-full flex-col overflow-hidden rounded-xl bg-gradient-to-br from-muted/50 to-transparent py-4 backdrop-blur-sm hover:shadow-md"
 			>
 				<CardHeader class="pb-2">
-					<div class="flex items-start justify-between gap-2">
+					<div class="flex flex-col gap-2">
 						<CardTitle class="min-w-0 flex-1 truncate text-base leading-tight">
 							{#if template.name}
 								{template.name.length > 25 ? template.name.slice(0, 25) + '...' : template.name}
@@ -225,7 +225,7 @@
 						</CardTitle>
 						{#if template.is_active}
 							<Badge
-								class="ml-auto flex shrink-0 items-center gap-2 border-none bg-green-600/10 whitespace-nowrap text-green-600"
+								class="flex shrink-0 items-center gap-2 border-none bg-green-600/10 whitespace-nowrap text-green-600"
 							>
 								<span class="size-1.5 animate-pulse rounded-full bg-green-600" aria-hidden="true"
 								></span>
@@ -233,7 +233,7 @@
 							</Badge>
 						{:else}
 							<Badge
-								class="ml-auto flex shrink-0 items-center gap-2 border-none bg-destructive/10 whitespace-nowrap text-destructive"
+								class="flex shrink-0 items-center gap-2 border-none bg-destructive/10 whitespace-nowrap text-destructive"
 							>
 								<!-- svelte-ignore element_invalid_self_closing_tag -->
 								<span class="size-1.5 rounded-full bg-destructive" aria-hidden="true" />

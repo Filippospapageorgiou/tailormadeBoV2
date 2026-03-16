@@ -375,7 +375,7 @@ export const getAllTemplatesTask = query(async () => {
 		const { data: taskTemplatesWithTasks, error: templateError } = await supabase
 			.from('task_templates')
 			.select(`*,task_items (*)`)
-			.eq('org_id', org_id)
+			.or(`org_id.eq.${org_id},org_id.is.null`)
 			.overrideTypes<TaskTemplateWithTasks[]>();
 
 		if (templateError) {
@@ -955,7 +955,7 @@ export const addUserWeeklyTasks = command(addUserWeeklyTasksSchema, async (data)
 			user_id: data.user_id,
 			org_id: org_id,
 			title: 'Νέες εργασίες ανατέθηκαν',
-			message: `Σου ανατέθηκαν ${data.task_item_ids.length} νέες εβδομαδίαιες εργασίες για ${ data.week_start_date}.`
+			message: `Σου ανατέθηκαν ${data.task_item_ids.length} νέες εβδομαδίαιες εργασίες για ${data.week_start_date}.`
 		});
 
 		return { success: true, message: 'Επιτυχία στην πρόσθεση εβδομαδιαίων εργασιών' };
@@ -1092,9 +1092,8 @@ export const addUserMonthlyTasks = command(addUserMonthlyTasksSchema, async (dat
 			user_id: data.user_id,
 			org_id: org_id,
 			title: 'Νέες εργασίες ανατέθηκαν',
-			message: `Σου ανατέθηκαν ${data.task_item_ids.length} νέες μηναίες εργασίες για ${ data.month_date}.`
+			message: `Σου ανατέθηκαν ${data.task_item_ids.length} νέες μηναίες εργασίες για ${data.month_date}.`
 		});
-
 
 		return { success: true, message: 'Επιτυχία στην πρόσθεση μηνιαίων εργασιών' };
 	} catch (error) {

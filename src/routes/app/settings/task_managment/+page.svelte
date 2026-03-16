@@ -162,13 +162,20 @@
 
 	const selectedUserIdData = $derived(users.find((u) => u.id === selectedUserId));
 
-	// Check if selected user already has tasks (only blocks daily)
-	const userHasExistingDailyTasks = $derived(
-		selectedFrequency === 'daily' &&
-			selectedUserIdData &&
-			'dailyTasks' in selectedUserIdData &&
-			(selectedUserIdData as any).dailyTasks?.length > 0
-	);
+	// ─── Check if selected user already has tasks (works for ALL frequencies) ───
+	const userHasExistingTasks = $derived(() => {
+		if (!selectedUserIdData) return false;
+		if (selectedFrequency === 'daily' && 'dailyTasks' in selectedUserIdData) {
+			return (selectedUserIdData as any).dailyTasks?.length > 0;
+		}
+		if (selectedFrequency === 'weekly' && 'weeklyTasks' in selectedUserIdData) {
+			return (selectedUserIdData as any).weeklyTasks?.length > 0;
+		}
+		if (selectedFrequency === 'monthly' && 'monthlyTasks' in selectedUserIdData) {
+			return (selectedUserIdData as any).monthlyTasks?.length > 0;
+		}
+		return false;
+	});
 
 	// For displaying existing tasks in any frequency
 	const existingTasksForUser = $derived(() => {
@@ -197,9 +204,16 @@
 		selectedUserId = '';
 	});
 
-	const frequencyLabels: Record<Frequency, { label: string; assignLabel: string; dateLabel: string }> = {
+	const frequencyLabels: Record<
+		Frequency,
+		{ label: string; assignLabel: string; dateLabel: string }
+	> = {
 		daily: { label: 'Ημερήσιο', assignLabel: 'Ημερήσια ανάθεση', dateLabel: 'Ημερομηνία' },
-		weekly: { label: 'Εβδομαδιαίο', assignLabel: 'Εβδομαδιαία ανάθεση', dateLabel: 'Εβδομάδα (αρχή)' },
+		weekly: {
+			label: 'Εβδομαδιαίο',
+			assignLabel: 'Εβδομαδιαία ανάθεση',
+			dateLabel: 'Εβδομάδα (αρχή)'
+		},
 		monthly: { label: 'Μηνιαίο', assignLabel: 'Μηνιαία ανάθεση', dateLabel: 'Μήνας' }
 	};
 
@@ -403,14 +417,16 @@
 		<main class="mx-auto w-auto px-4 py-8 sm:px-6 lg:px-8">
 			{#if currentView === 'assign'}
 				<!-- Frequency Pills -->
-				<div class="mb-5 inline-flex items-center gap-0.5 rounded-lg border border-border bg-muted/50 p-1">
-					{#each (['daily', 'weekly', 'monthly'] as const) as freq}
+				<div
+					class="mb-5 inline-flex items-center gap-0.5 rounded-lg border border-border bg-muted/50 p-1"
+				>
+					{#each ['daily', 'weekly', 'monthly'] as const as freq}
 						<button
 							onclick={() => (selectedFrequency = freq)}
 							class="flex items-center gap-2 rounded-md px-4 py-1.5 text-xs font-medium transition-all
 								{selectedFrequency === freq
-									? 'bg-background text-foreground shadow-sm'
-									: 'text-muted-foreground hover:text-foreground'}"
+								? 'bg-background text-foreground shadow-sm'
+								: 'text-muted-foreground hover:text-foreground'}"
 						>
 							<span class="h-1.5 w-1.5 rounded-full {freqDotColors[freq]}"></span>
 							{frequencyLabels[freq].label}
@@ -479,7 +495,9 @@
 													<div class="mt-1 flex items-center gap-2 py-0.5">
 														<Badge
 															variant="outline"
-															class="rounded-2 h-6 rounded-sm {freqColors[selectedFrequency]} [a&]:hover:bg-opacity-10"
+															class="rounded-2 h-6 rounded-sm {freqColors[
+																selectedFrequency
+															]} [a&]:hover:bg-opacity-10"
 														>
 															<CheckCheck className="size-3" />
 															{taskCount} εργασίες
@@ -502,20 +520,26 @@
 						<Card class="rounded-md border border-border/50 bg-transparent">
 							<CardHeader>
 								<CardTitle class="text-lg">Λεπτομέρειες ανάθεσης</CardTitle>
-								<CardDescription>{frequencyLabels[selectedFrequency].assignLabel} εργασιών</CardDescription>
+								<CardDescription
+									>{frequencyLabels[selectedFrequency].assignLabel} εργασιών</CardDescription
+								>
 							</CardHeader>
 							<CardContent class="space-y-4">
 								<div class="grid gap-4 sm:grid-cols-2">
 									<div class="space-y-2">
-										<Label for="task-template">Πρότυπο {frequencyLabels[selectedFrequency].label.toLowerCase()} εργασιών</Label>
+										<Label for="task-template"
+											>Πρότυπο {frequencyLabels[selectedFrequency].label.toLowerCase()} εργασιών</Label
+										>
 										<TemplateSelect
 											taskTemplatesWithTasks={filteredTemplates}
 											bind:value={selectedTemplateId}
-											userHasExistingTasks={userHasExistingDailyTasks ?? false}
+											userHasExistingTasks={userHasExistingTasks()}
 										/>
-										{#if userHasExistingDailyTasks}
+										{#if userHasExistingTasks()}
 											<p class="text-xs text-muted-foreground">
-												Απενεργοποιημένο: Υπάρχουν ήδη ημερήσιες εργασίες για αυτή την ημερομηνία
+												Απενεργοποιημένο: Υπάρχουν ήδη {frequencyLabels[
+													selectedFrequency
+												].label.toLowerCase()} εργασίες για αυτή την περίοδο
 											</p>
 										{/if}
 									</div>
@@ -526,27 +550,46 @@
 											{#if selectedFrequency === 'daily'}
 												<InputCalendar id="task_date" bind:value={selectedDate} required />
 											{:else if selectedFrequency === 'weekly'}
-												<InputCalendar id="week_start_date" bind:value={selectedWeekStart} required />
+												<InputCalendar
+													id="week_start_date"
+													bind:value={selectedWeekStart}
+													required
+												/>
 											{:else}
 												<Input type="month" bind:value={selectedMonth} required />
 											{/if}
 										</div>
 										<!-- Date context hint -->
 										{#if selectedFrequency === 'weekly' && selectedWeekStart}
-											<div class="flex items-center gap-2 rounded-md border border-blue-500/20 bg-blue-500/5 px-3 py-1.5 text-xs text-muted-foreground">
+											<div
+												class="flex items-center gap-2 rounded-md border border-blue-500/20 bg-blue-500/5 px-3 py-1.5 text-xs text-muted-foreground"
+											>
 												<CalendarRange class="h-3.5 w-3.5 text-blue-500" />
-												Εβδομάδα: <span class="font-medium text-foreground">{new Date(selectedWeekStart).toLocaleDateString('el-GR')} — {getWeekEndDate(selectedWeekStart)}</span>
+												Εβδομάδα:
+												<span class="font-medium text-foreground"
+													>{new Date(selectedWeekStart).toLocaleDateString('el-GR')} — {getWeekEndDate(
+														selectedWeekStart
+													)}</span
+												>
 											</div>
 										{:else if selectedFrequency === 'monthly' && selectedMonth}
-											<div class="flex items-center gap-2 rounded-md border border-amber-500/20 bg-amber-500/5 px-3 py-1.5 text-xs text-muted-foreground">
+											<div
+												class="flex items-center gap-2 rounded-md border border-amber-500/20 bg-amber-500/5 px-3 py-1.5 text-xs text-muted-foreground"
+											>
 												<CalendarDays class="h-3.5 w-3.5 text-amber-500" />
-												Μήνας: <span class="font-medium text-foreground">{new Date(selectedMonth + '-01').toLocaleDateString('el-GR', { month: 'long', year: 'numeric' })}</span>
+												Μήνας:
+												<span class="font-medium text-foreground"
+													>{new Date(selectedMonth + '-01').toLocaleDateString('el-GR', {
+														month: 'long',
+														year: 'numeric'
+													})}</span
+												>
 											</div>
 										{/if}
 									</div>
 								</div>
 
-								{#if selectedUserIdData && !userHasExistingDailyTasks}
+								{#if selectedUserIdData && !userHasExistingTasks()}
 									<div class="rounded-lg border border-border bg-muted/50 p-4">
 										<div class="flex items-center gap-3">
 											<UserCircle class="h-5 w-5 text-muted-foreground" />
@@ -562,8 +605,8 @@
 							</CardContent>
 						</Card>
 
-						<!-- Existing Daily Tasks Warning (only for daily) -->
-						{#if userHasExistingDailyTasks}
+						<!-- Existing Tasks Warning (works for ALL frequencies now) -->
+						{#if userHasExistingTasks()}
 							{@const existingTasks = getUserExistingTasks(selectedUserIdData)}
 							<Card class="rounded-md border border-border/50 bg-transparent">
 								<CardHeader>
@@ -571,9 +614,20 @@
 										<div>
 											<CardTitle class="text-lg">Υπάρχουν ήδη εργασίες</CardTitle>
 											<CardDescription class="mt-1">
-												Ο χρήστης {selectedUserIdData?.username} έχει ήδη εργασίες για την {new Date(
-													selectedDate
-												).toLocaleDateString('el-GR')}
+												Ο χρήστης {selectedUserIdData?.username} έχει ήδη {frequencyLabels[
+													selectedFrequency
+												].label.toLowerCase()} εργασίες
+												{#if selectedFrequency === 'daily'}
+													για την {new Date(selectedDate).toLocaleDateString('el-GR')}
+												{:else if selectedFrequency === 'weekly'}
+													για την εβδομάδα {new Date(selectedWeekStart).toLocaleDateString('el-GR')}
+													— {getWeekEndDate(selectedWeekStart)}
+												{:else}
+													για τον {new Date(selectedMonth + '-01').toLocaleDateString('el-GR', {
+														month: 'long',
+														year: 'numeric'
+													})}
+												{/if}
 											</CardDescription>
 										</div>
 										<div class="rounded-full bg-primary/10 p-2">
@@ -637,19 +691,16 @@
 										{/each}
 									</div>
 									<div class="mt-6 flex flex-col gap-3">
-										<Button
-											variant="outline"
-											class="w-75"
-											onclick={() => {
-												openAddNewTask = true;
-											}}
-										>
-											<Plus class="mr-2 h-4 w-4" />
-											Προσθήκη Προσαρμοσμένης Εργασίας
-										</Button>
 										<div class="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
 											<p>
-												Για να αναθέσετε νέες εργασίες από πρότυπα, επιλέξτε διαφορετική ημερομηνία
+												Για να αναθέσετε νέες εργασίες από πρότυπα, επιλέξτε διαφορετική
+												{#if selectedFrequency === 'daily'}
+													ημερομηνία
+												{:else if selectedFrequency === 'weekly'}
+													εβδομάδα
+												{:else}
+													μήνα
+												{/if}
 												ή χρήστη.
 											</p>
 										</div>
@@ -657,9 +708,21 @@
 								</CardContent>
 							</Card>
 						{/if}
+						{#if selectedUserId}
+							<Button
+								variant="outline"
+								class="w-75"
+								onclick={() => {
+									openAddNewTask = true;
+								}}
+							>
+								<Plus class="mr-2 h-4 w-4" />
+								Προσθήκη Προσαρμοσμένης Εργασίας
+							</Button>
+						{/if}
 
 						<!-- Template Preview -->
-						{#if selectedTemplated && !userHasExistingDailyTasks}
+						{#if selectedTemplated && !userHasExistingTasks()}
 							<Card class="bg-transparent">
 								<CardHeader>
 									<div class="flex items-start justify-between">
@@ -720,7 +783,7 @@
 											disabled={!selectedUserId ||
 												!selectedTemplated ||
 												isAssigning ||
-												userHasExistingDailyTasks}
+												userHasExistingTasks()}
 											class="min-w-[140px]"
 											onclick={handleAssignTasks}
 										>
@@ -734,7 +797,7 @@
 									</div>
 								</CardContent>
 							</Card>
-						{:else if !userHasExistingDailyTasks}
+						{:else if !userHasExistingTasks()}
 							<Card class="bg-transparent">
 								<CardContent>
 									<EmptyComp
@@ -770,7 +833,10 @@
 	<Modal.Content class="flex h-full max-h-[80dvh] flex-col sm:h-auto">
 		<Modal.Header>
 			<Modal.Title>Δημιουργία νέας εργασίας</Modal.Title>
-			<Modal.Description>Δημιουργήστε μια Προσαρμοσμένη εργασία εκτός προτύπου ({frequencyLabels[selectedFrequency].label})</Modal.Description>
+			<Modal.Description
+				>Δημιουργήστε μια Προσαρμοσμένη εργασία εκτός προτύπου ({frequencyLabels[selectedFrequency]
+					.label})</Modal.Description
+			>
 		</Modal.Header>
 		<ScrollArea class="h-[70dvh] w-full">
 			<form class="space-y-6 py-4">
