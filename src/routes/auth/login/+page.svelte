@@ -1,5 +1,7 @@
 <script lang="ts">
 	import GalleryVerticalEndIcon from '@lucide/svelte/icons/gallery-vertical-end';
+	import EyeIcon from '@lucide/svelte/icons/eye';
+	import EyeOffIcon from '@lucide/svelte/icons/eye-off';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
@@ -21,6 +23,7 @@
 	});
 
 	let loading: boolean = $state(false);
+	let showPassword: boolean = $state(false);
 </script>
 
 <div class="grid min-h-svh lg:grid-cols-2">
@@ -108,15 +111,29 @@
 												Ξεχάσατε τον κωδικό σας;
 											</a>
 										</div>
-										<Input
-											disabled={loading}
-											id="password"
-											placeholder="********"
-											name="password"
-											type="password"
-											class="h-11 rounded-lg border-border/60 bg-muted/40 transition-colors focus:bg-background"
-											required
-										/>
+										<div class="relative">
+											<Input
+												disabled={loading}
+												id="password"
+												placeholder="********"
+												name="password"
+												type={showPassword ? "text" : "password"}
+												class="h-11 rounded-lg border-border/60 bg-muted/40 pr-10 transition-colors focus:bg-background"
+												required
+											/>
+											<button
+												type="button"
+												onclick={() => (showPassword = !showPassword)}
+												class="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground transition-colors hover:text-foreground"
+												tabindex="-1"
+											>
+												{#if showPassword}
+													<EyeOffIcon class="size-4" />
+												{:else}
+													<EyeIcon class="size-4" />
+												{/if}
+											</button>
+										</div>
 									</div>
 									<Button
 										type="submit"
