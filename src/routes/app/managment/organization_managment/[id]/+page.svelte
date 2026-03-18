@@ -5,6 +5,8 @@
 	import * as Select from '$lib/components/ui/select/index.js';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import * as Avatar from '$lib/components/ui/avatar/index.js';
+	import { Wifi } from 'lucide-svelte';
+	import OrgPresenceOverview from '$lib/components/custom/presence/OrgPresenceOverview.svelte';
 
 	import { differenceInDays, parseISO } from 'date-fns';
 	import Button from '$lib/components/ui/button/button.svelte';
@@ -323,7 +325,7 @@
 		<!-- ── Tabbed Detail View ── -->
 		<Tabs.Root value="overview" class="mt-6 w-full overflow-visible">
 			<Tabs.List class="flex h-auto w-auto justify-start bg-transparent">
-				{#each [{ value: 'overview', icon: TrendingUp, label: 'Overview' }, { value: 'staff', icon: Users, label: 'Staff' }, { value: 'equipment', icon: Cog, label: 'Equipment' }, { value: 'bonus', icon: Award, label: 'Bonus' }, { value: 'evaluations', icon: ClipboardList, label: 'Evaluations' }, { value: 'tasks', icon: ListChecks, label: 'Tasks' }] as tab}
+				{#each [{ value: 'overview', icon: TrendingUp, label: 'Overview' }, { value: 'staff', icon: Users, label: 'Staff' }, { value: 'equipment', icon: Cog, label: 'Equipment' }, { value: 'bonus', icon: Award, label: 'Bonus' }, { value: 'evaluations', icon: ClipboardList, label: 'Evaluations' }, { value: 'tasks', icon: ListChecks, label: 'Tasks' }, { value: 'presence', icon: Wifi, label: 'Presence' }] as tab}
 					<Tabs.Trigger
 						value={tab.value}
 						class="cursor-pointer justify-start rounded-md border-0 bg-transparent px-3 py-2.5 text-sm font-medium text-muted-foreground shadow-none transition-colors hover:text-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground sm:px-4"
@@ -1394,6 +1396,19 @@
 						</Card.Content>
 					</Card.Root>
 				</div>
+			</Tabs.Content>
+
+			<!-- ── PRESENCE TAB ── -->
+			<Tabs.Content value="presence" class="mt-6 animate-fade-in-left space-y-4">
+				<Card.Root>
+					<Card.Header>
+						<Card.Title>Παρουσία σε πραγματικό χρόνο</Card.Title>
+						<Card.Description>Δείτε ποιοι χρήστες είναι συνδεδεμένοι αυτή τη στιγμή</Card.Description>
+					</Card.Header>
+					<Card.Content>
+						<OrgPresenceOverview orgId={organization.id} />
+					</Card.Content>
+				</Card.Root>
 			</Tabs.Content>
 		</Tabs.Root>
 	</main>

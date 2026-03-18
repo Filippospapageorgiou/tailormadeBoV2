@@ -10,13 +10,25 @@
 	import { Label } from '$lib/components/ui/label/index.js';
 	import { Switch } from '$lib/components/ui/switch/index.js';
 	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
-	import { Building2Icon, Info, Plus, RefreshCcw, TrendingUpDownIcon, Users, Wrench, CheckCircle, XCircle } from 'lucide-svelte';
+	import {
+		Building2Icon,
+		Info,
+		Plus,
+		RefreshCcw,
+		TrendingUpDownIcon,
+		Users,
+		Wrench,
+		CheckCircle,
+		XCircle
+	} from 'lucide-svelte';
 	import DataTable from './data-table.svelte';
 	import { orgColumns } from './columns';
 	import ScrollArea from '$lib/components/ui/scroll-area/scroll-area.svelte';
 	import PhoneInput from '$lib/components/ui/phone-input/phone-input.svelte';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import Stats from '$lib/components/stats_organization/Stats.svelte';
+	import { page } from '$app/state';
+	import AllOrgsPresenceCard from '$lib/components/custom/presence/AllOrgsPresenceCard.svelte';
 
 	let auth = authenticatedAccess();
 	let query = getAllOrganizations();
@@ -31,7 +43,13 @@
 
 	// Org stats
 	let orgStats = $derived.by(() => {
-		const stats = { total: organizations.length, active: 0, inactive: 0, totalEmployees: 0, totalEquipment: 0 };
+		const stats = {
+			total: organizations.length,
+			active: 0,
+			inactive: 0,
+			totalEmployees: 0,
+			totalEquipment: 0
+		};
 		for (const org of organizations) {
 			if (org.status) stats.active++;
 			else stats.inactive++;
@@ -116,20 +134,28 @@
 				</Tabs.List>
 
 				<Tabs.Content value="stats" class="mt-6 animate-fade-in-left space-y-6 overflow-visible">
-					<Stats />
+					<Stats
+						organizations={organizations.map((o) => ({ id: o.id, store_name: o.store_name }))}
+					/>
 				</Tabs.Content>
 
 				<Tabs.Content value="orgs" class="mt-6 animate-fade-in-left space-y-6">
 					<!-- Stats Cards -->
 					<div class="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5">
 						<!-- Total Orgs -->
-						<div class="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-4 transition-all duration-300 hover:shadow-md">
+						<div
+							class="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-4 transition-all duration-300 hover:shadow-md"
+						>
 							<div class="flex items-center justify-between">
 								<div class="space-y-1">
-									<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">Σύνολο</p>
-									<p class="text-2xl font-bold tabular-nums tracking-tight">{orgStats.total}</p>
+									<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+										Σύνολο
+									</p>
+									<p class="text-2xl font-bold tracking-tight tabular-nums">{orgStats.total}</p>
 								</div>
-								<div class="rounded-lg bg-primary/10 p-2.5 text-primary transition-colors group-hover:bg-primary/15">
+								<div
+									class="rounded-lg bg-primary/10 p-2.5 text-primary transition-colors group-hover:bg-primary/15"
+								>
 									<Building2Icon class="h-5 w-5" />
 								</div>
 							</div>
@@ -139,13 +165,19 @@
 						</div>
 
 						<!-- Active -->
-						<div class="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-4 transition-all duration-300 hover:shadow-md">
+						<div
+							class="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-4 transition-all duration-300 hover:shadow-md"
+						>
 							<div class="flex items-center justify-between">
 								<div class="space-y-1">
-									<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">Ενεργοί</p>
-									<p class="text-2xl font-bold tabular-nums tracking-tight">{orgStats.active}</p>
+									<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+										Ενεργοί
+									</p>
+									<p class="text-2xl font-bold tracking-tight tabular-nums">{orgStats.active}</p>
 								</div>
-								<div class="rounded-lg bg-emerald-500/10 p-2.5 text-emerald-600 transition-colors group-hover:bg-emerald-500/15 dark:text-emerald-400">
+								<div
+									class="rounded-lg bg-emerald-500/10 p-2.5 text-emerald-600 transition-colors group-hover:bg-emerald-500/15 dark:text-emerald-400"
+								>
 									<CheckCircle class="h-5 w-5" />
 								</div>
 							</div>
@@ -160,13 +192,19 @@
 						</div>
 
 						<!-- Inactive -->
-						<div class="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-4 transition-all duration-300 hover:shadow-md">
+						<div
+							class="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-4 transition-all duration-300 hover:shadow-md"
+						>
 							<div class="flex items-center justify-between">
 								<div class="space-y-1">
-									<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">Ανενεργοί</p>
-									<p class="text-2xl font-bold tabular-nums tracking-tight">{orgStats.inactive}</p>
+									<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+										Ανενεργοί
+									</p>
+									<p class="text-2xl font-bold tracking-tight tabular-nums">{orgStats.inactive}</p>
 								</div>
-								<div class="rounded-lg bg-red-500/10 p-2.5 text-red-600 transition-colors group-hover:bg-red-500/15 dark:text-red-400">
+								<div
+									class="rounded-lg bg-red-500/10 p-2.5 text-red-600 transition-colors group-hover:bg-red-500/15 dark:text-red-400"
+								>
 									<XCircle class="h-5 w-5" />
 								</div>
 							</div>
@@ -174,20 +212,30 @@
 								<div class="h-1.5 w-full overflow-hidden rounded-full bg-muted">
 									<div
 										class="h-full rounded-full bg-red-500 transition-all duration-500"
-										style="width: {orgStats.total ? (orgStats.inactive / orgStats.total) * 100 : 0}%"
+										style="width: {orgStats.total
+											? (orgStats.inactive / orgStats.total) * 100
+											: 0}%"
 									></div>
 								</div>
 							</div>
 						</div>
 
 						<!-- Total Employees -->
-						<div class="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-4 transition-all duration-300 hover:shadow-md">
+						<div
+							class="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-4 transition-all duration-300 hover:shadow-md"
+						>
 							<div class="flex items-center justify-between">
 								<div class="space-y-1">
-									<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">Υπάλληλοι</p>
-									<p class="text-2xl font-bold tabular-nums tracking-tight">{orgStats.totalEmployees}</p>
+									<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+										Υπάλληλοι
+									</p>
+									<p class="text-2xl font-bold tracking-tight tabular-nums">
+										{orgStats.totalEmployees}
+									</p>
 								</div>
-								<div class="rounded-lg bg-blue-500/10 p-2.5 text-blue-600 transition-colors group-hover:bg-blue-500/15 dark:text-blue-400">
+								<div
+									class="rounded-lg bg-blue-500/10 p-2.5 text-blue-600 transition-colors group-hover:bg-blue-500/15 dark:text-blue-400"
+								>
 									<Users class="h-5 w-5" />
 								</div>
 							</div>
@@ -197,13 +245,21 @@
 						</div>
 
 						<!-- Total Equipment -->
-						<div class="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-4 transition-all duration-300 hover:shadow-md">
+						<div
+							class="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-4 transition-all duration-300 hover:shadow-md"
+						>
 							<div class="flex items-center justify-between">
 								<div class="space-y-1">
-									<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">Εξοπλισμός</p>
-									<p class="text-2xl font-bold tabular-nums tracking-tight">{orgStats.totalEquipment}</p>
+									<p class="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+										Εξοπλισμός
+									</p>
+									<p class="text-2xl font-bold tracking-tight tabular-nums">
+										{orgStats.totalEquipment}
+									</p>
 								</div>
-								<div class="rounded-lg bg-purple-500/10 p-2.5 text-purple-600 transition-colors group-hover:bg-purple-500/15 dark:text-purple-400">
+								<div
+									class="rounded-lg bg-purple-500/10 p-2.5 text-purple-600 transition-colors group-hover:bg-purple-500/15 dark:text-purple-400"
+								>
 									<Wrench class="h-5 w-5" />
 								</div>
 							</div>

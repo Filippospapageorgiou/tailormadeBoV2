@@ -7,8 +7,17 @@
 	import { ThemeSelector } from '$lib/components/ui/theme-selector';
 	import Command from '$lib/components/command/command.svelte';
 	import Notifications from '$lib/components/custom/Notifications.svelte';
+	import { getProfileContext } from '$lib/stores/profile.svelte.js';
+	import { startPresenceTracker } from '$lib/hooks/use-presence.svelte';
 
-	let { children } = $props();
+	let { data, children } = $props();
+	const profile = getProfileContext();
+
+	// Presence tracking — subscribes to Supabase Realtime Presence channel
+	$effect(() => {
+		if (!data.supabase || !profile.id || !profile.orgId) return;
+		return startPresenceTracker(data.supabase, profile.id, profile.orgId);
+	});
 
 	const routeLabels: Record<string, string> = {
 		// Top level

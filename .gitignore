@@ -1,5 +1,6 @@
 node_modules
 .agents
+.vercel
 .claude
 workspace
 CLAUDE.md
@@ -28,3 +29,6 @@ Thumbs.db
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .env*.local
+
+
+REALTIME_PRESENCE.md

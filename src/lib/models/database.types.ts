@@ -70,7 +70,7 @@ export interface Profile {
 	phone: string;
 	display_order: number;
 	is_manager: boolean;
-	full_name:string;
+	full_name: string;
 }
 
 export interface RoleTypes {
@@ -82,7 +82,7 @@ export interface RoleTypes {
 
 export interface Organization {
 	id: number;
-	store_name: string | null;
+	store_name: string;
 	email: string | null;
 	phone: string | null;
 	status: boolean | null;
@@ -90,8 +90,8 @@ export interface Organization {
 	created_at: string;
 	updated_at: string | null;
 	location: string | null;
-	latitude:number | null,
-	longitude:number | null;
+	latitude: number | null;
+	longitude: number | null;
 }
 
 export interface verification_codes {
@@ -103,14 +103,14 @@ export interface verification_codes {
 	is_used: boolean;
 }
 
-export interface importantPhoneCalls{
-	id:number;
-	org_id:number;
-	associated_company:string;
-	manager_full_name:string;
-	department:string | null;
-	notes:string | null;
-	is_active:boolean;
+export interface importantPhoneCalls {
+	id: number;
+	org_id: number;
+	associated_company: string;
+	manager_full_name: string;
+	department: string | null;
+	notes: string | null;
+	is_active: boolean;
 	email: string;
 	phone: string;
 	created_at: string;
