@@ -28,11 +28,13 @@
 	}
 </script>
 
-<div class="flex items-center gap-3 rounded-lg border border-border/50 bg-card/50 px-3 py-2.5 transition-colors hover:bg-muted/40">
+<div
+	class="flex items-center gap-3 rounded-lg border border-border/50 bg-card/50 px-3 py-2.5 transition-colors hover:bg-muted/40"
+>
 	<div class="relative">
 		<Avatar.Root class="h-8 w-8">
 			{#if user.avatar_url}
-				<Avatar.Image src={user.avatar_url} alt={user.full_name} />
+				<Avatar.Image class="dark:bg-white" src={user.avatar_url} alt={user.full_name} />
 			{/if}
 			<Avatar.Fallback class="text-xs">{getInitials(user.full_name)}</Avatar.Fallback>
 		</Avatar.Root>
@@ -42,7 +44,7 @@
 	</div>
 
 	<div class="min-w-0 flex-1">
-		<p class="truncate text-sm font-medium leading-tight">{user.full_name || 'Άγνωστος'}</p>
+		<p class="truncate text-sm leading-tight font-medium">{user.full_name || 'Άγνωστος'}</p>
 		<p class="text-xs text-muted-foreground">
 			{user.status === 'active' ? 'Ενεργός' : 'Αδρανής'}
 		</p>

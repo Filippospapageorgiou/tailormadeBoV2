@@ -47,21 +47,31 @@
 			.sort((a, b) => b.total - a.total);
 	});
 
+	const DEBOUNCE_MS = 500;
+
 	function refreshState() {
 		const presence = getAllPresence();
 		allUsers = [...presence.values()].flat();
 	}
 
-	// Subscribe to all org channels + listen for changes
+	// Subscribe to all org channels + debounced listener for changes
 	$effect(() => {
 		const orgIds = organizations.map((o) => o.id);
 		const unsubChannels = subscribeToOrgPresence(supabase, orgIds);
-		const unsubListener = onAnyPresenceChange(refreshState);
+
+		let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+		const debouncedRefresh = () => {
+			if (debounceTimer) clearTimeout(debounceTimer);
+			debounceTimer = setTimeout(refreshState, DEBOUNCE_MS);
+		};
+
+		const unsubListener = onAnyPresenceChange(debouncedRefresh);
 
 		// Read initial state
 		refreshState();
 
 		return () => {
+			if (debounceTimer) clearTimeout(debounceTimer);
 			unsubChannels();
 			unsubListener();
 		};
