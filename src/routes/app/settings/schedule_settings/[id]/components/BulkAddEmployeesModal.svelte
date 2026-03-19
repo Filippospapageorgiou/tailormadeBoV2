@@ -105,7 +105,7 @@
 		<div class="space-y-4 py-4">
 			<!-- Search -->
 			<div class="relative">
-				<Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+				<Search class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 				<Input
 					bind:value={searchQuery}
 					placeholder="Αναζήτηση εργαζομένων..."
@@ -161,11 +161,12 @@
 							</div>
 
 							<!-- Avatar -->
-							<Avatar.Root
-								class="h-10 w-10 flex-shrink-0"
-								style="border: 2px solid {badgeColor};"
-							>
-								<Avatar.Image src={employee.image_url} alt={employee.username} />
+							<Avatar.Root class="flex-shrinkx-0 h-10 w-10" style="border: 2px solid {badgeColor};">
+								<Avatar.Image
+									class="dark:bg-white"
+									src={employee.image_url}
+									alt={employee.username}
+								/>
 								<Avatar.Fallback
 									class="text-xs font-bold text-white"
 									style="background-color: {badgeColor};"
@@ -188,9 +189,7 @@
 		</div>
 
 		<DialogFooter>
-			<Button variant="outline" onclick={handleClose} disabled={isLoading}>
-				Ακύρωση
-			</Button>
+			<Button variant="outline" onclick={handleClose} disabled={isLoading}>Ακύρωση</Button>
 			<Button onclick={handleAdd} disabled={isLoading || selectedCount === 0} class="gap-2">
 				{#if isLoading}
 					<Spinner />

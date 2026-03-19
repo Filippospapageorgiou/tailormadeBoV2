@@ -8,6 +8,7 @@
 	} from '$lib/hooks/use-presence.svelte';
 	import PresenceIndicator from './PresenceIndicator.svelte';
 	import { Wifi } from 'lucide-svelte';
+	import { goto } from '$app/navigation';
 
 	interface OrgInfo {
 		id: number;
@@ -111,7 +112,10 @@
 	{#if perOrg.length > 0}
 		<div class="mt-3 space-y-1.5 border-t border-border/40 pt-3">
 			{#each perOrg as org (org.id)}
-				<div class="flex items-center justify-between text-xs">
+				<button
+					class="flex w-full cursor-pointer items-center justify-between rounded-md px-1 py-0.5 text-xs transition-colors hover:bg-muted/60"
+					onclick={() => goto(`/app/managment/organization_managment/${org.id}?tab=presence`)}
+				>
 					<span class="truncate text-muted-foreground">{org.store_name}</span>
 					<div class="flex items-center gap-2 tabular-nums">
 						<span class="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
@@ -125,7 +129,7 @@
 							</span>
 						{/if}
 					</div>
-				</div>
+				</button>
 			{/each}
 		</div>
 	{/if}

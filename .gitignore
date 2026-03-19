@@ -3,7 +3,6 @@ node_modules
 .vercel
 .claude
 workspace
-CLAUDE.md
 claude_trainer.md
 
 # Output
@@ -31,4 +30,5 @@ vite.config.ts.timestamp-*
 .env*.local
 
 
-REALTIME_PRESENCE.md
+docs
+#claude.md

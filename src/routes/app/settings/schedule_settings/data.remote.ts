@@ -149,7 +149,6 @@ export const deleteSchedule = command(deleteScheduleSchema, async ({ scheduleId 
 	}
 });
 
-
 /**
  * Update schedule status
  */
@@ -162,116 +161,113 @@ const updateScheduleStatusSchema = z.object({
  * Send email notifications to all employees in the schedule
  */
 async function sendScheduleNotifications(
-    supabase: any, 
-    schedule: any,  
+	supabase: any,
+	schedule: any
 ): Promise<{ sentCount: number; errors: string[] }> {
-    try {
-        const org_id = await getUserOrgId();
+	try {
+		const org_id = await getUserOrgId();
 
+		const { data: org, error: orgError } = await supabase
+			.from('core_organizations')
+			.select('store_name')
+			.eq('id', org_id)
+			.single();
 
-        const { data: org, error: orgError } = await supabase
-            .from('core_organizations')
-            .select('store_name')
-            .eq('id', org_id)
-            .single();
+		if (orgError) {
+			console.error('Error fetching organization:', orgError);
+			return { sentCount: 0, errors: ['Failed to fetch organization'] };
+		}
 
-        if (orgError) {
-            console.error('Error fetching organization:', orgError);
-            return { sentCount: 0, errors: ['Failed to fetch organization'] };
-        }
+		const { data: employees, error: employeesError } = await supabase
+			.from('profiles')
+			.select('id, email, full_name, username')
+			.eq('org_id', org_id);
 
-        const { data: employees, error: employeesError } = await supabase
-            .from('profiles')
-            .select('id, email, full_name, username')
-            .eq('org_id', org_id);
+		if (employeesError) {
+			console.error('Error fetching employees for notifications:', employeesError);
+			return { sentCount: 0, errors: ['Failed to fetch employee list'] };
+		}
 
-        if (employeesError) {
-            console.error('Error fetching employees for notifications:', employeesError);
-            return { sentCount: 0, errors: ['Failed to fetch employee list'] };
-        }
+		if (!employees || employees.length === 0) {
+			console.log('No employees found for schedule notifications');
+			return { sentCount: 0, errors: [] };
+		}
 
-        if (!employees || employees.length === 0) {
-            console.log('No employees found for schedule notifications');
-            return { sentCount: 0, errors: [] };
-        }
+		console.log(`Sending schedule notifications to ${employees.length} employees...`);
 
-        console.log(`Sending schedule notifications to ${employees.length} employees...`);
+		const emailParams = employees.map((employee: any) => ({
+			recipientEmail: employee.email,
+			employeeName: employee.full_name || employee.username,
+			organizationName: org.store_name,
+			weekStartDate: schedule.week_start_date,
+			weekEndDate: schedule.week_end_date,
+			scheduleId: schedule.id.toString()
+		}));
 
-        const emailParams = employees.map((employee: any) => ({
-            recipientEmail: employee.email,
-            employeeName: employee.full_name || employee.username,
-            organizationName: org.store_name, 
-            weekStartDate: schedule.week_start_date,
-            weekEndDate: schedule.week_end_date,
-            scheduleId: schedule.id.toString()
-        }));
+		const result = await sendBulkScheduleNotifications(emailParams);
 
-        const result = await sendBulkScheduleNotifications(emailParams);
-
-        return {
-            sentCount: result.sentCount,
-            errors: result.errors
-        };
-
-    } catch (err) {
-        console.error('Error sending schedule notifications:', err);
-        return { 
-            sentCount: 0, 
-            errors: ['Failed to send notifications'] 
-        };
-    }
+		return {
+			sentCount: result.sentCount,
+			errors: result.errors
+		};
+	} catch (err) {
+		console.error('Error sending schedule notifications:', err);
+		return {
+			sentCount: 0,
+			errors: ['Failed to send notifications']
+		};
+	}
 }
 
 /**
  * Update schedule status
  */
 export const updateScheduleStatus = command(
-    updateScheduleStatusSchema,
-    async ({ scheduleId, status }) => {
-        const supabase = createServerClient();
-        const user = await requireAuthenticatedUser();
+	updateScheduleStatusSchema,
+	async ({ scheduleId, status }) => {
+		const supabase = createServerClient();
+		const user = await requireAuthenticatedUser();
 
-        try {
-            const updateData: any = { status };
+		try {
+			const updateData: any = { status };
 
-            if (status === SCHEDULE_STATUS.PUBLISHED) {
-                updateData.published_by = user.id;
-                updateData.published_at = new Date().toISOString();
-            }
+			if (status === SCHEDULE_STATUS.PUBLISHED) {
+				updateData.published_by = user.id;
+				updateData.published_at = new Date().toISOString();
+			}
 
-            const { data: scheduleArray, error: updateError } = await supabase
-                .from('weekly_schedules')
-                .update(updateData)
-                .eq('id', scheduleId)
-                .select()
-                .single(); 
+			const { data: scheduleArray, error: updateError } = await supabase
+				.from('weekly_schedules')
+				.update(updateData)
+				.eq('id', scheduleId)
+				.select()
+				.single();
 
-            if (updateError) {
-                console.error('Error updating schedule status:', updateError);
-                return {
-                    success: false,
-                    message: 'Failed to update schedule status'
-                };
-            }
+			if (updateError) {
+				console.error('Error updating schedule status:', updateError);
+				return {
+					success: false,
+					message: 'Failed to update schedule status'
+				};
+			}
 
+			if (status === SCHEDULE_STATUS.PUBLISHED) {
+				const emailResult = await sendScheduleNotifications(supabase, scheduleArray);
+				console.log(`Sent ${emailResult.sentCount} emails, ${emailResult.errors.length} failures`);
+			}
 
-            if (status === SCHEDULE_STATUS.PUBLISHED) {
-                const emailResult = await sendScheduleNotifications(supabase, scheduleArray);
-                console.log(`Sent ${emailResult.sentCount} emails, ${emailResult.errors.length} failures`);
-            }
-
-            return {
-                success: true,
-                message: `Schedule ${status === 'published' ? 'published' : status === 'archived' ? 'archived' : 'set to draft'} successfully`
-            };
-        } catch (err) {
-            console.error('Unexpected error during status update:', err);
-            return {
-                success: false,
-                message: 'An unexpected error occurred while updating schedule status'
-            };
-        }
-    }
+			return {
+				success: true,
+				message: `Schedule ${status === 'published' ? 'published' : status === 'archived' ? 'archived' : 'set to draft'} successfully`
+			};
+		} catch (err) {
+			console.error('Unexpected error during status update:', err);
+			return {
+				success: false,
+				message: 'An unexpected error occurred while updating schedule status'
+			};
+		}
+	}
 );
 // ======================== PAGINATION ==============
 
@@ -295,6 +291,7 @@ export const getSchedulesWithMetricsPaginated = query(
 	paginationSchema,
 	async ({ page, perPage }) => {
 		const supabase = createServerClient();
+		let org_id = await getUserOrgId();
 
 		try {
 			// Calculate offset
@@ -303,7 +300,8 @@ export const getSchedulesWithMetricsPaginated = query(
 			// Get total count
 			const { count, error: countError } = await supabase
 				.from('weekly_schedules')
-				.select('*', { count: 'exact', head: true });
+				.select('*', { count: 'exact', head: true })
+				.eq('org_id', org_id);
 
 			if (countError) {
 				console.error('Error counting schedules:', countError);
@@ -321,6 +319,7 @@ export const getSchedulesWithMetricsPaginated = query(
 			const { data: schedules, error: schedulesError } = await supabase
 				.from('weekly_schedules')
 				.select('*')
+				.eq('org_id', org_id)
 				.order('week_start_date', { ascending: false })
 				.range(offset, offset + perPage - 1)
 				.overrideTypes<WeeklySchedule[]>();
@@ -347,7 +346,9 @@ export const getSchedulesWithMetricsPaginated = query(
 
 					const uniqueEmployees = new Set((shifts ?? []).map((s) => s.user_id));
 					const morningShifts = (shifts ?? []).filter((s) => s.shift_category === 'morning').length;
-					const afternoonShifts = (shifts ?? []).filter((s) => s.shift_category === 'afternoon').length;
+					const afternoonShifts = (shifts ?? []).filter(
+						(s) => s.shift_category === 'afternoon'
+					).length;
 					const eveningShifts = (shifts ?? []).filter((s) => s.shift_category === 'evening').length;
 
 					return {
@@ -391,105 +392,110 @@ const copyScheduleSchema = z.object({
 	targetWeekStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format')
 });
 
-export const copySchedule = command(copyScheduleSchema, async ({ sourceScheduleId, targetWeekStart }) => {
-	const supabase = createServerClient();
-	const user = await requireAuthenticatedUser();
+export const copySchedule = command(
+	copyScheduleSchema,
+	async ({ sourceScheduleId, targetWeekStart }) => {
+		const supabase = createServerClient();
+		const user = await requireAuthenticatedUser();
 
-	try {
-		// Get source schedule
-		const { data: sourceSchedule, error: sourceError } = await supabase
-			.from('weekly_schedules')
-			.select('*')
-			.eq('id', sourceScheduleId)
-			.single<WeeklySchedule>();
+		try {
+			// Get source schedule
+			const { data: sourceSchedule, error: sourceError } = await supabase
+				.from('weekly_schedules')
+				.select('*')
+				.eq('id', sourceScheduleId)
+				.single<WeeklySchedule>();
 
-		if (sourceError || !sourceSchedule) {
-			return { success: false, message: 'Source schedule not found' };
-		}
-
-		// Calculate target end date
-		const startDate = new Date(targetWeekStart);
-		const endDate = new Date(startDate);
-		endDate.setDate(startDate.getDate() + 6);
-
-		// Create new schedule
-		const { data: newSchedule, error: createError } = await supabase
-			.from('weekly_schedules')
-			.insert({
-				org_id: sourceSchedule.org_id,
-				week_start_date: targetWeekStart,
-				week_end_date: endDate.toISOString().split('T')[0],
-				year: startDate.getFullYear(),
-				status: SCHEDULE_STATUS.DRAFT,
-				created_by: user.id
-			})
-			.select()
-			.single<WeeklySchedule>();
-
-		if (createError || !newSchedule) {
-			console.error('Error creating new schedule:', createError);
-			return { success: false, message: 'Failed to create new schedule' };
-		}
-
-		// Get source shifts
-		const { data: sourceShifts, error: shiftsError } = await supabase
-			.from('shifts')
-			.select('*')
-			.eq('schedule_id', sourceScheduleId);
-
-		if (shiftsError) {
-			console.error('Error fetching source shifts:', shiftsError);
-			return { success: false, message: 'Failed to copy shifts' };
-		}
-
-		// Copy shifts with adjusted dates
-		if (sourceShifts && sourceShifts.length > 0) {
-			const sourceStart = new Date(sourceSchedule.week_start_date);
-
-			const newShifts = sourceShifts.map((shift) => {
-				const shiftDate = new Date(shift.shift_date);
-				const dayOffset = Math.floor((shiftDate.getTime() - sourceStart.getTime()) / (1000 * 60 * 60 * 24));
-				const newShiftDate = new Date(startDate);
-				newShiftDate.setDate(startDate.getDate() + dayOffset);
-
-				return {
-					org_id: shift.org_id,
-					schedule_id: newSchedule.id,
-					user_id: shift.user_id,
-					shift_date: newShiftDate.toISOString().split('T')[0],
-					start_time: shift.start_time,
-					end_time: shift.end_time,
-					shift_type: shift.shift_type,
-					shift_category: shift.shift_category,
-					break_duration_minutes: shift.break_duration_minutes,
-					notes: shift.notes,
-					created_by: user.id
-				};
-			});
-
-			const { error: insertError } = await supabase.from('shifts').insert(newShifts);
-
-			if (insertError) {
-				console.error('Error copying shifts:', insertError);
-				// Still return success as the schedule was created
-				return {
-					success: true,
-					message: 'Schedule created but some shifts could not be copied',
-					schedule: newSchedule
-				};
+			if (sourceError || !sourceSchedule) {
+				return { success: false, message: 'Source schedule not found' };
 			}
-		}
 
-		return {
-			success: true,
-			message: `Το πρόγραμμα αντιγράφηκε επιτυχώς με ${sourceShifts?.length ?? 0} βάρδιες`,
-			schedule: newSchedule
-		};
-	} catch (err) {
-		console.error('Unexpected error copying schedule:', err);
-		return { success: false, message: 'An unexpected error occurred' };
+			// Calculate target end date
+			const startDate = new Date(targetWeekStart);
+			const endDate = new Date(startDate);
+			endDate.setDate(startDate.getDate() + 6);
+
+			// Create new schedule
+			const { data: newSchedule, error: createError } = await supabase
+				.from('weekly_schedules')
+				.insert({
+					org_id: sourceSchedule.org_id,
+					week_start_date: targetWeekStart,
+					week_end_date: endDate.toISOString().split('T')[0],
+					year: startDate.getFullYear(),
+					status: SCHEDULE_STATUS.DRAFT,
+					created_by: user.id
+				})
+				.select()
+				.single<WeeklySchedule>();
+
+			if (createError || !newSchedule) {
+				console.error('Error creating new schedule:', createError);
+				return { success: false, message: 'Failed to create new schedule' };
+			}
+
+			// Get source shifts
+			const { data: sourceShifts, error: shiftsError } = await supabase
+				.from('shifts')
+				.select('*')
+				.eq('schedule_id', sourceScheduleId);
+
+			if (shiftsError) {
+				console.error('Error fetching source shifts:', shiftsError);
+				return { success: false, message: 'Failed to copy shifts' };
+			}
+
+			// Copy shifts with adjusted dates
+			if (sourceShifts && sourceShifts.length > 0) {
+				const sourceStart = new Date(sourceSchedule.week_start_date);
+
+				const newShifts = sourceShifts.map((shift) => {
+					const shiftDate = new Date(shift.shift_date);
+					const dayOffset = Math.floor(
+						(shiftDate.getTime() - sourceStart.getTime()) / (1000 * 60 * 60 * 24)
+					);
+					const newShiftDate = new Date(startDate);
+					newShiftDate.setDate(startDate.getDate() + dayOffset);
+
+					return {
+						org_id: shift.org_id,
+						schedule_id: newSchedule.id,
+						user_id: shift.user_id,
+						shift_date: newShiftDate.toISOString().split('T')[0],
+						start_time: shift.start_time,
+						end_time: shift.end_time,
+						shift_type: shift.shift_type,
+						shift_category: shift.shift_category,
+						break_duration_minutes: shift.break_duration_minutes,
+						notes: shift.notes,
+						created_by: user.id
+					};
+				});
+
+				const { error: insertError } = await supabase.from('shifts').insert(newShifts);
+
+				if (insertError) {
+					console.error('Error copying shifts:', insertError);
+					// Still return success as the schedule was created
+					return {
+						success: true,
+						message: 'Schedule created but some shifts could not be copied',
+						schedule: newSchedule
+					};
+				}
+			}
+
+			return {
+				success: true,
+				message: `Το πρόγραμμα αντιγράφηκε επιτυχώς με ${sourceShifts?.length ?? 0} βάρδιες`,
+				schedule: newSchedule
+			};
+		} catch (err) {
+			console.error('Unexpected error copying schedule:', err);
+			return { success: false, message: 'An unexpected error occurred' };
+		}
 	}
-});
+);
 
 // ======================== CALENDAR OVERVIEW ==============
 
@@ -499,12 +505,13 @@ const calendarOverviewSchema = z.object({
 
 export const getScheduleCalendarOverview = query(calendarOverviewSchema, async ({ year }) => {
 	const supabase = createServerClient();
-
+	const org_id = await getUserOrgId();
 	try {
 		const { data: schedules, error } = await supabase
 			.from('weekly_schedules')
 			.select('*')
 			.eq('year', year)
+			.eq('org_id', org_id)
 			.order('week_start_date', { ascending: true });
 
 		if (error) {

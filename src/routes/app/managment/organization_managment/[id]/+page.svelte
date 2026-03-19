@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PageProps } from './types';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import * as Select from '$lib/components/ui/select/index.js';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
@@ -323,7 +324,7 @@
 		</div>
 
 		<!-- ── Tabbed Detail View ── -->
-		<Tabs.Root value="overview" class="mt-6 w-full overflow-visible">
+		<Tabs.Root value={page.url.searchParams.get('tab') ?? 'overview'} class="mt-6 w-full overflow-visible">
 			<Tabs.List class="flex h-auto w-auto justify-start bg-transparent">
 				{#each [{ value: 'overview', icon: TrendingUp, label: 'Overview' }, { value: 'staff', icon: Users, label: 'Staff' }, { value: 'equipment', icon: Cog, label: 'Equipment' }, { value: 'bonus', icon: Award, label: 'Bonus' }, { value: 'evaluations', icon: ClipboardList, label: 'Evaluations' }, { value: 'tasks', icon: ListChecks, label: 'Tasks' }, { value: 'presence', icon: Wifi, label: 'Presence' }] as tab}
 					<Tabs.Trigger

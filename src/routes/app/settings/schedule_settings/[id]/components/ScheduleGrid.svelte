@@ -122,9 +122,9 @@
 	function getDraggedShift(sourceId: string): { shift: Shift; badgeColor: string } | null {
 		if (!sourceId.startsWith('shift-')) return null;
 		const shiftId = parseInt(sourceId.replace('shift-', ''));
-		const shift = shifts.find(s => s.id === shiftId);
+		const shift = shifts.find((s) => s.id === shiftId);
 		if (!shift) return null;
-		const employee = employees.find(e => e.id === shift.user_id);
+		const employee = employees.find((e) => e.id === shift.user_id);
 		const badgeColor = employee?.badge_color || '#3b82f6';
 		return { shift, badgeColor };
 	}
@@ -140,7 +140,9 @@
 				<div
 					class="sticky top-0 z-20 flex border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900"
 				>
-					<div class="{EMPLOYEE_COL_WIDTH} flex-shrink-0 border-r border-zinc-200 px-4 py-3 dark:border-zinc-800">
+					<div
+						class="{EMPLOYEE_COL_WIDTH} flex-shrink-0 border-r border-zinc-200 px-4 py-3 dark:border-zinc-800"
+					>
 						<p class="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
 							Employee
 						</p>
@@ -149,10 +151,14 @@
 						<div
 							class="{DAY_COL_WIDTH} flex-shrink-0 border-r border-zinc-200 px-3 py-3 text-center last:border-r-0 dark:border-zinc-800"
 						>
-							<p class="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+							<p
+								class="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400"
+							>
 								{day.dayName}
 							</p>
-							<p class="mt-0.5 text-base font-semibold text-zinc-900 dark:text-zinc-100">{day.dayNum}</p>
+							<p class="mt-0.5 text-base font-semibold text-zinc-900 dark:text-zinc-100">
+								{day.dayNum}
+							</p>
 						</div>
 					{/each}
 				</div>
@@ -194,7 +200,9 @@
 									<!-- Employee row drag overlay -->
 									{@const emp = localEmployees.find((e) => e.id === source.id)}
 									{#if emp}
-										<div class="rounded-lg bg-white shadow-lg ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-700">
+										<div
+											class="rounded-lg bg-white shadow-lg ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-700"
+										>
 											<SortableEmployeeRow
 												employee={emp}
 												index={0}
@@ -216,7 +224,9 @@
 				<div
 					class="flex border-t border-zinc-200 bg-zinc-50/50 dark:border-zinc-800 dark:bg-zinc-900/50"
 				>
-					<div class="{EMPLOYEE_COL_WIDTH} flex-shrink-0 border-r border-zinc-200 px-4 py-3 dark:border-zinc-800">
+					<div
+						class="{EMPLOYEE_COL_WIDTH} flex-shrink-0 border-r border-zinc-200 px-4 py-3 dark:border-zinc-800"
+					>
 						{#if selectedEmployee}
 							{@const badgeColor = selectedEmployee.badge_color || '#3b82f6'}
 							{@const initials = getInitials(selectedEmployee.username)}
@@ -226,7 +236,11 @@
 								style="border-left: 3px solid {badgeColor};"
 							>
 								<Avatar.Root class="h-8 w-8 flex-shrink-0">
-									<Avatar.Image src={selectedEmployee.image_url} alt={selectedEmployee.username} />
+									<Avatar.Image
+										class="dark:bg-white"
+										src={selectedEmployee.image_url}
+										alt={selectedEmployee.username}
+									/>
 									<Avatar.Fallback
 										class="text-xs font-semibold text-white"
 										style="background-color: {badgeColor};"
@@ -236,7 +250,9 @@
 								</Avatar.Root>
 
 								<div class="min-w-0 flex-1">
-									<p class="truncate text-sm font-medium leading-tight text-zinc-900 dark:text-zinc-100">
+									<p
+										class="truncate text-sm leading-tight font-medium text-zinc-900 dark:text-zinc-100"
+									>
 										{selectedEmployee.username}
 									</p>
 									<p class="truncate text-xs text-zinc-500 dark:text-zinc-400">
@@ -248,7 +264,7 @@
 									variant="ghost"
 									size="icon"
 									onclick={handleRemoveSelectedEmployee}
-									class="h-6 w-6 flex-shrink-0 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950"
+									class="h-6 w-6 flex-shrink-0 text-zinc-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950"
 								>
 									<X class="h-4 w-4" />
 								</Button>
@@ -263,11 +279,16 @@
 										<UserPlus
 											class="h-4 w-4 text-zinc-400 transition-colors duration-150 group-hover:text-zinc-600 dark:text-zinc-500 dark:group-hover:text-zinc-300"
 										/>
-										<span class="text-sm text-zinc-500 group-hover:text-zinc-700 dark:text-zinc-400 dark:group-hover:text-zinc-300">Add employee</span>
+										<span
+											class="text-sm text-zinc-500 group-hover:text-zinc-700 dark:text-zinc-400 dark:group-hover:text-zinc-300"
+											>Add employee</span
+										>
 									</button>
 								</DropdownMenu.Trigger>
 								<DropdownMenu.Content align="start" class="w-64">
-									<DropdownMenu.Label class="flex items-center gap-2 text-zinc-600 dark:text-zinc-300">
+									<DropdownMenu.Label
+										class="flex items-center gap-2 text-zinc-600 dark:text-zinc-300"
+									>
 										<UserPlus class="h-4 w-4" />
 										Select Employee
 									</DropdownMenu.Label>
@@ -286,7 +307,11 @@
 													class="h-8 w-8 flex-shrink-0"
 													style="border: 2px solid {empBadgeColor};"
 												>
-													<Avatar.Image src={emp.image_url} alt={emp.username} />
+													<Avatar.Image
+														class="dark:bg-white"
+														src={emp.image_url}
+														alt={emp.username}
+													/>
 													<Avatar.Fallback
 														class="text-xs font-semibold text-white"
 														style="background-color: {empBadgeColor};"
@@ -295,7 +320,9 @@
 													</Avatar.Fallback>
 												</Avatar.Root>
 												<div class="flex-1 truncate">
-													<p class="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">{emp.username}</p>
+													<p class="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
+														{emp.username}
+													</p>
 													<p class="truncate text-xs text-zinc-500 dark:text-zinc-400">
 														{emp.email.split('@')[0]}
 													</p>
@@ -315,7 +342,9 @@
 					</div>
 
 					{#each weekDays as day (day.date)}
-						<div class="{DAY_COL_WIDTH} flex-shrink-0 border-r border-zinc-200 p-2.5 last:border-r-0 dark:border-zinc-800">
+						<div
+							class="{DAY_COL_WIDTH} flex-shrink-0 border-r border-zinc-200 p-2.5 last:border-r-0 dark:border-zinc-800"
+						>
 							{#if selectedEmployee}
 								{@const empBadgeColor = selectedEmployee.badge_color || '#3b82f6'}
 
@@ -330,9 +359,7 @@
 									onDelete={() => {}}
 								/>
 							{:else}
-								<div
-									class="flex h-[48px] items-center justify-center rounded-lg"
-								>
+								<div class="flex h-[48px] items-center justify-center rounded-lg">
 									<span class="text-xs text-zinc-300 dark:text-zinc-600">-</span>
 								</div>
 							{/if}
