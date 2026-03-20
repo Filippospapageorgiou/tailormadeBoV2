@@ -47,6 +47,7 @@
 		overall_rating: number | null;
 		submitted_at: string | null;
 		created_at: string;
+		is_emergency: boolean;
 		core_organizations: {
 			id: number;
 			store_name: string;
@@ -158,6 +159,34 @@
 				renderComponent(DataTableScoreBar, {
 					score: row.original.overall_rating
 				})
+		},
+		{
+			id: 'is_emergency',
+			accessorKey: 'is_emergency',
+			header: ({ column }) =>
+				renderComponent(DataTableSortButton, {
+					label: 'Τύπος',
+					onclick: column.getToggleSortingHandler()
+				}),
+			cell: ({ row }) => {
+				const isEmergency = row.original.is_emergency ?? false;
+				const snippet = createRawSnippet<[{ emergency: boolean }]>((getData) => {
+					const { emergency } = getData();
+					return {
+						render: () =>
+							emergency
+								? `<div class="inline-flex items-center gap-1.5 rounded-full bg-destructive/10 px-2.5 py-1 text-xs font-semibold text-destructive">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                        Έκτακτη
+                   </div>`
+								: `<div class="inline-flex items-center gap-1.5 rounded-full bg-muted/50 px-2.5 py-1 text-xs font-semibold text-muted-foreground">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>
+                        Κανονική
+                   </div>`
+					};
+				});
+				return renderSnippet(snippet, { emergency: isEmergency });
+			}
 		},
 
 		{

@@ -30,6 +30,8 @@
 	import Textarea from '$lib/components/ui/textarea/textarea.svelte';
 	import { addTaskTemplateWithTasks, updateTemplateWithTasks } from '../data.remote';
 	import * as RadioGroup from '$lib/components/ui/radio-group/index.js';
+	import * as Select from '$lib/components/ui/select';
+	import { cn } from '$lib/utils';
 
 	let { taskTemplatesWithTasks }: { taskTemplatesWithTasks: TaskTemplateWithTasks[] } = $props();
 
@@ -66,6 +68,7 @@
 	// SEPARATE state for EDIT form
 	let editValues = $state({
 		id: '',
+		org_id: 0,
 		name: '',
 		description: '',
 		is_active: 'false',
@@ -90,6 +93,7 @@
 	function openEditDialog(templateTask: TaskTemplateWithTasks) {
 		editValues = {
 			id: templateTask.id,
+			org_id: templateTask.org_id,
 			name: templateTask.name || '',
 			description: templateTask.description || '',
 			is_active: String(templateTask.is_active),
@@ -113,6 +117,7 @@
 		// Reset edit form
 		editValues = {
 			id: '',
+			org_id: 0,
 			name: '',
 			description: '',
 			is_active: String(false),
@@ -189,6 +194,25 @@
 	function removeTaskItemFromEdit(index: number) {
 		editValues.task_items.splice(index, 1);
 	}
+
+	let value = $state('all');
+
+	const frequency = [
+		{ value: 'all', label: 'όλες' },
+		{ value: 'daily', label: 'Καθημερινά' },
+		{ value: 'weekly', label: 'Εβδομαδιαία' },
+		{ value: 'monthly', label: 'Μηναία' }
+	];
+
+	const triggerContent = $derived(
+		frequency.find((f) => f.value === value)?.label ?? 'Διάλεξε εργασίες'
+	);
+
+	let filteredTemplateTasks: TaskTemplateWithTasks[] = $derived(
+		value === 'all'
+			? taskTemplatesWithTasks
+			: taskTemplatesWithTasks.filter((t) => t.frequency === value)
+	);
 </script>
 
 <div class="animate-fade-in-left space-y-6">
@@ -197,18 +221,35 @@
 			<h2 class="text-xl font-semibold text-foreground">Πρότυπα εργασιών</h2>
 			<p class="text-sm text-muted-foreground">Δημιουργία και διαχείριση προτύπων εργασιών</p>
 		</div>
-		<Button
-			onclick={() => {
-				openAddTemplateTask = true;
-			}}
-		>
-			<Plus class="mr-2 h-4 w-4" />
-			Νέο πρότυπο
-		</Button>
+		<div class="flex flex-row items-center justify-center space-x-2">
+			<Select.Root type="single" name="tasks" bind:value>
+				<Select.Trigger class="w-[180px]">
+					{triggerContent}
+				</Select.Trigger>
+				<Select.Content>
+					<Select.Group>
+						<Select.Label>Εργασίες</Select.Label>
+						{#each frequency as freq (freq.value)}
+							<Select.Item value={freq.value} label={freq.label}>
+								{freq.label}
+							</Select.Item>
+						{/each}
+					</Select.Group>
+				</Select.Content>
+			</Select.Root>
+			<Button
+				onclick={() => {
+					openAddTemplateTask = true;
+				}}
+			>
+				<Plus class="mr-2 h-4 w-4" />
+				Νέο πρότυπο
+			</Button>
+		</div>
 	</div>
 
 	<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-		{#each taskTemplatesWithTasks as template (template.id)}
+		{#each filteredTemplateTasks as template (template.id)}
 			{@const totalTime = template.task_items.reduce(
 				(acc, task) => acc + (task.estimated_minutes || 0),
 				0
@@ -257,8 +298,30 @@
 							<span>{totalTime}λ</span>
 						</div>
 						<div class="flex items-center gap-1">
-							<Badge variant="secondary">
-								<span class="text-sm text-muted-foreground">{template.frequency}</span>
+							<Badge
+								class={template.frequency === 'daily'
+									? 'border-emerald-500/30 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-400'
+									: template.frequency === 'weekly'
+										? 'border-blue-500/30 bg-blue-50 text-blue-700 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-400'
+										: 'border-amber-500/30 bg-amber-50 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-400'}
+							>
+								<span
+									class={cn(
+										'size-1.5 rounded-full',
+										template.frequency === 'daily'
+											? 'bg-emerald-500'
+											: template.frequency === 'weekly'
+												? 'bg-blue-500'
+												: 'bg-amber-500'
+									)}
+								></span>
+								<span class="text-sm">
+									{template.frequency === 'daily'
+										? 'Ημερήσιο'
+										: template.frequency === 'weekly'
+											? 'Εβδομαδιαίο'
+											: 'Μηνιαίο'}
+								</span>
 							</Badge>
 						</div>
 					</div>
@@ -273,21 +336,23 @@
 							<PencilIcon class="mr-2 h-3 w-3" />
 							Επεξεργασία
 						</Button>
-						<Button
-							onclick={() => confirmDelete(template.id)}
-							variant="outline"
-							size="sm"
-							class="cursor-pointer text-destructive hover:bg-destructive hover:text-destructive-foreground"
-						>
-							<Trash2Icon class="h-3 w-3" />
-						</Button>
+						{#if template.org_id !== null}
+							<Button
+								onclick={() => confirmDelete(template.id)}
+								variant="outline"
+								size="sm"
+								class="cursor-pointer text-destructive hover:bg-destructive hover:text-destructive-foreground"
+							>
+								<Trash2Icon class="h-3 w-3" />
+							</Button>
+						{/if}
 					</div>
 				</CardContent>
 			</Card>
 		{/each}
 	</div>
 
-	{#if taskTemplatesWithTasks.length === 0}
+	{#if filteredTemplateTasks.length === 0}
 		<Card class="border-dashed">
 			<CardContent class="flex flex-col items-center justify-center py-12">
 				<div class="mb-4 rounded-full bg-muted p-3">
@@ -664,14 +729,16 @@
 				</Button>
 
 				<Modal.Footer class="py-2">
-					<Button type="submit" disabled={isUpdating}>
-						{#if isUpdating}
-							<Spinner /> Ενημέρωση...
-						{:else}
-							Αποθήκευση αλλαγών
-						{/if}
-					</Button>
-					<Button variant="outline" type="button" onclick={closeEditDialog}>Κλείσιμο</Button>
+					{#if editValues.org_id !== null}
+						<Button type="submit" disabled={isUpdating}>
+							{#if isUpdating}
+								<Spinner /> Ενημέρωση...
+							{:else}
+								Αποθήκευση αλλαγών
+							{/if}
+						</Button>
+						<Button variant="outline" type="button" onclick={closeEditDialog}>Κλείσιμο</Button>
+					{/if}
 				</Modal.Footer>
 			</form>
 		</ScrollArea>

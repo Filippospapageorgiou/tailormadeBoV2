@@ -408,6 +408,7 @@ export const getMyEvaluations = query(async () => {
       overall_rating,
       submitted_at,
       created_at,
+	  is_emergency,
       core_organizations!store_evaluations_org_id_fkey (
         id,
         store_name,

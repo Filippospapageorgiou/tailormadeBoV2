@@ -441,35 +441,33 @@
 		{@const pendingOrgs = assignedOrgs.filter(
 			(o) => o.core_organizations?.latitude && o.core_organizations?.longitude
 		)}
-		{#if pendingOrgs.length > 0}
-			<div class="space-y-3">
-				<!-- Section header -->
-				<div class="flex items-center justify-between">
-					<div class="flex items-start gap-3">
-						<div class="rounded-lg bg-primary/10 p-2">
-							<MapPin class="h-4 w-4 text-primary" />
-						</div>
-						<div>
-							<h2 class="text-sm font-semibold">Εκκρεμείς Επισκέψεις</h2>
-							<p class="text-xs text-muted-foreground">
-								Καταστήματα που σου έχουν ανατεθεί και δεν έχουν αξιολογηθεί ακόμα.
-							</p>
-						</div>
+		<div class="space-y-3">
+			<!-- Section header -->
+			<div class="flex items-center justify-between">
+				<div class="flex items-start gap-3">
+					<div class="rounded-lg bg-primary/10 p-2">
+						<MapPin class="h-4 w-4 text-primary" />
 					</div>
-					<div class="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
-						<div class="size-2 animate-pulse rounded-full bg-primary"></div>
-						<span>{pendingOrgs.length} εκκρεμεί</span>
+					<div>
+						<h2 class="text-sm font-semibold">Εκκρεμείς Επισκέψεις</h2>
+						<p class="text-xs text-muted-foreground">
+							Καταστήματα που σου έχουν ανατεθεί και δεν έχουν αξιολογηθεί ακόμα.
+						</p>
 					</div>
 				</div>
-
-				<!-- Map -->
-				<div
-					class="h-[460px] overflow-hidden rounded-2xl border border-border/40 bg-card/60 shadow-sm lg:h-[560px]"
-				>
-					<TrainerMap assignedOrgs={pendingOrgs} evaluations={recentEvaluations} />
+				<div class="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
+					<div class="size-2 animate-pulse rounded-full bg-primary"></div>
+					<span>{pendingOrgs.length} εκκρεμεί</span>
 				</div>
 			</div>
-		{/if}
+
+			<!-- Map -->
+			<div
+				class="h-[460px] overflow-hidden rounded-2xl border border-border/40 bg-card/60 shadow-sm lg:h-[560px]"
+			>
+				<TrainerMap assignedOrgs={pendingOrgs} evaluations={recentEvaluations} />
+			</div>
+		</div>
 	{/if}
 </div>
 

@@ -3,16 +3,13 @@
 		Trash2,
 		CheckCircle2,
 		Clock,
-		LayoutPanelLeft,
 		Calendar,
 		CalendarRange,
 		CalendarDays,
 		Camera,
-		ChevronDown,
 		User,
 		ListChecks,
-		CircleDashed,
-		ImageIcon
+		CircleDashed
 	} from 'lucide-svelte';
 	import { Button } from '$lib/components/ui/button';
 	import * as Card from '$lib/components/ui/card/index.js';
@@ -175,7 +172,7 @@
 	}
 
 	// Summary stats across all users
-	const summaryStats = $derived(() => {
+	const summaryStats = $derived.by(() => {
 		let totalTasks = 0;
 		let completedTasks = 0;
 		let totalMinutes = 0;
@@ -247,7 +244,7 @@
 
 		<!-- Summary Stats Bar -->
 		{#if usersWithTasks.length > 0 && !isLoading}
-			{@const stats = summaryStats()}
+			{@const stats = summaryStats}
 			<div class="flex flex-wrap items-center gap-3 rounded-xl border border-border/60 bg-muted/30 px-4 py-3">
 				<div class="flex items-center gap-2 text-sm">
 					<User class="h-4 w-4 text-muted-foreground" />
@@ -439,7 +436,7 @@
 
 													<!-- Task metadata -->
 													<div class="flex flex-wrap items-center gap-2 pt-0.5">
-														{#if task.task_items?.estimated_minutes > 0}
+														{#if (task.task_items?.estimated_minutes ?? 0) > 0}
 															<div class="flex items-center gap-1 text-[11px] text-muted-foreground">
 																<Clock class="h-3 w-3" />
 																<span>{task.task_items.estimated_minutes} λεπτά</span>
