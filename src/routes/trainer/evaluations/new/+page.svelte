@@ -22,7 +22,11 @@
 	import BaristaTrainingEval from '$lib/components/trainer/BaristaTrainingEval.svelte';
 	import KnowledgeEval from '$lib/components/trainer/KnowledgeEval.svelte';
 	import { setEvaluationPhotosContext } from '$lib/stores/EvalutionPhotos.svelte';
-	import { setFifoCoffeeContext, getFifoCoffeeContext, computeFifoScore } from '$lib/stores/fifo-coffee.svelte';
+	import {
+		setFifoCoffeeContext,
+		getFifoCoffeeContext,
+		computeFifoScore
+	} from '$lib/stores/fifo-coffee.svelte';
 	import FifoCoffeeEval from '$lib/components/trainer/FifoCoffeeEval.svelte';
 	import EvalutionPhotos from '$lib/components/trainer/EvalutionPhotos.svelte';
 	import ManagersBarista from '$lib/components/trainer/managers-barista.svelte';
@@ -47,15 +51,15 @@
 	let assignmentStore = getAssignmentStore();
 	let equipmentStore = getEquipmentEvalContext();
 
-	const orgId = $derived(
-    	Number(page.url.searchParams.get('org')) || assignmentStore.org_id
-	);
+	const orgId = $derived(Number(page.url.searchParams.get('org')) || assignmentStore.org_id);
+
+	let isEmergency = $derived(page.url.searchParams.get('emergency') === 'true');
 
 	let equipmentQuery = $derived(getAllOrgEquipments({ orgId }));
 	let staffQuery = $derived(getOrgStaff({ orgId }));
 	let staff: Profile[] = $derived(staffQuery.current ?? []);
 	let equipments: Equipment[] = $derived(equipmentQuery.current?.equipments ?? []);
-	let finalScore:number = $state(0);
+	let finalScore: number = $state(0);
 	let date = $state(new Date().toISOString().split('T')[0]);
 	let baristas = $state<string[]>([]);
 	let managers = $state<string[]>([]);
@@ -74,7 +78,8 @@
 				storeManagers: managers,
 				baristasOnDuty: baristas,
 				submit: type,
-				overall_rating: finalScore
+				overall_rating: finalScore,
+				is_emergency: isEmergency
 			});
 
 			// 2. Save checked section items (cleanliness / knowledge / training)
@@ -176,8 +181,7 @@
 			<div class="space-y-1">
 				<h1 class="font-mono text-3xl tracking-wider md:text-4xl">Quality Control</h1>
 				<p class="text-xs text-muted-foreground md:text-sm">
-					Νεα αξιολογήσει για το κατάστημα με κώδικο {orgId} συμπλήρωσε την φόρμα και
-					υπέβαλε την
+					Νεα αξιολογήσει για το κατάστημα με κώδικο {orgId} συμπλήρωσε την φόρμα και υπέβαλε την
 				</p>
 			</div>
 		</div>

@@ -61,8 +61,7 @@
 			header: ({ table }) =>
 				renderComponent(DataTableCheckbox, {
 					checked: table.getIsAllPageRowsSelected(),
-					indeterminate:
-						table.getIsSomePageRowsSelected() && !table.getIsAllPageRowsSelected(),
+					indeterminate: table.getIsSomePageRowsSelected() && !table.getIsAllPageRowsSelected(),
 					onCheckedChange: (value) => table.toggleAllPageRowsSelected(!!value),
 					'aria-label': 'Επιλογή όλων'
 				}),
@@ -159,18 +158,16 @@
 					onclick: column.getToggleSortingHandler()
 				}),
 			cell: ({ row }) => {
-				const snippet = createRawSnippet<[{ formatted: string; relative: string }]>(
-					(getData) => {
-						const { formatted, relative } = getData();
-						return {
-							render: () =>
-								`<div>
+				const snippet = createRawSnippet<[{ formatted: string; relative: string }]>((getData) => {
+					const { formatted, relative } = getData();
+					return {
+						render: () =>
+							`<div>
 								<p class="text-sm">${formatted}</p>
 								<p class="text-[11px] text-muted-foreground">${relative}</p>
 							</div>`
-						};
-					}
-				);
+					};
+				});
 
 				const date = new Date(row.original.visit_date);
 				const formatted = date.toLocaleDateString('el-GR', {
@@ -180,9 +177,7 @@
 				});
 
 				const now = new Date();
-				const diffDays = Math.round(
-					(now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
-				);
+				const diffDays = Math.round((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
 				let relative = '';
 				if (diffDays === 0) relative = 'Σήμερα';
 				else if (diffDays === 1) relative = 'Χθες';
@@ -194,7 +189,35 @@
 				return renderSnippet(snippet, { formatted, relative });
 			}
 		},
-
+		// Emergency
+		{
+			id: 'is_emergency',
+			accessorKey: 'is_emergency',
+			header: ({ column }) =>
+				renderComponent(DataTableSortButton, {
+					label: 'Τύπος',
+					onclick: column.getToggleSortingHandler()
+				}),
+			cell: ({ row }) => {
+				const isEmergency = row.original.is_emergency ?? false;
+				const snippet = createRawSnippet<[{ emergency: boolean }]>((getData) => {
+					const { emergency } = getData();
+					return {
+						render: () =>
+							emergency
+								? `<div class="inline-flex items-center gap-1.5 rounded-full bg-destructive/10 px-2.5 py-1 text-xs font-semibold text-destructive">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                        Έκτακτη
+                   </div>`
+								: `<div class="inline-flex items-center gap-1.5 rounded-full bg-muted/50 px-2.5 py-1 text-xs font-semibold text-muted-foreground">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>
+                        Κανονική
+                   </div>`
+					};
+				});
+				return renderSnippet(snippet, { emergency: isEmergency });
+			}
+		},
 		// Status
 		{
 			id: 'status',
@@ -341,14 +364,12 @@
 		<div class="flex items-center gap-2">
 			<!-- Search -->
 			<div class="relative">
-				<Search class="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+				<Search class="absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 				<Input
 					placeholder="Αναζήτηση καταστήματος..."
 					value={(table.getColumn('store_name')?.getFilterValue() as string) ?? ''}
-					oninput={(e) =>
-						table.getColumn('store_name')?.setFilterValue(e.currentTarget.value)}
-					onchange={(e) =>
-						table.getColumn('store_name')?.setFilterValue(e.currentTarget.value)}
+					oninput={(e) => table.getColumn('store_name')?.setFilterValue(e.currentTarget.value)}
+					onchange={(e) => table.getColumn('store_name')?.setFilterValue(e.currentTarget.value)}
 					class="h-9 w-[200px] pl-8 sm:w-[260px]"
 				/>
 			</div>
@@ -366,9 +387,7 @@
 				<DropdownMenu.Content align="end" class="max-h-60 w-48 overflow-y-auto">
 					<DropdownMenu.Label>Εκπαιδευτής</DropdownMenu.Label>
 					<DropdownMenu.Separator />
-					<DropdownMenu.Item
-						onclick={() => table.getColumn('trainer')?.setFilterValue(undefined)}
-					>
+					<DropdownMenu.Item onclick={() => table.getColumn('trainer')?.setFilterValue(undefined)}>
 						Όλοι
 					</DropdownMenu.Item>
 					{#each uniqueTrainers as trainer (trainer.id)}
@@ -394,29 +413,19 @@
 				<DropdownMenu.Content align="end" class="w-40">
 					<DropdownMenu.Label>Κατάσταση</DropdownMenu.Label>
 					<DropdownMenu.Separator />
-					<DropdownMenu.Item
-						onclick={() => table.getColumn('status')?.setFilterValue(undefined)}
-					>
+					<DropdownMenu.Item onclick={() => table.getColumn('status')?.setFilterValue(undefined)}>
 						Όλες
 					</DropdownMenu.Item>
-					<DropdownMenu.Item
-						onclick={() => table.getColumn('status')?.setFilterValue('submitted')}
-					>
+					<DropdownMenu.Item onclick={() => table.getColumn('status')?.setFilterValue('submitted')}>
 						Υποβλήθηκε
 					</DropdownMenu.Item>
-					<DropdownMenu.Item
-						onclick={() => table.getColumn('status')?.setFilterValue('reviewed')}
-					>
+					<DropdownMenu.Item onclick={() => table.getColumn('status')?.setFilterValue('reviewed')}>
 						Αξιολογήθηκε
 					</DropdownMenu.Item>
-					<DropdownMenu.Item
-						onclick={() => table.getColumn('status')?.setFilterValue('draft')}
-					>
+					<DropdownMenu.Item onclick={() => table.getColumn('status')?.setFilterValue('draft')}>
 						Πρόχειρο
 					</DropdownMenu.Item>
-					<DropdownMenu.Item
-						onclick={() => table.getColumn('status')?.setFilterValue('reopened')}
-					>
+					<DropdownMenu.Item onclick={() => table.getColumn('status')?.setFilterValue('reopened')}>
 						Επαναλήφθηκε
 					</DropdownMenu.Item>
 				</DropdownMenu.Content>
@@ -432,9 +441,7 @@
 					{/snippet}
 				</DropdownMenu.Trigger>
 				<DropdownMenu.Content align="end">
-					{#each table
-						.getAllColumns()
-						.filter((col) => col.getCanHide()) as column (column.id)}
+					{#each table.getAllColumns().filter((col) => col.getCanHide()) as column (column.id)}
 						<DropdownMenu.CheckboxItem
 							class="capitalize"
 							bind:checked={() => column.getIsVisible(), (v) => column.toggleVisibility(!!v)}
@@ -458,13 +465,15 @@
 	</div>
 
 	<!-- ─── Table ─── -->
-	<div class="rounded-xl border border-border overflow-hidden">
+	<div class="overflow-hidden rounded-xl border border-border">
 		<Table.Root>
 			<Table.Header>
 				{#each table.getHeaderGroups() as headerGroup (headerGroup.id)}
 					<Table.Row class="hover:bg-transparent">
 						{#each headerGroup.headers as header (header.id)}
-							<Table.Head class="[&:has([role=checkbox])]:ps-3 bg-muted/30 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+							<Table.Head
+								class="bg-muted/30 text-xs font-medium tracking-wider text-muted-foreground uppercase [&:has([role=checkbox])]:ps-3"
+							>
 								{#if !header.isPlaceholder}
 									<FlexRender
 										content={header.column.columnDef.header}
@@ -483,11 +492,8 @@
 						class="transition-colors hover:bg-muted/30"
 					>
 						{#each row.getVisibleCells() as cell (cell.id)}
-							<Table.Cell class="[&:has([role=checkbox])]:ps-3 py-3">
-								<FlexRender
-									content={cell.column.columnDef.cell}
-									context={cell.getContext()}
-								/>
+							<Table.Cell class="py-3 [&:has([role=checkbox])]:ps-3">
+								<FlexRender content={cell.column.columnDef.cell} context={cell.getContext()} />
 							</Table.Cell>
 						{/each}
 					</Table.Row>
@@ -564,7 +570,7 @@
 					<ChevronLeft class="h-4 w-4" />
 				</Button>
 
-				<span class="px-2 text-sm tabular-nums text-muted-foreground">
+				<span class="px-2 text-sm text-muted-foreground tabular-nums">
 					{currentPage} / {totalPages}
 				</span>
 

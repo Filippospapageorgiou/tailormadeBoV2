@@ -202,7 +202,7 @@
 		emergencyModalOpen = false;
 		emergencyStep = 1;
 		selectedOrgValue = '';
-		goto(`/trainer/evaluations/new?org=${orgId}`);
+		goto(`/trainer/evaluations/new?org=${orgId}&emergency=true`);
 	}
 
 	// ── Assigned org evaluation ────────────────────────────────────────

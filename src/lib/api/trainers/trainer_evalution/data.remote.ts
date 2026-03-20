@@ -1,6 +1,10 @@
 import { query, command } from '$app/server';
 import { createAdminClient, createServerClient } from '$lib/supabase/server';
-import { getProfileByUUId, getUserProfile, getUserProfileWithRoleCheck } from '$lib/supabase/queries';
+import {
+	getProfileByUUId,
+	getUserProfile,
+	getUserProfileWithRoleCheck
+} from '$lib/supabase/queries';
 import { z } from 'zod/v4';
 import { error } from '@sveltejs/kit';
 import type { Equipment } from '$lib/models/equipment.types';
@@ -14,21 +18,21 @@ const profileIdSchema = z.object({
 	id: z.string()
 });
 
-export const getprofileByUUID = query(profileIdSchema, async({ id })=> {
-	try{
+export const getprofileByUUID = query(profileIdSchema, async ({ id }) => {
+	try {
 		let profile = await getProfileByUUId(id);
 		return {
 			success: true,
 			profile: profile
 		};
-	}catch(err){
-		console.error('[getprofileByUUID] error fetching user profile: ',err);
-		return{
-			success:false,
-			profile:null,
-		}
+	} catch (err) {
+		console.error('[getprofileByUUID] error fetching user profile: ', err);
+		return {
+			success: false,
+			profile: null
+		};
 	}
-})
+});
 
 export const authenticatedAccess = query(async () => {
 	const profile = await getUserProfileWithRoleCheck([3]); // 3 = trainer
@@ -92,7 +96,6 @@ export const getOrgStaff = query(getOrgStaffSchema, async ({ orgId }) => {
 	return staff ?? [];
 });
 
-
 // ============================================================
 // CREATE: Start a new evaluation
 // ============================================================
@@ -103,83 +106,90 @@ const createEvaluationSchema = z.object({
 	storeManagers: z.array(z.string()).default([]),
 	baristasOnDuty: z.array(z.string()).default([]),
 	submit: z.string(), // 'draft' | 'submitted'
-	overall_rating:z.number()
+	overall_rating: z.number(),
+	is_emergency: z.boolean()
 });
 
 export const createEvaluation = command(
-    createEvaluationSchema,
-    async ({ orgId, visitDate, storeManagers, baristasOnDuty, submit, overall_rating }) => {
-        const supabase = createAdminClient();
-        const profile = await getUserProfileWithRoleCheck([3]);
+	createEvaluationSchema,
+	async ({
+		orgId,
+		visitDate,
+		storeManagers,
+		baristasOnDuty,
+		submit,
+		overall_rating,
+		is_emergency
+	}) => {
+		const supabase = createAdminClient();
+		const profile = await getUserProfileWithRoleCheck([3]);
 
-        const { data: evaluation, error: insertError } = await supabase
-            .from('store_evaluations')
-            .insert({
-                org_id: orgId,
-                trainer_id: profile.id,
-                visit_date: visitDate,
-                store_managers: storeManagers,
-                baristas_on_duty: baristasOnDuty,
-                submit,
-                overall_rating,
-                ...(submit === 'submitted' && {
-                    submitted_at: new Date().toLocaleString('en-US', { timeZone: 'Europe/Athens' })
-                })
-            })
-            .select('id')
-            .single();
+		const { data: evaluation, error: insertError } = await supabase
+			.from('store_evaluations')
+			.insert({
+				org_id: orgId,
+				trainer_id: profile.id,
+				visit_date: visitDate,
+				store_managers: storeManagers,
+				baristas_on_duty: baristasOnDuty,
+				submit,
+				overall_rating,
+				is_emergency: is_emergency,
+				...(submit === 'submitted' && {
+					submitted_at: new Date().toLocaleString('en-US', { timeZone: 'Europe/Athens' })
+				})
+			})
+			.select('id')
+			.single();
 
-        if (insertError) {
-            console.error('[createEvaluation] Error:', insertError);
-            throw error(500, 'Failed to create evaluation');
-        }
+		if (insertError) {
+			console.error('[createEvaluation] Error:', insertError);
+			throw error(500, 'Failed to create evaluation');
+		}
 
-        // If submitted, check for assignment → delete + notify
-        if (submit === 'submitted') {
-            const { data: assignment } = await supabase
-                .from('trainer_org_assigments')
-                .select('id, assigned_by')
-                .eq('trainer_id', profile.id)
-                .eq('org_id', orgId)
-                .maybeSingle();
+		// If submitted, check for assignment → delete + notify
+		if (submit === 'submitted') {
+			const { data: assignment } = await supabase
+				.from('trainer_org_assigments')
+				.select('id, assigned_by')
+				.eq('trainer_id', profile.id)
+				.eq('org_id', orgId)
+				.maybeSingle();
 
-            if (assignment) {
-                await supabase
-                    .from('trainer_org_assigments')
-                    .delete()
-                    .eq('id', assignment.id);
+			if (assignment) {
+				await supabase.from('trainer_org_assigments').delete().eq('id', assignment.id);
 
-                const { data: assigner } = await supabase
-                    .from('profiles')
-                    .select('email, full_name, username')
-                    .eq('id', assignment.assigned_by)
-                    .single();
+				const { data: assigner } = await supabase
+					.from('profiles')
+					.select('email, full_name, username')
+					.eq('id', assignment.assigned_by)
+					.single();
 
-                const { data: org } = await supabase
-                    .from('core_organizations')
-                    .select('store_name, location')
-                    .eq('id', orgId)
-                    .single();
+				const { data: org } = await supabase
+					.from('core_organizations')
+					.select('store_name, location')
+					.eq('id', orgId)
+					.single();
 
-                if (assigner?.email && org) {
-                    const { sendEvaluationCompletionNotification } = await import(
-                        '$lib/emails/evaluation-completion-notification'
-                    );
-                    await sendEvaluationCompletionNotification({
-                        recipientEmail: assigner.email,
-                        recipientName: assigner.full_name ?? assigner.username ?? 'Διαχειριστής',
-                        trainerName: profile.full_name ?? profile.username ?? 'Trainer',
-                        storeName: org.store_name,
-                        storeLocation: org.location ?? undefined,
-                        visitDate,
-                        evaluationId: evaluation.id
-                    });
-                }
-            }
-        }
+				if (assigner?.email && org) {
+					const { sendEvaluationCompletionNotification } = await import(
+						'$lib/emails/evaluation-completion-notification'
+					);
+					await sendEvaluationCompletionNotification({
+						recipientEmail: assigner.email,
+						recipientName: assigner.full_name ?? assigner.username ?? 'Διαχειριστής',
+						trainerName: profile.full_name ?? profile.username ?? 'Trainer',
+						storeName: org.store_name,
+						storeLocation: org.location ?? undefined,
+						visitDate,
+						evaluationId: evaluation.id
+					});
+				}
+			}
+		}
 
-        return { evaluationId: evaluation.id };
-    }
+		return { evaluationId: evaluation.id };
+	}
 );
 
 // ============================================================
@@ -188,40 +198,43 @@ export const createEvaluation = command(
 
 const saveSectionItemsSchema = z.object({
 	evaluation_id: z.number().int().positive(),
-	items: z.array(z.object({
-		section: z.string(),
-		item_key: z.string(),
-		item_label: z.string(),
-		checked: z.boolean(),
-		score: z.number().nullable().optional(),
-		notes: z.string().nullable().optional(),
-	})),
+	items: z.array(
+		z.object({
+			section: z.string(),
+			item_key: z.string(),
+			item_label: z.string(),
+			checked: z.boolean(),
+			score: z.number().nullable().optional(),
+			notes: z.string().nullable().optional()
+		})
+	)
 });
 
-export const saveSectionItems = command(saveSectionItemsSchema, async ({ evaluation_id, items }) => {
-	const supabase = createServerClient();
+export const saveSectionItems = command(
+	saveSectionItemsSchema,
+	async ({ evaluation_id, items }) => {
+		const supabase = createServerClient();
 
-	const rows = items.map((item) => ({
-		evaluation_id,
-		section: item.section,
-		item_key: item.item_key,
-		item_label: item.item_label,
-		checked: item.checked,
-		score: item.score ?? null,
-		notes: item.notes ?? null,
-	}));
+		const rows = items.map((item) => ({
+			evaluation_id,
+			section: item.section,
+			item_key: item.item_key,
+			item_label: item.item_label,
+			checked: item.checked,
+			score: item.score ?? null,
+			notes: item.notes ?? null
+		}));
 
-	const { error: insertError } = await supabase
-		.from('evaluation_section_items')
-		.insert(rows);
+		const { error: insertError } = await supabase.from('evaluation_section_items').insert(rows);
 
-	if (insertError) {
-		console.error('[saveSectionItems] Error:', insertError);
-		throw error(500, 'Failed to save section items');
+		if (insertError) {
+			console.error('[saveSectionItems] Error:', insertError);
+			throw error(500, 'Failed to save section items');
+		}
+
+		return { success: true, count: rows.length };
 	}
-
-	return { success: true, count: rows.length };
-});
+);
 
 // ============================================================
 // SAVE: Barista training block (unique per evaluation)
@@ -233,32 +246,31 @@ const saveBaristaTrainingSchema = z.object({
 	score: z.number().nullable().optional(),
 	needs_followup: z.boolean(),
 	followup_date: z.string().nullable().optional(),
-	other_training: z.string().nullable().optional(),
+	other_training: z.string().nullable().optional()
 });
 
-export const saveBaristaTraining = command(saveBaristaTrainingSchema, async ({
-	evaluation_id, barista_name, score, needs_followup, followup_date, other_training
-}) => {
-	const supabase = createServerClient();
+export const saveBaristaTraining = command(
+	saveBaristaTrainingSchema,
+	async ({ evaluation_id, barista_name, score, needs_followup, followup_date, other_training }) => {
+		const supabase = createServerClient();
 
-	const { error: insertError } = await supabase
-		.from('evaluation_barista_training')
-		.insert({
+		const { error: insertError } = await supabase.from('evaluation_barista_training').insert({
 			evaluation_id,
 			barista_name: barista_name ?? null,
 			score: score ?? null,
 			needs_followup,
 			followup_date: followup_date ?? null,
-			other_training: other_training ?? null,
+			other_training: other_training ?? null
 		});
 
-	if (insertError) {
-		console.error('[saveBaristaTraining] Error:', insertError);
-		throw error(500, 'Failed to save barista training');
-	}
+		if (insertError) {
+			console.error('[saveBaristaTraining] Error:', insertError);
+			throw error(500, 'Failed to save barista training');
+		}
 
-	return { success: true };
-});
+		return { success: true };
+	}
+);
 
 // ============================================================
 // SAVE: Equipment evaluations + check items
@@ -266,63 +278,72 @@ export const saveBaristaTraining = command(saveBaristaTrainingSchema, async ({
 
 const saveEquipmentsSchema = z.object({
 	evaluation_id: z.number().int().positive(),
-	equipments: z.array(z.object({
-		equipment_id: z.number().nullable().optional(),
-		score: z.number().nullable().optional(),
-		notes: z.string().nullable().optional(),
-		checkItems: z.array(z.object({
-			check_name: z.string(),
-			value_numeric: z.number().nullable().optional(),
-			passed: z.boolean().nullable().optional(),
+	equipments: z.array(
+		z.object({
+			equipment_id: z.number().nullable().optional(),
+			score: z.number().nullable().optional(),
 			notes: z.string().nullable().optional(),
-		})).default([]),
-	})),
+			checkItems: z
+				.array(
+					z.object({
+						check_name: z.string(),
+						value_numeric: z.number().nullable().optional(),
+						passed: z.boolean().nullable().optional(),
+						notes: z.string().nullable().optional()
+					})
+				)
+				.default([])
+		})
+	)
 });
 
-export const saveEquipments = command(saveEquipmentsSchema, async ({ evaluation_id, equipments }) => {
-	const supabase = createServerClient();
+export const saveEquipments = command(
+	saveEquipmentsSchema,
+	async ({ evaluation_id, equipments }) => {
+		const supabase = createServerClient();
 
-	for (const eq of equipments) {
-		// Insert equipment evaluation row, get back its id
-		const { data: evalRow, error: evalError } = await supabase
-			.from('equipment_evaluations')
-			.insert({
-				evaluation_id,
-				equipment_id: eq.equipment_id ?? null,
-				score: eq.score ?? null,
-				notes: eq.notes ?? null,
-			})
-			.select('id')
-			.single();
+		for (const eq of equipments) {
+			// Insert equipment evaluation row, get back its id
+			const { data: evalRow, error: evalError } = await supabase
+				.from('equipment_evaluations')
+				.insert({
+					evaluation_id,
+					equipment_id: eq.equipment_id ?? null,
+					score: eq.score ?? null,
+					notes: eq.notes ?? null
+				})
+				.select('id')
+				.single();
 
-		if (evalError) {
-			console.error('[saveEquipments] Error inserting equipment eval:', evalError);
-			throw error(500, 'Failed to save equipment evaluation');
-		}
+			if (evalError) {
+				console.error('[saveEquipments] Error inserting equipment eval:', evalError);
+				throw error(500, 'Failed to save equipment evaluation');
+			}
 
-		// Bulk insert check items for this equipment
-		if (eq.checkItems.length > 0) {
-			const checkRows = eq.checkItems.map((ci) => ({
-				equipment_eval_id: evalRow.id,
-				check_name: ci.check_name,
-				value_numeric: ci.value_numeric ?? null,
-				passed: ci.passed ?? null,
-				notes: ci.notes ?? null,
-			}));
+			// Bulk insert check items for this equipment
+			if (eq.checkItems.length > 0) {
+				const checkRows = eq.checkItems.map((ci) => ({
+					equipment_eval_id: evalRow.id,
+					check_name: ci.check_name,
+					value_numeric: ci.value_numeric ?? null,
+					passed: ci.passed ?? null,
+					notes: ci.notes ?? null
+				}));
 
-			const { error: checkError } = await supabase
-				.from('equipment_check_items')
-				.insert(checkRows);
+				const { error: checkError } = await supabase
+					.from('equipment_check_items')
+					.insert(checkRows);
 
-			if (checkError) {
-				console.error('[saveEquipments] Error inserting check items:', checkError);
-				throw error(500, 'Failed to save equipment check items');
+				if (checkError) {
+					console.error('[saveEquipments] Error inserting check items:', checkError);
+					throw error(500, 'Failed to save equipment check items');
+				}
 			}
 		}
-	}
 
-	return { success: true };
-});
+		return { success: true };
+	}
+);
 
 // ============================================================
 // SAVE: Final summary & action points
@@ -332,37 +353,41 @@ const saveSummarySchema = z.object({
 	evaluation_id: z.number().int().positive(),
 	score: z.number(),
 	comments: z.string(),
-	sections: z.array(z.object({
-		label: z.string(),
-		description: z.string(),
-		priority: z.number(),
-	})).default([]),
+	sections: z
+		.array(
+			z.object({
+				label: z.string(),
+				description: z.string(),
+				priority: z.number()
+			})
+		)
+		.default([])
 });
 
-export const saveSummary = command(saveSummarySchema, async ({ evaluation_id, score, comments, sections }) => {
-	const supabase = createServerClient();
+export const saveSummary = command(
+	saveSummarySchema,
+	async ({ evaluation_id, score, comments, sections }) => {
+		const supabase = createServerClient();
 
-	const { error: insertError } = await supabase
-		.from('evaluation_summary_actions')
-		.insert({
+		const { error: insertError } = await supabase.from('evaluation_summary_actions').insert({
 			evaluation_id: evaluation_id,
 			score,
 			comments,
-			sections,
+			sections
 		});
 
-	if (insertError) {
-		console.error('[saveSummary] Error:', insertError);
-		throw error(500, 'Failed to save evaluation summary');
-	}
+		if (insertError) {
+			console.error('[saveSummary] Error:', insertError);
+			throw error(500, 'Failed to save evaluation summary');
+		}
 
-	return { success: true };
-});
+		return { success: true };
+	}
+);
 
 // ============================================================
 // LOAD: Full evaluation with all child data (for editing)
 // ============================================================
-
 
 // ============================================================
 // LIST: Trainer's own evaluations
@@ -409,12 +434,14 @@ export const getMyEvaluations = query(async () => {
 
 const saveFifoCoffeeSchema = z.object({
 	evaluation_id: z.number().int().positive(),
-	items: z.array(z.object({
-		coffee_type: z.enum(['espresso', 'filter', 'organic', 'decaf', 'greek_coffee', 'instant']),
-		roast_date: z.string().nullable(),
-		score: z.number().int().min(0).max(5),
-		status: z.enum(['peak', 'too_fresh', 'expired', 'unknown']),
-	})),
+	items: z.array(
+		z.object({
+			coffee_type: z.enum(['espresso', 'filter', 'organic', 'decaf', 'greek_coffee', 'instant']),
+			roast_date: z.string().nullable(),
+			score: z.number().int().min(0).max(5),
+			status: z.enum(['peak', 'too_fresh', 'expired', 'unknown'])
+		})
+	)
 });
 
 export const saveFifoCoffee = command(saveFifoCoffeeSchema, async ({ evaluation_id, items }) => {
@@ -427,14 +454,12 @@ export const saveFifoCoffee = command(saveFifoCoffeeSchema, async ({ evaluation_
 			coffee_type: i.coffee_type,
 			roast_date: i.roast_date,
 			score: i.score,
-			status: i.status,
+			status: i.status
 		}));
 
 	if (rows.length === 0) return { success: true, count: 0 };
 
-	const { error: insertError } = await supabase
-		.from('evaluation_fifo_coffee')
-		.insert(rows);
+	const { error: insertError } = await supabase.from('evaluation_fifo_coffee').insert(rows);
 
 	if (insertError) {
 		console.error('[saveFifoCoffee] Error:', insertError);
@@ -559,24 +584,24 @@ export const deleteEvaluation = command(deleteEvaluationSchema, async ({ evaluat
 
 const savePhotosSchema = z.object({
 	evaluation_id: z.number().int().positive(),
-	photos: z.array(z.object({
-		category: z.string(),
-		storage_path: z.string(),
-		description: z.string().nullable().optional(),
-	})),
+	photos: z.array(
+		z.object({
+			category: z.string(),
+			storage_path: z.string(),
+			description: z.string().nullable().optional()
+		})
+	)
 });
 
 export const savePhotos = command(savePhotosSchema, async ({ evaluation_id, photos }) => {
 	const supabase = createServerClient();
 	const profile = await getUserProfileWithRoleCheck([3]);
 
-	const { error: insertError } = await supabase
-		.from('evaluation_photos')
-		.insert({
-			evaluation_id,
-			photos,
-			uploaded_by: profile.id,
-		});
+	const { error: insertError } = await supabase.from('evaluation_photos').insert({
+		evaluation_id,
+		photos,
+		uploaded_by: profile.id
+	});
 
 	if (insertError) {
 		console.error('[savePhotos] Error:', insertError);
@@ -591,79 +616,85 @@ export const savePhotos = command(savePhotosSchema, async ({ evaluation_id, phot
 // ============================================================
 
 const submitEvaluationFinalSchema = z.object({
-	evaluationId: z.number().int().positive(),
+	evaluationId: z.number().int().positive()
 });
 
-export const submitEvaluationFinal = command(submitEvaluationFinalSchema, async ({ evaluationId }) => {
-	const supabase = createAdminClient();
-	const profile = await getUserProfileWithRoleCheck([3]);
+export const submitEvaluationFinal = command(
+	submitEvaluationFinalSchema,
+	async ({ evaluationId }) => {
+		const supabase = createAdminClient();
+		const profile = await getUserProfileWithRoleCheck([3]);
 
-	// Fetch the evaluation (verify ownership)
-	const { data: evaluation } = await supabase
-		.from('store_evaluations')
-		.select('id, org_id, trainer_id, visit_date, submit')
-		.eq('id', evaluationId)
-		.eq('trainer_id', profile.id)
-		.single();
-
-	if (!evaluation) throw error(404, 'Evaluation not found');
-	if (evaluation.submit === 'submitted') throw error(400, 'Already submitted');
-
-	// Mark as submitted
-	const { error: updateError } = await supabase
-		.from('store_evaluations')
-		.update({ submit: 'submitted', submitted_at: new Date().toLocaleString('en-US', { timeZone: 'Europe/Athens' })})
-		.eq('id', evaluationId);
-
-	if (updateError) {
-		console.error('[submitEvaluationFinal] Update error:', updateError);
-		throw error(500, 'Failed to submit evaluation');
-	}
-
-	// Find the active assignment for this trainer+org
-	const { data: assignment } = await supabase
-		.from('trainer_org_assigments')
-		.select('id, assigned_by')
-		.eq('trainer_id', profile.id)
-		.eq('org_id', evaluation.org_id)
-		.maybeSingle();
-
-	if (assignment) {
-		// Delete the assignment
-		await supabase.from('trainer_org_assigments').delete().eq('id', assignment.id);
-
-		// Fetch assigner profile for email
-		const { data: assigner } = await supabase
-			.from('profiles')
-			.select('email, full_name, username')
-			.eq('id', assignment.assigned_by)
+		// Fetch the evaluation (verify ownership)
+		const { data: evaluation } = await supabase
+			.from('store_evaluations')
+			.select('id, org_id, trainer_id, visit_date, submit')
+			.eq('id', evaluationId)
+			.eq('trainer_id', profile.id)
 			.single();
 
-		// Fetch org info
-		const { data: org } = await supabase
-			.from('core_organizations')
-			.select('store_name, location')
-			.eq('id', evaluation.org_id)
-			.single();
+		if (!evaluation) throw error(404, 'Evaluation not found');
+		if (evaluation.submit === 'submitted') throw error(400, 'Already submitted');
 
-		if (assigner?.email && org) {
-			const { sendEvaluationCompletionNotification } = await import(
-				'$lib/emails/evaluation-completion-notification'
-			);
-			await sendEvaluationCompletionNotification({
-				recipientEmail: assigner.email,
-				recipientName: assigner.full_name ?? assigner.username ?? 'Διαχειριστής',
-				trainerName: profile.full_name ?? profile.username ?? 'Trainer',
-				storeName: org.store_name,
-				storeLocation: org.location ?? undefined,
-				visitDate: evaluation.visit_date,
-				evaluationId,
-			});
+		// Mark as submitted
+		const { error: updateError } = await supabase
+			.from('store_evaluations')
+			.update({
+				submit: 'submitted',
+				submitted_at: new Date().toLocaleString('en-US', { timeZone: 'Europe/Athens' })
+			})
+			.eq('id', evaluationId);
+
+		if (updateError) {
+			console.error('[submitEvaluationFinal] Update error:', updateError);
+			throw error(500, 'Failed to submit evaluation');
 		}
-	}
 
-	return { success: true };
-});
+		// Find the active assignment for this trainer+org
+		const { data: assignment } = await supabase
+			.from('trainer_org_assigments')
+			.select('id, assigned_by')
+			.eq('trainer_id', profile.id)
+			.eq('org_id', evaluation.org_id)
+			.maybeSingle();
+
+		if (assignment) {
+			// Delete the assignment
+			await supabase.from('trainer_org_assigments').delete().eq('id', assignment.id);
+
+			// Fetch assigner profile for email
+			const { data: assigner } = await supabase
+				.from('profiles')
+				.select('email, full_name, username')
+				.eq('id', assignment.assigned_by)
+				.single();
+
+			// Fetch org info
+			const { data: org } = await supabase
+				.from('core_organizations')
+				.select('store_name, location')
+				.eq('id', evaluation.org_id)
+				.single();
+
+			if (assigner?.email && org) {
+				const { sendEvaluationCompletionNotification } = await import(
+					'$lib/emails/evaluation-completion-notification'
+				);
+				await sendEvaluationCompletionNotification({
+					recipientEmail: assigner.email,
+					recipientName: assigner.full_name ?? assigner.username ?? 'Διαχειριστής',
+					trainerName: profile.full_name ?? profile.username ?? 'Trainer',
+					storeName: org.store_name,
+					storeLocation: org.location ?? undefined,
+					visitDate: evaluation.visit_date,
+					evaluationId
+				});
+			}
+		}
+
+		return { success: true };
+	}
+);
 
 // ============================================================
 // REVIEW: Admin marks evaluation as reviewed + notifies trainer
@@ -671,66 +702,78 @@ export const submitEvaluationFinal = command(submitEvaluationFinalSchema, async 
 
 const reviewEvaluationSchema = z.object({
 	evaluationId: z.number().int().positive(),
-	admin_notes: z.string().max(2000).optional().default(''),
+	admin_notes: z.string().max(2000).optional().default('')
 });
 
-export const reviewEvaluation = command(reviewEvaluationSchema, async ({ evaluationId, admin_notes }) => {
-	const supabase = createAdminClient();
-	const profile = await getUserProfileWithRoleCheck([1]); // admin only
+export const reviewEvaluation = command(
+	reviewEvaluationSchema,
+	async ({ evaluationId, admin_notes }) => {
+		const supabase = createAdminClient();
+		const profile = await getUserProfileWithRoleCheck([1]); // admin only
 
-	const { data: evaluation } = await supabase
-		.from('store_evaluations')
-		.select('id, org_id, trainer_id, visit_date, submit')
-		.eq('id', evaluationId)
-		.single();
+		const { data: evaluation } = await supabase
+			.from('store_evaluations')
+			.select('id, org_id, trainer_id, visit_date, submit')
+			.eq('id', evaluationId)
+			.single();
 
-	if (!evaluation) throw error(404, 'Evaluation not found');
+		if (!evaluation) throw error(404, 'Evaluation not found');
 
-	const { error: updateError } = await supabase
-		.from('store_evaluations')
-		.update({
-			submit: 'reviewed',
-			reviewed_by: profile.id,
-			reviewed_at: new Date().toLocaleString('en-US', { timeZone: 'Europe/Athens' }),
-			admin_notes: admin_notes || null,
-		})
-		.eq('id', evaluationId);
+		const { error: updateError } = await supabase
+			.from('store_evaluations')
+			.update({
+				submit: 'reviewed',
+				reviewed_by: profile.id,
+				reviewed_at: new Date().toLocaleString('en-US', { timeZone: 'Europe/Athens' }),
+				admin_notes: admin_notes || null
+			})
+			.eq('id', evaluationId);
 
-	if (updateError) {
-		console.error('[reviewEvaluation] Update error:', updateError);
-		throw error(500, 'Failed to mark evaluation as reviewed');
+		if (updateError) {
+			console.error('[reviewEvaluation] Update error:', updateError);
+			throw error(500, 'Failed to mark evaluation as reviewed');
+		}
+
+		// Fetch trainer + org for email notification
+		const [trainerRes, orgRes] = await Promise.all([
+			supabase
+				.from('profiles')
+				.select('email, full_name, username')
+				.eq('id', evaluation.trainer_id)
+				.single(),
+			supabase
+				.from('core_organizations')
+				.select('store_name, location')
+				.eq('id', evaluation.org_id)
+				.single()
+		]);
+
+		const trainer = trainerRes.data;
+		const org = orgRes.data;
+
+		if (trainer?.email && org) {
+			const { sendEvaluationReviewNotification } = await import(
+				'$lib/emails/evaluation-review-notification'
+			);
+			await sendEvaluationReviewNotification({
+				recipientEmail: trainer.email,
+				trainerName: trainer.full_name ?? trainer.username ?? 'Trainer',
+				adminName: profile.full_name ?? profile.username ?? 'Διαχειριστής',
+				storeName: org.store_name,
+				storeLocation: org.location ?? undefined,
+				visitDate: evaluation.visit_date,
+				evaluationId,
+				adminNotes: admin_notes || null
+			});
+		}
+
+		return { success: true };
 	}
-
-	// Fetch trainer + org for email notification
-	const [trainerRes, orgRes] = await Promise.all([
-		supabase.from('profiles').select('email, full_name, username').eq('id', evaluation.trainer_id).single(),
-		supabase.from('core_organizations').select('store_name, location').eq('id', evaluation.org_id).single(),
-	]);
-
-	const trainer = trainerRes.data;
-	const org = orgRes.data;
-
-	if (trainer?.email && org) {
-		const { sendEvaluationReviewNotification } = await import('$lib/emails/evaluation-review-notification');
-		await sendEvaluationReviewNotification({
-			recipientEmail: trainer.email,
-			trainerName: trainer.full_name ?? trainer.username ?? 'Trainer',
-			adminName: profile.full_name ?? profile.username ?? 'Διαχειριστής',
-			storeName: org.store_name,
-			storeLocation: org.location ?? undefined,
-			visitDate: evaluation.visit_date,
-			evaluationId,
-			adminNotes: admin_notes || null,
-		});
-	}
-
-	return { success: true };
-});
+);
 
 // ============================================================
 // HELPER: Verify evaluation ownership & editable status
 // ============================================================
-
 
 // ============================================================
 // LOAD: Full evaluation detail (all related tables)
@@ -745,7 +788,8 @@ export const getEvaluationById = query(getEvaluationByIdSchema, async ({ evaluat
 
 	const { data: evaluation, error: evalError } = await supabase
 		.from('store_evaluations')
-		.select(`
+		.select(
+			`
 			*,
 			core_organizations!store_evaluations_org_id_fkey (*),
 			trainer:profiles!store_evaluations_trainer_id_fkey (id, full_name, email, image_url, username),
@@ -759,7 +803,8 @@ export const getEvaluationById = query(getEvaluationByIdSchema, async ({ evaluat
 			evaluation_photos (*),
 			evaluation_summary_actions (*),
 			evaluation_fifo_coffee (*)
-		`)
+		`
+		)
 		.eq('id', evaluationId)
 		.single();
 
@@ -771,7 +816,7 @@ export const getEvaluationById = query(getEvaluationByIdSchema, async ({ evaluat
 	// Fetch staff profiles for store managers and baristas
 	const allStaffIds = [
 		...(evaluation.store_managers ?? []),
-		...(evaluation.baristas_on_duty ?? []),
+		...(evaluation.baristas_on_duty ?? [])
 	].filter(Boolean) as string[];
 
 	let staffProfiles: { id: string; full_name: string; image_url: string | null }[] = [];
@@ -798,7 +843,7 @@ export const getEvaluationById = query(getEvaluationByIdSchema, async ({ evaluat
 	return {
 		evaluation: evaluation as any,
 		staffProfiles,
-		photoItemsWithUrls,
+		photoItemsWithUrls
 	};
 });
 
@@ -814,7 +859,7 @@ export const getAllOrgEquipments = query(orgIdEquipment, async ({ orgId }) => {
 		const { data: equipments, error } = await supabase
 			.from('equipment')
 			.select('*')
-			.eq('org_id',orgId)
+			.eq('org_id', orgId)
 			.overrideTypes<Equipment[]>();
 		if (error) {
 			console.error('Error fetching equipments: ', error);
