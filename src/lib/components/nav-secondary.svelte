@@ -14,6 +14,7 @@
 			title: string;
 			url: string;
 			icon: Component;
+			badge?: number;
 		}[];
 	} & ComponentProps<typeof Sidebar.Group> = $props();
 
@@ -48,6 +49,11 @@
 								<a href={item.url} {...props} onclick={handleLinkClick}>
 									<item.icon />
 									<span>{item.title}</span>
+									{#if item.badge && item.badge > 0}
+										<span class="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium leading-none text-primary-foreground">
+											{item.badge > 99 ? '99+' : item.badge}
+										</span>
+									{/if}
 								</a>
 							{/if}
 						{/snippet}

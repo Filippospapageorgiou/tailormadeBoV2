@@ -13,7 +13,7 @@
 	let idleCount = $derived(presenceList.filter((u) => u.status === 'idle').length);
 
 	let sortedUsers = $derived(
-		[...presenceList].sort((a, b) => {
+		[...new Map(presenceList.map((u) => [u.user_id, u])).values()].sort((a, b) => {
 			if (a.status !== b.status) return a.status === 'active' ? -1 : 1;
 			return (a.full_name ?? '').localeCompare(b.full_name ?? '', 'el');
 		})

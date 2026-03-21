@@ -71,6 +71,7 @@ export interface Profile {
 	display_order: number;
 	is_manager: boolean;
 	full_name: string;
+	org_name: string;
 }
 
 export interface RoleTypes {

@@ -2,6 +2,7 @@
 	import BookOpenIcon from '@lucide/svelte/icons/book-open';
 	import LifeBuoyIcon from '@lucide/svelte/icons/life-buoy';
 	import SendIcon from '@lucide/svelte/icons/send';
+	import MessageCircleIcon from '@lucide/svelte/icons/message-circle';
 	import {
 		NotebookPen,
 		Coffee,
@@ -17,8 +18,7 @@
 		Landmark,
 		ShieldCheck,
 		Award,
-		Building,
-		PersonStanding
+		Building
 	} from 'lucide-svelte';
 	import UserGroup from '$lib/animated/icons/user-group.svelte';
 	import GlobeAlt from '$lib/animated/icons/globe-alt.svelte';
@@ -124,6 +124,12 @@
 				isActive: false
 			},*/
 			{
+				title: 'Συνομιλίες',
+				url: '/app/chat',
+				icon: MessageCircleIcon,
+				isActive: false
+			},
+			{
 				title: 'Feedback',
 				url: '#',
 				icon: SendIcon,
@@ -188,10 +194,19 @@
 	import { Bot, Boxes, Slack } from '@lucide/svelte';
 	import { goto } from '$app/navigation';
 	import Settings from '$lib/animated/icons/settings.svelte';
+	import { getChatContext } from '$lib/stores/chat.svelte';
 
 	let { ref = $bindable(null), ...restProps }: ComponentProps<typeof Sidebar.Root> = $props();
 
 	let user = getProfileContext();
+	let chatStore = getChatContext();
+
+	// Inject reactive badge count into navSecondary
+	let navSecondaryWithBadge = $derived(
+		data.navSecondary.map((item) =>
+			item.title === 'Συνομιλίες' ? { ...item, badge: chatStore?.unreadCount ?? 0 } : item
+		)
+	);
 
 	// Filter navMain based on user role
 	let filteredNavMain = $derived(
@@ -241,7 +256,7 @@
 		{#if user.role_id === 1}
 			<NavProjects projects={data.projects} />
 		{/if}
-		<NavSecondary items={data.navSecondary} class="mt-auto" />
+		<NavSecondary items={navSecondaryWithBadge} class="mt-auto" />
 	</Sidebar.Content>
 	<Sidebar.Footer>
 		<NavUser />

@@ -9,14 +9,36 @@
 	import Notifications from '$lib/components/custom/Notifications.svelte';
 	import { getProfileContext } from '$lib/stores/profile.svelte.js';
 	import { startPresenceTracker } from '$lib/hooks/use-presence.svelte';
+	import { setChatContext } from '$lib/stores/chat.svelte';
+	import { subscribeToChatInbox } from '$lib/hooks/use-chat.svelte';
+	import { getUnreadCount } from '$lib/api/chat/data.remote';
 
 	let { data, children } = $props();
 	const profile = getProfileContext();
+	const chatStore = setChatContext();
 
 	// Presence tracking — subscribes to Supabase Realtime Presence channel
 	$effect(() => {
 		if (!data.supabase || !profile.id || !profile.orgId) return;
 		return startPresenceTracker(data.supabase, profile.id, profile.orgId);
+	});
+
+	// Chat — reactive unread count query (called at init, NOT inside $effect)
+	const unreadQuery = getUnreadCount();
+	chatStore.setRefreshFn(() => unreadQuery.refresh());
+
+	// Sync query result → chat store (auto-updates on command invalidation)
+	$effect(() => {
+		const result = unreadQuery.current;
+		if (result?.success) {
+			chatStore.setCount(result.count);
+		}
+	});
+
+	// Inbox subscription — optimistically increment on new messages
+	$effect(() => {
+		if (!data.supabase || !profile.id) return;
+		return subscribeToChatInbox(data.supabase, profile.id, () => chatStore.increment());
 	});
 
 	const routeLabels: Record<string, string> = {
@@ -47,10 +69,13 @@
 		manage_users: 'Διαχείριση Χρηστών',
 		register_settings: 'Ρυθμίσεις Εγγραφής',
 		schedule_settings: 'Ρυθμίσεις Προγράμματος',
-		task_managment: 'Διαχείριση Εργασιών'
+		task_managment: 'Διαχείριση Εργασιών',
+
+		// Chat
+		chat: 'Συνομιλίες'
 	};
 
-	let breadcrumbs = $derived(() => {
+	let breadcrumbs = $derived.by(() => {
 		const pathSegments = page.url.pathname.split('/').filter(Boolean);
 		let cumulativePath = '';
 		return pathSegments.map((segment) => {
@@ -73,13 +98,13 @@
 
 				<Breadcrumb.Root class="hidden items-center gap-2 sm:flex">
 					<Breadcrumb.List>
-						{#if breadcrumbs().length > 0}
+						{#if breadcrumbs.length > 0}
 							<Breadcrumb.Separator />
 						{/if}
 
-						{#each breadcrumbs() as segment, i}
+						{#each breadcrumbs as segment, i}
 							<Breadcrumb.Item>
-								{#if i === breadcrumbs().length - 1}
+								{#if i === breadcrumbs.length - 1}
 									<Breadcrumb.Page>{segment.name}</Breadcrumb.Page>
 								{:else}
 									<Breadcrumb.Link
@@ -90,7 +115,7 @@
 									</Breadcrumb.Link>
 								{/if}
 							</Breadcrumb.Item>
-							{#if i < breadcrumbs().length - 1}
+							{#if i < breadcrumbs.length - 1}
 								<Breadcrumb.Separator />
 							{/if}
 						{/each}

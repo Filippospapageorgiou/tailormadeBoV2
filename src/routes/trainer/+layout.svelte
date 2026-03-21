@@ -14,28 +14,45 @@
 		LogOut,
 		User,
 		ChevronRight,
-		GraduationCap
+		GraduationCap,
+		MessageCircle
 	} from 'lucide-svelte';
 	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
 	import { setAssignmentStore } from '$lib/stores/assignedOrg.svelte';
+	import { setChatContext } from '$lib/stores/chat.svelte';
+	import { subscribeToChatInbox } from '$lib/hooks/use-chat.svelte';
+	import { getUnreadCount } from '$lib/api/chat/data.remote';
 
 	let assignmentStore = setAssignmentStore(null); // initialize empty
-	let { children } = $props();
+	let { data, children } = $props();
+
+	const chatStore = setChatContext();
 
 	let user = getProfileContext();
 
 	const navLinks = [
-		{
-			href: '/trainer',
-			label: 'Dashboard',
-			icon: LayoutDashboard
-		},
-		{
-			href: '/trainer/evaluations',
-			label: 'Αξιολογήσεις',
-			icon: ClipboardList
-		}
+		{ href: '/trainer', label: 'Dashboard', icon: LayoutDashboard },
+		{ href: '/trainer/evaluations', label: 'Αξιολογήσεις', icon: ClipboardList },
+		{ href: '/trainer/chat', label: 'Συνομιλίες', icon: MessageCircle }
 	];
+
+	// Chat — reactive unread count query (called at init, NOT inside $effect)
+	const unreadQuery = getUnreadCount();
+	chatStore.setRefreshFn(() => unreadQuery.refresh());
+
+	// Sync query result → chat store
+	$effect(() => {
+		const result = unreadQuery.current;
+		if (result?.success) {
+			chatStore.setCount(result.count);
+		}
+	});
+
+	// Inbox subscription — optimistically increment on new messages
+	$effect(() => {
+		if (!data?.supabase || !user.id) return;
+		return subscribeToChatInbox(data.supabase, user.id, () => chatStore.increment());
+	});
 
 	function isActive(href: string): boolean {
 		if (href === '/trainer') {
@@ -54,12 +71,13 @@
 	}
 
 	// Breadcrumb: derive readable segments from pathname
-	let breadcrumbs = $derived(() => {
+	let breadcrumbs = $derived.by(() => {
 		const labelMap: Record<string, string> = {
 			trainer: 'Trainer',
 			evaluations: 'Αξιολογήσεις',
 			new: 'Νέα Αξιολόγηση',
-			profile: 'Προφίλ'
+			profile: 'Προφίλ',
+			chat: 'Συνομιλίες'
 		};
 
 		const segments = page.url.pathname.split('/').filter(Boolean);
@@ -132,22 +150,27 @@
 				{#each navLinks as link}
 					<a
 						href={link.href}
-						class="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors
+						class="relative flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors
 							{isActive(link.href)
 							? 'bg-primary/10 text-primary'
 							: 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
 					>
 						<link.icon class="h-3.5 w-3.5" />
 						<span class="hidden sm:inline">{link.label}</span>
+						{#if link.href === '/trainer/chat' && chatStore.unreadCount > 0}
+							<span class="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium leading-none text-primary-foreground">
+								{chatStore.unreadCount > 99 ? '99+' : chatStore.unreadCount}
+							</span>
+						{/if}
 					</a>
 				{/each}
 			</nav>
 
 			<!-- Breadcrumb (hidden on mobile) -->
-			{#if breadcrumbs().length > 1}
+			{#if breadcrumbs.length > 1}
 				<Separator orientation="vertical" class="hidden h-4 md:block" />
 				<nav class="hidden items-center gap-1 md:flex">
-					{#each breadcrumbs() as crumb, i}
+					{#each breadcrumbs as crumb, i}
 						{#if i > 0}
 							<ChevronRight class="h-3 w-3 text-muted-foreground/50" />
 							{#if crumb.isLast}
