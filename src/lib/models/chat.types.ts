@@ -6,6 +6,14 @@ export interface ChatConversation {
 	participant_b: string;
 	created_at: string;
 	last_message_at: string;
+	/** Number of unread messages from the other participant */
+	unread_count: number;
+	/** Preview of the most recent message in the conversation */
+	last_message: {
+		content: string | null;
+		sender_id: string;
+		has_image: boolean;
+	} | null;
 	/**
 	 * The other participant in the conversation (not the current user).
 	 * org_id reflects their primary org (profiles.org_id).

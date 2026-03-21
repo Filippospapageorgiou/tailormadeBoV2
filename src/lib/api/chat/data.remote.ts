@@ -64,7 +64,46 @@ export const getConversations = query(async () => {
 			return { success: false, message: 'Σφάλμα κατά την ανάκτηση συνομιλιών', conversations: [] };
 		}
 
-		const conversations: ChatConversation[] = (data ?? []).map((row) => {
+		const rows = data ?? [];
+		const convIds = rows.map((r) => r.id);
+
+		// Fetch unread counts per conversation (messages from others that are unread)
+		let unreadMap = new Map<number, number>();
+		if (convIds.length > 0) {
+			const { data: unreadRows } = await supabase
+				.from('chat_messages')
+				.select('conversation_id')
+				.in('conversation_id', convIds)
+				.eq('is_read', false)
+				.neq('sender_id', user.id);
+
+			for (const ur of unreadRows ?? []) {
+				unreadMap.set(ur.conversation_id, (unreadMap.get(ur.conversation_id) ?? 0) + 1);
+			}
+		}
+
+		// Fetch last message per conversation
+		let lastMessageMap = new Map<number, { content: string | null; sender_id: string; has_image: boolean }>();
+		if (convIds.length > 0) {
+			const { data: msgRows } = await supabase
+				.from('chat_messages')
+				.select('conversation_id, content, sender_id, image_path')
+				.in('conversation_id', convIds)
+				.order('created_at', { ascending: false });
+
+			// Pick first (most recent) per conversation
+			for (const msg of msgRows ?? []) {
+				if (!lastMessageMap.has(msg.conversation_id)) {
+					lastMessageMap.set(msg.conversation_id, {
+						content: msg.content,
+						sender_id: msg.sender_id,
+						has_image: !!msg.image_path
+					});
+				}
+			}
+		}
+
+		const conversations: ChatConversation[] = rows.map((row) => {
 			const isA = row.participant_a === user.id;
 			const rawOther = isA ? (row.profile_b as any) : (row.profile_a as any);
 			const orgName = rawOther?.org?.store_name ?? null;
@@ -75,6 +114,8 @@ export const getConversations = query(async () => {
 				participant_b: row.participant_b,
 				created_at: row.created_at,
 				last_message_at: row.last_message_at,
+				unread_count: unreadMap.get(row.id) ?? 0,
+				last_message: lastMessageMap.get(row.id) ?? null,
 				other_participant: { ...profileFields, org_name: orgName }
 			};
 		});

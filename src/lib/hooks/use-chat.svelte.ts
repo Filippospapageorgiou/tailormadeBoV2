@@ -96,10 +96,10 @@ export function subscribeToConversation(
 
 /**
  * Subscribe to new messages across all the user's conversations.
- * Triggers `onNewMessage` on every INSERT so the badge count can be refreshed.
+ * Triggers `onNewMessage` only for messages in conversations the user is part of.
  *
- * RLS controls what rows are returned in the payload — only messages in
- * conversations the current user is part of will trigger this callback.
+ * Fetches the user's conversation IDs upfront and filters client-side,
+ * since Supabase Realtime does not enforce RLS on postgres_changes.
  *
  * Use inside an `$effect()` on the chat inbox/layout — return value is cleanup.
  *
@@ -113,6 +113,18 @@ export function subscribeToChatInbox(
 	currentUserId: string,
 	onNewMessage: () => void
 ): () => void {
+	// Track the user's conversation IDs for client-side filtering
+	let myConversationIds = new Set<number>();
+
+	// Fetch conversation IDs the user is part of
+	supabase
+		.from('chat_conversations')
+		.select('id')
+		.or(`participant_a.eq.${currentUserId},participant_b.eq.${currentUserId}`)
+		.then(({ data }) => {
+			myConversationIds = new Set((data ?? []).map((c) => c.id));
+		});
+
 	const channel = supabase
 		.channel(`chat_inbox_${currentUserId}`)
 		.on(
@@ -125,9 +137,24 @@ export function subscribeToChatInbox(
 			(payload) => {
 				const raw = payload.new as ChatMessageRealtimePayload;
 
-				// Only increment badge for messages sent by others
-				if (raw.sender_id !== currentUserId) {
+				// Only count messages from others AND in conversations we're part of
+				if (raw.sender_id !== currentUserId && myConversationIds.has(raw.conversation_id)) {
 					onNewMessage();
+				}
+			}
+		)
+		// Also listen for new conversations so we pick up newly created ones
+		.on(
+			'postgres_changes',
+			{
+				event: 'INSERT',
+				schema: 'public',
+				table: 'chat_conversations'
+			},
+			(payload) => {
+				const row = payload.new as { id: number; participant_a: string; participant_b: string };
+				if (row.participant_a === currentUserId || row.participant_b === currentUserId) {
+					myConversationIds.add(row.id);
 				}
 			}
 		)

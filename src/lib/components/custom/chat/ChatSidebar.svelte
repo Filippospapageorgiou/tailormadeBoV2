@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { MessageCircle, Search, Plus } from 'lucide-svelte';
+	import { Search, Plus, ImageIcon } from 'lucide-svelte';
 	import * as Avatar from '$lib/components/ui/avatar/index.js';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
@@ -111,11 +111,12 @@
 		{:else}
 			{#each filtered as conv (conv.id)}
 				{@const isActive = activeConversationId === conv.id}
+				{@const hasUnread = conv.unread_count > 0}
 				<a
 					href="{basePath}/{conv.id}"
 					class="flex min-h-[4rem] items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/50 active:bg-muted {isActive
 						? 'bg-muted/60'
-						: ''}"
+						: ''} {hasUnread ? 'bg-primary/[0.03]' : ''}"
 				>
 					<div class="relative shrink-0">
 						<Avatar.Root class="size-11">
@@ -130,17 +131,34 @@
 								{getInitials(conv.other_participant.full_name)}
 							</Avatar.Fallback>
 						</Avatar.Root>
+						{#if hasUnread}
+							<span class="absolute -top-0.5 -right-0.5 flex size-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold leading-none text-primary-foreground">
+								{conv.unread_count > 9 ? '9+' : conv.unread_count}
+							</span>
+						{/if}
 					</div>
 
 					<div class="min-w-0 flex-1">
 						<div class="flex items-baseline justify-between gap-2">
-							<span class="truncate text-sm font-semibold">
+							<span class="truncate text-sm {hasUnread ? 'font-bold' : 'font-semibold'}">
 								{conv.other_participant.full_name ?? 'Άγνωστος'}
 							</span>
-							<span class="shrink-0 text-[11px] text-muted-foreground">
+							<span class="shrink-0 text-[11px] {hasUnread ? 'font-semibold text-primary' : 'text-muted-foreground'}">
 								{formatTime(conv.last_message_at)}
 							</span>
 						</div>
+						{#if conv.last_message}
+							<p class="truncate text-xs {hasUnread ? 'font-medium text-foreground' : 'text-muted-foreground'}">
+								{#if conv.last_message.has_image && !conv.last_message.content}
+									<span class="inline-flex items-center gap-1">
+										<ImageIcon class="inline size-3" />
+										Εικόνα
+									</span>
+								{:else}
+									{conv.last_message.content}
+								{/if}
+							</p>
+						{/if}
 						<div class="flex items-center gap-1.5 text-[10px] text-muted-foreground/60">
 							<span>{getRoleLabel(conv.other_participant.role_id)}</span>
 							{#if conv.other_participant.org_name}
