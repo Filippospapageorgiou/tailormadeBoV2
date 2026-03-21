@@ -360,7 +360,7 @@
 			disabled={messageText.trim() === '' || sending}
 		>
 			{#if sending}
-				<LoaderIcon class="animate-spin size-4" />
+				<LoaderIcon class="size-4 animate-spin-clockwise repeat-infinite" />
 			{:else}
 				<SendIcon class="size-4" />
 			{/if}
