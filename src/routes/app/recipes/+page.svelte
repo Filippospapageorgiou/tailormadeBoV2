@@ -91,6 +91,10 @@
 									<img
 										src={beverage.image_url}
 										alt={beverage.name}
+										loading="lazy"
+										decoding="async"
+										width="400"
+										height="400"
 										class="h-full w-full object-cover
 					   transition-transform duration-500 ease-out
 					   group-hover:scale-108"
