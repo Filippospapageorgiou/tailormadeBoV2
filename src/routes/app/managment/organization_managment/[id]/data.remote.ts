@@ -482,9 +482,12 @@ export interface OrgUserPresence {
  * Fetch all profiles for the current org, joined with their last_seen_at.
  * Returns every user — the client merges with realtime presence to determine active/idle/offline.
  */
-export const getOrgUsersPresence = query(async () => {
+const getOrgPresenceSchema = z.object({
+	org_id: z.number()
+});
+
+export const getOrgUsersPresence = query(getOrgPresenceSchema, async ({ org_id }) => {
 	const supabase = createServerClient();
-	const orgId = await getUserOrgId();
 
 	const { data, error } = await supabase
 		.from('profiles')
@@ -496,7 +499,7 @@ export const getOrgUsersPresence = query(async () => {
 			user_presence!left ( last_seen_at )
 		`
 		)
-		.eq('org_id', orgId);
+		.eq('org_id', org_id);
 
 	if (error) {
 		console.error('[getOrgUsersPresence]', error.message);
@@ -514,6 +517,6 @@ export const getOrgUsersPresence = query(async () => {
 			last_seen_at: presence?.last_seen_at ?? null
 		};
 	});
-
+	console.log(users);
 	return { success: true as const, users };
 });

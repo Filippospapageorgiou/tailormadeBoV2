@@ -12,13 +12,13 @@
 	let { orgId }: { orgId: number } = $props();
 
 	// ── Server data: all org users with last_seen_at ──
-	const orgUsersQuery = getOrgUsersPresence();
+	const orgUsersQuery = $derived(getOrgUsersPresence({ org_id: orgId }));
 	let allUsers = $derived<OrgUserPresence[]>(
 		orgUsersQuery.current?.success ? orgUsersQuery.current.users : []
 	);
 
 	// ── Realtime presence: who's currently connected ──
-	let presenceList = $state<PresencePayload[]>(getPresenceList(orgId));
+	let presenceList = $derived<PresencePayload[]>(getPresenceList(orgId));
 
 	$effect(() => {
 		return onPresenceChange(orgId, () => {
