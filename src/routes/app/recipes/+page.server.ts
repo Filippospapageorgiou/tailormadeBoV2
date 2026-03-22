@@ -18,11 +18,10 @@ export const load: PageServerLoad = async ({ locals: { supabase }, setHeaders })
 		return { beverages: [] };
 	}
 
-	// Transform image URLs through Vercel's optimisation API
-	// Grid cards are ~200px wide so 400px is 2x retina — no need to serve full-res
+	// 640px wide @ quality 90 — sharp enough for retina grid cards, still ~4x smaller than full res
 	const transformedBeverages = (beverages ?? []).map((b) => ({
 		...b,
-		image_url: optimizeImage(b.image_url, 400, 75)
+		image_url: optimizeImage(b.image_url)
 	}));
 
 	return {

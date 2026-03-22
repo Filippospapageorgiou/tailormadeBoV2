@@ -9,7 +9,7 @@ import { dev } from '$app/environment';
  * @param width  - Desired display width in px (default: 400 for grid cards)
  * @param quality - Image quality 1-100 (default: 75)
  */
-export function optimizeImage(src: string | null, width = 400, quality = 75): string | null {
+export function optimizeImage(src: string | null, width = 640, quality = 90): string | null {
 	if (!src) return null;
 	if (dev) return src; // Don't transform in local dev
 
