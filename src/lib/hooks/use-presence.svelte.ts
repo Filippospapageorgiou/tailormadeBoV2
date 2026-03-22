@@ -6,6 +6,9 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 const IDLE_TIMEOUT = 3 * 60 * 1000; // 3 minutes
 const ACTIVITY_THROTTLE = 5_000; // Only process activity events every 5s
 
+/** Virtual org ID for trainers (who have no real org) */
+export const TRAINER_VIRTUAL_ORG_ID = 0;
+
 /**
  * Reactive presence state per org — updated by the tracker's sync events.
  * The OrgPresenceOverview reads from this instead of creating a second channel.
@@ -53,6 +56,28 @@ function notifyGlobalListeners() {
 }
 
 /**
+ * Upsert the user_presence row with current timestamp.
+ * Called on idle transition and on cleanup/disconnect.
+ */
+async function upsertLastSeen(
+	supabase: SupabaseClient,
+	userId: string,
+	orgId: number
+): Promise<void> {
+	try {
+		await supabase.from('user_presence').upsert(
+			{
+				user_id: userId,
+				org_id: orgId
+			},
+			{ onConflict: 'user_id' }
+		);
+	} catch (err) {
+		console.error('[upsertLastSeen] Failed to upsert last_seen at: ', err);
+	}
+}
+
+/**
  * Subscribe to presence channels for multiple orgs (read-only, no tracking).
  * Used by super admin to observe all orgs. Returns a cleanup function.
  */
@@ -90,6 +115,7 @@ export function subscribeToOrgPresence(supabase: SupabaseClient, orgIds: number[
 
 /**
  * Starts presence tracking for the current user.
+ * Works for both org users (real orgId) and trainers (TRAINER_VIRTUAL_ORG_ID = 0).
  * Call inside an $effect() — returns a cleanup function.
  */
 export function startPresenceTracker(
@@ -140,6 +166,8 @@ export function startPresenceTracker(
 		idleTimer = setTimeout(() => {
 			status = 'idle';
 			channel.track(getPayload());
+			// Write to DB when user goes idle
+			upsertLastSeen(supabase, userId, orgId);
 		}, IDLE_TIMEOUT);
 	}
 
@@ -171,6 +199,8 @@ export function startPresenceTracker(
 		for (const event of events) {
 			window.removeEventListener(event, onActivity);
 		}
+		// Write to DB on disconnect/navigation away
+		upsertLastSeen(supabase, userId, orgId);
 		supabase.removeChannel(channel);
 		presenceByOrg.delete(orgId);
 		presenceListeners.delete(orgId);

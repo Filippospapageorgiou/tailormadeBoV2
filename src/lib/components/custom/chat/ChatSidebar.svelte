@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { Search, Plus, ImageIcon } from 'lucide-svelte';
+	import { Search, Plus, ImageIcon } from '@lucide/svelte';
 	import * as Avatar from '$lib/components/ui/avatar/index.js';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { getConversations } from '$lib/api/chat/data.remote';
 	import { getChatContext } from '$lib/stores/chat.svelte';
+	import UserStatusDot from '$lib/components/custom/presence/UserStatusDot.svelte';
 	import NewConversationSheet from './NewConversationSheet.svelte';
 	import { formatDistanceToNow } from 'date-fns';
 	import { el } from 'date-fns/locale';
@@ -85,9 +86,7 @@
 
 	<div class="shrink-0 px-3 py-2">
 		<div class="relative">
-			<Search
-				class="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground"
-			/>
+			<Search class="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
 			<Input bind:value={search} placeholder="Αναζήτηση συνομιλίας..." class="pl-8 text-sm" />
 		</div>
 	</div>
@@ -131,8 +130,14 @@
 								{getInitials(conv.other_participant.full_name)}
 							</Avatar.Fallback>
 						</Avatar.Root>
+						<!-- Status dot -->
+						<span class="absolute -right-0.5 -bottom-0.5">
+							<UserStatusDot userId={conv.other_participant.id} size="sm" />
+						</span>
 						{#if hasUnread}
-							<span class="absolute -top-0.5 -right-0.5 flex size-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold leading-none text-primary-foreground">
+							<span
+								class="absolute -top-0.5 -right-0.5 flex size-5 items-center justify-center rounded-full bg-primary text-[10px] leading-none font-bold text-primary-foreground"
+							>
 								{conv.unread_count > 9 ? '9+' : conv.unread_count}
 							</span>
 						{/if}
@@ -143,12 +148,20 @@
 							<span class="truncate text-sm {hasUnread ? 'font-bold' : 'font-semibold'}">
 								{conv.other_participant.full_name ?? 'Άγνωστος'}
 							</span>
-							<span class="shrink-0 text-[11px] {hasUnread ? 'font-semibold text-primary' : 'text-muted-foreground'}">
+							<span
+								class="shrink-0 text-[11px] {hasUnread
+									? 'font-semibold text-primary'
+									: 'text-muted-foreground'}"
+							>
 								{formatTime(conv.last_message_at)}
 							</span>
 						</div>
 						{#if conv.last_message}
-							<p class="truncate text-xs {hasUnread ? 'font-medium text-foreground' : 'text-muted-foreground'}">
+							<p
+								class="truncate text-xs {hasUnread
+									? 'font-medium text-foreground'
+									: 'text-muted-foreground'}"
+							>
 								{#if conv.last_message.has_image && !conv.last_message.content}
 									<span class="inline-flex items-center gap-1">
 										<ImageIcon class="inline size-3" />

@@ -8,7 +8,11 @@
 	import Command from '$lib/components/command/command.svelte';
 	import Notifications from '$lib/components/custom/Notifications.svelte';
 	import { getProfileContext } from '$lib/stores/profile.svelte.js';
-	import { startPresenceTracker } from '$lib/hooks/use-presence.svelte';
+	import {
+		startPresenceTracker,
+		subscribeToOrgPresence,
+		TRAINER_VIRTUAL_ORG_ID
+	} from '$lib/hooks/use-presence.svelte';
 	import { setChatContext } from '$lib/stores/chat.svelte';
 	import { subscribeToChatInbox } from '$lib/hooks/use-chat.svelte';
 	import { getUnreadCount } from '$lib/api/chat/data.remote';
@@ -21,6 +25,11 @@
 	$effect(() => {
 		if (!data.supabase || !profile.id || !profile.orgId) return;
 		return startPresenceTracker(data.supabase, profile.id, profile.orgId);
+	});
+
+	$effect(() => {
+		if (!data.supabase) return;
+		return subscribeToOrgPresence(data.supabase, [TRAINER_VIRTUAL_ORG_ID]);
 	});
 
 	// Chat — reactive unread count query (called at init, NOT inside $effect)

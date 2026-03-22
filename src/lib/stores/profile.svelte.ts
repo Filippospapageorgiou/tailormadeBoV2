@@ -51,11 +51,11 @@ export class ProfileStore {
 	updateAvatar(newAvatarUrl: string) {
 		this.imageUrl = newAvatarUrl;
 	}
-	
+
 	updatePhone(phone: string) {
 		this.phone = phone;
 	}
-	
+
 	updateFullName(fullName: string) {
 		this.full_name = fullName;
 	}

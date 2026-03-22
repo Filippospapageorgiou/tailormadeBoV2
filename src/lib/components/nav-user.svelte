@@ -1,11 +1,7 @@
 <script lang="ts">
 	import BadgeCheckIcon from '@lucide/svelte/icons/badge-check';
-	import BellIcon from '@lucide/svelte/icons/bell';
 	import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';
-	import CreditCardIcon from '@lucide/svelte/icons/credit-card';
 	import LogOutIcon from '@lucide/svelte/icons/log-out';
-	import SparklesIcon from '@lucide/svelte/icons/sparkles';
-	import { Loader } from 'lucide-svelte';
 	import { goto } from '$app/navigation';
 
 	import * as Avatar from '$lib/components/ui/avatar/index.js';
@@ -14,7 +10,7 @@
 	import { useSidebar } from '$lib/components/ui/sidebar/index.js';
 	import { getProfileContext } from '$lib/stores/profile.svelte';
 	import Spinner from './ui/spinner/spinner.svelte';
-
+	import UserStatusDot from './custom/presence/UserStatusDot.svelte';
 	let isLoggingOut = $state(false);
 
 	const sidebar = useSidebar();
@@ -69,10 +65,15 @@
 						size="lg"
 						class="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
 					>
-						<Avatar.Root class="size-8 rounded-lg dark:bg-white">
-							<Avatar.Image src={profile.imageUrl} alt={profile.username} />
-							<Avatar.Fallback class="rounded-lg">CN</Avatar.Fallback>
-						</Avatar.Root>
+						<div class="relative">
+							<Avatar.Root class="size-8 rounded-lg dark:bg-white">
+								<Avatar.Image src={profile.imageUrl} alt={profile.username} />
+								<Avatar.Fallback class="rounded-lg">CN</Avatar.Fallback>
+							</Avatar.Root>
+							<span class="absolute -right-0.5 -bottom-0.5">
+								<UserStatusDot userId={profile.id} size="sm" />
+							</span>
+						</div>
 						<div class="grid flex-1 text-left text-sm leading-tight">
 							<span class="truncate font-medium">{profile.username}</span>
 							<span class="truncate text-xs">{profile.email}</span>

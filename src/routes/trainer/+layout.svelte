@@ -4,10 +4,13 @@
 	import { ThemeSelector } from '$lib/components/ui/theme-selector';
 	import * as Avatar from '$lib/components/ui/avatar/index.js';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
-	import { Button } from '$lib/components/ui/button/index.js';
 	import { Separator } from '$lib/components/ui/separator/index.js';
-	import { enhance } from '$app/forms';
 	import { getProfileContext } from '$lib/stores/profile.svelte';
+	import {
+		startPresenceTracker,
+		subscribeToOrgPresence,
+		TRAINER_VIRTUAL_ORG_ID
+	} from '$lib/hooks/use-presence.svelte';
 	import {
 		ClipboardList,
 		LayoutDashboard,
@@ -16,12 +19,13 @@
 		ChevronRight,
 		GraduationCap,
 		MessageCircle
-	} from 'lucide-svelte';
+	} from '@lucide/svelte';
 	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
 	import { setAssignmentStore } from '$lib/stores/assignedOrg.svelte';
 	import { setChatContext } from '$lib/stores/chat.svelte';
 	import { subscribeToChatInbox } from '$lib/hooks/use-chat.svelte';
 	import { getUnreadCount } from '$lib/api/chat/data.remote';
+	import { getChatableOrgs } from '$lib/api/chat/data.remote';
 
 	let assignmentStore = setAssignmentStore(null); // initialize empty
 	let { data, children } = $props();
@@ -35,6 +39,24 @@
 		{ href: '/trainer/evaluations', label: 'Αξιολογήσεις', icon: ClipboardList },
 		{ href: '/trainer/chat', label: 'Συνομιλίες', icon: MessageCircle }
 	];
+
+	// ── Presence tracking — trainer joins virtual org channel (org_id = 0) ──
+	$effect(() => {
+		if (!data.supabase || !user.id) return;
+		return startPresenceTracker(data.supabase, user.id, TRAINER_VIRTUAL_ORG_ID);
+	});
+
+	// ── Subscribe to org presence channels so trainer can see org users' status ──
+	const orgsQuery = getChatableOrgs();
+
+	$effect(() => {
+		if (!data.supabase) return;
+		const orgs = orgsQuery.current?.orgs ?? [];
+		if (orgs.length === 0) return;
+
+		const orgIds = orgs.map((o: { id: number }) => o.id);
+		return subscribeToOrgPresence(data.supabase, orgIds);
+	});
 
 	// Chat — reactive unread count query (called at init, NOT inside $effect)
 	const unreadQuery = getUnreadCount();
@@ -138,7 +160,7 @@
 					<img src="/icon.png" alt="Tailor Made" class="size-8 object-cover" />
 				</div>
 				<div class="hidden flex-col sm:flex">
-					<span class="text-xs font-semibold leading-none tracking-wide">TAILOR MADE</span>
+					<span class="text-xs leading-none font-semibold tracking-wide">TAILOR MADE</span>
 					<span class="text-[10px] leading-none text-muted-foreground">TRAINER PORTAL</span>
 				</div>
 			</button>
@@ -158,7 +180,9 @@
 						<link.icon class="h-3.5 w-3.5" />
 						<span class="hidden sm:inline">{link.label}</span>
 						{#if link.href === '/trainer/chat' && chatStore.unreadCount > 0}
-							<span class="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium leading-none text-primary-foreground">
+							<span
+								class="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] leading-none font-medium text-primary-foreground"
+							>
 								{chatStore.unreadCount > 99 ? '99+' : chatStore.unreadCount}
 							</span>
 						{/if}
@@ -204,7 +228,9 @@
 			<!-- User dropdown -->
 			<DropdownMenu.Root>
 				<DropdownMenu.Trigger>
-					<Avatar.Root class="h-8 w-8 cursor-pointer ring-2 ring-transparent transition-all hover:ring-primary/30">
+					<Avatar.Root
+						class="h-8 w-8 cursor-pointer ring-2 ring-transparent transition-all hover:ring-primary/30"
+					>
 						<Avatar.Image src={user.imageUrl} alt={user.username} class="dark:bg-white" />
 						<Avatar.Fallback class="text-xs font-medium">
 							{getInitials(user.username ?? 'TM')}
@@ -224,20 +250,20 @@
 					</DropdownMenu.Item>
 					<DropdownMenu.Separator />
 					<DropdownMenu.Item>
-					<LogOut />
-					<button
-						onclick={handleLogout}
-						disabled={isLoggingOut}
-						class="flex w-full cursor-pointer items-center gap-2 text-start"
-					>
-						{#if isLoggingOut}
-							<Spinner />
-						{/if}
-						<span>
-							{isLoggingOut ? 'Logging out...' : 'Log out'}
-						</span>
-					</button>
-				</DropdownMenu.Item>
+						<LogOut />
+						<button
+							onclick={handleLogout}
+							disabled={isLoggingOut}
+							class="flex w-full cursor-pointer items-center gap-2 text-start"
+						>
+							{#if isLoggingOut}
+								<Spinner />
+							{/if}
+							<span>
+								{isLoggingOut ? 'Logging out...' : 'Log out'}
+							</span>
+						</button>
+					</DropdownMenu.Item>
 				</DropdownMenu.Content>
 			</DropdownMenu.Root>
 		</div>
@@ -252,7 +278,7 @@
 	<footer class="py-4 text-center">
 		<p class="py-4 text-center text-xs text-muted-foreground/50">
 			© 2026 Filippos Papageorgiou · Platform Development · Confidential - All Rights Reserved
-			<span>TRAINER PORTAL</span>	
+			<span>TRAINER PORTAL</span>
 		</p>
 	</footer>
 </div>

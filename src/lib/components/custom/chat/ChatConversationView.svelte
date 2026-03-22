@@ -20,6 +20,7 @@
 	import { subscribeToConversation } from '$lib/hooks/use-chat.svelte';
 	import { getChatContext } from '$lib/stores/chat.svelte';
 	import { getProfileContext } from '$lib/stores/profile.svelte';
+	import UserStatusDot from '$lib/components/custom/presence/UserStatusDot.svelte';
 	import type { ChatMessage } from '$lib/models/chat.types';
 	import { formatDistanceToNow } from 'date-fns';
 	import { el } from 'date-fns/locale';
@@ -192,18 +193,23 @@
 				<ArrowLeftIcon class="size-4" />
 			</a>
 			{#if otherParticipant}
-				<Avatar.Root class="size-9">
-					{#if otherParticipant?.image_url}
-						<Avatar.Image
-							class="dark:bg-white"
-							src={otherParticipant?.image_url}
-							alt={otherParticipant?.full_name ?? ''}
-						/>
-					{/if}
-					<Avatar.Fallback class="bg-primary/10 text-xs font-medium text-primary">
-						{getInitials(otherParticipant?.full_name ?? null)}
-					</Avatar.Fallback>
-				</Avatar.Root>
+				<div class="relative">
+					<Avatar.Root class="size-9">
+						{#if otherParticipant?.image_url}
+							<Avatar.Image
+								class="dark:bg-white"
+								src={otherParticipant?.image_url}
+								alt={otherParticipant?.full_name ?? ''}
+							/>
+						{/if}
+						<Avatar.Fallback class="bg-primary/10 text-xs font-medium text-primary">
+							{getInitials(otherParticipant?.full_name ?? null)}
+						</Avatar.Fallback>
+					</Avatar.Root>
+					<span class="absolute -right-0.5 -bottom-0.5">
+						<UserStatusDot userId={otherParticipant.id} size="sm" />
+					</span>
+				</div>
 				<div class="flex flex-col">
 					<span class="text-sm font-semibold">{otherParticipant?.full_name ?? 'Άγνωστος'}</span>
 					{#if otherParticipant?.org_name}

@@ -7,7 +7,13 @@ import { getContext, setContext } from 'svelte';
 
 const FIFO_COFFEE_KEY = Symbol('fifo_coffee');
 
-export type FifoCoffeeType = 'espresso' | 'filter' | 'organic' | 'decaf' | 'greek_coffee' | 'instant';
+export type FifoCoffeeType =
+	| 'espresso'
+	| 'filter'
+	| 'organic'
+	| 'decaf'
+	| 'greek_coffee'
+	| 'instant';
 
 export const FIFO_COFFEE_LABELS: Record<FifoCoffeeType, string> = {
 	espresso: 'Espresso',
@@ -41,7 +47,7 @@ export function computeFifoScore(roastDate: string | null): FifoCoffeeComputed {
 
 	if (daysOld < 10) return { daysOld, status: 'too_fresh', score: 3 };
 	if (daysOld <= 30) return { daysOld, status: 'peak', score: 5 };
-	return { daysOld, status: 'expired', score: 0 };
+	return { daysOld, status: 'expired', score: 1 };
 }
 
 export class FifoCoffeeStore {
@@ -59,10 +65,7 @@ export class FifoCoffeeStore {
 		(() => {
 			const scored = this.items.filter((i) => i.roast_date);
 			if (!scored.length) return 0;
-			const total = scored.reduce(
-				(sum, i) => sum + computeFifoScore(i.roast_date).score,
-				0
-			);
+			const total = scored.reduce((sum, i) => sum + computeFifoScore(i.roast_date).score, 0);
 			return Math.round((total / (scored.length * 5)) * 100);
 		})()
 	);

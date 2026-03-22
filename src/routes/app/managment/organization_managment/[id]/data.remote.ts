@@ -1,8 +1,11 @@
 // src/routes/app/organization_managment/[id]/data.remote.ts
 import { query, command } from '$app/server';
 import { createServerClient } from '$lib/supabase/server';
-import { getUserProfileWithRoleCheck } from '$lib/supabase/queries';
-import { sendOrganizationInvitation, resendOrganizationInvitation } from '$lib/emails/organization-invitations';
+import { getUserOrgId, getUserProfileWithRoleCheck } from '$lib/supabase/queries';
+import {
+	sendOrganizationInvitation,
+	resendOrganizationInvitation
+} from '$lib/emails/organization-invitations';
 import { z } from 'zod/v4';
 import { generateSecureToken } from '$lib/utils';
 
@@ -31,150 +34,151 @@ const inviteUserToOrgSchema = z.object({
  * Invite a user to a specific organization with a specific role
  * Uses Resend for email delivery instead of Supabase Auth
  */
-export const inviteUserToOrg = command(inviteUserToOrgSchema, async ({ email, orgId, roleId, expirationDays }) => {
-	const supabase = createServerClient();
+export const inviteUserToOrg = command(
+	inviteUserToOrgSchema,
+	async ({ email, orgId, roleId, expirationDays }) => {
+		const supabase = createServerClient();
 
-	try {
-		// Verify the inviter is a super_admin
-		const profile = await getUserProfileWithRoleCheck([1]);
+		try {
+			// Verify the inviter is a super_admin
+			const profile = await getUserProfileWithRoleCheck([1]);
 
-		if (!profile) {
-			return {
-				success: false,
-				message: 'Unauthorized: Only super admins can invite users to organizations'
-			};
-		}
-
-		// Verify the organization exists
-		const { data: org, error: orgError } = await supabase
-			.from('core_organizations')
-			.select('id, store_name')
-			.eq('id', orgId)
-			.single();
-
-		if (orgError || !org) {
-			return {
-				success: false,
-				message: 'Organization not found'
-			};
-		}
-
-		// Get role name for the email
-		const { data: role, error: roleError } = await supabase
-			.from('role_types')
-			.select('id, role_name')
-			.eq('id', roleId)
-			.single();
-
-		if (roleError || !role) {
-			return {
-				success: false,
-				message: 'Invalid role selected'
-			};
-		}
-
-		// Check if user already exists in this organization
-		const { data: existingUser } = await supabase
-			.from('profiles')
-			.select('id, email')
-			.eq('email', email)
-			.eq('org_id', orgId)
-			.maybeSingle();
-
-		if (existingUser) {
-			return {
-				success: false,
-				message: 'This user is already a member of this organization'
-			};
-		}
-
-		// Check if there's already a pending invitation for this email + org
-		const { data: existingInvitation } = await supabase
-			.from('organization_invitations')
-			.select('id, status, expires_at')
-			.eq('email', email)
-			.eq('org_id', orgId)
-			.eq('status', 'pending')
-			.maybeSingle();
-
-		if (existingInvitation) {
-			// Check if it's expired
-			const isExpired = new Date(existingInvitation.expires_at) < new Date();
-			if (!isExpired) {
+			if (!profile) {
 				return {
 					success: false,
-					message: 'A pending invitation already exists for this email. You can resend it instead.'
+					message: 'Unauthorized: Only super admins can invite users to organizations'
 				};
 			}
-			// If expired, we'll create a new one (the old one stays as expired)
-		}
 
-		// Generate secure token
-		const token = generateSecureToken();
+			// Verify the organization exists
+			const { data: org, error: orgError } = await supabase
+				.from('core_organizations')
+				.select('id, store_name')
+				.eq('id', orgId)
+				.single();
 
-		// Calculate expiration date
-		const expiresAt = new Date();
-		expiresAt.setDate(expiresAt.getDate() + expirationDays);
+			if (orgError || !org) {
+				return {
+					success: false,
+					message: 'Organization not found'
+				};
+			}
 
-		// Create invitation record
-		const { data: invitation, error: insertError } = await supabase
-			.from('organization_invitations')
-			.insert({
-				org_id: orgId,
-				email: email,
-				role_id: roleId,
-				token: token,
-				invited_by: profile.id,
-				status: 'pending',
-				expires_at: expiresAt.toISOString()
-			})
-			.select()
-			.single();
+			// Get role name for the email
+			const { data: role, error: roleError } = await supabase
+				.from('role_types')
+				.select('id, role_name')
+				.eq('id', roleId)
+				.single();
 
-		if (insertError) {
-			console.error('[inviteUserToOrg] Error creating invitation:', insertError);
-			return {
-				success: false,
-				message: 'Failed to create invitation'
-			};
-		}
+			if (roleError || !role) {
+				return {
+					success: false,
+					message: 'Invalid role selected'
+				};
+			}
 
-		// Send invitation email via Resend
-		const emailResult = await sendOrganizationInvitation({
-			recipientEmail: email,
-			organizationName: org.store_name || 'Unknown Organization',
-			roleName: role.role_name,
-			inviterName: profile.username || profile.email,
-			inviteToken: token,
-			expiresAt: expiresAt
-		});
+			// Check if user already exists in this organization
+			const { data: existingUser } = await supabase
+				.from('profiles')
+				.select('id, email')
+				.eq('email', email)
+				.eq('org_id', orgId)
+				.maybeSingle();
 
-		if (!emailResult.success) {
-			// Rollback: delete the invitation if email failed
-			await supabase
+			if (existingUser) {
+				return {
+					success: false,
+					message: 'This user is already a member of this organization'
+				};
+			}
+
+			// Check if there's already a pending invitation for this email + org
+			const { data: existingInvitation } = await supabase
 				.from('organization_invitations')
-				.delete()
-				.eq('id', invitation.id);
+				.select('id, status, expires_at')
+				.eq('email', email)
+				.eq('org_id', orgId)
+				.eq('status', 'pending')
+				.maybeSingle();
+
+			if (existingInvitation) {
+				// Check if it's expired
+				const isExpired = new Date(existingInvitation.expires_at) < new Date();
+				if (!isExpired) {
+					return {
+						success: false,
+						message:
+							'A pending invitation already exists for this email. You can resend it instead.'
+					};
+				}
+				// If expired, we'll create a new one (the old one stays as expired)
+			}
+
+			// Generate secure token
+			const token = generateSecureToken();
+
+			// Calculate expiration date
+			const expiresAt = new Date();
+			expiresAt.setDate(expiresAt.getDate() + expirationDays);
+
+			// Create invitation record
+			const { data: invitation, error: insertError } = await supabase
+				.from('organization_invitations')
+				.insert({
+					org_id: orgId,
+					email: email,
+					role_id: roleId,
+					token: token,
+					invited_by: profile.id,
+					status: 'pending',
+					expires_at: expiresAt.toISOString()
+				})
+				.select()
+				.single();
+
+			if (insertError) {
+				console.error('[inviteUserToOrg] Error creating invitation:', insertError);
+				return {
+					success: false,
+					message: 'Failed to create invitation'
+				};
+			}
+
+			// Send invitation email via Resend
+			const emailResult = await sendOrganizationInvitation({
+				recipientEmail: email,
+				organizationName: org.store_name || 'Unknown Organization',
+				roleName: role.role_name,
+				inviterName: profile.username || profile.email,
+				inviteToken: token,
+				expiresAt: expiresAt
+			});
+
+			if (!emailResult.success) {
+				// Rollback: delete the invitation if email failed
+				await supabase.from('organization_invitations').delete().eq('id', invitation.id);
+
+				return {
+					success: false,
+					message: emailResult.message || 'Failed to send invitation email'
+				};
+			}
 
 			return {
+				success: true,
+				message: `Invitation sent successfully to ${email}`,
+				invitation: invitation
+			};
+		} catch (err) {
+			console.error('[inviteUserToOrg] Unexpected error:', err);
+			return {
 				success: false,
-				message: emailResult.message || 'Failed to send invitation email'
+				message: 'An unexpected error occurred while sending the invitation'
 			};
 		}
-
-		return {
-			success: true,
-			message: `Invitation sent successfully to ${email}`,
-			invitation: invitation
-		};
-	} catch (err) {
-		console.error('[inviteUserToOrg] Unexpected error:', err);
-		return {
-			success: false,
-			message: 'An unexpected error occurred while sending the invitation'
-		};
 	}
-});
+);
 
 /**
  * Schema for resending an invitation
@@ -195,11 +199,13 @@ export const resendInvitation = command(resendInvitationSchema, async ({ invitat
 		// Fetch the existing invitation with org and role details
 		const { data: invitation, error: fetchError } = await supabase
 			.from('organization_invitations')
-			.select(`
+			.select(
+				`
 				*,
 				core_organizations (id, store_name),
 				role_types (id, role_name)
-			`)
+			`
+			)
 			.eq('id', invitationId)
 			.single();
 
@@ -352,11 +358,13 @@ export const getOrganizationInvitations = query(getOrgInvitationsSchema, async (
 	try {
 		const { data: invitations, error } = await supabase
 			.from('organization_invitations')
-			.select(`
+			.select(
+				`
 				*,
 				role_types (id, role_name),
 				profiles!invited_by (id, username, email)
-			`)
+			`
+			)
 			.eq('org_id', orgId)
 			.order('created_at', { ascending: false });
 
@@ -370,12 +378,13 @@ export const getOrganizationInvitations = query(getOrgInvitationsSchema, async (
 
 		// Check and update expired invitations
 		const now = new Date();
-		const updatedInvitations = invitations?.map(inv => {
-			if (inv.status === 'pending' && new Date(inv.expires_at) < now) {
-				return { ...inv, status: 'expired' };
-			}
-			return inv;
-		}) || [];
+		const updatedInvitations =
+			invitations?.map((inv) => {
+				if (inv.status === 'pending' && new Date(inv.expires_at) < now) {
+					return { ...inv, status: 'expired' };
+				}
+				return inv;
+			}) || [];
 
 		return {
 			success: true,
@@ -460,4 +469,51 @@ export const getOrganizationStats = query(getOrgStatsSchema, async ({ orgId }) =
 			}
 		};
 	}
+});
+
+export interface OrgUserPresence {
+	id: string;
+	full_name: string | null;
+	image_url: string | null;
+	last_seen_at: string | null;
+}
+
+/**
+ * Fetch all profiles for the current org, joined with their last_seen_at.
+ * Returns every user — the client merges with realtime presence to determine active/idle/offline.
+ */
+export const getOrgUsersPresence = query(async () => {
+	const supabase = createServerClient();
+	const orgId = await getUserOrgId();
+
+	const { data, error } = await supabase
+		.from('profiles')
+		.select(
+			`
+			id,
+			full_name,
+			image_url,
+			user_presence!left ( last_seen_at )
+		`
+		)
+		.eq('org_id', orgId);
+
+	if (error) {
+		console.error('[getOrgUsersPresence]', error.message);
+		return { success: false as const, message: error.message, users: [] };
+	}
+
+	const users: OrgUserPresence[] = (data ?? []).map((p: any) => {
+		// PostgREST returns the joined row as an object (1-to-1 via unique constraint)
+		// or null if no matching user_presence row exists
+		const presence = p.user_presence;
+		return {
+			id: p.id,
+			full_name: p.full_name,
+			image_url: p.image_url,
+			last_seen_at: presence?.last_seen_at ?? null
+		};
+	});
+
+	return { success: true as const, users };
 });

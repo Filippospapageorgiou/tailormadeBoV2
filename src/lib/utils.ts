@@ -9,7 +9,6 @@ export function generateSecureToken(): string {
 	return crypto.randomBytes(32).toString('hex');
 }
 
-
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
 }
@@ -190,25 +189,61 @@ export function formatWeekRange(start: string, end: string): string {
 	return `Εβδομάδα ${startDay}-${endDay} ${month} ${year}`;
 }
 
-export async function geocodeAddress(address:string):Promise<{lat:number; lon:number} | null>{
+export async function geocodeAddress(
+	address: string
+): Promise<{ lat: number; lon: number } | null> {
 	const encoded = encodeURIComponent(address);
-  const response = await fetch(
-    `https://nominatim.openstreetmap.org/search?format=json&q=${encoded}&limit=1`,
-    {
-      headers: {
-        'User-Agent': 'tailormadebov2.app' 
-      }
-    }
-  );
-  
-  const data = await response.json();
-  
-  if (data.length > 0) {
-    return {
-      lat: parseFloat(data[0].lat),
-      lon: parseFloat(data[0].lon)
-    };
-  }
-  return null;
+	const response = await fetch(
+		`https://nominatim.openstreetmap.org/search?format=json&q=${encoded}&limit=1`,
+		{
+			headers: {
+				'User-Agent': 'tailormadebov2.app'
+			}
+		}
+	);
+
+	const data = await response.json();
+
+	if (data.length > 0) {
+		return {
+			lat: parseFloat(data[0].lat),
+			lon: parseFloat(data[0].lon)
+		};
+	}
+	return null;
 }
 
+/**
+ * Returns a human-readable "last seen" string in Greek.
+ * @param lastSeenAt - ISO timestamp from the DB (TIMESTAMPTZ)
+ * @param now - Current date (defaults to new Date())
+ */
+export function formatLastSeen(lastSeenAt: string | null, now: Date = new Date()): string {
+	if (!lastSeenAt) return 'Δεν υπάρχει δραστηριότητα';
+
+	const seen = new Date(lastSeenAt);
+	const diffMs = now.getTime() - seen.getTime();
+
+	// Guard against future timestamps
+	if (diffMs < 0) return 'Μόλις τώρα';
+
+	const diffSeconds = Math.floor(diffMs / 1000);
+	const diffMinutes = Math.floor(diffSeconds / 60);
+	const diffHours = Math.floor(diffMinutes / 60);
+	const diffDays = Math.floor(diffHours / 24);
+
+	if (diffSeconds < 60) return 'Μόλις τώρα';
+	if (diffMinutes === 1) return 'Πριν 1 λεπτό';
+	if (diffMinutes < 60) return `Πριν ${diffMinutes} λεπτά`;
+	if (diffHours === 1) return 'Πριν 1 ώρα';
+	if (diffHours < 24) return `Πριν ${diffHours} ώρες`;
+	if (diffDays === 1) return 'Χθες';
+	if (diffDays < 7) return `Πριν ${diffDays} μέρες`;
+
+	// Older than a week — show the actual date
+	return seen.toLocaleDateString('el-GR', {
+		day: 'numeric',
+		month: 'short',
+		year: diffDays > 365 ? 'numeric' : undefined
+	});
+}
