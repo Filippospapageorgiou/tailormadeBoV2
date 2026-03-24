@@ -887,3 +887,52 @@ export const getAllOrgEquipments = query(orgIdEquipment, async ({ orgId }) => {
 		};
 	}
 });
+
+// ============================================================
+// ADD THIS to the end of src/lib/api/trainers/trainer_evalution/data.remote.ts
+// ============================================================
+
+// ============================================================
+// LIST: Recent evaluations from ALL trainers (for dashboard feed)
+// ============================================================
+
+export const getRecentAllEvaluations = query(async () => {
+	const supabase = createServerClient();
+
+	const { data: evaluations, error: evalError } = await supabase
+		.from('store_evaluations')
+		.select(
+			`
+      id,
+      org_id,
+      visit_date,
+      submit,
+      overall_rating,
+      submitted_at,
+      created_at,
+      core_organizations!store_evaluations_org_id_fkey (
+        id,
+        store_name,
+        location
+      ),
+      trainer:profiles!store_evaluations_trainer_id_fkey (
+        id,
+        full_name,
+        username,
+        image_url
+      )
+    `
+		)
+		.in('submit', ['submitted', 'reviewed'])
+		.order('submitted_at', { ascending: false })
+		.limit(5);
+
+	if (evalError) {
+		console.error('[getRecentAllEvaluations] Error:', evalError);
+		throw error(500, 'Failed to fetch recent evaluations');
+	}
+
+	return {
+		evaluations: evaluations ?? []
+	};
+});

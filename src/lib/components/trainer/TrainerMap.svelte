@@ -13,10 +13,12 @@
 		Clock,
 		CheckCircle2,
 		FileText,
-		AlertCircle
+		AlertCircle,
+		Building2
 	} from 'lucide-svelte';
 	import Separator from '../ui/separator/separator.svelte';
 	import type { EvaluationStatus } from '$lib/models/trainers.types.js';
+	import type { Organization } from '$lib/models/database.types.js';
 
 	type AssignedOrg = {
 		id: number;
@@ -71,17 +73,34 @@
 
 	let {
 		assignedOrgs,
-		evaluations = []
-	}: { assignedOrgs: AssignedOrg[]; evaluations?: EvaluationItem[] } = $props();
+		evaluations = [],
+		allOrganizations = []
+	}: {
+		assignedOrgs: AssignedOrg[];
+		evaluations?: EvaluationItem[];
+		allOrganizations?: Organization[];
+	} = $props();
 
-	// Center on first org or default to Greece
+	// Set of assigned org IDs for quick lookup
+	let assignedOrgIds = $derived(new Set(assignedOrgs.map((a) => a.org_id)));
+
+	// Unassigned orgs = allOrganizations minus assigned, with valid coords
+	let unassignedOrgs = $derived(
+		allOrganizations.filter(
+			(o) => !assignedOrgIds.has(o.id) && o.latitude != null && o.longitude != null
+		)
+	);
+
+	// Center on first assigned org, or first unassigned, or default to Greece
 	const mapCenter = $derived<[number, number]>(
-		assignedOrgs.length > 0
+		assignedOrgs.length > 0 && assignedOrgs[0].core_organizations?.longitude
 			? [
 					assignedOrgs[0].core_organizations!.longitude!,
 					assignedOrgs[0].core_organizations!.latitude!
 				]
-			: [23.729757, 37.976707]
+			: unassignedOrgs.length > 0
+				? [unassignedOrgs[0].longitude!, unassignedOrgs[0].latitude!]
+				: [23.729757, 37.976707]
 	);
 
 	// Get evaluations for a specific org, newest first
@@ -110,6 +129,7 @@
 
 <div class="h-full w-full">
 	<Map center={mapCenter} zoom={10}>
+		<!-- ── Assigned org markers (blue/red, existing behavior) ── -->
 		{#each assignedOrgs as assignment (assignment.org_id)}
 			{@const org = assignment.core_organizations!}
 			{@const days = daysUntil(assignment.visit_date)}
@@ -118,8 +138,6 @@
 
 			<MapMarker longitude={org.longitude!} latitude={org.latitude!}>
 				<MarkerContent>
-					<!-- svelte-ignore a11y_click_events_have_key_events -->
-					<!-- svelte-ignore a11y_no_static_element_interactions -->
 					<div class="relative flex items-center justify-center">
 						<div
 							class="absolute size-8 animate-pulsing rounded-full {isOverdue
@@ -219,7 +237,7 @@
 								</div>
 							{/if}
 							{#if !org.location && !org.phone}
-								<p class="italic text-muted-foreground">Δεν υπάρχουν στοιχεία επικοινωνίας</p>
+								<p class="text-muted-foreground italic">Δεν υπάρχουν στοιχεία επικοινωνίας</p>
 							{/if}
 						</div>
 
@@ -228,14 +246,125 @@
 						<!-- Last 3 evaluations -->
 						<div>
 							<p
-								class="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
+								class="mb-2 text-[10px] font-semibold tracking-wide text-muted-foreground uppercase"
 							>
 								Τελευταίες Αξιολογήσεις
 							</p>
 							{#if orgEvals.length === 0}
-								<p class="text-xs italic text-muted-foreground">
-									Δεν υπάρχουν αξιολογήσεις ακόμα
-								</p>
+								<p class="text-xs text-muted-foreground italic">Δεν υπάρχουν αξιολογήσεις ακόμα</p>
+							{:else}
+								<div class="space-y-1.5">
+									{#each orgEvals.slice(0, 3) as ev}
+										{@const cfg = statusConfig[ev.submit]}
+										<div class="flex items-center gap-2 rounded-lg {cfg.bg} px-2.5 py-1.5">
+											<cfg.icon class="size-3 shrink-0 {cfg.color}" />
+											<span class="flex-1 text-[11px] text-muted-foreground">
+												{formatDate(ev.visit_date)}
+											</span>
+											{#if ev.overall_rating !== null}
+												<div class="flex items-center gap-0.5 text-yellow-500">
+													<Star class="size-2.5 fill-current" />
+													<span class="text-[11px] font-semibold">{ev.overall_rating}/100</span>
+												</div>
+											{:else}
+												<span class="text-[10px] font-medium {cfg.color}">{cfg.label}</span>
+											{/if}
+										</div>
+									{/each}
+								</div>
+							{/if}
+						</div>
+					</div>
+				</MarkerPopup>
+			</MapMarker>
+		{/each}
+
+		<!-- ── Unassigned org markers (green pulsing dots) ── -->
+		{#each unassignedOrgs as org (org.id)}
+			{@const orgEvals = getOrgEvals(org.id)}
+
+			<MapMarker longitude={org.longitude!} latitude={org.latitude!}>
+				<MarkerContent>
+					<div class="relative flex items-center justify-center">
+						<div
+							class="absolute size-8 animate-pulsing rounded-full bg-emerald-500/40 repeat-infinite"
+						></div>
+						<div
+							class="absolute size-6 animate-pulsing rounded-full bg-emerald-500/60 repeat-infinite [animation-delay:300ms]"
+						></div>
+						<div
+							class="absolute size-4 animate-pulse-fade-in rounded-full bg-emerald-400/80 blur-sm repeat-infinite"
+						></div>
+						<div
+							class="relative size-3 rounded-full border-2 border-emerald-300 bg-emerald-500 shadow-lg shadow-emerald-500/50 repeat-infinite"
+						></div>
+					</div>
+				</MarkerContent>
+
+				<MarkerTooltip class="border border-border/50">
+					<div class="flex items-center gap-2">
+						<span class="text-sm font-bold">{org.store_name}</span>
+						<span class="text-xs text-emerald-500">Μη ανατεθειμένο</span>
+					</div>
+				</MarkerTooltip>
+
+				<MarkerPopup class="border border-border/50" closeButton>
+					<div class="w-full min-w-0 space-y-3 sm:w-72">
+						<!-- Header -->
+						<div class="flex items-start gap-3">
+							<div
+								class="flex size-9 shrink-0 items-center justify-center rounded-full bg-emerald-500/15"
+							>
+								<Building2 class="size-4 text-emerald-500" />
+							</div>
+							<div class="min-w-0 flex-1 pr-5">
+								<h3 class="truncate text-sm font-semibold text-foreground">
+									{org.store_name}
+								</h3>
+								<div class="mt-1.5">
+									<span
+										class="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400"
+									>
+										Μη ανατεθειμένο
+									</span>
+								</div>
+							</div>
+						</div>
+
+						<Separator />
+
+						<!-- Contact / location info -->
+						<div class="space-y-2 text-xs">
+							{#if org.location}
+								<div class="flex items-start gap-2 text-muted-foreground">
+									<MapPinned class="mt-0.5 size-3.5 shrink-0" />
+									<span class="line-clamp-2">{org.location}</span>
+								</div>
+							{/if}
+							{#if org.phone}
+								<div class="flex items-center gap-2 text-muted-foreground">
+									<Phone class="size-3.5 shrink-0" />
+									<a href="tel:{org.phone}" class="hover:text-foreground hover:underline">
+										{org.phone}
+									</a>
+								</div>
+							{/if}
+							{#if !org.location && !org.phone}
+								<p class="text-muted-foreground italic">Δεν υπάρχουν στοιχεία επικοινωνίας</p>
+							{/if}
+						</div>
+
+						<Separator />
+
+						<!-- Last 3 evaluations -->
+						<div>
+							<p
+								class="mb-2 text-[10px] font-semibold tracking-wide text-muted-foreground uppercase"
+							>
+								Τελευταίες Αξιολογήσεις
+							</p>
+							{#if orgEvals.length === 0}
+								<p class="text-xs text-muted-foreground italic">Δεν υπάρχουν αξιολογήσεις ακόμα</p>
 							{:else}
 								<div class="space-y-1.5">
 									{#each orgEvals.slice(0, 3) as ev}

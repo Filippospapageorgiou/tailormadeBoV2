@@ -19,11 +19,13 @@
 		FileText,
 		TrendingUp,
 		MapPin,
-		AlertTriangle
+		AlertTriangle,
+		Users
 	} from 'lucide-svelte';
 	import {
 		getMyAssignedOrgs,
-		getMyEvaluations
+		getMyEvaluations,
+		getRecentAllEvaluations
 	} from '$lib/api/trainers/trainer_evalution/data.remote.js';
 	import { getAllOrganizations } from '$lib/api/trainers/trainer_managment/data.remote.js';
 	import type { EvaluationStatus } from '$lib/models/trainers.types.js';
@@ -40,6 +42,7 @@
 	let assignedOrgsQuery = getMyAssignedOrgs();
 	let evaluationsQuery = getMyEvaluations();
 	let allOrgsQuery = getAllOrganizations();
+	let allEvalsQuery = getRecentAllEvaluations();
 
 	// Shape returned by getMyAssignedOrgs
 	type AssignedOrg = {
@@ -79,6 +82,28 @@
 		} | null;
 	};
 
+	// Shape returned by getRecentAllEvaluations
+	type AllTrainerEvaluation = {
+		id: number;
+		org_id: number;
+		visit_date: string;
+		submit: EvaluationStatus;
+		overall_rating: number | null;
+		submitted_at: string | null;
+		created_at: string;
+		core_organizations: {
+			id: number;
+			store_name: string;
+			location: string | null;
+		} | null;
+		trainer: {
+			id: string;
+			full_name: string | null;
+			username: string | null;
+			image_url: string | null;
+		} | null;
+	};
+
 	// Derived data
 	let assignedOrgs = $derived(
 		(assignedOrgsQuery?.current?.assignments ?? []) as unknown as AssignedOrg[]
@@ -87,6 +112,9 @@
 		(evaluationsQuery?.current?.evaluations ?? []) as unknown as EvaluationListItem[]
 	);
 	let allOrgs = $derived((allOrgsQuery?.current?.organizations ?? []) as Organization[]);
+	let allTrainerEvals = $derived(
+		(allEvalsQuery?.current?.evaluations ?? []) as unknown as AllTrainerEvaluation[]
+	);
 
 	// Stats derived from evaluations
 	let stats = $derived({
@@ -100,6 +128,7 @@
 	let orgsLoading = $derived(assignedOrgsQuery?.current === undefined);
 	let evalsLoading = $derived(evaluationsQuery?.current === undefined);
 	let allOrgsLoading = $derived(allOrgsQuery?.current === undefined);
+	let allEvalsLoading = $derived(allEvalsQuery?.current === undefined);
 
 	// Check if an org has an active draft
 	function hasDraft(orgId: number): boolean {
@@ -137,6 +166,21 @@
 			month: 'long',
 			year: 'numeric'
 		}).format(new Date(dateStr));
+	}
+
+	// ── Score-based color helper ──────────────────────────────────────
+	function scoreColor(rating: number | null): {
+		text: string;
+		bg: string;
+		fill: string;
+	} {
+		if (rating === null) return { text: 'text-muted-foreground', bg: 'bg-muted', fill: '' };
+		if (rating < 30) return { text: 'text-red-500', bg: 'bg-red-500/10', fill: 'text-red-500' };
+		if (rating < 60)
+			return { text: 'text-orange-500', bg: 'bg-orange-500/10', fill: 'text-orange-500' };
+		if (rating < 80)
+			return { text: 'text-yellow-500', bg: 'bg-yellow-500/10', fill: 'text-yellow-500' };
+		return { text: 'text-emerald-500', bg: 'bg-emerald-500/10', fill: 'text-emerald-500' };
 	}
 
 	type StatusConfig = {
@@ -322,7 +366,6 @@
 
 								<div class="min-w-0 flex-1">
 									<p class="truncate text-sm font-medium">{storeName}</p>
-									<!-- Scheduled visit date assigned by admin -->
 									<p class="flex items-center gap-1 text-xs">
 										<CalendarDays class="h-3 w-3 text-primary" />
 										<span class="font-semibold text-foreground">{formatDate(org.visit_date)}</span>
@@ -363,7 +406,7 @@
 			</Card.Root>
 		</div>
 
-		<!-- Recent Evaluations -->
+		<!-- My Recent Evaluations (with score colors) -->
 		<div class="lg:col-span-2">
 			<Card.Root
 				class="relative h-full overflow-hidden rounded-2xl border border-border/40 bg-card/60 backdrop-blur-sm"
@@ -378,7 +421,7 @@
 							<TrendingUp class="h-4 w-4 text-emerald-600" />
 						</div>
 						<div>
-							<Card.Title class="text-base">Πρόσφατες</Card.Title>
+							<Card.Title class="text-base">Οι Αξιολογήσεις μου</Card.Title>
 							<Card.Description class="text-xs">Τελευταίες αξιολογήσεις</Card.Description>
 						</div>
 					</div>
@@ -392,6 +435,7 @@
 					{:else if recentEvaluations.length > 0}
 						{#each recentEvaluations.slice(0, 5) as ev, i}
 							{@const cfg = statusConfig[ev.submit]}
+							{@const sc = scoreColor(ev.overall_rating)}
 							<button
 								style="animation-delay: {i * 60}ms; animation-fill-mode: backwards;"
 								class="flex w-full animate-fade-in-down cursor-pointer items-center gap-3 rounded-xl border border-border/30 bg-background/50 p-3 text-left transition-all hover:border-primary/20 hover:bg-primary/5"
@@ -406,10 +450,10 @@
 									</p>
 									<p class="text-[10px] text-muted-foreground">{formatDate(ev.visit_date)}</p>
 								</div>
-								{#if ev.overall_rating}
-									<div class="flex shrink-0 items-center gap-0.5 text-yellow-500">
-										<Star class="h-3 w-3 fill-current" />
-										<span class="text-xs font-medium">{ev.overall_rating}</span>
+								{#if ev.overall_rating !== null}
+									<div class="flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 {sc.bg}">
+										<Star class="h-3 w-3 fill-current {sc.fill}" />
+										<span class="text-xs font-semibold {sc.text}">{ev.overall_rating}</span>
 									</div>
 								{:else}
 									<Badge variant={cfg.variant} class="shrink-0 text-[10px]">{cfg.label}</Badge>
@@ -436,8 +480,85 @@
 		</div>
 	</div>
 
+	<!-- All Trainers Recent Evaluations -->
+	<Card.Root
+		class="relative overflow-hidden rounded-2xl border border-border/40 bg-card/60 backdrop-blur-sm"
+	>
+		<div
+			class="absolute -top-20 -left-20 -z-10 h-48 w-48 rounded-full bg-violet-500/8 blur-3xl"
+		></div>
+
+		<Card.Header class="pb-3">
+			<div class="flex items-center gap-2">
+				<div class="rounded-lg bg-violet-500/10 p-2">
+					<Users class="h-4 w-4 text-violet-500" />
+				</div>
+				<div>
+					<Card.Title class="text-base">Πρόσφατες Αξιολογήσεις</Card.Title>
+					<Card.Description class="text-xs">Από όλους τους trainers</Card.Description>
+				</div>
+			</div>
+		</Card.Header>
+
+		<Card.Content class="space-y-2">
+			{#if allEvalsLoading}
+				{#each Array(3) as _}
+					<div class="h-14 animate-pulse rounded-xl bg-muted/40"></div>
+				{/each}
+			{:else if allTrainerEvals.length > 0}
+				{#each allTrainerEvals as ev, i}
+					{@const cfg = statusConfig[ev.submit]}
+					{@const sc = scoreColor(ev.overall_rating)}
+					{@const trainerName = ev.trainer?.full_name ?? ev.trainer?.username ?? 'Trainer'}
+					<button
+						style="animation-delay: {i * 60}ms; animation-fill-mode: backwards;"
+						class="flex w-full animate-fade-in-down cursor-pointer items-center gap-3 rounded-xl border border-border/30 bg-background/50 p-3 text-left transition-all hover:border-primary/20 hover:bg-primary/5"
+						onclick={() => goto(`/trainer/evaluations/${ev.id}`)}
+					>
+						<!-- Status icon -->
+						<div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted">
+							<cfg.icon class="h-3.5 w-3.5 {cfg.color}" />
+						</div>
+
+						<!-- Store + date info -->
+						<div class="min-w-0 flex-1">
+							<p class="truncate text-xs font-medium">
+								{ev.core_organizations?.store_name ?? '—'}
+							</p>
+							<p class="text-[10px] text-muted-foreground">{formatDate(ev.visit_date)}</p>
+						</div>
+
+						<!-- Score with color -->
+						{#if ev.overall_rating !== null}
+							<div class="flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 {sc.bg}">
+								<Star class="h-3 w-3 fill-current {sc.fill}" />
+								<span class="text-xs font-semibold {sc.text}">{ev.overall_rating}</span>
+							</div>
+						{:else}
+							<Badge variant={cfg.variant} class="shrink-0 text-[10px]">{cfg.label}</Badge>
+						{/if}
+
+						<!-- Trainer avatar -->
+						<Avatar.Root class="h-7 w-7 shrink-0 ring-1 ring-border/50">
+							<Avatar.Image src={ev.trainer?.image_url} alt={trainerName} class="dark:bg-white" />
+							<Avatar.Fallback class="text-[10px] font-medium">
+								{getInitials(trainerName)}
+							</Avatar.Fallback>
+						</Avatar.Root>
+						{trainerName}
+					</button>
+				{/each}
+			{:else}
+				<div class="flex flex-col items-center justify-center py-10 text-muted-foreground">
+					<Users class="mb-2 h-8 w-8 opacity-30" />
+					<p class="text-sm">Δεν υπάρχουν πρόσφατες αξιολογήσεις</p>
+				</div>
+			{/if}
+		</Card.Content>
+	</Card.Root>
+
 	<!-- Map Section -->
-	{#if !orgsLoading}
+	{#if !orgsLoading && !allOrgsLoading}
 		{@const pendingOrgs = assignedOrgs.filter(
 			(o) => o.core_organizations?.latitude && o.core_organizations?.longitude
 		)}
@@ -449,15 +570,19 @@
 						<MapPin class="h-4 w-4 text-primary" />
 					</div>
 					<div>
-						<h2 class="text-sm font-semibold">Εκκρεμείς Επισκέψεις</h2>
-						<p class="text-xs text-muted-foreground">
-							Καταστήματα που σου έχουν ανατεθεί και δεν έχουν αξιολογηθεί ακόμα.
-						</p>
+						<h2 class="text-sm font-semibold">Χάρτης Καταστημάτων</h2>
+						<p class="text-xs text-muted-foreground">Όλα τα καταστήματα — ανατεθειμένα και μη.</p>
 					</div>
 				</div>
-				<div class="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
-					<div class="size-2 animate-pulse rounded-full bg-primary"></div>
-					<span>{pendingOrgs.length} εκκρεμεί</span>
+				<div class="flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
+					<div class="flex items-center gap-1.5">
+						<div class="size-2 animate-pulse rounded-full bg-primary"></div>
+						<span>{pendingOrgs.length} ανατεθειμένα</span>
+					</div>
+					<div class="flex items-center gap-1.5">
+						<div class="size-2 rounded-full bg-emerald-500"></div>
+						<span>{allOrgs.length - assignedOrgs.length} λοιπά</span>
+					</div>
 				</div>
 			</div>
 
@@ -465,7 +590,11 @@
 			<div
 				class="h-[460px] overflow-hidden rounded-2xl border border-border/40 bg-card/60 shadow-sm lg:h-[560px]"
 			>
-				<TrainerMap assignedOrgs={pendingOrgs} evaluations={recentEvaluations} />
+				<TrainerMap
+					assignedOrgs={pendingOrgs}
+					evaluations={recentEvaluations}
+					allOrganizations={allOrgs}
+				/>
 			</div>
 		</div>
 	{/if}
