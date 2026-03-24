@@ -2,9 +2,9 @@ import type { PageServerLoad } from './$types';
 import { optimizeImage } from '$lib/image';
 
 export const load: PageServerLoad = async ({ locals: { supabase }, setHeaders }) => {
-	// Cache the page for 1 hour — returning users won't re-fetch the beverage list
+	// Images rarely change — cache aggressively
 	setHeaders({
-		'cache-control': 'public, max-age=3600, s-maxage=600'
+		'cache-control': 'public, max-age=86400, s-maxage=3600, stale-while-revalidate=86400'
 	});
 
 	const { data: beverages, error } = await supabase
