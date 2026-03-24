@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { EquipmentWithLogs } from '$lib/models/equipment.types';
+	import type { EquipmentWithLogCount, MaintenanceLogWithUser } from '$lib/models/equipment.types';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 	import {
@@ -9,7 +9,6 @@
 		XCircle,
 		Wrench,
 		X,
-		Clock,
 		BadgeAlert,
 		Calendar,
 		AlertTriangle,
@@ -24,9 +23,13 @@
 	import { format } from 'date-fns';
 	import { el } from 'date-fns/locale';
 	import * as Avatar from '$lib/components/ui/avatar';
-	import Separator from '$lib/components/ui/separator/separator.svelte';
 	import { fade, scale } from 'svelte/transition';
-	import { deleteEquipment, deleteMaintanceLog, editEquipment } from '../data.remote';
+	import {
+		deleteEquipment,
+		deleteMaintanceLog,
+		editEquipment,
+		getMaintenanceLogs
+	} from '../data.remote';
 	import { toast } from 'svelte-sonner';
 	import { Spinner } from '$lib/components/ui/spinner';
 	import * as Select from '$lib/components/ui/select';
@@ -35,9 +38,18 @@
 	import * as Empty from '$lib/components/ui/empty/index.js';
 	import { ScrollArea } from '$lib/components/ui/scroll-area/index.js';
 	import InputCalendar from '$lib/components/custom/inputCalendar.svelte';
+	import { Skeleton } from '$lib/components/ui/skeleton';
 
 	let previewImage: string | null = $state(null);
-	let { equipment, index }: { equipment: EquipmentWithLogs; index: number } = $props();
+	let {
+		equipment,
+		index
+	}: {
+		equipment: EquipmentWithLogCount;
+		index: number;
+	} = $props();
+
+	let logCount = $derived(equipment.maintenance_logs?.[0]?.count ?? 0);
 
 	const getInitials = (name: string) => {
 		return (
@@ -49,12 +61,6 @@
 				.toUpperCase() || '??'
 		);
 	};
-
-	let sortedLogs = $derived(
-		[...equipment.maintenance_logs].sort(
-			(a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-		)
-	);
 
 	let modalOpen = $state(false);
 
@@ -87,8 +93,7 @@
 	const statusColors: Record<EquipmentStatus, string> = {
 		operational:
 			'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/20',
-		maintenance:
-			'bg-orange-500/10 text-orange-600 dark:text-orange-400 ring-1 ring-orange-500/20',
+		maintenance: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 ring-1 ring-orange-500/20',
 		broken: 'bg-red-500/10 text-red-600 dark:text-red-400 ring-1 ring-red-500/20'
 	};
 
@@ -148,7 +153,7 @@
 	}
 
 	let openDeleteDialog = $state(false);
-	let deleteEquipmentData: EquipmentWithLogs | undefined = $state();
+	let deleteEquipmentData: EquipmentWithLogCount | undefined = $state();
 
 	function handleDelete() {
 		openDeleteDialog = true;
@@ -174,8 +179,20 @@
 	function toggleLog(id: number) {
 		expandedLogId = expandedLogId === id ? null : id;
 	}
-</script>
+	// Lazy-loaded logs state
+	let maintenanceQuery = $state<ReturnType<typeof getMaintenanceLogs> | null>(null);
+	let logs = $derived(maintenanceQuery?.current?.logs ?? []);
+	let loading = $derived(maintenanceQuery?.loading ?? false);
 
+	let sortedLogs = $derived(
+		[...logs].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+	);
+
+	function openEquipmentModal(id: number) {
+		modalOpen = true;
+		maintenanceQuery = getMaintenanceLogs({ equipmentId: id });
+	}
+</script>
 
 <div
 	style="animation-delay: {index * 80}ms; animation-fill-mode: backwards;"
@@ -232,13 +249,13 @@
 				</Tooltip.Provider>
 			</div>
 
-			{#if equipment.maintenance_logs.length > 0}
+			{#if logCount > 0}
 				<button
-					onclick={() => (modalOpen = true)}
+					onclick={() => openEquipmentModal(equipment.id)}
 					class="inline-flex cursor-pointer items-center gap-1.5 rounded-md bg-red-500/90 px-2.5 py-1 text-[10px] font-semibold text-white shadow-sm backdrop-blur-md transition-all hover:bg-red-600"
 				>
 					<Wrench class="h-3 w-3" />
-					{equipment.maintenance_logs.length} Logs
+					{logCount} Logs
 					{#if serviceStatus === 'overdue'}
 						<span class="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-white"></span>
 					{/if}
@@ -282,9 +299,7 @@
 				{equipment.name}
 			</h3>
 			<div class="mt-1 flex flex-wrap items-center gap-2">
-				<span
-					class="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground/60"
-				>
+				<span class="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground/60">
 					#{equipment.id.toString().padStart(4, '0')}
 				</span>
 				{#if equipment.model}
@@ -296,9 +311,7 @@
 		<!-- Service Health -->
 		{#if equipment.next_service_date}
 			<div class="space-y-2.5 rounded-lg bg-muted/30 p-3 dark:bg-muted/15">
-				<span
-					class="text-[10px] font-semibold tracking-widest text-muted-foreground/70 uppercase"
-				>
+				<span class="text-[10px] font-semibold tracking-widest text-muted-foreground/70 uppercase">
 					Service Status
 				</span>
 
@@ -333,9 +346,7 @@
 			</div>
 		{:else}
 			<div class="rounded-lg bg-muted/30 p-3 dark:bg-muted/15">
-				<span
-					class="text-[10px] font-semibold tracking-widest text-muted-foreground/70 uppercase"
-				>
+				<span class="text-[10px] font-semibold tracking-widest text-muted-foreground/70 uppercase">
 					Service Status
 				</span>
 				<p class="mt-1.5 text-xs text-muted-foreground/60">No service date scheduled</p>
@@ -344,11 +355,14 @@
 	</div>
 </div>
 
-
 <Modal.Root bind:open={modalOpen}>
-	<Modal.Content class="flex max-h-[85vh] max-w-2xl flex-col overflow-hidden rounded-xl border-border/60 bg-background/95 p-0 backdrop-blur-xl dark:bg-background/90">
+	<Modal.Content
+		class="flex max-h-[85vh] max-w-2xl flex-col overflow-hidden rounded-xl border-border/60 bg-background/95 p-0 backdrop-blur-xl dark:bg-background/90"
+	>
 		<!-- Header -->
-		<Modal.Header class="sticky top-0 z-20 border-b border-border/40 bg-background/80 px-6 py-4 backdrop-blur-md">
+		<Modal.Header
+			class="sticky top-0 z-20 border-b border-border/40 bg-background/80 px-6 py-4 backdrop-blur-md"
+		>
 			<div class="flex items-center gap-3">
 				<div
 					class="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/10 text-red-600 dark:text-red-400"
@@ -362,7 +376,7 @@
 					<Modal.Description class="text-xs text-muted-foreground">
 						{equipment.name}
 						<span class="text-muted-foreground/50">·</span>
-						{sortedLogs.length} καταγραφές
+						{maintenanceQuery ? sortedLogs.length : logCount} καταγραφές
 					</Modal.Description>
 				</div>
 			</div>
@@ -370,7 +384,20 @@
 
 		<!-- Logs list -->
 		<div class="flex-1 overflow-y-auto">
-			{#if sortedLogs.length === 0}
+			{#if loading}
+				<div class="space-y-4 p-6">
+					{#each { length: 3 } as _}
+						<div class="flex items-center gap-3">
+							<Skeleton class="h-9 w-9 rounded-full" />
+							<div class="flex-1 space-y-2">
+								<Skeleton class="h-4 w-1/3" />
+								<Skeleton class="h-3 w-2/3" />
+							</div>
+							<Skeleton class="h-4 w-16" />
+						</div>
+					{/each}
+				</div>
+			{:else if sortedLogs.length === 0}
 				<div class="flex flex-col items-center justify-center py-16 text-muted-foreground">
 					<CheckCircle2 class="mb-3 h-10 w-10 opacity-20" />
 					<p class="text-sm">Δεν υπάρχουν καταγραφές συντήρησης.</p>
@@ -393,10 +420,7 @@
 								>
 									<!-- Avatar -->
 									<Avatar.Root class="h-9 w-9 flex-shrink-0 shadow-sm">
-										<Avatar.Image
-											src={log.profiles?.image_url}
-											alt={log.profiles?.username}
-										/>
+										<Avatar.Image src={log.profiles?.image_url} alt={log.profiles?.username} />
 										<Avatar.Fallback class="text-[10px] font-bold text-primary">
 											{getInitials(log.profiles?.username || 'Unknown')}
 										</Avatar.Fallback>
@@ -425,9 +449,7 @@
 									<!-- Right side: date + images count + chevron -->
 									<div class="flex flex-shrink-0 items-center gap-2">
 										{#if log.images && log.images.length > 0}
-											<span
-												class="flex items-center gap-1 text-[10px] text-muted-foreground/50"
-											>
+											<span class="flex items-center gap-1 text-[10px] text-muted-foreground/50">
 												<ImageIcon class="h-3 w-3" />
 												{log.images.length}
 											</span>
@@ -445,10 +467,7 @@
 
 								<!-- Expanded details -->
 								{#if isExpanded}
-									<div
-										class="space-y-4 px-6 pb-5 pl-[4.5rem]"
-										transition:fade={{ duration: 150 }}
-									>
+									<div class="space-y-4 px-6 pb-5 pl-[4.5rem]" transition:fade={{ duration: 150 }}>
 										<!-- Date full -->
 										<div class="flex items-center gap-1.5 text-xs text-muted-foreground/60">
 											<Calendar class="h-3 w-3" />
@@ -506,6 +525,8 @@
 															<img
 																src={img}
 																alt="Evidence {idx + 1}"
+																loading="lazy"
+																decoding="async"
 																class="h-full w-full object-cover transition-transform duration-300 group-hover/img:scale-110"
 															/>
 															<div
@@ -516,6 +537,42 @@
 												</div>
 											</div>
 										{/if}
+									</div>
+
+									<!-- Delete log -->
+									<div class="flex justify-end pt-2">
+										<form
+											{...deleteMaintanceLog.enhance(async ({ submit }) => {
+												deletingLogId = log.id;
+												isDeleting = true;
+												await submit();
+												if (deleteMaintanceLog.result?.success) {
+													toast.success(deleteMaintanceLog.result.message);
+													maintenanceQuery = getMaintenanceLogs({ equipmentId: equipment.id });
+												} else {
+													toast.error(deleteMaintanceLog.result?.message || 'Σφάλμα κατά την διαγραφή');
+												}
+												isDeleting = false;
+												deletingLogId = undefined;
+											})}
+										>
+											<input type="hidden" name="maintanceLogId" value={log.id} />
+											<Button
+												type="submit"
+												variant="ghost"
+												size="sm"
+												disabled={isDeleting && deletingLogId === log.id}
+												class="h-7 gap-1.5 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+											>
+												{#if isDeleting && deletingLogId === log.id}
+													<Spinner class="h-3 w-3" />
+													Διαγραφή...
+												{:else}
+													<Trash2 class="h-3 w-3" />
+													Διαγραφή
+												{/if}
+											</Button>
+										</form>
 									</div>
 								{/if}
 							</div>
@@ -543,7 +600,6 @@
 		</Modal.Footer>
 	</Modal.Content>
 </Modal.Root>
-
 
 {#if previewImage}
 	<div
@@ -611,7 +667,7 @@
 			</div>
 
 			{#if deleteEquipmentData}
-				<div class="rounded-lg borderp-4">
+				<div class="borderp-4 rounded-lg">
 					<div class="flex items-start gap-4">
 						{#if deleteEquipmentData.image_url}
 							<img

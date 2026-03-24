@@ -41,6 +41,11 @@ export interface MaintenanceLog {
 
 // --- Joined Types (For UI Display) ---
 
+// Lightweight shape for the equipment list — only the log count, not full logs
+export interface EquipmentWithLogCount extends Equipment {
+	maintenance_logs: [{ count: number }];
+}
+
 // When fetching logs, you usually want the User's name, not just their UUID
 export interface MaintenanceLogWithUser extends MaintenanceLog {
 	profiles: {

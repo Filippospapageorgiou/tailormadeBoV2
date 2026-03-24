@@ -2,7 +2,12 @@ import { query, form } from '$app/server';
 import { createServerClient } from '$lib/supabase/server';
 import { z } from 'zod/v4';
 import { getUserOrgId, getUserProfile, getUserProfileWithRoleCheck } from '$lib/supabase/queries';
-import { type MaintenanceLog, type EquipmentWithLogs } from '$lib/models/equipment.types';
+import {
+	type MaintenanceLog,
+	type EquipmentWithLogCount,
+	type MaintenanceLogWithUser
+} from '$lib/models/equipment.types';
+import { optimizeImage } from '$lib/image';
 
 /**
  * HELPER: sanitizePath
@@ -96,21 +101,12 @@ export const getAllEquipments = query(async () => {
 		const { data: equipments, error: equipmentsError } = await supabase
 			.from('equipment')
 			.select(
-				`
-        *,
-        maintenance_logs (
-            *,
-            profiles!maintenance_logs_user_id_fkey (
-                username,
-                role,
-                image_url,
-                phone
-            )
-        )
-    `
+				`*,
+        		maintenance_logs(count)
+    			`
 			)
 			.eq('org_id', org_id)
-			.overrideTypes<EquipmentWithLogs[]>();
+			.overrideTypes<EquipmentWithLogCount[]>();
 
 		if (equipmentsError) {
 			console.error('[getAllEquipments] Error fetching all equipments: ', equipmentsError);
@@ -122,10 +118,17 @@ export const getAllEquipments = query(async () => {
 			};
 		}
 
+		// Optimize images through Vercel Image Optimization (resize + WebP/AVIF)
+		const optimizedEquipments = (equipments || []).map((e) => ({
+			...e,
+			image_url: optimizeImage(e.image_url, 400, 75),
+			maintenance_logs: e.maintenance_logs as [{ count: number }]
+		}));
+
 		return {
 			success: true,
-			equipments: equipments || [],
-			total: equipments.length || 0,
+			equipments: optimizedEquipments,
+			total: optimizedEquipments.length || 0,
 			message: 'Επιτυχής ανάκτηση μηχανημάτων'
 		};
 	} catch (err: any) {
@@ -136,6 +139,43 @@ export const getAllEquipments = query(async () => {
 			total: 0,
 			message: 'Σφάλμα κάτα την άνακτηση των μηχανημάτων'
 		};
+	}
+});
+
+const getMaintenanceLogsSchema = z.object({
+	equipmentId: z.number().positive()
+});
+
+export const getMaintenanceLogs = query(getMaintenanceLogsSchema, async (equipmentId) => {
+	try {
+		const supabase = createServerClient();
+
+		const { data: logs, error } = await supabase
+			.from('maintenance_logs')
+			.select(
+				`
+				*,
+				profiles!maintenance_logs_user_id_fkey (
+					username,
+					role,
+					image_url,
+					phone
+				)
+			`
+			)
+			.eq('equipment_id', equipmentId.equipmentId)
+			.order('created_at', { ascending: false })
+			.overrideTypes<MaintenanceLogWithUser[]>();
+
+		if (error) {
+			console.error('[getMaintenanceLogs] Error fetching logs: ', error);
+			return { success: false, logs: [] };
+		}
+
+		return { success: true, logs: logs || [] };
+	} catch (err: any) {
+		console.error('[getMaintenanceLogs] Error fetching logs: ', err);
+		return { success: false, logs: [] };
 	}
 });
 

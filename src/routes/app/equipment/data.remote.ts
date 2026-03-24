@@ -3,6 +3,7 @@ import { query } from '$app/server';
 import { createServerClient } from '$lib/supabase/server';
 import type { Equipment } from '$lib/models/equipment.types';
 import { getUserOrgId } from '$lib/supabase/queries';
+import { optimizeImage } from '$lib/image';
 
 export const getAllEquipments = query(async () => {
 	const supabase = createServerClient();
@@ -25,11 +26,17 @@ export const getAllEquipments = query(async () => {
 			};
 		}
 
+		// Optimize images through Vercel Image Optimization (resize + WebP/AVIF)
+		const optimizedEquipments = (equipments || []).map((e) => ({
+			...e,
+			image_url: optimizeImage(e.image_url, 400, 75)
+		}));
+
 		return {
 			success: true,
-			total: equipments.length || 0,
+			total: optimizedEquipments.length || 0,
 			message: 'Equipments fetched successfully',
-			equipments
+			equipments: optimizedEquipments
 		};
 	} catch (error) {
 		console.error('Error fetching equipments: ', error);
