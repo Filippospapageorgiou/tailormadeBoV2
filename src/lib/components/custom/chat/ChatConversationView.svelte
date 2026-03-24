@@ -67,12 +67,14 @@
 		}
 	});
 
-	// Mark conversation as read on mount (once per conversation)
+	// In ChatView — the $effect that marks as read:
+	// AFTER:
 	$effect(() => {
 		if (initialLoaded && conversationId && !markedAsRead) {
 			markedAsRead = true;
 			markConversationAsRead({ conversationId }).then(() => {
 				chatStore.refreshCount();
+				convsQuery.refresh(); // ← refresh the conversations list so unread_count updates
 			});
 		}
 	});
