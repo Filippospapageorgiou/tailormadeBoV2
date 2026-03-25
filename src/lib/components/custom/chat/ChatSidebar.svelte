@@ -55,7 +55,8 @@
 			.toUpperCase();
 	}
 
-	function getRoleLabel(roleId: number | null) {
+	function getRoleLabel(roleId: number | null, isSupport?: boolean) {
+		if (isSupport) return 'Τεχνική Υποστήριξη';
 		if (roleId === 1 || roleId === 2) return 'Manager';
 		if (roleId === 3) return 'Trainer';
 		return 'Barista';
@@ -173,7 +174,12 @@
 							</p>
 						{/if}
 						<div class="flex items-center gap-1.5 text-[10px] text-muted-foreground/60">
-							<span>{getRoleLabel(conv.other_participant.role_id)}</span>
+							<span
+								>{getRoleLabel(
+									conv.other_participant.role_id,
+									conv.other_participant.is_support
+								)}</span
+							>
 							{#if conv.other_participant.org_name}
 								<span>·</span>
 								<span class="truncate">{conv.other_participant.org_name}</span>

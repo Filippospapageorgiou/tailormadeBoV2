@@ -517,6 +517,5 @@ export const getOrgUsersPresence = query(getOrgPresenceSchema, async ({ org_id }
 			last_seen_at: presence?.last_seen_at ?? null
 		};
 	});
-	console.log(users);
 	return { success: true as const, users };
 });

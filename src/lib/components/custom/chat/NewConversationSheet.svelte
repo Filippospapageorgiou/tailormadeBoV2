@@ -68,7 +68,8 @@
 			.toUpperCase();
 	}
 
-	function getRoleLabel(roleId: number | null) {
+	function getRoleLabel(roleId: number | null, isSupport?: boolean) {
+		if (isSupport) return 'Τεχνική Υποστήριξη';
 		if (roleId === 1 || roleId === 2) return 'Manager';
 		if (roleId === 3) return 'Trainer';
 		return 'Barista';
@@ -201,7 +202,7 @@
 								</Avatar.Root>
 								<div class="min-w-0 flex-1">
 									<p class="truncate text-sm font-medium">{user.full_name ?? 'Άγνωστος'}</p>
-									<p class="text-xs text-muted-foreground">{getRoleLabel(user.role_id)}</p>
+									<p class="text-xs text-muted-foreground">{getRoleLabel(user.role_id, user.is_support)}</p>
 								</div>
 								<ChevronRight class="size-4 shrink-0 text-muted-foreground" />
 							</button>

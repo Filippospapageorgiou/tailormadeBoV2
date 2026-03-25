@@ -46,6 +46,8 @@ export const getConversations = query(async () => {
 	const supabase = createServerClient();
 	const user = await requireAuthenticatedUser();
 
+	const SUPPORT_USER_ID = 'd2a6cf7a-1189-44c0-906a-2acf017948aa';
+
 	try {
 		const { data, error } = await supabase
 			.from('chat_conversations')
@@ -83,7 +85,10 @@ export const getConversations = query(async () => {
 		}
 
 		// Fetch last message per conversation
-		let lastMessageMap = new Map<number, { content: string | null; sender_id: string; has_image: boolean }>();
+		let lastMessageMap = new Map<
+			number,
+			{ content: string | null; sender_id: string; has_image: boolean }
+		>();
 		if (convIds.length > 0) {
 			const { data: msgRows } = await supabase
 				.from('chat_messages')
@@ -116,7 +121,7 @@ export const getConversations = query(async () => {
 				last_message_at: row.last_message_at,
 				unread_count: unreadMap.get(row.id) ?? 0,
 				last_message: lastMessageMap.get(row.id) ?? null,
-				other_participant: { ...profileFields, org_name: orgName }
+				other_participant: { ...profileFields, org_name: orgName, is_support: rawOther?.id === SUPPORT_USER_ID }
 			};
 		});
 
@@ -397,6 +402,8 @@ export const getChatableUsers = query(getChatableUsersSchema, async ({ orgId }) 
 	const supabase = createServerClient();
 	const user = await requireAuthenticatedUser();
 
+	const SUPPORT_USER_ID = 'd2a6cf7a-1189-44c0-906a-2acf017948aa';
+
 	try {
 		let q = supabase
 			.from('profiles')
@@ -418,7 +425,21 @@ export const getChatableUsers = query(getChatableUsersSchema, async ({ orgId }) 
 			return { success: false, message: 'Σφάλμα κατά την ανάκτηση χρηστών', users: [] };
 		}
 
-		return { success: true, message: 'Επιτυχής ανάκτηση', users: data ?? [] };
+		let users = (data ?? []).map((u) => ({ ...u, is_support: u.id === SUPPORT_USER_ID }));
+
+		// Always include support user unless they are the current user or already in the list
+		if (user.id !== SUPPORT_USER_ID && !users.some((u) => u.is_support)) {
+			const { data: supportUser } = await supabase
+				.from('profiles')
+				.select('id, full_name, image_url, role_id, org_id, role')
+				.eq('id', SUPPORT_USER_ID)
+				.single();
+
+			if (supportUser) {
+				users = [{ ...supportUser, is_support: true }, ...users];
+			}
+		}
+		return { success: true, message: 'Επιτυχής ανάκτηση', users };
 	} catch (err) {
 		console.error('[getChatableUsers] Unexpected error:', err);
 		return { success: false, message: 'Απρόσμενο σφάλμα', users: [] };

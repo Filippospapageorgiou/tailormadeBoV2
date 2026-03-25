@@ -25,6 +25,7 @@ export interface ChatConversation {
 		'id' | 'full_name' | 'image_url' | 'role_id' | 'org_id' | 'org_name'
 	> & {
 		org_name: string | null;
+		is_support?: boolean;
 	};
 }
 
