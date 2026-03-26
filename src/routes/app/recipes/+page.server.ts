@@ -4,9 +4,8 @@ import { optimizeImage } from '$lib/image';
 export const load: PageServerLoad = async ({ locals: { supabase }, setHeaders }) => {
 	// Images rarely change — cache aggressively
 	setHeaders({
-		'cache-control': 'public, max-age=86400, s-maxage=3600, stale-while-revalidate=86400'
+		'cache-control': 'private, max-age=3600, stale-while-revalidate=86400'
 	});
-
 	const { data: beverages, error } = await supabase
 		.from('beverages')
 		.select('id, name, description, execution, image_url, public')
