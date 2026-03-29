@@ -257,7 +257,8 @@ export const bulkAssignTrainerToOrgs = command(
 		const supabase = createServerClient();
 		const profile = await getUserProfile();
 
-		const results: { orgId: number; success: boolean; reactivated?: boolean; message?: string }[] = [];
+		const results: { orgId: number; success: boolean; reactivated?: boolean; message?: string }[] =
+			[];
 
 		try {
 			for (const orgId of orgIds) {
@@ -292,15 +293,13 @@ export const bulkAssignTrainerToOrgs = command(
 
 					results.push({ orgId, success: true, reactivated: true });
 				} else {
-					const { error: insertError } = await supabase
-						.from('trainer_org_assigments')
-						.insert({
-							trainer_id: trainerId,
-							org_id: orgId,
-							assigned_by: profile.id,
-							visit_date: visitDate,
-							is_active: true
-						});
+					const { error: insertError } = await supabase.from('trainer_org_assigments').insert({
+						trainer_id: trainerId,
+						org_id: orgId,
+						assigned_by: profile.id,
+						visit_date: visitDate,
+						is_active: true
+					});
 
 					if (insertError) {
 						console.error('[bulkAssignTrainerToOrgs] Insert error:', insertError);
@@ -427,9 +426,9 @@ export const getEvaluations = query(async () => {
 	const supabase = createServerClient();
 
 	const { data: evaluations, error: evalError } = await supabase
-    .from('store_evaluations')
-    .select(
-        `*,
+		.from('store_evaluations')
+		.select(
+			`*,
         core_organizations!store_evaluations_org_id_fkey (
             *
         ),
@@ -440,10 +439,10 @@ export const getEvaluations = query(async () => {
             *
         )
         `
-    )
-    .in('submit', ['submitted', 'reviewed'])
-    .order('visit_date', { ascending: false });
-	
+		)
+		.in('submit', ['submitted', 'reviewed'])
+		.order('visit_date', { ascending: false });
+
 	if (evalError) {
 		console.error('[getEvaluations] Error:', evalError);
 		throw error(500, 'Failed to fetch evaluations');
@@ -703,7 +702,7 @@ export const getTrainerManagementStats = query(async () => {
 	const { count: totalEvaluations } = await supabase
 		.from('store_evaluations')
 		.select('id', { count: 'exact', head: true })
-		.eq('submit','submitted');
+		.eq('submit', 'submitted');
 
 	// Pending invitations
 	const { count: pendingInvitations } = await supabase
@@ -717,4 +716,124 @@ export const getTrainerManagementStats = query(async () => {
 		totalEvaluations: totalEvaluations ?? 0,
 		pendingInvitations: pendingInvitations ?? 0
 	};
+});
+
+// ============================================================
+// EQUIPMENT VISITS — Dashboard & Detail
+// ============================================================
+
+/**
+ * Get equipment visit stats for the dashboard
+ */
+export const getEquipmentVisitStats = query(async () => {
+	const supabase = createAdminClient();
+
+	// Total completed visits
+	const { count: completedVisits } = await supabase
+		.from('trainer_service_visits')
+		.select('id', { count: 'exact', head: true })
+		.eq('status', 'completed');
+
+	// Total actions performed
+	const { count: totalActions } = await supabase
+		.from('trainer_visit_actions')
+		.select('id', { count: 'exact', head: true });
+
+	// Total cost — fetch all costs and sum
+	const { data: costRows } = await supabase.from('trainer_visit_actions').select('cost');
+
+	const totalCost = (costRows || []).reduce((sum, r) => sum + (r.cost || 0), 0);
+
+	// Unique stores visited (completed visits only)
+	const { data: visitedOrgs } = await supabase
+		.from('trainer_service_visits')
+		.select('org_id')
+		.eq('status', 'completed');
+
+	const uniqueStores = new Set((visitedOrgs || []).map((v) => v.org_id)).size;
+
+	return {
+		completedVisits: completedVisits ?? 0,
+		totalActions: totalActions ?? 0,
+		totalCost: Math.round(totalCost * 100) / 100,
+		uniqueStores
+	};
+});
+
+/**
+ * Get all equipment visits for the data table
+ */
+export const getAllEquipmentVisits = query(async () => {
+	const supabase = createAdminClient();
+
+	const { data: visits, error: visitError } = await supabase
+		.from('trainer_service_visits')
+		.select(
+			`*,
+			core_organizations!trainer_service_visits_org_id_fkey (
+				id, store_name, location
+			),
+			profiles!trainer_service_visits_trainer_id_fkey (
+				id, username, full_name, email, image_url
+			),
+			trainer_visit_actions (
+				id, action_type, cost
+			)`
+		)
+		.order('created_at', { ascending: false });
+
+	if (visitError) {
+		console.error('[getAllEquipmentVisits] Error:', visitError);
+		return { success: false, visits: [] };
+	}
+
+	// Enrich with computed fields
+	const enriched = (visits || []).map((v: any) => ({
+		...v,
+		action_count: v.trainer_visit_actions?.length ?? 0,
+		total_cost: (v.trainer_visit_actions || []).reduce(
+			(sum: number, a: any) => sum + (a.cost || 0),
+			0
+		)
+	}));
+
+	return { success: true, visits: enriched };
+});
+
+/**
+ * Get a single equipment visit with full details (for detail page)
+ */
+const getEquipmentVisitByIdSchema = z.object({
+	visitId: z.number().int().positive()
+});
+
+export const getEquipmentVisitById = query(getEquipmentVisitByIdSchema, async ({ visitId }) => {
+	const supabase = createAdminClient();
+
+	const { data: visit, error: visitError } = await supabase
+		.from('trainer_service_visits')
+		.select(
+			`*,
+				core_organizations!trainer_service_visits_org_id_fkey (
+					id, store_name, location, phone
+				),
+				profiles!trainer_service_visits_trainer_id_fkey (
+					id, username, full_name, email, image_url, phone
+				),
+				trainer_visit_actions (
+					*,
+					equipment (
+						id, name, model, image_url, status, next_service_date
+					)
+				)`
+		)
+		.eq('id', visitId)
+		.single();
+
+	if (visitError || !visit) {
+		console.error('[getEquipmentVisitById] Error:', visitError);
+		return { success: false, visit: null };
+	}
+
+	return { success: true, visit };
 });

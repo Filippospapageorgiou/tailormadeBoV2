@@ -17,6 +17,7 @@
 		StickyNote,
 		Hash
 	} from 'lucide-svelte';
+	import Spinner from '../ui/spinner/spinner.svelte';
 
 	let { equipments }: { equipments: Equipment[] } = $props();
 
@@ -114,6 +115,7 @@
 
 	<!-- Equipment Blocks -->
 	{#if store.equipments.length === 0}
+		<Spinner />
 	{:else}
 		<div class="flex flex-col gap-3">
 			{#each store.equipments as evaluation (evaluation.id)}

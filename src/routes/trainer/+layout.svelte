@@ -18,7 +18,8 @@
 		User,
 		ChevronRight,
 		GraduationCap,
-		MessageCircle
+		MessageCircle,
+		Cog
 	} from '@lucide/svelte';
 	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
 	import { setAssignmentStore } from '$lib/stores/assignedOrg.svelte';
@@ -26,6 +27,7 @@
 	import { subscribeToChatInbox } from '$lib/hooks/use-chat.svelte';
 	import { getUnreadCount } from '$lib/api/chat/data.remote';
 	import { getChatableOrgs } from '$lib/api/chat/data.remote';
+	import { getAllMaintenanceLogs } from '$lib/api/trainers/equipment/data.remote.js';
 
 	let assignmentStore = setAssignmentStore(null); // initialize empty
 	let { data, children } = $props();
@@ -37,8 +39,13 @@
 	const navLinks = [
 		{ href: '/trainer', label: 'Dashboard', icon: LayoutDashboard },
 		{ href: '/trainer/evaluations', label: 'Αξιολογήσεις', icon: ClipboardList },
-		{ href: '/trainer/chat', label: 'Συνομιλίες', icon: MessageCircle }
+		{ href: '/trainer/chat', label: 'Συνομιλίες', icon: MessageCircle },
+		{ href: '/trainer/equipment', label: 'Εξοπλισμός', icon: Cog }
 	];
+
+	let countQuery = getAllMaintenanceLogs();
+
+	let count = $derived(countQuery?.current?.count);
 
 	// ── Presence tracking — trainer joins virtual org channel (org_id = 0) ──
 	$effect(() => {
@@ -99,7 +106,8 @@
 			evaluations: 'Αξιολογήσεις',
 			new: 'Νέα Αξιολόγηση',
 			profile: 'Προφίλ',
-			chat: 'Συνομιλίες'
+			chat: 'Συνομιλίες',
+			equipment: 'Εξοπλισμός'
 		};
 
 		const segments = page.url.pathname.split('/').filter(Boolean);
@@ -184,6 +192,13 @@
 								class="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] leading-none font-medium text-primary-foreground"
 							>
 								{chatStore.unreadCount > 99 ? '99+' : chatStore.unreadCount}
+							</span>
+						{/if}
+						{#if link.href === '/trainer/equipment' && count! > 0}
+							<span
+								class="flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] leading-none font-medium text-primary-foreground"
+							>
+								{count! > 99 ? '99+' : count}
 							</span>
 						{/if}
 					</a>

@@ -11,13 +11,16 @@
 		CheckCircle2,
 		Clock,
 		FileText,
-		CalendarDays
+		CalendarDays,
+		Wrench,
+		Star,
+		DollarSign
 	} from 'lucide-svelte';
 	import * as Avatar from '$lib/components/ui/avatar/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge/index.js';
-	import { updateTrainerProfile } from './data.remote.js';
+	import { updateTrainerProfile, getTrainerProfileStats } from './data.remote.js';
 	import { getProfileContext } from '$lib/stores/profile.svelte.js';
 	import { showSuccessToast, showFailToast } from '$lib/stores/toast.svelte';
 	import * as Modal from '$lib/components/ui/modal';
@@ -32,6 +35,8 @@
 		getMyEvaluations
 	} from '$lib/api/trainers/trainer_evalution/data.remote.js';
 	import type { EvaluationStatus } from '$lib/models/trainers.types.js';
+	import EvaluationChart from '$lib/components/custom/trainersDashboard/evalution-chart.svelte';
+	import EquipmentVisitsChart from '$lib/components/custom/trainersDashboard/EquipmentVisitsChart.svelte';
 
 	let { data } = $props();
 
@@ -70,6 +75,12 @@
 	// Reactive data queries
 	let assignedOrgsQuery = getMyAssignedOrgs();
 	let evaluationsQuery = getMyEvaluations();
+	let profileStatsQuery = getTrainerProfileStats();
+
+	let profileStats = $derived(profileStatsQuery?.current);
+	let evaluationChartData = $derived((profileStats?.evaluationChartData ?? []) as { month: string; submitted: number; reviewed: number }[]);
+	let visitsChartData = $derived((profileStats?.visitsChartData ?? []) as { month: string; visits: number; actions: number }[]);
+	let summary = $derived(profileStats?.summary ?? { completedVisits: 0, totalActions: 0, totalCost: 0, avgRating: null as number | null });
 
 	type AssignedOrg = {
 		id: number;
@@ -404,13 +415,13 @@
 								</p>
 							</div>
 
-							<!-- Evaluation stat cards -->
+							<!-- Summary stat cards -->
 							<div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
 								{#each [
-									{ label: 'Σύνολο', value: stats.total, icon: ClipboardList, color: 'text-foreground', bg: 'bg-muted/50' },
-									{ label: 'Πρόχειρα', value: stats.draft, icon: FileText, color: 'text-muted-foreground', bg: 'bg-muted/30' },
-									{ label: 'Υποβληθέντα', value: stats.submitted, icon: Clock, color: 'text-primary', bg: 'bg-primary/10' },
-									{ label: 'Ελεγμένα', value: stats.reviewed, icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-500/10' }
+									{ label: 'Αξιολογήσεις', value: stats.total, icon: ClipboardList, color: 'text-foreground', bg: 'bg-muted/50' },
+									{ label: 'Ελεγμένες', value: stats.reviewed, icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-500/10' },
+									{ label: 'Επισκέψεις', value: summary.completedVisits, icon: Wrench, color: 'text-primary', bg: 'bg-primary/10' },
+									{ label: 'Ενέργειες', value: summary.totalActions, icon: Building2, color: 'text-muted-foreground', bg: 'bg-muted/30' }
 								] as stat}
 									<Card.Root
 										class="relative overflow-hidden rounded-2xl border border-border/40 bg-card/60 p-4 backdrop-blur-sm"
@@ -430,19 +441,84 @@
 								{/each}
 							</div>
 
-							<!-- Assigned stores card -->
-							<Card.Root
-								class="rounded-2xl border border-border/40 bg-card/60 p-5 backdrop-blur-sm"
-							>
-								<div class="flex items-center gap-4">
-									<div class="rounded-xl bg-primary/10 p-3">
-										<Building2 class="h-5 w-5 text-primary" />
+							<!-- Extra stats row: avg rating + total cost + stores -->
+							<div class="grid grid-cols-3 gap-3">
+								<Card.Root
+									class="rounded-2xl border border-border/40 bg-card/60 p-4 backdrop-blur-sm"
+								>
+									<div class="flex items-center gap-3">
+										<div class="rounded-lg bg-amber-500/10 p-2">
+											<Star class="h-4 w-4 text-amber-500" />
+										</div>
+										<div>
+											<p class="text-[10px] text-muted-foreground uppercase">Μ.Ο. Βαθμολογίας</p>
+											<p class="text-lg font-bold">
+												{summary.avgRating !== null ? summary.avgRating : '—'}
+											</p>
+										</div>
 									</div>
-									<div>
-										<p class="text-sm text-muted-foreground">Ανατεθειμένα Καταστήματα</p>
-										<p class="text-2xl font-bold">
-											{orgsLoading ? '—' : assignedOrgs.length}
-										</p>
+								</Card.Root>
+								<Card.Root
+									class="rounded-2xl border border-border/40 bg-card/60 p-4 backdrop-blur-sm"
+								>
+									<div class="flex items-center gap-3">
+										<div class="rounded-lg bg-emerald-500/10 p-2">
+											<DollarSign class="h-4 w-4 text-emerald-600" />
+										</div>
+										<div>
+											<p class="text-[10px] text-muted-foreground uppercase">Κόστος Service</p>
+											<p class="text-lg font-bold">{summary.totalCost}€</p>
+										</div>
+									</div>
+								</Card.Root>
+								<Card.Root
+									class="rounded-2xl border border-border/40 bg-card/60 p-4 backdrop-blur-sm"
+								>
+									<div class="flex items-center gap-3">
+										<div class="rounded-lg bg-primary/10 p-2">
+											<Building2 class="h-4 w-4 text-primary" />
+										</div>
+										<div>
+											<p class="text-[10px] text-muted-foreground uppercase">Καταστήματα</p>
+											<p class="text-lg font-bold">
+												{orgsLoading ? '—' : assignedOrgs.length}
+											</p>
+										</div>
+									</div>
+								</Card.Root>
+							</div>
+
+							<!-- Charts -->
+							<div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+								<EvaluationChart data={evaluationChartData} />
+								<EquipmentVisitsChart data={visitsChartData} />
+							</div>
+
+							<!-- Evaluation breakdown -->
+							<Card.Root class="rounded-2xl border border-border/40 bg-card/60 backdrop-blur-sm">
+								<div class="p-5">
+									<h3 class="mb-3 text-sm font-semibold">Κατανομή Αξιολογήσεων</h3>
+									<div class="grid grid-cols-3 gap-3">
+										{#each [
+											{ label: 'Πρόχειρα', value: stats.draft, color: 'bg-muted' },
+											{ label: 'Υποβληθέντα', value: stats.submitted, color: 'bg-primary' },
+											{ label: 'Ελεγμένα', value: stats.reviewed, color: 'bg-emerald-500' }
+										] as item}
+											<div class="space-y-1.5">
+												<div class="flex items-center justify-between text-xs">
+													<span class="text-muted-foreground">{item.label}</span>
+													<span class="font-semibold">{evalsLoading ? '—' : item.value}</span>
+												</div>
+												<div class="h-1.5 w-full rounded-full bg-muted/40">
+													<div
+														class="h-full rounded-full transition-all duration-500 {item.color}"
+														style="width: {stats.total > 0
+															? (item.value / stats.total) * 100
+															: 0}%"
+													></div>
+												</div>
+											</div>
+										{/each}
 									</div>
 								</div>
 							</Card.Root>

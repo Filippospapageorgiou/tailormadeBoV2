@@ -102,10 +102,11 @@ export const getAllEquipments = query(async () => {
 			.from('equipment')
 			.select(
 				`*,
-        		maintenance_logs(count)
+        		maintenance_logs!inner(count)
     			`
 			)
 			.eq('org_id', org_id)
+			.eq('maintenance_logs.status', 'open')
 			.overrideTypes<EquipmentWithLogCount[]>();
 
 		if (equipmentsError) {
@@ -164,6 +165,7 @@ export const getMaintenanceLogs = query(getMaintenanceLogsSchema, async (equipme
 			`
 			)
 			.eq('equipment_id', equipmentId.equipmentId)
+			.eq('status', 'open')
 			.order('created_at', { ascending: false })
 			.overrideTypes<MaintenanceLogWithUser[]>();
 

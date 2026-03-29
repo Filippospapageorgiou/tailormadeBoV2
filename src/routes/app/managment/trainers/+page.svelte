@@ -15,14 +15,19 @@
 	import { Label } from '$lib/components/ui/label/index.js';
 	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
 	import { Plus, RefreshCcw, CheckCircle, XCircle, Mail } from 'lucide-svelte';
-	import { Braces, ChartBarIncreasing, MoveRight } from '@lucide/svelte';
+	import { Braces, ChartBarIncreasing, Cog, Slack } from '@lucide/svelte';
 	import EvalutionAssign from '$lib/components/custom/trainersDashboard/evalution-assign.svelte';
 	import StatsSection from '$lib/components/custom/trainersDashboard/StatsSection.svelte';
+	import EquipmentStatsSection from '$lib/components/custom/trainersDashboard/EquipmentStatsSection.svelte';
 	import AssignmentSheet from '$lib/components/custom/trainersDashboard/assignment-sheet.svelte';
 	import DataTable from './data-table/data-table.svelte';
+	import EquipmentVisitsDataTable from './equipment-visits-data-table/data-table.svelte';
+	import { getAllEquipmentVisits } from '$lib/api/trainers/trainer_managment/data.remote';
+	import * as Tabs from '$lib/components/ui/tabs/index.js';
 
 	let auth = authenticatedAccess();
 	let evaluationsQuery = getEvaluations();
+	let equipmentVisitsQuery = getAllEquipmentVisits();
 
 	// ─── Invite Trainer Modal ───
 	let openTrainerModal = $state(false);
@@ -36,7 +41,13 @@
 
 	// ─── Data for dropdowns ───
 	let trainersData = $state<
-		Array<{ id: string; full_name: string | null; username: string; imageUrl: string; email: string; }>
+		Array<{
+			id: string;
+			full_name: string | null;
+			username: string;
+			imageUrl: string;
+			email: string;
+		}>
 	>([]);
 	let orgsData = $state<Array<{ id: number; store_name: string }>>([]);
 
@@ -83,10 +94,10 @@
 		visitDate: string;
 	}) {
 		return await bulkAssignTrainerToOrgs({
-        	trainerId: data.trainerId,
-        	orgIds: data.orgIds,
-        	visitDate: data.visitDate
-   	 	});
+			trainerId: data.trainerId,
+			orgIds: data.orgIds,
+			visitDate: data.visitDate
+		});
 	}
 
 	// ─── Invite modal handlers ───
@@ -125,11 +136,17 @@
 	}
 
 	let isRefreshing = $state(false);
+	let isEquipmentRefreshing = $state(false);
 	$effect(() => {
-		if(isRefreshing){
+		if (isRefreshing) {
 			evaluationsQuery.refresh();
 		}
-	})
+	});
+	$effect(() => {
+		if (isEquipmentRefreshing) {
+			equipmentVisitsQuery.refresh();
+		}
+	});
 </script>
 
 {#await auth}
@@ -145,56 +162,101 @@
 						Διαχειριστείτε τους trainers σας, αναθέστε τους νέες εργασίες και δείτε live ενημερώσεις
 					</p>
 				</div>
-				<div class="flex items-center gap-2">
-					<Button
-						variant="secondary"
-						size="sm"
-						class="h-9 cursor-pointer"
-						onclick={() => {
-							isRefreshing = true;
-						}}
-					>
-						<RefreshCcw
-							class="h-4 w-4 {isRefreshing ? 'animate-spin-clockwise repeat-infinite' : ''}"
-						/>
-					</Button>
-					<Button
-						variant="secondary"
-						size="sm"
-						class="h-9 w-fit cursor-pointer gap-2 px-4"
-						onclick={() => (openAssignmentsSheet = true)}
-					>
-						<ChartBarIncreasing class="h-4 w-4" />
-						<span class="hidden sm:inline">Προβολή Αναθέσεων</span>
-					</Button>
-					<Button
-						variant="default"
-						size="sm"
-						class="h-9 w-fit cursor-pointer gap-2 px-4"
-						onclick={openEvalAssignModal}
-					>
-						<Braces class="h-4 w-4" />
-						<span class="hidden sm:inline">Ανάθεση Αξιολόγησης</span>
-					</Button>
-					<Button
-						variant="default"
-						size="sm"
-						class="h-9 w-fit cursor-pointer gap-2 px-4"
-						onclick={openAddDialog}
-					>
-						<Plus class="h-4 w-4" />
-						<span class="hidden sm:inline">Νέος Trainer</span>
-					</Button>
-				</div>
 			</div>
+			<!-- Tabs Section -->
+			<Tabs.Root value="stats" class="w-full overflow-visible">
+				<Tabs.List class="flex h-auto w-auto items-end justify-end bg-transparent">
+					<Tabs.Trigger
+						value="stats"
+						class="cursor-pointer justify-start rounded-md border-0 bg-transparent px-4 py-2.5 text-sm font-medium text-muted-foreground shadow-none transition-colors hover:text-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground"
+					>
+						<Slack class="h-4 w-4" />
+						Trainers
+					</Tabs.Trigger>
+					<Tabs.Trigger
+						value="orgs"
+						class="cursor-pointer justify-start rounded-md border-0 bg-transparent px-4 py-2.5 text-sm font-medium text-muted-foreground shadow-none transition-colors hover:text-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground"
+					>
+						<Cog class="h-4 w-4" />
+						Εξοπλισμός
+					</Tabs.Trigger>
+				</Tabs.List>
 
-			<StatsSection trainers={getTrainers().current?.trainers} bind:isRefreshing />
-			<DataTable
-				data={evaluationsQuery?.current?.evaluations ?? []}
-				onview={(id) => console.log('View', id)}
-				onedit={(id) => console.log('Edit', id)}
-				ondelete={(id) => console.log('Delete', id)}
-			/>
+				<Tabs.Content value="stats" class="mt-6 animate-fade-in-left space-y-6 overflow-visible">
+					<div class="flex items-center justify-end gap-2">
+						<Button
+							variant="secondary"
+							size="sm"
+							class="h-9 cursor-pointer"
+							onclick={() => {
+								isRefreshing = true;
+							}}
+						>
+							<RefreshCcw
+								class="h-4 w-4 {isRefreshing ? 'animate-spin-clockwise repeat-infinite' : ''}"
+							/>
+						</Button>
+						<Button
+							variant="secondary"
+							size="sm"
+							class="h-9 w-fit cursor-pointer gap-2 px-4"
+							onclick={() => (openAssignmentsSheet = true)}
+						>
+							<ChartBarIncreasing class="h-4 w-4" />
+							<span class="hidden sm:inline">Προβολή Αναθέσεων</span>
+						</Button>
+						<Button
+							variant="default"
+							size="sm"
+							class="h-9 w-fit cursor-pointer gap-2 px-4"
+							onclick={openEvalAssignModal}
+						>
+							<Braces class="h-4 w-4" />
+							<span class="hidden sm:inline">Ανάθεση Αξιολόγησης</span>
+						</Button>
+						<Button
+							variant="default"
+							size="sm"
+							class="h-9 w-fit cursor-pointer gap-2 px-4"
+							onclick={openAddDialog}
+						>
+							<Plus class="h-4 w-4" />
+							<span class="hidden sm:inline">Νέος Trainer</span>
+						</Button>
+					</div>
+					<StatsSection trainers={getTrainers().current?.trainers} bind:isRefreshing />
+					<DataTable
+						data={evaluationsQuery?.current?.evaluations ?? []}
+						onview={(id) => console.log('View', id)}
+						onedit={(id) => console.log('Edit', id)}
+						ondelete={(id) => console.log('Delete', id)}
+					/>
+				</Tabs.Content>
+
+				<Tabs.Content value="orgs" class="mt-6 animate-fade-in-left space-y-6">
+					<div class="flex items-center justify-end gap-2">
+						<Button
+							variant="secondary"
+							size="sm"
+							class="h-9 cursor-pointer"
+							onclick={() => {
+								isEquipmentRefreshing = true;
+							}}
+						>
+							<RefreshCcw
+								class="h-4 w-4 {isEquipmentRefreshing
+									? 'animate-spin-clockwise repeat-infinite'
+									: ''}"
+							/>
+						</Button>
+					</div>
+					<EquipmentStatsSection bind:isRefreshing={isEquipmentRefreshing} />
+					<EquipmentVisitsDataTable
+						data={equipmentVisitsQuery?.current?.visits ?? []}
+						basePath="/app/managment/trainers/visit"
+					/>
+				</Tabs.Content>
+			</Tabs.Root>
 		</main>
 	</div>
 {/await}

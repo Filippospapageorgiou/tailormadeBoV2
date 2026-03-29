@@ -21,7 +21,7 @@
 	let { open = $bindable(), basePath = '/app/chat' }: Props = $props();
 
 	const profile = getProfileContext();
-	const isTrainer = $derived(profile.role_id === 3);
+	const isTrainer = $derived(profile.role_id === 3 || profile.role_id === 1); //super_admin or trainer
 
 	// Queries
 	const orgsQuery = getChatableOrgs();
@@ -202,7 +202,9 @@
 								</Avatar.Root>
 								<div class="min-w-0 flex-1">
 									<p class="truncate text-sm font-medium">{user.full_name ?? 'Άγνωστος'}</p>
-									<p class="text-xs text-muted-foreground">{getRoleLabel(user.role_id, user.is_support)}</p>
+									<p class="text-xs text-muted-foreground">
+										{getRoleLabel(user.role_id, user.is_support)}
+									</p>
 								</div>
 								<ChevronRight class="size-4 shrink-0 text-muted-foreground" />
 							</button>

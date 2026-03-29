@@ -59,3 +59,68 @@ export interface MaintenanceLogWithUser extends MaintenanceLog {
 export interface EquipmentWithLogs extends Equipment {
 	maintenance_logs: MaintenanceLogWithUser[];
 }
+
+// --- Trainer Service Visits ---
+
+export type VisitStatus = 'in_progress' | 'completed';
+
+export type VisitActionType =
+	| 'inspected'
+	| 'cleaned_maintained'
+	| 'repaired_on_site'
+	| 'took_for_service'
+	| 'returned_from_service'
+	| 'replaced_part'
+	| 'marked_as_broken';
+
+export const VISIT_ACTION_LABELS: Record<VisitActionType, string> = {
+	inspected: 'Επιθεώρηση',
+	cleaned_maintained: 'Καθαρισμός / Συντήρηση',
+	repaired_on_site: 'Επισκευή επί τόπου',
+	took_for_service: 'Παραλαβή για service',
+	returned_from_service: 'Επιστροφή από service',
+	replaced_part: 'Αντικατάσταση εξαρτήματος',
+	marked_as_broken: 'Σήμανση ως βλάβη'
+};
+
+export interface TrainerServiceVisit {
+	id: number;
+	trainer_id: string; // UUID
+	org_id: number;
+	visit_date: string; // YYYY-MM-DD
+	status: VisitStatus;
+	notes: string | null;
+	created_at: string;
+	completed_at: string | null;
+}
+
+export interface TrainerVisitAction {
+	id: number;
+	visit_id: number;
+	equipment_id: number;
+	action_type: VisitActionType;
+	description: string;
+	images: string[] | null;
+	cost: number;
+	status_change: EquipmentStatus | null;
+	next_service_date: string | null;
+	created_at: string;
+}
+
+// --- Joined Types for Trainer Views ---
+
+export interface TrainerServiceVisitWithActions extends TrainerServiceVisit {
+	trainer_visit_actions: TrainerVisitActionWithEquipment[];
+}
+
+export interface TrainerVisitActionWithEquipment extends TrainerVisitAction {
+	equipment: Pick<Equipment, 'id' | 'name' | 'model' | 'image_url'>;
+}
+
+export interface TrainerServiceVisitWithOrg extends TrainerServiceVisit {
+	core_organizations: {
+		id: number;
+		store_name: string;
+		location: string | null;
+	};
+}

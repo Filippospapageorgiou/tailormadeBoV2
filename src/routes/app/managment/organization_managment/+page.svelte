@@ -27,8 +27,6 @@
 	import PhoneInput from '$lib/components/ui/phone-input/phone-input.svelte';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import Stats from '$lib/components/stats_organization/Stats.svelte';
-	import { page } from '$app/state';
-	import AllOrgsPresenceCard from '$lib/components/custom/presence/AllOrgsPresenceCard.svelte';
 
 	let auth = authenticatedAccess();
 	let query = getAllOrganizations();

@@ -1,5 +1,5 @@
-import { form } from '$app/server';
-import { createServerClient } from '$lib/supabase/server';
+import { form, query } from '$app/server';
+import { createServerClient, createAdminClient } from '$lib/supabase/server';
 import { requireAuthenticatedUser } from '$lib/supabase/shared';
 import { z } from 'zod/v4';
 
@@ -104,3 +104,106 @@ export const updateTrainerProfile = form(
 		return { success: true, message: 'Το προφιλ σου ενημερωθήκε επιτυχώς' };
 	}
 );
+
+// Greek month abbreviations
+const MONTH_LABELS = [
+	'Ιαν', 'Φεβ', 'Μαρ', 'Απρ', 'Μάι', 'Ιούν',
+	'Ιούλ', 'Αύγ', 'Σεπ', 'Οκτ', 'Νοε', 'Δεκ'
+];
+
+/**
+ * Get trainer profile stats: monthly evaluations, monthly visits, summary numbers
+ */
+export const getTrainerProfileStats = query(async () => {
+	const user = await requireAuthenticatedUser();
+	const supabase = createAdminClient();
+	const uid = user.id;
+
+	// Evaluations
+	const { data: evaluations } = await supabase
+		.from('store_evaluations')
+		.select('id, visit_date, submit, overall_rating, created_at')
+		.eq('trainer_id', uid)
+		.order('visit_date', { ascending: false });
+
+	// Visits with action counts
+	const { data: visits } = await supabase
+		.from('trainer_service_visits')
+		.select('id, visit_date, status, completed_at, trainer_visit_actions(id, cost)')
+		.eq('trainer_id', uid)
+		.order('visit_date', { ascending: false });
+
+	// Build monthly evaluation chart data
+	const evalMonthMap = new Map<string, { submitted: number; reviewed: number }>();
+	for (const e of evaluations ?? []) {
+		const date = new Date(e.visit_date);
+		const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+		if (!evalMonthMap.has(key)) evalMonthMap.set(key, { submitted: 0, reviewed: 0 });
+		const entry = evalMonthMap.get(key)!;
+		if (e.submit === 'submitted' || e.submit === 'reviewed') entry.submitted++;
+		if (e.submit === 'reviewed') entry.reviewed++;
+	}
+
+	const evaluationChartData = Array.from(evalMonthMap.entries())
+		.sort(([a], [b]) => a.localeCompare(b))
+		.slice(-8)
+		.map(([key, counts]) => {
+			const [year, month] = key.split('-');
+			return {
+				month: `${MONTH_LABELS[parseInt(month) - 1]} '${year.slice(-2)}`,
+				...counts
+			};
+		});
+
+	// Build monthly visits chart data
+	const visitMonthMap = new Map<string, { visits: number; actions: number }>();
+	for (const v of visits ?? []) {
+		if (v.status !== 'completed') continue;
+		const date = new Date(v.visit_date);
+		const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+		if (!visitMonthMap.has(key)) visitMonthMap.set(key, { visits: 0, actions: 0 });
+		const entry = visitMonthMap.get(key)!;
+		entry.visits++;
+		entry.actions += (v.trainer_visit_actions as any[])?.length ?? 0;
+	}
+
+	const visitsChartData = Array.from(visitMonthMap.entries())
+		.sort(([a], [b]) => a.localeCompare(b))
+		.slice(-8)
+		.map(([key, counts]) => {
+			const [year, month] = key.split('-');
+			return {
+				month: `${MONTH_LABELS[parseInt(month) - 1]} '${year.slice(-2)}`,
+				...counts
+			};
+		});
+
+	// Summary numbers
+	const completedVisits = (visits ?? []).filter((v) => v.status === 'completed').length;
+	const totalActions = (visits ?? []).reduce(
+		(sum, v) => sum + ((v.trainer_visit_actions as any[])?.length ?? 0), 0
+	);
+	const totalCost = (visits ?? []).reduce(
+		(sum, v) => sum + ((v.trainer_visit_actions as any[]) ?? []).reduce(
+			(s: number, a: any) => s + (a.cost || 0), 0
+		), 0
+	);
+
+	const ratings = (evaluations ?? [])
+		.map((e) => e.overall_rating)
+		.filter((r): r is number => r !== null && r > 0);
+	const avgRating = ratings.length > 0
+		? Math.round((ratings.reduce((s, r) => s + r, 0) / ratings.length) * 10) / 10
+		: null;
+
+	return {
+		evaluationChartData,
+		visitsChartData,
+		summary: {
+			completedVisits,
+			totalActions,
+			totalCost: Math.round(totalCost * 100) / 100,
+			avgRating
+		}
+	};
+});
