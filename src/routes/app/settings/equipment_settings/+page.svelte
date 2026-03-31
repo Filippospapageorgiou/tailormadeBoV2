@@ -264,7 +264,7 @@
 {/if}
 
 <Modal.Root bind:open={addEquipmentModal}>
-	<Modal.Content class="flex max-h-[85dvh] flex-col sm:max-h-[95dvh]">
+	<Modal.Content class="flex max-h-dvh flex-col">
 		<Modal.Header>
 			<Modal.Title>Πρόσθεσε νέο εξοπλισμό</Modal.Title>
 			<Modal.Description>
@@ -272,7 +272,7 @@
 			</Modal.Description>
 		</Modal.Header>
 		<form
-			class="flex min-h-0 flex-1 flex-col px-2 py-2"
+			class="flex flex-1 flex-col px-2 py-2"
 			enctype="multipart/form-data"
 			{...addEquipment.enhance(async ({ form, data, submit }) => {
 				isUpdating = true;
@@ -288,7 +288,7 @@
 				addEquipmentModal = false;
 			})}
 		>
-			<ScrollArea class=" h-116 flex-1">
+			<ScrollArea class="h-96 flex-1">
 				<div class="w-full space-y-2">
 					<Label class="gap-1">
 						Όνομα εξοπλισμού <span class="text-destructive">*</span>
@@ -374,7 +374,7 @@
 					<input type="hidden" name="next_service_date" value={nextServiceDate} />
 				</div>
 			</ScrollArea>
-			<Modal.Footer class="flex-shrink-0 border-t pt-4 pb-2">
+			<Modal.Footer class="flex-shrink-0 border-t border-border/50 pt-4 pb-2">
 				<Button type="submit" disabled={isUpdating}>
 					{#if isUpdating}
 						<Spinner /> Προσθήκη εξοπλισμού

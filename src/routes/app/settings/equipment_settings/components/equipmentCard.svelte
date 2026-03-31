@@ -13,7 +13,8 @@
 		Calendar,
 		AlertTriangle,
 		ImageIcon,
-		ChevronDown
+		ChevronDown,
+		Cloud
 	} from 'lucide-svelte';
 	import { differenceInDays, parseISO } from 'date-fns';
 	import type { EquipmentStatus } from '$lib/models/equipment.types';
@@ -34,11 +35,10 @@
 	import * as Select from '$lib/components/ui/select';
 	import Input from '$lib/components/ui/input/input.svelte';
 	import Label from '$lib/components/ui/label/label.svelte';
+	import * as Empty from '$lib/components/ui/empty/index.js';
 	import { ScrollArea } from '$lib/components/ui/scroll-area/index.js';
 	import InputCalendar from '$lib/components/custom/inputCalendar.svelte';
 	import { Skeleton } from '$lib/components/ui/skeleton';
-	import { FileDropZone, MEGABYTE, displaySize } from '$lib/components/ui/file-drop-zone';
-	import type { FileDropZoneProps } from '$lib/components/ui/file-drop-zone';
 
 	let previewImage: string | null = $state(null);
 	let {
@@ -119,9 +119,8 @@
 	let editName = $state('');
 	let editModel = $state('');
 	let editSerialNumber = $state('');
-	let editFile: File | null = $state(null);
+	let editFiles: FileList | undefined = $state();
 	let editPreviewUrl: string | null = $state(null);
-	let editFileInputRef: HTMLInputElement | null = $state(null);
 	let editManualUrl = $state('');
 	let editStatus = $state('');
 	let editLastServiceDate = $state('');
@@ -136,34 +135,20 @@
 		editLastServiceDate = equipment.last_service_date || '';
 		editNextServiceDate = equipment.next_service_date || '';
 		editPreviewUrl = equipment.image_url || null;
-		editFile = null;
 		editModalOpen = true;
 	}
 
-	const onEditUpload: FileDropZoneProps['onUpload'] = async (newFiles) => {
-		const file = newFiles[0];
-		if (!file) return;
-		if (editPreviewUrl && editFile) URL.revokeObjectURL(editPreviewUrl);
-		editFile = file;
-		editPreviewUrl = URL.createObjectURL(file);
-		if (editFileInputRef) {
-			const dt = new DataTransfer();
-			dt.items.add(file);
-			editFileInputRef.files = dt.files;
-		}
-	};
-
-	const onEditFileRejected: FileDropZoneProps['onFileRejected'] = ({ reason, file }) => {
-		toast.error(`${file.name} απέτυχε!`, { description: reason });
-	};
-
-	function removeEditFile() {
-		if (editPreviewUrl && editFile) URL.revokeObjectURL(editPreviewUrl);
-		editFile = null;
-		editPreviewUrl = null;
-		if (editFileInputRef) {
-			const dt = new DataTransfer();
-			editFileInputRef.files = dt.files;
+	function handleEditFileChange(e: Event) {
+		const target = e.target as HTMLInputElement;
+		const file = target.files?.[0];
+		if (file) {
+			const reader = new FileReader();
+			reader.onload = (e) => {
+				editPreviewUrl = e.target?.result as string;
+			};
+			reader.readAsDataURL(file);
+		} else {
+			editPreviewUrl = equipment.image_url || null;
 		}
 	}
 
@@ -659,7 +644,6 @@
 		</button>
 	</div>
 {/if}
-
 <Modal.Root bind:open={openDeleteDialog}>
 	<Modal.Content>
 		<Modal.Header>
@@ -755,7 +739,7 @@
 
 <!-- Edit Equipment Modal -->
 <Modal.Root bind:open={editModalOpen}>
-	<Modal.Content class="flex max-h-[85dvh] flex-col sm:max-h-[95dvh]">
+	<Modal.Content class="flex flex-col">
 		<Modal.Header>
 			<Modal.Title>Επεξεργασία εξοπλισμού</Modal.Title>
 			<Modal.Description>
@@ -763,7 +747,7 @@
 			</Modal.Description>
 		</Modal.Header>
 		<form
-			class="flex min-h-0 flex-1 flex-col px-2 py-2"
+			class="flex flex-col gap-2 space-y-2 px-2 py-2"
 			enctype="multipart/form-data"
 			{...editEquipment.enhance(async ({ form, submit }) => {
 				isUpdating = true;
@@ -778,7 +762,7 @@
 			})}
 		>
 			<input type="hidden" name="id" value={equipment.id} />
-			<ScrollArea class="min-h-0 flex-1">
+			<ScrollArea class="h-96 w-full">
 				<div class="w-full space-y-2">
 					<Label class="gap-1">
 						Όνομα εξοπλισμού <span class="text-destructive">*</span>
@@ -811,49 +795,56 @@
 					/>
 
 					<input
-						bind:this={editFileInputRef}
+						id="edit-image-upload"
 						name="image_url"
 						type="file"
 						accept="image/*"
 						class="hidden"
+						bind:files={editFiles}
+						onchange={handleEditFileChange}
 					/>
 
 					{#if editPreviewUrl}
-						<div class="relative w-full rounded-lg border p-2">
-							<img
-								src={editPreviewUrl}
-								alt="Preview"
-								class="mx-auto max-h-48 rounded-md object-cover"
-							/>
-							<div class="mt-2 flex items-center justify-between px-1">
-								{#if editFile}
-									<span class="truncate text-xs text-muted-foreground">
-										{editFile.name} ({displaySize(editFile.size)})
-									</span>
-								{:else}
-									<span class="text-xs text-muted-foreground">Τρέχουσα εικόνα</span>
-								{/if}
-								<Button
-									type="button"
-									variant="ghost"
-									size="icon"
-									class="h-6 w-6 text-muted-foreground hover:text-destructive"
-									onclick={removeEditFile}
-								>
-									<X class="h-4 w-4" />
-								</Button>
-							</div>
-						</div>
+						<button
+							type="button"
+							onclick={() => document.getElementById('edit-image-upload')?.click()}
+							class="w-full"
+						>
+							<Empty.Root class="cursor-pointer transition-colors hover:bg-muted/50">
+								<Empty.Header>
+									<Empty.Description>
+										<img
+											src={editPreviewUrl}
+											alt="Preview"
+											class="mx-auto max-h-48 rounded-md object-cover"
+										/>
+									</Empty.Description>
+								</Empty.Header>
+								<Empty.Content>
+									<p class="text-xs text-muted-foreground">Κλικ για αλλαγή εικόνας</p>
+								</Empty.Content>
+							</Empty.Root>
+						</button>
 					{:else}
-						<FileDropZone
-							onUpload={onEditUpload}
-							onFileRejected={onEditFileRejected}
-							maxFileSize={10 * MEGABYTE}
-							accept="image/*"
-							maxFiles={1}
-							fileCount={editFile ? 1 : 0}
-							class="h-36"
-						/>
+						<button
+							type="button"
+							onclick={() => document.getElementById('edit-image-upload')?.click()}
+							class="w-full"
+						>
+							<Empty.Root
+								class="cursor-pointer border border-dashed transition-colors hover:bg-muted/50"
+							>
+								<Empty.Header>
+									<Empty.Media variant="icon">
+										<Cloud />
+									</Empty.Media>
+									<Empty.Title>Ανέβασε εικόνα</Empty.Title>
+									<Empty.Description>
+										Κάνε κλικ για να ανεβάσεις εικόνα του εξοπλισμού
+									</Empty.Description>
+								</Empty.Header>
+							</Empty.Root>
+						</button>
 					{/if}
 
 					<Label class="gap-1">Manual url</Label>
@@ -890,7 +881,7 @@
 					<input type="hidden" name="next_service_date" value={editNextServiceDate} />
 				</div>
 			</ScrollArea>
-			<Modal.Footer class="flex-shrink-0 border-t pt-4 pb-2">
+			<Modal.Footer class="py-2">
 				<Button type="submit" disabled={isUpdating}>
 					{#if isUpdating}
 						<Spinner /> Ενημέρωση...
