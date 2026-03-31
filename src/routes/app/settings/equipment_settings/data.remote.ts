@@ -189,7 +189,7 @@ const EquipmentSchema = z.object({
 	image_url: z
 		.instanceof(File, { error: 'Please upload a file.' })
 		.refine((file) => file.size > 0, 'File cannot be empty.')
-		.refine((file) => file.size < 5 * 1024 * 1024, 'File size must be less than 5MB.')
+		.refine((file) => file.size < 10 * 1024 * 1024, 'File size must be less than 10MB.')
 		.refine(
 			(file) =>
 				['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'].includes(file.type),

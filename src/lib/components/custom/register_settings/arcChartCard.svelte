@@ -43,13 +43,19 @@
 	} satisfies Chart.ChartConfig;
 </script>
 
-<Card.Root class="relative flex h-full flex-col glass-card rounded-2xl p-6 overflow-hidden backdrop-blur-xl">
+<Card.Root
+	class="glass-card relative flex h-full flex-col overflow-hidden rounded-2xl backdrop-blur-xl"
+>
 	<!-- Glassy gradient background -->
-	<div class="absolute inset-0 bg-gradient-to-br from-primary/20 via-card/80 to-secondary/30 -z-10"></div>
-	
+	<div
+		class="absolute inset-0 -z-10 bg-gradient-to-br from-primary/20 via-card/80 to-secondary/30"
+	></div>
+
 	<!-- Ambient glow effects -->
-	<div class="absolute -top-20 -left-16 w-40 h-40 bg-chart-1/25 rounded-full blur-3xl -z-10"></div>
-	<div class="absolute -bottom-24 -right-20 w-44 h-44 bg-primary/20 rounded-full blur-3xl -z-10"></div>
+	<div class="absolute -top-20 -left-16 -z-10 h-40 w-40 rounded-full bg-chart-1/25 blur-3xl"></div>
+	<div
+		class="absolute -right-20 -bottom-24 -z-10 h-44 w-44 rounded-full bg-primary/20 blur-3xl"
+	></div>
 
 	<Card.Header class="items-center">
 		<Card.Title>Συνολικά Έξοδα</Card.Title>
@@ -61,8 +67,8 @@
 		</Card.Description>
 	</Card.Header>
 
-	<Card.Content class="flex-1 flex items-center justify-center">
-		<Chart.Container config={chartConfig} class="mx-auto aspect-square max-h-[250px] w-full">
+	<Card.Content class="flex flex-1 items-center justify-center">
+		<Chart.Container config={chartConfig} class="max-h-[180px] w-full">
 			<ArcChart
 				label="label"
 				value="value"
@@ -70,7 +76,7 @@
 				innerRadius={76}
 				trackOuterRadius={84}
 				trackInnerRadius={78}
-				padding={40}
+				padding={0}
 				range={[90, -270]}
 				maxValue={EXPENSE_LIMIT}
 				series={chartData.map((d) => ({

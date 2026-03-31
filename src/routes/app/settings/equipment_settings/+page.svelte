@@ -7,18 +7,18 @@
 	import Input from '$lib/components/ui/input/input.svelte';
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
 	import Button from '$lib/components/ui/button/button.svelte';
-	import { Plus, RefreshCw } from 'lucide-svelte';
+	import { Plus, RefreshCw, X } from 'lucide-svelte';
 	import * as Modal from '$lib/components/ui/modal';
 	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
 	import EquipmentCard from './components/equipmentCard.svelte';
-	import { Cloud } from 'lucide-svelte';
 	import Label from '$lib/components/ui/label/label.svelte';
-	import * as Empty from '$lib/components/ui/empty/index.js';
 	import { ScrollArea } from '$lib/components/ui/scroll-area/index.js';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import InputCalendar from '$lib/components/custom/inputCalendar.svelte';
 	import EmptyComp from '$lib/components/custom/EmptyComp.svelte';
 	import { Cog } from '@lucide/svelte';
+	import { FileDropZone, MEGABYTE, displaySize } from '$lib/components/ui/file-drop-zone';
+	import type { FileDropZoneProps } from '$lib/components/ui/file-drop-zone';
 
 	let auth = authenticatedAccess();
 	let query = getAllEquipments();
@@ -81,22 +81,31 @@
 	let name = $state('');
 	let model = $state('');
 	let serialNumber = $state('');
-	let files: FileList | undefined = $state();
-	let previewUrl: string | null = $state(null);
+	let addFile: File | null = $state(null);
+	let addPreviewUrl: string | null = $state(null);
+	let addFileInputRef: HTMLInputElement | null = $state(null);
 
-	function handleFileChange(e: Event) {
-		const target = e.target as HTMLInputElement;
-		const file = target.files?.[0];
-
-		if (file) {
-			const reader = new FileReader();
-			reader.onload = (e) => {
-				previewUrl = e.target?.result as string;
-			};
-			reader.readAsDataURL(file);
-		} else {
-			previewUrl = null;
+	const onAddUpload: FileDropZoneProps['onUpload'] = async (newFiles) => {
+		const file = newFiles[0];
+		if (!file) return;
+		addFile = file;
+		addPreviewUrl = URL.createObjectURL(file);
+		if (addFileInputRef) {
+			const dt = new DataTransfer();
+			dt.items.add(file);
+			addFileInputRef.files = dt.files;
 		}
+	};
+
+	const onAddFileRejected: FileDropZoneProps['onFileRejected'] = ({ reason, file }) => {
+		toast.error(`${file.name} απέτυχε!`, { description: reason });
+	};
+
+	function removeAddFile() {
+		if (addPreviewUrl) URL.revokeObjectURL(addPreviewUrl);
+		addFile = null;
+		addPreviewUrl = null;
+		if (addFileInputRef) addFileInputRef.value = '';
 	}
 
 	let valueStatus = $state('');
@@ -255,7 +264,7 @@
 {/if}
 
 <Modal.Root bind:open={addEquipmentModal}>
-	<Modal.Content class="flex h-[85dvh] max-h-[95dvh] flex-col sm:h-auto">
+	<Modal.Content class="flex max-h-[85dvh] flex-col sm:max-h-[95dvh]">
 		<Modal.Header>
 			<Modal.Title>Πρόσθεσε νέο εξοπλισμό</Modal.Title>
 			<Modal.Description>
@@ -263,7 +272,7 @@
 			</Modal.Description>
 		</Modal.Header>
 		<form
-			class="flex flex-col gap-2 space-y-2 px-2 py-2"
+			class="flex min-h-0 flex-1 flex-col px-2 py-2"
 			enctype="multipart/form-data"
 			{...addEquipment.enhance(async ({ form, data, submit }) => {
 				isUpdating = true;
@@ -274,11 +283,12 @@
 					toast.error(addEquipment.result?.message || 'Αποτυχία προσθήκης προσπάθησε πάλι');
 				}
 				form.reset();
+				removeAddFile();
 				isUpdating = false;
 				addEquipmentModal = false;
 			})}
 		>
-			<ScrollArea class="h-[50dvh] max-h-[90dvh] w-full">
+			<ScrollArea class=" h-116 flex-1">
 				<div class="w-full space-y-2">
 					<Label class="gap-1">
 						Όνομα εξοπλισμού <span class="text-destructive">*</span>
@@ -292,56 +302,45 @@
 					<Input type="text" name="serial_number" placeholder="LM-1234-5678" />
 
 					<input
-						id="image-upload"
+						bind:this={addFileInputRef}
 						name="image_url"
 						type="file"
 						accept="image/*"
 						class="hidden"
-						bind:files
-						onchange={handleFileChange}
 					/>
 
-					{#if previewUrl}
-						<button
-							type="button"
-							onclick={() => document.getElementById('image-upload')?.click()}
-							class="w-full"
-						>
-							<Empty.Root class="cursor-pointer transition-colors hover:bg-muted/50">
-								<Empty.Header>
-									<Empty.Description>
-										<img
-											src={previewUrl}
-											alt="Preview"
-											class="mx-auto max-h-48 rounded-md object-cover"
-										/>
-									</Empty.Description>
-								</Empty.Header>
-								<Empty.Content>
-									<p class="text-xs text-muted-foreground">Κλικ για αλλαγή εικόνας</p>
-								</Empty.Content>
-							</Empty.Root>
-						</button>
+					{#if addPreviewUrl}
+						<div class="relative w-full rounded-lg border p-2">
+							<img
+								src={addPreviewUrl}
+								alt="Preview"
+								class="mx-auto max-h-48 rounded-md object-cover"
+							/>
+							<div class="mt-2 flex items-center justify-between px-1">
+								<span class="truncate text-xs text-muted-foreground">
+									{addFile?.name} ({addFile ? displaySize(addFile.size) : ''})
+								</span>
+								<Button
+									type="button"
+									variant="ghost"
+									size="icon"
+									class="h-6 w-6 text-muted-foreground hover:text-destructive"
+									onclick={removeAddFile}
+								>
+									<X class="h-4 w-4" />
+								</Button>
+							</div>
+						</div>
 					{:else}
-						<button
-							type="button"
-							onclick={() => document.getElementById('image-upload')?.click()}
-							class="w-full"
-						>
-							<Empty.Root
-								class="cursor-pointer border border-dashed transition-colors hover:bg-muted/50"
-							>
-								<Empty.Header>
-									<Empty.Media variant="icon">
-										<Cloud />
-									</Empty.Media>
-									<Empty.Title>Ανέβασε εικόνα</Empty.Title>
-									<Empty.Description>
-										Κάνε κλικ για να ανεβάσεις εικόνα του εξοπλισμού
-									</Empty.Description>
-								</Empty.Header>
-							</Empty.Root>
-						</button>
+						<FileDropZone
+							onUpload={onAddUpload}
+							onFileRejected={onAddFileRejected}
+							maxFileSize={10 * MEGABYTE}
+							accept="image/*"
+							maxFiles={1}
+							fileCount={addFile ? 1 : 0}
+							class="h-36"
+						/>
 					{/if}
 
 					<Label class="gap-1">Manual url</Label>
@@ -375,7 +374,7 @@
 					<input type="hidden" name="next_service_date" value={nextServiceDate} />
 				</div>
 			</ScrollArea>
-			<Modal.Footer class="py-2">
+			<Modal.Footer class="flex-shrink-0 border-t pt-4 pb-2">
 				<Button type="submit" disabled={isUpdating}>
 					{#if isUpdating}
 						<Spinner /> Προσθήκη εξοπλισμού
