@@ -27,17 +27,22 @@
 	import PhoneInput from '$lib/components/ui/phone-input/phone-input.svelte';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import Stats from '$lib/components/stats_organization/Stats.svelte';
+	import { Root } from '$lib/components/ui/button';
+	import Map from '$lib/components/ui/map/Map.svelte';
+	import InputMap from '$lib/components/stats_organization/inputMap.svelte';
 
 	let auth = authenticatedAccess();
 	let query = getAllOrganizations();
 
 	let organizations = $derived(query.current?.organizations ?? []);
 	let phone = $state('');
+	let location = $state('');
 
 	// Modal state
 	let openAddOrgModal = $state(false);
 	let isSubmitting = $state(false);
 	let orgStatus = $state(true);
+	let locationMode = $state<'text' | 'pin'>('text');
 
 	// Org stats
 	let orgStats = $derived.by(() => {
@@ -66,11 +71,14 @@
 	function openAddDialog() {
 		openAddOrgModal = true;
 		orgStatus = true;
+		locationMode = 'text';
+		markerPosition = { lng: 23.729757, lat: 37.976707 };
 	}
 
 	function closeAddDialog() {
 		openAddOrgModal = false;
 		orgStatus = true;
+		locationMode = 'text';
 	}
 
 	let isRefresing = $state(false);
@@ -79,6 +87,11 @@
 		await query.refresh();
 		isRefresing = false;
 	}
+
+	let markerPosition = $state({
+		lng: 23.729757,
+		lat: 37.976707
+	});
 </script>
 
 {#if auth.loading}
@@ -283,38 +296,41 @@
 				<Modal.Title>Δημιουργία νέου οργανισμού</Modal.Title>
 				<Modal.Description>Συμπληρώστε τα στοιχεία του νέου οργανισμού</Modal.Description>
 			</Modal.Header>
-
-			<ScrollArea class="h-[65dvh] w-full sm:h-auto">
-				<form
-					class="space-y-6 px-1 py-4"
-					{...createOrganization.enhance(async ({ form, submit }) => {
-						isSubmitting = true;
-						await submit();
+			<form
+				class="space-y-6 px-1 py-4"
+				{...createOrganization.enhance(async ({ form, submit }) => {
+					isSubmitting = true;
+					try {
+						await submit().updates(query);
 
 						if (createOrganization.result?.success) {
 							toast.success('Ο οργανισμός δημιουργήθηκε επιτυχώς');
 							form.reset();
 							closeAddDialog();
-							await query.refresh();
 						} else {
 							toast.error(
 								createOrganization.result?.message || 'Αποτυχία δημιουργίας, προσπαθήστε ξανά'
 							);
 						}
+					} finally {
 						isSubmitting = false;
-					})}
-				>
+					}
+				})}
+			>
+				<ScrollArea class="h-[600px] w-full">
 					<div class="space-y-4">
 						<!-- Store Name -->
 						<div class="space-y-2">
-							<Label for="store-name"
-								>Όνομα καταστήματος<span class="text-destructive">*</span></Label
-							>
+							<Label for="store-name">
+								Όνομα καταστήματος<span class="text-destructive">*</span>
+							</Label>
 							<Input
 								id="store-name"
-								{...createOrganization.fields.store_name.as('text')}
+								name="store_name"
+								type="text"
 								placeholder="π.χ. Coffee roasters Athens"
 								disabled={isSubmitting}
+								required
 							/>
 						</div>
 
@@ -323,8 +339,8 @@
 							<Label for="org-email">Email</Label>
 							<Input
 								id="org-email"
+								name="email"
 								type="email"
-								{...createOrganization.fields.email.as('text')}
 								placeholder="info@example.com"
 								disabled={isSubmitting}
 							/>
@@ -335,9 +351,9 @@
 							<Label for="org-phone">Τηλέφωνο</Label>
 							<PhoneInput
 								country="GR"
-								placeholder={'+30 210 5671 123'}
+								name="phone"
+								placeholder="+30 210 5671 123"
 								disabled={isSubmitting}
-								{...createOrganization.fields.phone.as('text')}
 								bind:value={phone}
 							/>
 						</div>
@@ -347,7 +363,8 @@
 							<Label for="org-country">Χώρα</Label>
 							<Input
 								id="org-country"
-								{...createOrganization.fields.country.as('text')}
+								name="country"
+								type="text"
 								placeholder="Greece"
 								disabled={isSubmitting}
 							/>
@@ -355,16 +372,48 @@
 
 						<!-- Location -->
 						<div class="space-y-2">
-							<Label for="org-location"
-								>Τοποθεσία / Διεύθυνση<span class="text-destructive">*</span></Label
+							<Label>Τοποθεσία<span class="text-destructive">*</span></Label>
+
+							<Tabs.Root
+								value={locationMode}
+								onValueChange={(v) => (locationMode = v as 'text' | 'pin')}
+								class="w-full overflow-visible"
 							>
-							<Input
-								id="org-location"
-								{...createOrganization.fields.location.as('text')}
-								placeholder="Περικλέους 37, Αθήνα"
-								disabled={isSubmitting}
-								required
-							/>
+								<Tabs.List class="flex h-auto w-auto justify-start bg-transparent">
+									<Tabs.Trigger value="text">Διεύθυνση</Tabs.Trigger>
+									<Tabs.Trigger value="pin">Πινέζα στον χάρτη</Tabs.Trigger>
+								</Tabs.List>
+
+								<!-- TEXT MODE -->
+								{#if locationMode === 'text'}
+									<div class="p-2">
+										<Input
+											id="org-location"
+											name="location"
+											type="text"
+											placeholder="Περικλέους 37, Αθήνα"
+											disabled={isSubmitting}
+											required
+											bind:value={location}
+										/>
+									</div>
+								{/if}
+
+								<!-- PIN MODE -->
+								{#if locationMode === 'pin'}
+									<div class="space-y-2 p-2">
+										<InputMap bind:markerPosition />
+										<p class="text-xs text-muted-foreground">
+											Lng: {markerPosition.lng.toFixed(5)}, Lat: {markerPosition.lat.toFixed(5)}
+										</p>
+
+										<!-- Plain hidden inputs — no .as() helper -->
+										<input type="hidden" name="lat" value={markerPosition.lat} />
+										<input type="hidden" name="lng" value={markerPosition.lng} />
+										<input type="hidden" name="location" value={location} />
+									</div>
+								{/if}
+							</Tabs.Root>
 						</div>
 
 						<!-- Status Toggle -->
@@ -376,42 +425,26 @@
 								</p>
 							</div>
 							<Switch id="org-status" bind:checked={orgStatus} class="cursor-pointer" />
-							<input
-								type="hidden"
-								{...createOrganization.fields.status.as('text')}
-								value={orgStatus.toString()}
-							/>
-						</div>
-						<div
-							class="flex gap-2 rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-950/50 dark:text-blue-200"
-						>
-							<Info class="mt-0.5 h-4 w-4 shrink-0" />
-							<div class="space-y-1">
-								<p class="font-medium">Μορφή διεύθυνσης για τον χάρτη</p>
-								<p class="text-xs opacity-90">
-									Χρησιμοποιήστε: <span class="font-mono">[Οδός] [Αριθμός], [Πόλη]</span>
-								</p>
-								<p class="text-xs opacity-75">π.χ. Ερμού 10, Αθήνα ή Τσιμισκή 50, Θεσσαλονίκη</p>
-							</div>
+							<input type="hidden" name="status" value={orgStatus ? 'true' : 'false'} />
 						</div>
 					</div>
+				</ScrollArea>
 
-					<Modal.Footer class="py-4">
-						<Button type="submit" disabled={isSubmitting} class="cursor-pointer">
-							{#if isSubmitting}
-								<Spinner class="mr-2 h-4 w-4" />
-								Δημιουργία...
-							{:else}
-								<Plus class="mr-2 h-4 w-4" />
-								Δημιουργία οργανισμού
-							{/if}
-						</Button>
-						<Button variant="outline" type="button" onclick={closeAddDialog} class="cursor-pointer">
-							Ακύρωση
-						</Button>
-					</Modal.Footer>
-				</form>
-			</ScrollArea>
+				<Modal.Footer class="py-4">
+					<Button type="submit" disabled={isSubmitting} class="cursor-pointer">
+						{#if isSubmitting}
+							<Spinner class="mr-2 h-4 w-4" />
+							Δημιουργία...
+						{:else}
+							<Plus class="mr-2 h-4 w-4" />
+							Δημιουργία οργανισμού
+						{/if}
+					</Button>
+					<Button variant="outline" type="button" onclick={closeAddDialog} class="cursor-pointer">
+						Ακύρωση
+					</Button>
+				</Modal.Footer>
+			</form>
 		</Modal.Content>
 	</Modal.Root>
 {/if}

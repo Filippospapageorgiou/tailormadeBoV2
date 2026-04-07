@@ -339,13 +339,26 @@ const addActionSchema = z.object({
 	actionType: z.string(),
 	description: z.string().min(1),
 	images: z.array(z.string()).optional(),
-	cost: z.number().min(0).optional()
+	cost: z.number().min(0).optional(),
+	statusChange: z.enum(['operational', 'maintenance', 'broken']).nullable().optional(),
+	nextServiceDate: z.string().nullable().optional(),
+	previousServiceDate: z.string().nullable().optional()
 });
 
 export const addVisitAction = command(
 	addActionSchema,
-	async ({ visitId, equipmentId, actionType, description, images, cost }) => {
-		const supabase = createServerClient();
+	async ({
+		visitId,
+		equipmentId,
+		actionType,
+		description,
+		images,
+		cost,
+		statusChange,
+		nextServiceDate,
+		previousServiceDate
+	}) => {
+		const supabase = createAdminClient(); // need admin for cross-org equipment update
 		await getUserProfileWithRoleCheck([3]);
 
 		const { data: action, error } = await supabase
@@ -356,7 +369,10 @@ export const addVisitAction = command(
 				action_type: actionType,
 				description,
 				images: images || null,
-				cost: cost || 0
+				cost: cost || 0,
+				status_change: statusChange || null,
+				next_service_date: nextServiceDate || null,
+				last_service_date: previousServiceDate || null
 			})
 			.select()
 			.single();
@@ -364,6 +380,23 @@ export const addVisitAction = command(
 		if (error) {
 			console.error('[addVisitAction] Error:', error);
 			return { success: false, action: null, message: 'Σφάλμα κατά την προσθήκη ενέργειας' };
+		}
+
+		// If status or service date changed, update the equipment too
+		if (statusChange || nextServiceDate) {
+			const updateData: Record<string, any> = {};
+			if (statusChange) updateData.status = statusChange;
+			if (previousServiceDate) updateData.last_service_date = previousServiceDate;
+			if (nextServiceDate) updateData.next_service_date = nextServiceDate;
+			console.log(updateData);
+			const { error: eqError } = await supabase
+				.from('equipment')
+				.update(updateData)
+				.eq('id', equipmentId);
+
+			if (eqError) {
+				console.error('[addVisitAction] Equipment update error:', eqError);
+			}
 		}
 
 		return { success: true, action };

@@ -21,19 +21,34 @@
 		visitId,
 		equipmentId,
 		equipmentName,
+		equipmentStatus = '',
 		onActionAdded
 	}: {
 		open: boolean;
 		visitId: number;
 		equipmentId: number;
 		equipmentName: string;
+		equipmentStatus?: string;
 		onActionAdded?: () => void;
 	} = $props();
 
 	let actionType = $state('');
 	let description = $state('');
 	let cost = $state('');
+	let statusChange = $state<'operational' | 'maintenance' | 'broken' | ''>('');
+	let nextServiceDate = $state('');
+	let previousServiceDate = $state('');
 	let isSubmitting = $state(false);
+
+	const statusLabels: Record<string, string> = {
+		operational: 'Σε λειτουργία',
+		maintenance: 'Σε service',
+		broken: 'Βλάβη'
+	};
+
+	let statusTriggerLabel = $derived(
+		statusChange ? statusLabels[statusChange] || statusChange : 'Χωρίς αλλαγή'
+	);
 
 	type UploadedFile = {
 		name: string;
@@ -136,7 +151,10 @@
 				actionType,
 				description: description.trim(),
 				images: imageUrls.length > 0 ? imageUrls : undefined,
-				cost: cost ? parseFloat(cost) : undefined
+				cost: cost ? parseFloat(cost) : undefined,
+				statusChange: (statusChange as 'operational' | 'maintenance' | 'broken') || undefined,
+				nextServiceDate: nextServiceDate || undefined,
+				previousServiceDate: previousServiceDate || undefined
 			});
 
 			if (result.success) {
@@ -159,6 +177,9 @@
 		actionType = '';
 		description = '';
 		cost = '';
+		statusChange = '';
+		previousServiceDate = '';
+		nextServiceDate = '';
 		files = [];
 	}
 
@@ -227,6 +248,55 @@
 					bind:value={cost}
 					class="text-sm"
 				/>
+			</div>
+
+			<!-- Status Change -->
+			<div class="space-y-3 rounded-xl border border-border/40 bg-muted/20 p-3">
+				<p class="text-xs font-medium text-muted-foreground">
+					Αλλαγή κατάστασης εξοπλισμού (προαιρετικό)
+					{#if equipmentStatus}
+						<span class="ml-1"
+							>— Τρέχουσα: <span class="font-semibold text-foreground"
+								>{statusLabels[equipmentStatus] || equipmentStatus}</span
+							></span
+						>
+					{/if}
+				</p>
+				<div class="space-y-3">
+					<!-- Status row -->
+					<div class="space-y-1.5">
+						<Label class="text-xs font-medium tracking-wide text-muted-foreground uppercase"
+							>Νέα κατάσταση</Label
+						>
+						<Select.Root type="single" name="statusChange" bind:value={statusChange}>
+							<Select.Trigger class="h-9 w-full text-sm">{statusTriggerLabel}</Select.Trigger>
+							<Select.Content>
+								<Select.Group>
+									<Select.Item value="" label="Χωρίς αλλαγή">Χωρίς αλλαγή</Select.Item>
+									<Select.Item value="operational" label="Σε λειτουργία">Σε λειτουργία</Select.Item>
+									<Select.Item value="maintenance" label="Σε service">Σε service</Select.Item>
+									<Select.Item value="broken" label="Βλάβη">Βλάβη</Select.Item>
+								</Select.Group>
+							</Select.Content>
+						</Select.Root>
+					</div>
+
+					<!-- Service dates row -->
+					<div class="grid grid-cols-2 gap-3">
+						<div class="space-y-1.5">
+							<Label class="text-xs font-medium tracking-wide text-muted-foreground uppercase"
+								>Τελευταίο service</Label
+							>
+							<Input type="date" bind:value={previousServiceDate} class="h-9 w-full text-sm" />
+						</div>
+						<div class="space-y-1.5">
+							<Label class="text-xs font-medium tracking-wide text-muted-foreground uppercase"
+								>Επόμενο service</Label
+							>
+							<Input type="date" bind:value={nextServiceDate} class="h-9 w-full text-sm" />
+						</div>
+					</div>
+				</div>
 			</div>
 
 			<!-- Images -->

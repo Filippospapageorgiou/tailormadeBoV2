@@ -3,11 +3,9 @@
 	import { goto } from '$app/navigation';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
-	import * as Select from '$lib/components/ui/select/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import Badge from '$lib/components/ui/badge/badge.svelte';
 	import Textarea from '$lib/components/ui/textarea/textarea.svelte';
-	import { Input } from '$lib/components/ui/input/index.js';
 	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
 	import {
 		ArrowLeft,
@@ -17,22 +15,16 @@
 		Wrench,
 		XCircle,
 		AlertTriangle,
-		MapPin,
-		ChevronDown
+		MapPin
 	} from 'lucide-svelte';
 	import {
 		getVisitWithActions,
 		completeVisit,
 		cancelVisit,
 		deleteVisitAction,
-		updateEquipmentStatus,
 		resolveMaintenanceLogs
 	} from '$lib/api/trainers/equipment/data.remote.js';
-	import {
-		VISIT_ACTION_LABELS,
-		type VisitActionType,
-		type EquipmentStatus
-	} from '$lib/models/equipment.types.js';
+	import { VISIT_ACTION_LABELS, type VisitActionType } from '$lib/models/equipment.types.js';
 	import { showSuccessToast, showFailToast } from '$lib/stores/toast.svelte';
 	import VisitActionForm from '../../components/VisitActionForm.svelte';
 	import Label from '$lib/components/ui/label/label.svelte';
@@ -56,6 +48,7 @@
 	let actionFormOpen = $state(false);
 	let actionEquipmentId = $state(0);
 	let actionEquipmentName = $state('');
+	let actionEquipmentStatus = $state('');
 
 	// Cancel dialog
 	let cancelDialogOpen = $state(false);
@@ -67,18 +60,24 @@
 	let visitNotes = $state('');
 	let selectedResolvedIds = $state<Set<number>>(new Set());
 
-	// Status update
-	let showStatusUpdate = $state(false);
-	let selectedEquipmentForStatus = $state('');
-	let newStatus = $state('');
-	let newNextServiceDate = $state('');
-	let isUpdatingStatus = $state(false);
-
 	// Sync notes from visit data
 	$effect(() => {
 		if (visit?.notes && !visitNotes) {
 			visitNotes = visit.notes;
 		}
+	});
+
+	// Count open maintenance logs per equipment
+	let issuesByEquipment = $derived.by(() => {
+		const map = new Map<number, { count: number; issues: any[] }>();
+		for (const issue of openIssues) {
+			const eqId = issue.equipment_id;
+			if (!map.has(eqId)) map.set(eqId, { count: 0, issues: [] });
+			const entry = map.get(eqId)!;
+			entry.count++;
+			entry.issues.push(issue);
+		}
+		return map;
 	});
 
 	// Group actions by equipment
@@ -180,32 +179,6 @@
 		}
 	}
 
-	async function handleStatusUpdate() {
-		if (!selectedEquipmentForStatus || !newStatus) return;
-		isUpdatingStatus = true;
-		try {
-			const result = await updateEquipmentStatus({
-				equipmentId: Number(selectedEquipmentForStatus),
-				status: newStatus as EquipmentStatus,
-				nextServiceDate: newNextServiceDate || undefined,
-				updateLastServiceDate: true
-			});
-			if (result.success) {
-				showSuccessToast('Ενημερώθηκε', 'Η κατάσταση εξοπλισμού ενημερώθηκε');
-				selectedEquipmentForStatus = '';
-				newStatus = '';
-				newNextServiceDate = '';
-				visitQuery.refresh();
-			} else {
-				showFailToast('Σφάλμα', result.message || 'Αποτυχία');
-			}
-		} catch {
-			showFailToast('Σφάλμα', 'Κάτι πήγε στραβά');
-		} finally {
-			isUpdatingStatus = false;
-		}
-	}
-
 	function formatTime(dateStr: string): string {
 		return new Intl.DateTimeFormat('el-GR', { hour: '2-digit', minute: '2-digit' }).format(
 			new Date(dateStr)
@@ -217,17 +190,6 @@
 		maintenance: 'Σε service',
 		broken: 'Βλάβη'
 	};
-
-	let statusTriggerLabel = $derived(
-		selectedEquipmentForStatus
-			? allEquipments.find((e: any) => e.id === Number(selectedEquipmentForStatus))?.name ||
-					'Επιλέξτε...'
-			: 'Επιλέξτε εξοπλισμό...'
-	);
-
-	let newStatusTriggerLabel = $derived(
-		newStatus ? statusLabels[newStatus] || newStatus : 'Επιλέξτε κατάσταση...'
-	);
 </script>
 
 <div class="flex flex-1 flex-col gap-6 p-4 pt-6">
@@ -313,15 +275,29 @@
 					<div class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
 						{#each allEquipments as eq (eq.id)}
 							{@const hasActions = actions.some((a: any) => a.equipment_id === eq.id)}
+							{@const eqIssues = issuesByEquipment.get(eq.id)}
+							{@const issueCount = eqIssues?.count ?? 0}
 							<button
-								class="flex flex-col items-center gap-2 rounded-xl border p-3 text-center transition-all hover:border-primary/30 hover:bg-primary/5
-									{hasActions ? 'border-primary/20 bg-primary/5' : 'border-border/40'}"
+								class="relative flex flex-col items-center gap-2 rounded-xl border p-3 text-center transition-all hover:border-primary/30 hover:bg-primary/5
+									{issueCount > 0
+									? 'border-red-500/50 bg-red-500/5'
+									: hasActions
+										? 'border-primary/20 bg-primary/5'
+										: 'border-border/40'}"
 								onclick={() => {
 									actionEquipmentId = eq.id;
 									actionEquipmentName = eq.name;
+									actionEquipmentStatus = eq.status;
 									actionFormOpen = true;
 								}}
 							>
+								{#if issueCount > 0}
+									<div
+										class="absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white"
+									>
+										{issueCount}
+									</div>
+								{/if}
 								{#if eq.image_url}
 									<img src={eq.image_url} alt={eq.name} class="h-12 w-12 rounded-lg object-cover" />
 								{:else}
@@ -335,7 +311,11 @@
 										{statusLabels[eq.status] || eq.status}
 									</p>
 								</div>
-								{#if hasActions}
+								{#if issueCount > 0}
+									<Badge class="border-0 bg-red-500/10 text-[9px] text-red-600 dark:text-red-400">
+										{issueCount} βλάβ{issueCount === 1 ? 'η' : 'ες'}
+									</Badge>
+								{:else if hasActions}
 									{@const count = actions.filter((a: any) => a.equipment_id === eq.id).length}
 									<Badge variant="secondary" class="text-[9px]">{count} ενέργ.</Badge>
 								{/if}
@@ -401,6 +381,16 @@
 													{/each}
 												</div>
 											{/if}
+											{#if action.status_change}
+												<p class="mt-1 text-[10px] font-medium text-amber-600 dark:text-amber-400">
+													Κατάσταση → {statusLabels[action.status_change] || action.status_change}
+												</p>
+											{/if}
+											{#if action.next_service_date}
+												<p class="mt-0.5 text-[10px] text-muted-foreground">
+													Επόμενο service: {action.next_service_date}
+												</p>
+											{/if}
 											{#if action.cost > 0}
 												<p class="mt-1 text-[10px] text-muted-foreground">Κόστος: {action.cost}€</p>
 											{/if}
@@ -436,88 +426,6 @@
 
 		<!-- Status Update + Complete (only for active visits) -->
 		{#if !isCompleted}
-			<!-- Optional Status Update -->
-			<Card.Root class="rounded-2xl border border-border/40 bg-card/60 backdrop-blur-sm">
-				<button
-					class="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-muted/30"
-					onclick={() => (showStatusUpdate = !showStatusUpdate)}
-				>
-					<div class="flex items-center gap-2">
-						<div class="rounded-lg bg-muted p-2">
-							<CheckCircle2 class="h-4 w-4 text-muted-foreground" />
-						</div>
-						<div>
-							<p class="text-sm font-medium">Ενημέρωση κατάστασης εξοπλισμού</p>
-							<p class="text-xs text-muted-foreground">
-								Προαιρετικό — αλλάξτε κατάσταση ή ημερομηνία service
-							</p>
-						</div>
-					</div>
-					<ChevronDown
-						class="h-4 w-4 text-muted-foreground transition-transform {showStatusUpdate
-							? 'rotate-180'
-							: ''}"
-					/>
-				</button>
-
-				{#if showStatusUpdate}
-					<div class="space-y-3 border-t border-border/30 p-4">
-						<div class="space-y-1.5">
-							<Label class="text-xs font-medium text-muted-foreground">Εξοπλισμός</Label>
-							<Select.Root
-								type="single"
-								name="statusEquipment"
-								bind:value={selectedEquipmentForStatus}
-							>
-								<Select.Trigger class="h-9 w-full text-sm">{statusTriggerLabel}</Select.Trigger>
-								<Select.Content>
-									<Select.Group>
-										{#each allEquipments as eq}
-											<Select.Item value={String(eq.id)} label={eq.name}>
-												{eq.name} — {statusLabels[eq.status] || eq.status}
-											</Select.Item>
-										{/each}
-									</Select.Group>
-								</Select.Content>
-							</Select.Root>
-						</div>
-						<div class="space-y-1.5">
-							<Label class="text-xs font-medium text-muted-foreground">Νέα κατάσταση</Label>
-							<Select.Root type="single" name="newStatus" bind:value={newStatus}>
-								<Select.Trigger class="h-9 w-full text-sm">{newStatusTriggerLabel}</Select.Trigger>
-								<Select.Content>
-									<Select.Group>
-										<Select.Item value="operational" label="Σε λειτουργία"
-											>Σε λειτουργία</Select.Item
-										>
-										<Select.Item value="maintenance" label="Σε service">Σε service</Select.Item>
-										<Select.Item value="broken" label="Βλάβη">Βλάβη</Select.Item>
-									</Select.Group>
-								</Select.Content>
-							</Select.Root>
-						</div>
-						<div class="space-y-1.5">
-							<Label class="text-xs font-medium text-muted-foreground"
-								>Επόμενο service (προαιρετικό)</Label
-							>
-							<Input type="date" bind:value={newNextServiceDate} class="h-9 text-sm" />
-						</div>
-						<Button
-							size="sm"
-							class="w-full"
-							disabled={!selectedEquipmentForStatus || !newStatus || isUpdatingStatus}
-							onclick={handleStatusUpdate}
-						>
-							{#if isUpdatingStatus}
-								Ενημέρωση... <Spinner class="ml-1.5 h-3 w-3" />
-							{:else}
-								Ενημέρωση Κατάστασης
-							{/if}
-						</Button>
-					</div>
-				{/if}
-			</Card.Root>
-
 			<!-- Notes + Complete -->
 			<Card.Root class="rounded-2xl border-2 border-primary/30 bg-card/60 backdrop-blur-sm">
 				<div class="space-y-4 p-4">
@@ -549,6 +457,7 @@
 		{visitId}
 		equipmentId={actionEquipmentId}
 		equipmentName={actionEquipmentName}
+		equipmentStatus={actionEquipmentStatus}
 		onActionAdded={() => visitQuery.refresh()}
 	/>
 {/if}
@@ -637,17 +546,16 @@
 
 			{#if selectedResolvedIds.size > 0}
 				<p class="text-xs text-emerald-600 dark:text-emerald-400">
-					{selectedResolvedIds.size} βλάβ{selectedResolvedIds.size === 1 ? 'η' : 'ες'} θα σημειωθ{selectedResolvedIds.size === 1 ? 'εί' : 'ούν'} ως επιλυμέν{selectedResolvedIds.size === 1 ? 'η' : 'ες'}
+					{selectedResolvedIds.size} βλάβ{selectedResolvedIds.size === 1 ? 'η' : 'ες'} θα σημειωθ{selectedResolvedIds.size ===
+					1
+						? 'εί'
+						: 'ούν'} ως επιλυμέν{selectedResolvedIds.size === 1 ? 'η' : 'ες'}
 				</p>
 			{/if}
 		{/if}
 
 		<Dialog.Footer class="gap-2">
-			<Button
-				variant="outline"
-				onclick={() => (completeModalOpen = false)}
-				disabled={isCompleting}
-			>
+			<Button variant="outline" onclick={() => (completeModalOpen = false)} disabled={isCompleting}>
 				Πίσω
 			</Button>
 			<Button class="gap-1.5" onclick={handleComplete} disabled={isCompleting}>

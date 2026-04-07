@@ -390,6 +390,18 @@
 													<p class="text-sm leading-relaxed text-foreground/80">
 														{action.description}
 													</p>
+													{#if action.status_change}
+														<p class="mt-1.5 flex items-center gap-1.5 text-[11px] font-medium text-amber-600 dark:text-amber-400">
+															<span class="rounded bg-amber-500/10 px-1.5 py-0.5">
+																Κατάσταση → {equipmentStatusConfig[action.status_change]?.label || action.status_change}
+															</span>
+														</p>
+													{/if}
+													{#if action.next_service_date}
+														<p class="mt-1 text-[11px] text-muted-foreground">
+															Επόμενο service: {new Date(action.next_service_date).toLocaleDateString('el-GR', { day: 'numeric', month: 'short', year: 'numeric' })}
+														</p>
+													{/if}
 													<p class="mt-1 text-[10px] text-muted-foreground/60">
 														{new Date(action.created_at).toLocaleString('el-GR', {
 															dateStyle: 'medium',

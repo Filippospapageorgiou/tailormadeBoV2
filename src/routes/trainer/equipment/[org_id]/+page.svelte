@@ -268,6 +268,9 @@
 							<p class="mt-0.5 line-clamp-1 text-[11px] text-muted-foreground">
 								{issue.issue_description}
 							</p>
+							<p class="mt-0.5 line-clamp-1 text-[11px] text-muted-foreground">
+								{issue.action_taken}
+							</p>
 
 							<!-- Issue images -->
 							{#if issue.images?.length}

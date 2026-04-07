@@ -9,49 +9,119 @@ export interface OrganizationWithCounts extends Organization {
 	equipment_count: number;
 }
 // ======================== FORM SCHEMAS ==============
-
+// ─────────────────────────────────────────────────────────
+// Schema: use z.coerce + preprocess to handle FormData strings cleanly
+// ─────────────────────────────────────────────────────────
 const createOrganizationSchema = z.object({
-    id:z.string().optional(),
-	store_name: z.string().min(1, 'Store name is required').max(100, 'Store name too long'),
-	email: z.email('Invalid email address').optional().or(z.literal('')),
-	phone: z.string().max(20, 'Phone number too long').optional().or(z.literal('')),
-	country: z.string().max(50, 'Country name too long').optional().or(z.literal('')),
-	location: z.string().max(200, 'Location too long').optional().or(z.literal('')),
-	status: z.string().transform((val) => val === 'true')
+	store_name: z
+		.string()
+		.trim()
+		.min(1, 'Το όνομα καταστήματος είναι υποχρεωτικό')
+		.max(100, 'Πολύ μεγάλο όνομα'),
+
+	email: z
+		.string()
+		.trim()
+		.optional()
+		.transform((v) => (v === '' ? undefined : v))
+		.pipe(z.email('Μη έγκυρο email').optional()),
+
+	phone: z
+		.string()
+		.trim()
+		.max(20, 'Πολύ μεγάλος αριθμός')
+		.optional()
+		.transform((v) => (v === '' ? undefined : v)),
+
+	country: z
+		.string()
+		.trim()
+		.max(50, 'Πολύ μεγάλο όνομα χώρας')
+		.optional()
+		.transform((v) => (v === '' ? undefined : v)),
+
+	location: z
+		.string()
+		.trim()
+		.min(1, 'Η τοποθεσία είναι υποχρεωτική')
+		.max(200, 'Πολύ μεγάλη τοποθεσία'),
+
+	// Status comes as 'true' / 'false' string from hidden input
+	status: z
+		.string()
+		.optional()
+		.transform((v) => v === 'true'),
+
+	// Coordinates: come as strings from form data, may be empty.
+	// Preprocess: '' / undefined → undefined, otherwise parseFloat.
+	lat: z
+		.string()
+		.optional()
+		.transform((v) => (v === '' || v == null ? undefined : Number(v)))
+		.pipe(z.number().min(-90).max(90).optional()),
+	lng: z
+		.string()
+		.optional()
+		.transform((v) => (v === '' || v == null ? undefined : Number(v)))
+		.pipe(z.number().min(-180).max(180).optional())
 });
 
+// ─────────────────────────────────────────────────────────
+// Form handler
+// ─────────────────────────────────────────────────────────
 export const createOrganization = form(createOrganizationSchema, async (data) => {
+	console.log('═══════════════════════════════════════');
+	console.log('[createOrganization] Incoming form data:');
+	console.log('  store_name:', data.store_name);
+	console.log('  email:', data.email);
+	console.log('  phone:', data.phone);
+	console.log('  country:', data.country);
+	console.log('  location:', data.location);
+	console.log('  status:', data.status);
+	console.log('  lat:', data.lat, '(type:', typeof data.lat, ')');
+	console.log('  lng:', data.lng, '(type:', typeof data.lng, ')');
+	console.log('═══════════════════════════════════════');
+
 	const supabase = createServerClient();
 
+	let latitude: number | null = null;
+	let longitude: number | null = null;
+	let resolvedAddress = data.location;
+
 	try {
-
-		// Geocode μόνο αν υπάρχει location
-		let latitude: number | null = null;
-		let longitude: number | null = null;
-
-		if (data.location) {
+		// ── Decide source of coordinates ──
+		if (data.lat !== undefined && data.lng !== undefined) {
+			console.log('[createOrganization] ✅ Using PIN coordinates from user');
+			latitude = data.lat;
+			longitude = data.lng;
+		} else {
+			console.log('[createOrganization] 🌍 Geocoding address:', data.location);
 			const geoResult = await geocodeAddress(data.location);
-			
-			if (geoResult) {
-				latitude = geoResult.lat;
-				longitude = geoResult.lon;
-			} else {
-				console.warn('[createOrganization] Geocoding failed for:', data.location);
+
+			if (!geoResult) {
+				console.warn('[createOrganization] ❌ Geocoding failed for:', data.location);
 				return {
 					success: false,
 					message: 'Δεν βρέθηκε η διεύθυνση. Δοκιμάστε διαφορετική μορφή.'
 				};
 			}
+
+			console.log('[createOrganization] ✅ Geocoding success:', geoResult);
+			latitude = geoResult.lat;
+			longitude = geoResult.lon;
 		}
 
+		console.log('[createOrganization] Final coords → lat:', latitude, 'lng:', longitude);
+
+		// ── Insert ──
 		const { data: newOrg, error: insertError } = await supabase
 			.from('core_organizations')
 			.insert({
 				store_name: data.store_name,
-				email: data.email || null,
-				phone: data.phone || null,
-				country: data.country || null,
-				location: data.location || null,
+				email: data.email ?? null,
+				phone: data.phone ?? null,
+				country: data.country ?? null,
+				location: resolvedAddress,
 				status: data.status,
 				latitude,
 				longitude
@@ -60,7 +130,7 @@ export const createOrganization = form(createOrganizationSchema, async (data) =>
 			.single();
 
 		if (insertError) {
-			console.error('[createOrganization] Error creating organization:', insertError);
+			console.error('[createOrganization] Insert error:', insertError);
 			return {
 				success: false,
 				message: 'Σφάλμα κατά τη δημιουργία οργανισμού'
@@ -87,28 +157,38 @@ const updateOrganizationSchema = z.object({
 	email: z.email('Invalid email address').optional().or(z.literal('')),
 	phone: z.string().max(20, 'Phone number too long').optional().or(z.literal('')),
 	country: z.string().max(50, 'Country name too long').optional().or(z.literal('')),
-	location: z.string().max(200, 'Location too long').optional().or(z.literal('')),
-	status: z.string().transform((val) => val === 'true')
+	location: z.string().min(1, 'Η τοποθεσία είναι υποχρεωτική').max(200, 'Location too long'),
+	status: z.string().transform((val) => val === 'true'),
+	lng: z.number().optional(),
+	lat: z.number().optional()
 });
 
 export const updateOrganization = form(updateOrganizationSchema, async (data) => {
 	const supabase = createServerClient();
 	try {
-
-		// Geocode μόνο αν υπάρχει location
 		let latitude: number | null = null;
 		let longitude: number | null = null;
 
-		if (data.location) {
+		// Αν ο χρήστης έστειλε συντεταγμένες, χρησιμοποίησέ τες απευθείας
+		if (data.lat != null && data.lng != null) {
+			latitude = data.lat;
+			longitude = data.lng;
+		} else if (data.location) {
+			// Αλλιώς, geocode από τη διεύθυνση
 			const geoResult = await geocodeAddress(data.location);
-			
+
 			if (geoResult) {
 				latitude = geoResult.lat;
 				longitude = geoResult.lon;
 			} else {
 				console.warn('[updateOrganization] Geocoding failed for:', data.location);
+				return {
+					success: false,
+					message: 'Δεν βρέθηκε η διεύθυνση. Δοκιμάστε διαφορετική μορφή.'
+				};
 			}
 		}
+
 		const { data: updatedOrg, error: updateError } = await supabase
 			.from('core_organizations')
 			.update({
@@ -146,7 +226,6 @@ export const updateOrganization = form(updateOrganizationSchema, async (data) =>
 		};
 	}
 });
-
 // ======================== COMMANDS ==============
 
 const deleteOrganizationSchema = z.object({
@@ -157,10 +236,7 @@ export const deleteOrganization = command(deleteOrganizationSchema, async ({ org
 	const supabase = createServerClient();
 
 	try {
-		const { error } = await supabase
-			.from('core_organizations')
-			.delete()
-			.eq('id', organizationId);
+		const { error } = await supabase.from('core_organizations').delete().eq('id', organizationId);
 
 		if (error) {
 			console.error('[deleteOrganization] Error deleting organization:', error);
