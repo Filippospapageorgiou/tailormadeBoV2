@@ -171,7 +171,7 @@
 						class="cursor-pointer justify-start rounded-md border-0 bg-transparent px-4 py-2.5 text-sm font-medium text-muted-foreground shadow-none transition-colors hover:text-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground"
 					>
 						<Slack class="h-4 w-4" />
-						Trainers
+						Quality control
 					</Tabs.Trigger>
 					<Tabs.Trigger
 						value="orgs"

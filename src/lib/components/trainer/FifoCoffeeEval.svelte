@@ -22,6 +22,11 @@
 			class: 'border-blue-500/40 bg-blue-500/10 text-blue-600 dark:text-blue-400',
 			icon: Clock
 		},
+		acceptable: {
+			label: 'Αποδεκτό',
+			class: 'border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400',
+			icon: null
+		},
 		expired: {
 			label: 'Ληγμένο',
 			class: 'border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-400',
@@ -103,10 +108,7 @@
 					</div>
 
 					<!-- Date picker — binds directly to item.roast_date in $state -->
-					<InputCalendar
-						id="fifo-{item.coffee_type}"
-						bind:value={item.roast_date}
-					/>
+					<InputCalendar id="fifo-{item.coffee_type}" bind:value={item.roast_date} />
 				</div>
 			{/each}
 

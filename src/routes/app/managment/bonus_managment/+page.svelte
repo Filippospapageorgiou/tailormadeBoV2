@@ -405,24 +405,22 @@
 
 			<!-- Tabs Section - Horizontal like User Management -->
 			<Tabs.Root value="periods" class="w-full">
-				<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-					<Tabs.List class="flex h-auto w-auto justify-start space-x-1 bg-transparent">
-						<Tabs.Trigger
-							value="import"
-							class="cursor-pointer justify-start rounded-md border-0 bg-transparent px-4 py-3 text-base font-medium text-muted-foreground shadow-none transition-colors hover:text-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground"
-						>
-							<Import class="mr-2 h-4 w-4" />
-							<span class="hover:underline">Import Excel</span>
-						</Tabs.Trigger>
-						<Tabs.Trigger
-							value="periods"
-							class="cursor-pointer justify-start rounded-md border-0 bg-transparent px-4 py-3 text-base font-medium text-muted-foreground shadow-none transition-colors hover:text-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground"
-						>
-							<Award class="mr-2 h-4 w-4" />
-							<span class="hover:underline">Περίοδοι Bonus</span>
-						</Tabs.Trigger>
-					</Tabs.List>
-				</div>
+				<Tabs.List class="flex h-auto w-auto justify-start bg-transparent">
+					<Tabs.Trigger
+						value="import"
+						class="cursor-pointer justify-start rounded-md border-0 bg-transparent px-4 py-3 text-base font-medium text-muted-foreground shadow-none transition-colors hover:text-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground"
+					>
+						<Import class="mr-2 h-4 w-4" />
+						<span class="hover:underline">Import Excel</span>
+					</Tabs.Trigger>
+					<Tabs.Trigger
+						value="periods"
+						class="cursor-pointer justify-start rounded-md border-0 bg-transparent px-4 py-3 text-base font-medium text-muted-foreground shadow-none transition-colors hover:text-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground"
+					>
+						<Award class="mr-2 h-4 w-4" />
+						<span class="hover:underline">Περίοδοι Bonus</span>
+					</Tabs.Trigger>
+				</Tabs.List>
 
 				<!-- Import Tab Content -->
 				<Tabs.Content value="import" class="mt-6 animate-fade-in-left space-y-6">

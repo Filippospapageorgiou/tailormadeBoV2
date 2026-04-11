@@ -2,7 +2,6 @@
 // FIFO Coffee Evaluation Store — Svelte 5 Runes
 // TailorMade BO
 // ============================================
-
 import { getContext, setContext } from 'svelte';
 
 const FIFO_COFFEE_KEY = Symbol('fifo_coffee');
@@ -24,7 +23,7 @@ export const FIFO_COFFEE_LABELS: Record<FifoCoffeeType, string> = {
 	instant: 'Instant Coffee'
 };
 
-export type FifoCoffeeStatus = 'peak' | 'too_fresh' | 'expired' | 'unknown';
+export type FifoCoffeeStatus = 'peak' | 'too_fresh' | 'expired' | 'unknown' | 'acceptable';
 
 export interface FifoCoffeeItem {
 	coffee_type: FifoCoffeeType;
@@ -45,8 +44,11 @@ export function computeFifoScore(roastDate: string | null): FifoCoffeeComputed {
 	const roast = new Date(roastDate);
 	const daysOld = Math.floor((today.getTime() - roast.getTime()) / (1000 * 60 * 60 * 24));
 
-	if (daysOld < 10) return { daysOld, status: 'too_fresh', score: 3 };
-	if (daysOld <= 30) return { daysOld, status: 'peak', score: 5 };
+	if (daysOld < 15) return { daysOld, status: 'too_fresh', score: 3 };
+	if (daysOld <= 50) return { daysOld, status: 'peak', score: 5 };
+	if (daysOld <= 90) return { daysOld, status: 'acceptable', score: 2 };
+	// Beyond 90 days, it's considered expired. We could add a "stale" category for 90–120 days if desired.
+	//greek coffee < 30 days is too fresh - 60 too fresh - 90 peak - 460 acceptable > expired
 	return { daysOld, status: 'expired', score: 1 };
 }
 
