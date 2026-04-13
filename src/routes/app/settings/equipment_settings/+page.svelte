@@ -1,24 +1,18 @@
 <script lang="ts">
 	import AuthBlock from '$lib/components/custom/AuthBlock/authBlock.svelte';
 	import { authenticatedAccess, getAllEquipments } from './data.remote';
-	import { addEquipment } from './data.remote';
 	import { toast } from 'svelte-sonner';
 	import * as Select from '$lib/components/ui/select';
 	import Input from '$lib/components/ui/input/input.svelte';
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
 	import Button from '$lib/components/ui/button/button.svelte';
-	import { Plus, RefreshCw, X } from 'lucide-svelte';
-	import * as Modal from '$lib/components/ui/modal';
+	import { Plus, RefreshCw } from 'lucide-svelte';
 	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
 	import EquipmentCard from './components/equipmentCard.svelte';
-	import Label from '$lib/components/ui/label/label.svelte';
-	import { ScrollArea } from '$lib/components/ui/scroll-area/index.js';
 	import { Skeleton } from '$lib/components/ui/skeleton';
-	import InputCalendar from '$lib/components/custom/inputCalendar.svelte';
 	import EmptyComp from '$lib/components/custom/EmptyComp.svelte';
 	import { Cog } from '@lucide/svelte';
-	import { FileDropZone, MEGABYTE, displaySize } from '$lib/components/ui/file-drop-zone';
-	import type { FileDropZoneProps } from '$lib/components/ui/file-drop-zone';
+	import { goto } from '$app/navigation';
 
 	let auth = authenticatedAccess();
 	let query = getAllEquipments();
@@ -74,43 +68,6 @@
 		await query.refresh();
 		refreshAction = false;
 	}
-
-	let isUpdating = $state(false);
-	let addEquipmentModal = $state(false);
-
-	let name = $state('');
-	let model = $state('');
-	let serialNumber = $state('');
-	let addFile: File | null = $state(null);
-	let addPreviewUrl: string | null = $state(null);
-	let addFileInputRef: HTMLInputElement | null = $state(null);
-
-	const onAddUpload: FileDropZoneProps['onUpload'] = async (newFiles) => {
-		const file = newFiles[0];
-		if (!file) return;
-		addFile = file;
-		addPreviewUrl = URL.createObjectURL(file);
-		if (addFileInputRef) {
-			const dt = new DataTransfer();
-			dt.items.add(file);
-			addFileInputRef.files = dt.files;
-		}
-	};
-
-	const onAddFileRejected: FileDropZoneProps['onFileRejected'] = ({ reason, file }) => {
-		toast.error(`${file.name} απέτυχε!`, { description: reason });
-	};
-
-	function removeAddFile() {
-		if (addPreviewUrl) URL.revokeObjectURL(addPreviewUrl);
-		addFile = null;
-		addPreviewUrl = null;
-		if (addFileInputRef) addFileInputRef.value = '';
-	}
-
-	let valueStatus = $state('');
-	let lastServiceDate = $state('');
-	let nextServiceDate = $state('');
 </script>
 
 {#if auth.loading}
@@ -149,7 +106,6 @@
 					</Select.Content>
 				</Select.Root>
 				<div class="gpa-2 flex flex-row items-center space-x-2">
-					<!-- Search Input -->
 					<!-- Add Button -->
 					<Tooltip.Provider>
 						<Tooltip.Root>
@@ -158,7 +114,7 @@
 									variant="default"
 									size="sm"
 									class="h-6 cursor-pointer gap-2 px-2"
-									onclick={() => (addEquipmentModal = true)}
+									onclick={() => goto('/app/settings/equipment_settings/new')}
 								>
 									<Plus class="h-4 w-4" />
 								</Button>
@@ -262,135 +218,3 @@
 		</main>
 	</div>
 {/if}
-
-<Modal.Root bind:open={addEquipmentModal}>
-	<Modal.Content class="flex max-h-dvh flex-col">
-		<Modal.Header>
-			<Modal.Title>Πρόσθεσε νέο εξοπλισμό</Modal.Title>
-			<Modal.Description>
-				Προσθέσε της απαραιτήτες πληροφορίες και εικονές για τον νέο εξοπλισμό
-			</Modal.Description>
-		</Modal.Header>
-		<form
-			class="flex flex-1 flex-col px-2 py-2"
-			enctype="multipart/form-data"
-			{...addEquipment.enhance(async ({ form, data, submit }) => {
-				isUpdating = true;
-				await submit();
-				if (addEquipment.result?.success) {
-					toast.success(addEquipment.result.message);
-				} else {
-					toast.error(addEquipment.result?.message || 'Αποτυχία προσθήκης προσπάθησε πάλι');
-				}
-				form.reset();
-				removeAddFile();
-				isUpdating = false;
-				addEquipmentModal = false;
-			})}
-		>
-			<ScrollArea class="h-96 flex-1">
-				<div class="w-full space-y-2">
-					<Label class="gap-1">
-						Όνομα εξοπλισμού <span class="text-destructive">*</span>
-					</Label>
-					<Input type="text" name="name" placeholder="La marzoco machine" required />
-					<Label class="gap-1">
-						Μοντέλο εξοπλισμού <span class="text-destructive">*</span>
-					</Label>
-					<Input type="text" name="model" placeholder="2-Group AV" required />
-					<Label class="gap-1">Σειριακός αριθμός εξοπλισμού</Label>
-					<Input type="text" name="serial_number" placeholder="LM-1234-5678" />
-
-					<input
-						bind:this={addFileInputRef}
-						name="image_url"
-						type="file"
-						accept="image/*"
-						class="hidden"
-					/>
-
-					{#if addPreviewUrl}
-						<div class="relative w-full rounded-lg border p-2">
-							<img
-								src={addPreviewUrl}
-								alt="Preview"
-								class="mx-auto max-h-48 rounded-md object-cover"
-							/>
-							<div class="mt-2 flex items-center justify-between px-1">
-								<span class="truncate text-xs text-muted-foreground">
-									{addFile?.name} ({addFile ? displaySize(addFile.size) : ''})
-								</span>
-								<Button
-									type="button"
-									variant="ghost"
-									size="icon"
-									class="h-6 w-6 text-muted-foreground hover:text-destructive"
-									onclick={removeAddFile}
-								>
-									<X class="h-4 w-4" />
-								</Button>
-							</div>
-						</div>
-					{:else}
-						<FileDropZone
-							onUpload={onAddUpload}
-							onFileRejected={onAddFileRejected}
-							maxFileSize={10 * MEGABYTE}
-							accept="image/*"
-							maxFiles={1}
-							fileCount={addFile ? 1 : 0}
-							class="h-36"
-						/>
-					{/if}
-
-					<Label class="gap-1">Manual url</Label>
-					<Input
-						name="manual_url"
-						type="text"
-						placeholder="https://lamarzoccousa.com/commercial-products/espresso-machines/kb90/"
-					/>
-					<Label>Κατάσταση εξοπλισμού<span class="text-destructive">*</span></Label>
-					<Select.Root type="single" name="status" bind:value={valueStatus} required>
-						<Select.Trigger class="w-full">
-							{equipmentStatus.find((c) => c.value === valueStatus)?.label ?? 'Διαλέξε κατάσταση'}
-						</Select.Trigger>
-						<Select.Content>
-							<Select.Group>
-								<Select.Label>Κατάσταση</Select.Label>
-								{#each equipmentStatus as status (status.value)}
-									<Select.Item value={status.value} label={status.label}>
-										{status.label}
-									</Select.Item>
-								{/each}
-							</Select.Group>
-						</Select.Content>
-					</Select.Root>
-
-					<Label>Τελευταίο servise εξοπλισμού<span class="text-destructive">*</span></Label>
-					<InputCalendar id="last_service_date" bind:value={lastServiceDate} required />
-					<input type="hidden" name="last_service_date" value={lastServiceDate} />
-					<Label>Έπομενο servise εξοπλισμού<span class="text-destructive">*</span></Label>
-					<InputCalendar id="next_service_date" bind:value={nextServiceDate} required />
-					<input type="hidden" name="next_service_date" value={nextServiceDate} />
-				</div>
-			</ScrollArea>
-			<Modal.Footer class="flex-shrink-0 border-t border-border/50 pt-4 pb-2">
-				<Button type="submit" disabled={isUpdating}>
-					{#if isUpdating}
-						<Spinner /> Προσθήκη εξοπλισμού
-					{:else}
-						Προσθήκη εξοπλισμού
-					{/if}
-				</Button>
-				<Button
-					variant="outline"
-					onclick={() => {
-						addEquipmentModal = false;
-					}}
-				>
-					Κλείσιμο
-				</Button>
-			</Modal.Footer>
-		</form>
-	</Modal.Content>
-</Modal.Root>

@@ -143,6 +143,79 @@ export const getAllEquipments = query(async () => {
 	}
 });
 
+const getEquipmentByIdSchema = z.object({
+	equipmentId: z.number().positive()
+});
+
+export const getEquipmentById = query(getEquipmentByIdSchema, async ({ equipmentId }) => {
+	try {
+		const supabase = createServerClient();
+		const org_id = await getUserOrgId();
+
+		const { data: equipment, error } = await supabase
+			.from('equipment')
+			.select('*')
+			.eq('id', equipmentId)
+			.eq('org_id', org_id)
+			.single();
+
+		if (error) {
+			console.error('[getEquipmentById] Error: ', error);
+			return { success: false, equipment: null };
+		}
+
+		return { success: true, equipment };
+	} catch (err: any) {
+		console.error('[getEquipmentById] Error: ', err);
+		return { success: false, equipment: null };
+	}
+});
+
+const getAllMaintenanceLogsSchema = z.object({
+	equipmentId: z.number().positive()
+});
+
+export const getAllMaintenanceLogs = query(getAllMaintenanceLogsSchema, async ({ equipmentId }) => {
+	try {
+		const supabase = createServerClient();
+
+		const { data: logs, error } = await supabase
+			.from('maintenance_logs')
+			.select(
+				`
+				*,
+				profiles!maintenance_logs_user_id_fkey (
+					username,
+					role,
+					image_url,
+					phone
+				),
+				resolved_profile:profiles!maintenance_logs_resolved_by_fkey (
+					username,
+					image_url
+				)
+			`
+			)
+			.eq('equipment_id', equipmentId)
+			.order('created_at', { ascending: false })
+			.overrideTypes<
+				(MaintenanceLogWithUser & {
+					resolved_profile: { username: string; image_url: string | null } | null;
+				})[]
+			>();
+
+		if (error) {
+			console.error('[getAllMaintenanceLogs] Error fetching logs: ', error);
+			return { success: false, logs: [] };
+		}
+
+		return { success: true, logs: logs || [] };
+	} catch (err: any) {
+		console.error('[getAllMaintenanceLogs] Error fetching logs: ', err);
+		return { success: false, logs: [] };
+	}
+});
+
 const getMaintenanceLogsSchema = z.object({
 	equipmentId: z.number().positive()
 });
