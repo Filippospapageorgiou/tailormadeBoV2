@@ -168,11 +168,20 @@ export const actions: Actions = {
 		if (!username || username.trim().length < 2) {
 			return { success: false, message: 'Username must be at least 2 characters' };
 		}
-		if (!password || password.length < 6) {
-			return { success: false, message: 'Password must be at least 6 characters' };
+		if (!password || password.length < 4) {
+			return { success: false, message: 'Ο κωδικός πρέπει να έχει τουλάχιστον 4 χαρακτήρες' };
+		}
+		if (!/[A-ZΑ-Ω]/.test(password)) {
+			return { success: false, message: 'Ο κωδικός πρέπει να έχει τουλάχιστον ένα κεφαλαίο γράμμα' };
+		}
+		if (!/[0-9]/.test(password)) {
+			return { success: false, message: 'Ο κωδικός πρέπει να έχει τουλάχιστον έναν αριθμό' };
+		}
+		if (!/[^a-zA-Z0-9\s]/.test(password)) {
+			return { success: false, message: 'Ο κωδικός πρέπει να έχει τουλάχιστον ένα σύμβολο (π.χ. ! @ # $)' };
 		}
 		if (password !== confirmPassword) {
-			return { success: false, message: 'Passwords do not match' };
+			return { success: false, message: 'Οι κωδικοί δεν ταιριάζουν' };
 		}
 
 		try {

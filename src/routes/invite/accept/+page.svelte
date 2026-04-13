@@ -16,7 +16,9 @@
 		CheckCircle,
 		AlertCircle,
 		Sparkles,
-		LogIn
+		LogIn,
+		Circle,
+		CircleCheck
 	} from 'lucide-svelte';
 	import { toast } from 'svelte-sonner';
 	import * as Password from '$lib/components/ui/password';
@@ -41,8 +43,14 @@
 		});
 	}
 
-	// Check if passwords match
-	let passwordsMatch = $derived(password === confirmPassword && password.length >= 6);
+	// Password requirements
+	let hasMinLength = $derived(password.length >= 4);
+	let hasUppercase = $derived(/[A-ZΑ-Ω]/.test(password));
+	let hasNumber = $derived(/[0-9]/.test(password));
+	let hasSymbol = $derived(/[^a-zA-Z0-9\s]/.test(password));
+	let hasNoSpaces = $derived(password.length > 0 && !/\s/.test(password));
+	let allPasswordReqs = $derived(hasMinLength && hasUppercase && hasNumber && hasSymbol && hasNoSpaces);
+	let passwordsMatch = $derived(password === confirmPassword && allPasswordReqs);
 	let formValid = $derived(
 		username.trim().length >= 2 && full_name.trim().length >= 2 && passwordsMatch
 	);
@@ -339,13 +347,13 @@
 										<Lock
 											class="absolute top-6 left-3 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground sm:left-3.5"
 										/>
-										<Password.Root>
+										<Password.Root minScore={0}>
 											<Password.Input
 												name="password"
 												required
 												disabled={isSubmitting}
 												bind:value={password}
-												placeholder="*********"
+												placeholder="Γράψε τον κωδικό σου"
 												class="h-10 pl-9 text-sm sm:h-12 sm:pl-11 sm:text-base"
 											>
 												<Password.ToggleVisibility />
@@ -353,6 +361,57 @@
 											<Password.Strength />
 										</Password.Root>
 									</div>
+
+									<!-- Password requirements checklist -->
+									{#if password.length > 0}
+										<div class="rounded-lg bg-stone-50 p-3 dark:bg-stone-800/50">
+											<p class="mb-2 text-[10px] font-semibold tracking-wide text-muted-foreground uppercase sm:text-[11px]">
+												Ο κωδικός πρέπει να έχει:
+											</p>
+											<ul class="space-y-1.5">
+												<li class="flex items-center gap-2 text-xs sm:text-sm {hasMinLength ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}">
+													{#if hasMinLength}
+														<CircleCheck class="h-3.5 w-3.5 flex-shrink-0" />
+													{:else}
+														<Circle class="h-3.5 w-3.5 flex-shrink-0" />
+													{/if}
+													Τουλάχιστον 4 χαρακτήρες
+												</li>
+												<li class="flex items-center gap-2 text-xs sm:text-sm {hasUppercase ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}">
+													{#if hasUppercase}
+														<CircleCheck class="h-3.5 w-3.5 flex-shrink-0" />
+													{:else}
+														<Circle class="h-3.5 w-3.5 flex-shrink-0" />
+													{/if}
+													Ένα κεφαλαίο γράμμα (π.χ. A, B, Γ)
+												</li>
+												<li class="flex items-center gap-2 text-xs sm:text-sm {hasNumber ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}">
+													{#if hasNumber}
+														<CircleCheck class="h-3.5 w-3.5 flex-shrink-0" />
+													{:else}
+														<Circle class="h-3.5 w-3.5 flex-shrink-0" />
+													{/if}
+													Ένας αριθμός (π.χ. 1, 2, 3)
+												</li>
+												<li class="flex items-center gap-2 text-xs sm:text-sm {hasSymbol ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}">
+													{#if hasSymbol}
+														<CircleCheck class="h-3.5 w-3.5 flex-shrink-0" />
+													{:else}
+														<Circle class="h-3.5 w-3.5 flex-shrink-0" />
+													{/if}
+													Ένα σύμβολο (π.χ. ! @ # $)
+												</li>
+												<li class="flex items-center gap-2 text-xs sm:text-sm {hasNoSpaces ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}">
+													{#if hasNoSpaces}
+														<CircleCheck class="h-3.5 w-3.5 flex-shrink-0" />
+													{:else}
+														<Circle class="h-3.5 w-3.5 flex-shrink-0" />
+													{/if}
+													Χωρίς κενά
+												</li>
+											</ul>
+										</div>
+									{/if}
 								</div>
 
 								<div class="space-y-1.5 sm:space-y-2">
@@ -363,11 +422,11 @@
 										<Lock
 											class="absolute top-1/2 left-3 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground sm:left-3.5"
 										/>
-										<Password.Root>
+										<Password.Root minScore={0}>
 											<Password.Input
 												id="confirmPassword"
 												name="confirmPassword"
-												placeholder="Επιβεβαίωση κωδικού"
+												placeholder="Γράψε πάλι τον κωδικό"
 												bind:value={confirmPassword}
 												class="h-10 pl-9 text-sm sm:h-12 sm:pl-11 sm:text-base"
 												required
@@ -377,7 +436,12 @@
 											</Password.Input>
 										</Password.Root>
 									</div>
-									{#if confirmPassword && !passwordsMatch}
+									{#if confirmPassword && passwordsMatch}
+										<p class="flex items-center gap-1.5 text-xs text-green-600 sm:text-sm dark:text-green-400">
+											<CircleCheck class="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+											Οι κωδικοί ταιριάζουν
+										</p>
+									{:else if confirmPassword && !passwordsMatch}
 										<p class="flex items-center gap-1.5 text-xs text-red-500 sm:text-sm">
 											<AlertCircle class="h-3 w-3 sm:h-3.5 sm:w-3.5" />
 											Οι κωδικοί δεν ταιριάζουν
