@@ -359,32 +359,87 @@ const beverageReadInsertSchema = z.object({
 	beverage_id: z.number().int().positive()
 });
 
+/**
+ * Καταγράφει όταν ένας χρήστης ανοίγει/διαβάζει μια συνταγή (beverage).
+ *
+ * Μεταδεδομένα που αποθηκεύονται:
+ *   - ip_address  : client IP (από x-forwarded-for / x-real-ip / x-vercel-forwarded-for)
+ *   - user_agent  : browser/device UA
+ *   - country     : ISO country code (x-vercel-ip-country)  — δωρεάν από Vercel edge
+ *   - city        : πόλη (x-vercel-ip-city)                 — URL-encoded από Vercel, decode
+ *   - region      : περιφέρεια (x-vercel-ip-country-region)
+ *   - read_at     : γεμίζει ΑΥΤΟΜΑΤΑ από τη βάση (DEFAULT now()) — μην το στέλνεις
+ *
+ * Duplicate protection:
+ *   Unique index στη βάση: (user_id, beverage_id, date_trunc('minute', read_at AT TIME ZONE 'UTC'))
+ *   → διπλά clicks μέσα στο ίδιο λεπτό αγνοούνται από την Postgres (error code 23505),
+ *     το οποίο αντιμετωπίζουμε ως success.
+ */
 export const insertBeverageRead = command(beverageReadInsertSchema, async (data) => {
 	const supabase = createServerClient();
 	const user = await requireAuthenticatedUser();
 	const { request, getClientAddress } = getRequestEvent();
+	const headers = request.headers;
 
-	// Get IP — prefer x-forwarded-for (proxy/CDN), fallback to getClientAddress
-	const forwardedFor = request.headers.get('x-forwarded-for');
-	const ip = forwardedFor ? forwardedFor.split(',')[0].trim() : getClientAddress();
-	const userAgent = request.headers.get('user-agent');
+	// ── IP extraction (Vercel-aware) ────────────────────────────────────────────
+	// Σε Vercel production υπάρχει πάντα x-forwarded-for ή x-vercel-forwarded-for.
+	// Σε local dev fallback στο socket address (π.χ. 127.0.0.1).
+	const ip =
+		headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+		headers.get('x-real-ip') ||
+		headers.get('x-vercel-forwarded-for')?.split(',')[0].trim() ||
+		getClientAddress() ||
+		null;
 
+	const userAgent = headers.get('user-agent');
+
+	// ── Geo από Vercel edge (δωρεάν, χωρίς external lookup) ─────────────────────
+	// Το x-vercel-ip-city έρχεται URL-encoded (π.χ. "Thessalon%C3%ADki").
+	const country = headers.get('x-vercel-ip-country'); // π.χ. "GR"
+	const region = headers.get('x-vercel-ip-country-region'); // π.χ. "54"
+	const rawCity = headers.get('x-vercel-ip-city');
+	const city = rawCity ? safeDecode(rawCity) : null;
+
+	//log
+	console.log('Inserting beverage read with metadata:', {
+		beverage_id: data.beverage_id,
+		user_id: user.id,
+		ip,
+		userAgent,
+		country,
+		region,
+		city
+	});
+
+	// ── Insert ──────────────────────────────────────────────────────────────────
 	const { error } = await supabase.from('beverages_reads').insert({
 		beverage_id: data.beverage_id,
 		user_id: user.id,
-		org_id: user.user_metadata?.org_id || null,
-		read_at: new Date().toLocaleString('gr'),
+		org_id: user.user_metadata?.org_id ?? null,
+		// ΔΕΝ στέλνουμε read_at — η βάση έχει DEFAULT now() (σωστό UTC timestamptz)
 		ip_address: ip,
-		user_agent: userAgent
+		user_agent: userAgent,
+		country,
+		city,
+		region
 	});
 
-	if (error) {
+	// Unique violation (23505) = duplicate μέσα στο ίδιο λεπτό → το θεωρούμε success idempotent
+	if (error && error.code !== '23505') {
 		console.error('Error inserting beverage read:', error);
 		return { success: false, message: 'Failed to record beverage read.' };
 	}
 
 	return { success: true, message: 'Beverage read recorded successfully.' };
 });
+
+function safeDecode(value: string): string {
+	try {
+		return decodeURIComponent(value);
+	} catch {
+		return value;
+	}
+}
 
 export const getBeverageReads = query(async () => {
 	await getUserProfileWithRoleCheck([1]);
