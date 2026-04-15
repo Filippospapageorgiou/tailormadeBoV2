@@ -28,8 +28,12 @@
 			: beverages
 	);
 
+	let isNavigating = $state(false);
+
 	const handleBeverageClick = (id: number) => {
-		// Log the beverage read before navigating
+		if (isNavigating) return;
+		isNavigating = true;
+
 		insertBeverageRead({ beverage_id: id }).catch((e) =>
 			console.error('Failed to log beverage read:', e)
 		);
@@ -79,17 +83,17 @@
 				{:else}
 					<div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
 						{#each filteredBeverages as beverage, i (beverage.id)}
-							<div
+							<button
+								type="button"
 								style="animation-delay: {i * 150}ms; animation-fill-mode: backwards;"
-								role="button"
-								tabindex="0"
 								onclick={() => handleBeverageClick(beverage.id)}
-								onkeydown={(e) => e.key === 'Enter' && handleBeverageClick(beverage.id)}
+								disabled={isNavigating}
 								class="group relative animate-fade-in-right cursor-pointer overflow-hidden rounded-xl
-			   border border-border/40 bg-card shadow-sm
+			   border border-border/40 bg-card text-left shadow-sm
 			   transition-all duration-300 ease-out
-			   hover:-translate-y-0.5 hover:shadow-lg dark:border-white/5
-			   dark:hover:shadow-black/30"
+			   hover:-translate-y-0.5 hover:shadow-lg
+			   disabled:cursor-not-allowed disabled:opacity-70
+			   dark:border-white/5 dark:hover:shadow-black/30"
 							>
 								<!-- Image container -->
 								<div class="relative aspect-square w-full overflow-hidden bg-muted">
@@ -146,7 +150,7 @@
 					scale-x-0 bg-primary
 					transition-transform duration-300 group-hover:scale-x-100"
 								></div>
-							</div>
+							</button>
 						{/each}
 					</div>
 				{/if}

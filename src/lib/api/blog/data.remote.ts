@@ -1,4 +1,4 @@
-import { query, command, form } from '$app/server';
+import { query, command, form, getRequestEvent } from '$app/server';
 import { createServerClient, createAdminClient } from '$lib/supabase/server';
 import { getUserProfileWithRoleCheck } from '$lib/supabase/queries';
 import { requireAuthenticatedUser } from '$lib/supabase/shared';
@@ -362,26 +362,28 @@ const beverageReadInsertSchema = z.object({
 export const insertBeverageRead = command(beverageReadInsertSchema, async (data) => {
 	const supabase = createServerClient();
 	const user = await requireAuthenticatedUser();
+	const { request, getClientAddress } = getRequestEvent();
+
+	// Get IP — prefer x-forwarded-for (proxy/CDN), fallback to getClientAddress
+	const forwardedFor = request.headers.get('x-forwarded-for');
+	const ip = forwardedFor ? forwardedFor.split(',')[0].trim() : getClientAddress();
+	const userAgent = request.headers.get('user-agent');
 
 	const { error } = await supabase.from('beverages_reads').insert({
 		beverage_id: data.beverage_id,
 		user_id: user.id,
 		org_id: user.user_metadata?.org_id || null,
-		read_at: new Date().toLocaleString('gr')
+		read_at: new Date().toLocaleString('gr'),
+		ip_address: ip,
+		user_agent: userAgent
 	});
 
 	if (error) {
 		console.error('Error inserting beverage read:', error);
-		return {
-			success: false,
-			message: 'Failed to record beverage read.'
-		};
+		return { success: false, message: 'Failed to record beverage read.' };
 	}
 
-	return {
-		success: true,
-		message: 'Beverage read recorded successfully.'
-	};
+	return { success: true, message: 'Beverage read recorded successfully.' };
 });
 
 export const getBeverageReads = query(async () => {
