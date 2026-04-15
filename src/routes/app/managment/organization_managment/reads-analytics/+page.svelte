@@ -10,8 +10,6 @@
 		Coffee,
 		Newspaper,
 		BookOpen,
-		TrendingUp,
-		TrendingDown,
 		Crown,
 		Medal,
 		Award,
@@ -32,9 +30,7 @@
 	];
 
 	const urlTab = (page.url.searchParams.get('tab') as Cat) || 'beverages';
-	let activeTab = $state<Cat>(
-		TABS.some((t) => t.key === urlTab) ? urlTab : 'beverages'
-	);
+	let activeTab = $state<Cat>(TABS.some((t) => t.key === urlTab) ? urlTab : 'beverages');
 
 	let dataQuery = $derived(getReadsAnalytics({ category: activeTab }));
 	let payload = $derived(dataQuery?.current);
@@ -136,13 +132,11 @@
 				<p
 					class="mb-2 text-[11px] tracking-[0.28em] text-muted-foreground uppercase"
 					style="font-feature-settings: 'ss01';"
-				>
-					Reading Room · 7 ημέρες
-				</p>
+				></p>
 				<h1 class="reading-room-title text-[clamp(2.5rem,7vw,5.5rem)] leading-[0.95]">
 					<span class="italic">Ποιος</span> διαβάζει<br />
 					<span class="reading-room-accent">πραγματικά</span><em
-						class="ml-2 not-italic text-muted-foreground">;</em
+						class="ml-2 text-muted-foreground not-italic">;</em
 					>
 				</h1>
 			</div>
@@ -221,9 +215,7 @@
 			</div>
 		{:else}
 			<!-- Hero numbers -->
-			<section
-				class="mb-16 grid grid-cols-1 items-end gap-8 md:grid-cols-[2fr_1fr_1fr] md:gap-12"
-			>
+			<section class="mb-16 grid grid-cols-1 items-end gap-8 md:grid-cols-[2fr_1fr_1fr] md:gap-12">
 				<div class="relative">
 					<span
 						class="font-serif text-[clamp(5rem,16vw,11rem)] leading-[0.85] font-light tabular-nums"
@@ -231,16 +223,16 @@
 					>
 						{totalReads.toLocaleString('el-GR')}
 					</span>
-					<p class="mt-2 font-serif text-lg italic text-muted-foreground">
-						αναγνώσεις συνολικά
-					</p>
+					<p class="mt-2 font-serif text-lg text-muted-foreground italic">αναγνώσεις συνολικά</p>
 				</div>
 				<div class="space-y-1 border-l border-border/60 pl-6">
 					<p class="text-[10px] tracking-widest text-muted-foreground uppercase">Μ.Ο. / ημέρα</p>
 					<p class="font-serif text-4xl tabular-nums">{Math.round(totalReads / 7)}</p>
 				</div>
 				<div class="space-y-1 border-l border-border/60 pl-6">
-					<p class="text-[10px] tracking-widest text-muted-foreground uppercase">Μ.Ο. / αναγνώστη</p>
+					<p class="text-[10px] tracking-widest text-muted-foreground uppercase">
+						Μ.Ο. / αναγνώστη
+					</p>
 					<p class="font-serif text-4xl tabular-nums">
 						{activeReaders > 0 ? (totalReads / activeReaders).toFixed(1) : '0'}
 					</p>
@@ -264,8 +256,7 @@
 							{@const reader = top3[rankIdx]}
 							{@const rank = rankIdx + 1}
 							{@const isFirst = rank === 1}
-							{@const ringColor =
-								rank === 1 ? accentColor : rank === 2 ? '#cbd5e1' : '#d97706'}
+							{@const ringColor = rank === 1 ? accentColor : rank === 2 ? '#cbd5e1' : '#d97706'}
 							{#if reader}
 								<div
 									class="flex flex-col items-center text-center"
@@ -276,19 +267,18 @@
 								>
 									<div
 										class="podium-stage relative"
-										style="transform: {isFirst
-											? 'rotate(-2deg) translateY(-8px)'
-											: 'none'};"
+										style="transform: {isFirst ? 'rotate(-2deg) translateY(-8px)' : 'none'};"
 									>
-										<div class="absolute inset-0 scale-110 rounded-full opacity-40 blur-2xl" style="background:{ringColor};"></div>
+										<div
+											class="absolute inset-0 scale-110 rounded-full opacity-40 blur-2xl"
+											style="background:{ringColor};"
+										></div>
 										<div
 											class="relative rounded-full p-[3px]"
 											style="background: conic-gradient(from 180deg, {ringColor}, {ringColor}88, {ringColor});"
 										>
 											<div class="rounded-full bg-background p-1">
-												<Avatar.Root
-													class="h-20 w-20 border-2 border-background md:h-28 md:w-28"
-												>
+												<Avatar.Root class="h-20 w-20 border-2 border-background md:h-28 md:w-28">
 													{#if reader.image_url}
 														<Avatar.Image src={reader.image_url} alt={reader.full_name} />
 													{/if}
@@ -337,7 +327,9 @@
 								</div>
 							{:else}
 								<div class="order-{i} opacity-40">
-									<div class="mx-auto h-20 w-20 rounded-full border border-dashed border-border md:h-28 md:w-28"></div>
+									<div
+										class="mx-auto h-20 w-20 rounded-full border border-dashed border-border md:h-28 md:w-28"
+									></div>
 									<p class="mt-5 text-center text-xs text-muted-foreground">—</p>
 								</div>
 							{/if}
@@ -365,13 +357,15 @@
 							Κανείς δεν διάβασε αυτή την εβδομάδα.
 						</Card.Root>
 					{:else}
-						<div class="overflow-hidden rounded-xl border border-border/60 bg-card/40 backdrop-blur-sm">
+						<div
+							class="overflow-hidden rounded-xl border border-border/60 bg-card/40 backdrop-blur-sm"
+						>
 							<table class="w-full text-sm">
 								<thead
 									class="sticky top-0 border-b border-border/60 bg-muted/30 text-[10px] tracking-wider text-muted-foreground uppercase"
 								>
 									<tr>
-										<th class="px-4 py-3 text-left w-10">#</th>
+										<th class="w-10 px-4 py-3 text-left">#</th>
 										<th class="px-4 py-3 text-left">Υπάλληλος</th>
 										<th class="hidden px-4 py-3 text-left md:table-cell">Κατάστημα</th>
 										<th class="px-4 py-3 text-right">Αναγν.</th>
@@ -417,9 +411,7 @@
 													{r.count}
 												</span>
 											</td>
-											<td
-												class="hidden px-4 py-3 text-xs text-muted-foreground md:table-cell"
-											>
+											<td class="hidden px-4 py-3 text-xs text-muted-foreground md:table-cell">
 												<span class="inline-flex items-center gap-1">
 													<Clock class="h-3 w-3" />
 													{relativeTime(r.last_read)}
@@ -467,18 +459,13 @@
 								{@const pct = (org.count / maxOrgCount) * 100}
 								<li class="group" style="animation-delay: {i * 60}ms">
 									<div class="mb-1.5 flex items-baseline justify-between gap-2">
-										<span
-											class="flex items-center gap-2 truncate text-sm"
-										>
+										<span class="flex items-center gap-2 truncate text-sm">
 											<span class="font-serif text-muted-foreground tabular-nums">
 												{String(i + 1).padStart(2, '0')}
 											</span>
 											<span class="truncate font-medium">{org.store_name}</span>
 										</span>
-										<span
-											class="font-serif text-lg tabular-nums"
-											style="color:{accentColor};"
-										>
+										<span class="font-serif text-lg tabular-nums" style="color:{accentColor};">
 											{org.count}
 										</span>
 									</div>
@@ -525,7 +512,9 @@
 											class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
 										/>
 									{:else}
-										<div class="flex h-full w-full items-center justify-center text-muted-foreground">
+										<div
+											class="flex h-full w-full items-center justify-center text-muted-foreground"
+										>
 											<Sparkles class="h-6 w-6" />
 										</div>
 									{/if}
@@ -535,14 +524,14 @@
 										#{i + 1}
 									</div>
 									<div
-										class="absolute right-2 bottom-2 rounded-md px-2 py-1 font-serif text-lg font-medium tabular-nums text-white shadow-md"
+										class="absolute right-2 bottom-2 rounded-md px-2 py-1 font-serif text-lg font-medium text-white tabular-nums shadow-md"
 										style="background:{accentColor}ee;"
 									>
 										{item.count}
 									</div>
 								</div>
 								<div class="space-y-1 p-3">
-									<p class="line-clamp-2 text-sm font-medium leading-snug">{item.name}</p>
+									<p class="line-clamp-2 text-sm leading-snug font-medium">{item.name}</p>
 									<p class="text-[10px] tracking-wide text-muted-foreground">
 										{item.unique_readers} μοναδικ{item.unique_readers === 1 ? 'ός' : 'οί'}
 									</p>
@@ -574,7 +563,9 @@
 								<div
 									class="group flex items-center gap-2 rounded-full bg-muted/40 py-1 pr-3 pl-1 transition-colors hover:bg-muted"
 								>
-									<Avatar.Root class="h-7 w-7 opacity-70 grayscale transition-all group-hover:opacity-100 group-hover:grayscale-0">
+									<Avatar.Root
+										class="h-7 w-7 opacity-70 grayscale transition-all group-hover:opacity-100 group-hover:grayscale-0"
+									>
 										{#if s.image_url}
 											<Avatar.Image src={s.image_url} alt={s.full_name} />
 										{/if}
@@ -587,7 +578,7 @@
 								</div>
 							{/each}
 						</div>
-						<p class="mt-4 font-serif text-sm italic text-muted-foreground">
+						<p class="mt-4 font-serif text-sm text-muted-foreground italic">
 							Μια φιλική υπενθύμιση μπορεί να κάνει θαύματα.
 						</p>
 					</div>
@@ -599,15 +590,17 @@
 
 <style>
 	.reading-room {
-		background:
-			linear-gradient(180deg, transparent, var(--background));
+		background: linear-gradient(180deg, transparent, var(--background));
 	}
 
 	.reading-room-title {
 		font-family: 'Fraunces', 'Sansation', serif;
 		font-weight: 300;
 		letter-spacing: -0.02em;
-		font-variation-settings: 'SOFT' 30, 'WONK' 1, 'opsz' 144;
+		font-variation-settings:
+			'SOFT' 30,
+			'WONK' 1,
+			'opsz' 144;
 	}
 
 	.reading-room-accent {

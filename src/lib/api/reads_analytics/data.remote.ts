@@ -224,11 +224,11 @@ export const getReadsAnalytics = query(categorySchema, async ({ category }) => {
 		}
 	}
 
-	// 6. Silent employees — readable employees (role_id 2, 4, 5) with 0 reads
+	// 6. Silent employees — readable employees (role_id 1, 2, 4, 5) with 0 reads
 	const { data: allEmployees } = await supabase
 		.from('profiles')
 		.select('id, full_name, image_url, org_id, role_id, core_organizations(id, store_name)')
-		.in('role_id', [2, 4, 5]);
+		.neq('role_id', 3); // Exclude role_id 3 (unreadable);
 
 	const silent: SilentEmployee[] = [];
 	(allEmployees ?? []).forEach((p: any) => {
