@@ -182,6 +182,61 @@ export const getAllMaintenanceLogs = query(async () => {
 });
 
 /**
+ * Get full detail for a single equipment (for trainer detail page):
+ * equipment row + maintenance logs (with resolver profile) + trainer visit actions.
+ */
+const getEquipmentDetailSchema = z.object({
+	equipmentId: z.number().int().positive()
+});
+
+export const getTrainerEquipmentDetail = query(
+	getEquipmentDetailSchema,
+	async ({ equipmentId }) => {
+		const supabase = createAdminClient();
+		await getUserProfileWithRoleCheck([3]);
+
+		const [{ data: equipment, error: eqErr }, { data: logs }, { data: actions }] =
+			await Promise.all([
+				supabase.from('equipment').select('*').eq('id', equipmentId).single(),
+				supabase
+					.from('maintenance_logs')
+					.select(
+						`*,
+						profiles!maintenance_logs_user_id_fkey (username, role, image_url, phone),
+						resolved_profile:profiles!maintenance_logs_resolved_by_fkey (username, image_url)`
+					)
+					.eq('equipment_id', equipmentId)
+					.order('created_at', { ascending: false }),
+				supabase
+					.from('trainer_visit_actions')
+					.select(
+						`*,
+						trainer_service_visits!inner (
+							id, visit_date, status, notes,
+							profiles!trainer_service_visits_trainer_id_fkey (
+								id, username, image_url, role
+							)
+						)`
+					)
+					.eq('equipment_id', equipmentId)
+					.order('created_at', { ascending: false })
+			]);
+
+		if (eqErr || !equipment) {
+			console.error('[getTrainerEquipmentDetail] Error:', eqErr);
+			return { success: false, equipment: null, logs: [], actions: [] };
+		}
+
+		return {
+			success: true,
+			equipment,
+			logs: logs || [],
+			actions: actions || []
+		};
+	}
+);
+
+/**
  * Get recent issues across ALL organizations
  */
 export const getRecentIssues = query(async () => {

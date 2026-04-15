@@ -4,6 +4,7 @@ import { getUserProfileWithRoleCheck } from '$lib/supabase/queries';
 import type { Organization, Profile } from '$lib/models/database.types';
 import type { Equipment } from '$lib/models/equipment.types';
 import type { BonusHistoryItem, BonusEmployeePayout, TaskUserStat } from './types';
+import type { EquipmentWithLogCount } from '$lib/models/equipment.types';
 
 function groupTasksByUser(tasks: Array<{ user_id: string; completed: boolean }>) {
 	const result: Record<string, { total: number; completed: number }> = {};
@@ -15,7 +16,8 @@ function groupTasksByUser(tasks: Array<{ user_id: string; completed: boolean }>)
 	return result;
 }
 
-export const load: PageServerLoad = async ({ params, locals: { supabase } }) => {
+export const load: PageServerLoad = async ({ params, locals }) => {
+	const { supabase } = locals;
 	// Only super_admin (role_id: 1) can access this
 	const profile = await getUserProfileWithRoleCheck([1]);
 
@@ -43,10 +45,12 @@ export const load: PageServerLoad = async ({ params, locals: { supabase } }) => 
 		// Fetch employees for this organization
 		const { data: employees, error: employeesError } = await supabase
 			.from('profiles')
-			.select(`
+			.select(
+				`
 				*,
 				role_types!role_id(role_name)
-			`)
+			`
+			)
 			.eq('org_id', orgId)
 			.order('created_at', { ascending: false });
 
@@ -64,18 +68,19 @@ export const load: PageServerLoad = async ({ params, locals: { supabase } }) => 
 		// Fetch equipment for this organization
 		const { data: equipment, error: equipmentError } = await supabase
 			.from('equipment')
-			.select('*')
+			.select(
+				`*,
+							maintenance_logs!inner(count)
+							`
+			)
 			.eq('org_id', orgId)
-			.order('name', { ascending: true });
-
-		if (equipmentError) {
-			console.error('[OrganizationDetail] Error fetching equipment:', equipmentError);
-		}
+			.eq('maintenance_logs.status', 'open')
+			.overrideTypes<EquipmentWithLogCount[]>();
 
 		// Fetch role types for the invite modal
 		const { data: roleTypes, error: roleTypesError } = await supabase
 			.from('role_types')
-			.select('*')
+			.select('*');
 
 		if (roleTypesError) {
 			console.error('[OrganizationDetail] Error fetching role types:', roleTypesError);
@@ -97,23 +102,39 @@ export const load: PageServerLoad = async ({ params, locals: { supabase } }) => 
 
 		// Parallel fetch: shifts + schedules + tasks
 		const [shiftsRes, schedulesRes, dailyRes, weeklyRes, monthlyRes] = await Promise.all([
-			supabase.from('shifts').select('user_id').eq('org_id', orgId).eq('shift_type','work'),
-			supabase.from('weekly_schedules').select('*', { count: 'exact', head: true }).eq('org_id', orgId),
+			supabase.from('shifts').select('user_id').eq('org_id', orgId).eq('shift_type', 'work'),
+			supabase
+				.from('weekly_schedules')
+				.select('*', { count: 'exact', head: true })
+				.eq('org_id', orgId),
 			empIds.length > 0
-				? supabase.from('user_daily_tasks').select('user_id, completed').eq('task_date', today).in('user_id', empIds)
+				? supabase
+						.from('user_daily_tasks')
+						.select('user_id, completed')
+						.eq('task_date', today)
+						.in('user_id', empIds)
 				: Promise.resolve({ data: [] as any[], error: null }),
 			empIds.length > 0
-				? supabase.from('user_weekly_tasks').select('user_id, completed').gte('week_start_date', weekStartStr).lte('week_start_date', today).in('user_id', empIds)
+				? supabase
+						.from('user_weekly_tasks')
+						.select('user_id, completed')
+						.gte('week_start_date', weekStartStr)
+						.lte('week_start_date', today)
+						.in('user_id', empIds)
 				: Promise.resolve({ data: [] as any[], error: null }),
 			empIds.length > 0
-				? supabase.from('user_monthly_tasks').select('user_id, completed').eq('month_date', monthDate).in('user_id', empIds)
-				: Promise.resolve({ data: [] as any[], error: null }),
+				? supabase
+						.from('user_monthly_tasks')
+						.select('user_id, completed')
+						.eq('month_date', monthDate)
+						.in('user_id', empIds)
+				: Promise.resolve({ data: [] as any[], error: null })
 		]);
 
 		// Process shifts
 		const shiftCountByUser: Record<string, number> = {};
 		let totalShifts = 0;
-		for (const s of (shiftsRes.data ?? [])) {
+		for (const s of shiftsRes.data ?? []) {
 			shiftCountByUser[s.user_id] = (shiftCountByUser[s.user_id] ?? 0) + 1;
 			totalShifts++;
 		}
@@ -126,19 +147,20 @@ export const load: PageServerLoad = async ({ params, locals: { supabase } }) => 
 			userId: emp.id,
 			daily: dailyByUser[emp.id] ?? { total: 0, completed: 0 },
 			weekly: weeklyByUser[emp.id] ?? { total: 0, completed: 0 },
-			monthly: monthlyByUser[emp.id] ?? { total: 0, completed: 0 },
+			monthly: monthlyByUser[emp.id] ?? { total: 0, completed: 0 }
 		}));
 
 		// Calculate stats
 		const employeeCount = flattenedEmployees.length;
 		const equipmentCount = equipment?.length || 0;
-		const activeEquipment = equipment?.filter((e: Equipment) => e.status === 'operational').length || 0;
-		const maintenanceEquipment = equipment?.filter((e: Equipment) => e.status === 'maintenance').length || 0;
+		const activeEquipment = equipment?.filter((e: any) => e.status === 'operational').length || 0;
+		const maintenanceEquipment =
+			equipment?.filter((e: any) => e.status === 'maintenance').length || 0;
 
 		return {
 			organization: organization as Organization,
 			employees: flattenedEmployees,
-			equipment: (equipment || []) as Equipment[],
+			equipment: (equipment || []) as EquipmentWithLogCount[],
 			roleTypes: roleTypes || [],
 			bonusHistory,
 			shiftCountByUser,
@@ -149,7 +171,7 @@ export const load: PageServerLoad = async ({ params, locals: { supabase } }) => 
 				activeEquipment,
 				maintenanceEquipment,
 				totalShifts,
-				schedulesCount: schedulesRes.count ?? 0,
+				schedulesCount: schedulesRes.count ?? 0
 			},
 			profile
 		};
@@ -167,10 +189,12 @@ async function fetchBonusHistory(supabase: any, orgId: number): Promise<BonusHis
 		// Fetch bonus organization data for this org with period info
 		const { data: bonusOrgData, error: bonusError } = await supabase
 			.from('bonus_organization_data')
-			.select(`
+			.select(
+				`
 				*,
 				bonus_periods (*)
-			`)
+			`
+			)
 			.eq('org_id', orgId)
 			.order('created_at', { ascending: false });
 
@@ -189,7 +213,8 @@ async function fetchBonusHistory(supabase: any, orgId: number): Promise<BonusHis
 		// Fetch all employee payouts for these org_data records
 		const { data: payouts, error: payoutsError } = await supabase
 			.from('bonus_employee_payouts')
-			.select(`
+			.select(
+				`
 				*,
 				profiles!user_id (
 					id,
@@ -197,7 +222,8 @@ async function fetchBonusHistory(supabase: any, orgId: number): Promise<BonusHis
 					email,
 					image_url
 				)
-			`)
+			`
+			)
 			.in('org_data_id', orgDataIds)
 			.order('bonus_amount', { ascending: false });
 

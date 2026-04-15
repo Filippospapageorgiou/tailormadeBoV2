@@ -92,7 +92,7 @@ export const actions = {
 				} else {
 					const reporterProfile = await getUserProfile();
 					const equipmentPageUrl = `${url.origin}/app/settings/equipment_settings`;
-
+					/*
 					const notificationResult = await sendMaintanceNotification({
 						equipment,
 						issueDescription,
@@ -100,7 +100,7 @@ export const actions = {
 						reportedBy: reporterProfile,
 						equipmentPageUrl
 					});
-
+					
 					if (notificationResult.success) {
 						console.log(
 							`[addMaintenanceLog] Notification sent to ${notificationResult.sentCount} recipient(s)`
@@ -108,6 +108,7 @@ export const actions = {
 					} else {
 						console.error('[addMaintenanceLog] Notification failed:', notificationResult.message);
 					}
+						*/
 				}
 			} catch (emailError) {
 				console.error('[addMaintenanceLog] Email notification error (non-critical):', emailError);

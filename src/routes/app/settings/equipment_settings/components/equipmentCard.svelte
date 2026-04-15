@@ -8,10 +8,12 @@
 
 	let {
 		equipment,
-		index
+		index,
+		backQuery = ''
 	}: {
 		equipment: EquipmentWithLogCount;
 		index: number;
+		backQuery?: string;
 	} = $props();
 
 	let logCount = $derived(equipment.maintenance_logs?.[0]?.count ?? 0);
@@ -67,7 +69,7 @@
 </script>
 
 <button
-	onclick={() => goto(`/app/settings/equipment_settings/${equipment.id}`)}
+	onclick={() => goto(`/app/settings/equipment_settings/${equipment.id}${backQuery}`)}
 	style="animation-delay: {index * 80}ms; animation-fill-mode: backwards;"
 	class="group animate-fade-in-right cursor-pointer overflow-hidden rounded-xl border bg-background/70 text-left shadow-sm backdrop-blur-sm transition-all duration-300 hover:shadow-md dark:bg-background/50 {borderColor}"
 >

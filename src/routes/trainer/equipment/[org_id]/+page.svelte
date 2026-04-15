@@ -94,7 +94,7 @@
 	}
 
 	function handleViewLogs(equipmentId: number) {
-		// TODO: logs modal
+		goto(`/trainer/equipment/${orgId}/${equipmentId}`);
 	}
 
 	const statusFilters: { value: EquipmentStatus | 'all' | 'overdue'; label: string }[] = [

@@ -150,13 +150,11 @@ const getEquipmentByIdSchema = z.object({
 export const getEquipmentById = query(getEquipmentByIdSchema, async ({ equipmentId }) => {
 	try {
 		const supabase = createServerClient();
-		const org_id = await getUserOrgId();
 
 		const { data: equipment, error } = await supabase
 			.from('equipment')
 			.select('*')
 			.eq('id', equipmentId)
-			.eq('org_id', org_id)
 			.single();
 
 		if (error) {
@@ -209,12 +207,60 @@ export const getAllMaintenanceLogs = query(getAllMaintenanceLogsSchema, async ({
 			return { success: false, logs: [] };
 		}
 
-		return { success: true, logs: logs || [] };
+		return {
+			success: true,
+			logs: logs || []
+		};
 	} catch (err: any) {
 		console.error('[getAllMaintenanceLogs] Error fetching logs: ', err);
 		return { success: false, logs: [] };
 	}
 });
+
+const getEquipmentVisitActionsSchema = z.object({
+	equipmentId: z.number().positive()
+});
+
+export const getEquipmentVisitActions = query(
+	getEquipmentVisitActionsSchema,
+	async ({ equipmentId }) => {
+		try {
+			const supabase = createServerClient();
+
+			const { data, error } = await supabase
+				.from('trainer_visit_actions')
+				.select(
+					`
+					*,
+					trainer_service_visits!inner (
+						id,
+						visit_date,
+						status,
+						notes,
+						profiles!trainer_service_visits_trainer_id_fkey (
+							id,
+							username,
+							image_url,
+							role
+						)
+					)
+				`
+				)
+				.eq('equipment_id', equipmentId)
+				.order('created_at', { ascending: false });
+
+			if (error) {
+				console.error('[getEquipmentVisitActions] Error: ', error);
+				return { success: false, actions: [] };
+			}
+
+			return { success: true, actions: data || [] };
+		} catch (err: any) {
+			console.error('[getEquipmentVisitActions] Error: ', err);
+			return { success: false, actions: [] };
+		}
+	}
+);
 
 const getMaintenanceLogsSchema = z.object({
 	equipmentId: z.number().positive()

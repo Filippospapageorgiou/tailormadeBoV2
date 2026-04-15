@@ -71,8 +71,17 @@
 </script>
 
 <div
+	role="button"
+	tabindex="0"
+	onclick={() => onViewLogs?.(equipment.id)}
+	onkeydown={(e) => {
+		if (e.key === 'Enter' || e.key === ' ') {
+			e.preventDefault();
+			onViewLogs?.(equipment.id);
+		}
+	}}
 	style="animation-delay: {index * 60}ms; animation-fill-mode: backwards;"
-	class="group animate-fade-in-down overflow-hidden rounded-xl border bg-gradient-to-br from-muted/50 to-transparent backdrop-blur-sm {borderColor}"
+	class="group animate-fade-in-down cursor-pointer overflow-hidden rounded-xl border bg-gradient-to-br from-muted/50 to-transparent backdrop-blur-sm transition-shadow hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary {borderColor}"
 >
 	<!-- Image -->
 	<div class="relative h-36 w-full overflow-hidden">
@@ -173,7 +182,10 @@
 					{#if logCount > 0}
 						<button
 							class="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-							onclick={() => onViewLogs?.(equipment.id)}
+							onclick={(e) => {
+								e.stopPropagation();
+								onViewLogs?.(equipment.id);
+							}}
 						>
 							{logCount} αναφορ{logCount === 1 ? 'ά' : 'ές'}
 						</button>
@@ -186,7 +198,10 @@
 		{#if logCount > 0 && !equipment.next_service_date}
 			<button
 				class="flex w-full items-center gap-2 rounded-lg bg-orange-500/10 p-2.5 text-left transition-colors hover:bg-orange-500/15"
-				onclick={() => onViewLogs?.(equipment.id)}
+				onclick={(e) => {
+					e.stopPropagation();
+					onViewLogs?.(equipment.id);
+				}}
 			>
 				<MessageSquareWarning class="h-4 w-4 shrink-0 text-orange-600 dark:text-orange-400" />
 				<div class="min-w-0 flex-1">
@@ -203,7 +218,10 @@
 				variant="outline"
 				size="sm"
 				class="w-full gap-1.5 text-xs"
-				onclick={() => onAddAction?.(equipment.id)}
+				onclick={(e: MouseEvent) => {
+					e.stopPropagation();
+					onAddAction?.(equipment.id);
+				}}
 			>
 				<Plus class="h-3.5 w-3.5" />
 				Προσθήκη Ενέργειας

@@ -8,8 +8,6 @@
 	import * as Avatar from '$lib/components/ui/avatar/index.js';
 	import { Wifi } from 'lucide-svelte';
 	import OrgPresenceOverview from '$lib/components/custom/presence/OrgPresenceOverview.svelte';
-
-	import { differenceInDays, parseISO } from 'date-fns';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
@@ -30,7 +28,6 @@
 		TrendingUp,
 		CheckCircle2,
 		Settings,
-		Star,
 		ListChecks,
 		CalendarCheck,
 		Phone,
@@ -47,6 +44,8 @@
 	import { getEvaluations } from '$lib/api/trainers/trainer_managment/data.remote';
 	import ImagePreviewModal from '$lib/components/custom/ImagePreviewModal.svelte';
 	import OrgTasksTab from '$lib/components/custom/tasks/OrgTasksTab.svelte';
+	import EquipmentCard from '../../../settings/equipment_settings/components/equipmentCard.svelte';
+	import type { Equipment, EquipmentWithLogCount } from '$lib/models/equipment.types';
 
 	let { data }: PageProps = $props();
 
@@ -63,7 +62,7 @@
 
 	// Derived data from server load
 	let employees = $derived(data.employees);
-	let equipment = $derived(data.equipment);
+	let equipments = $derived(data.equipment) as EquipmentWithLogCount[];
 	let bonusHistory = $derived(data.bonusHistory);
 	let stats = $derived(data.stats);
 
@@ -79,9 +78,9 @@
 	);
 
 	let equipmentCounts = $derived({
-		operational: equipment.filter((e) => e.status === 'operational').length,
-		maintenance: equipment.filter((e) => e.status === 'maintenance').length,
-		broken: equipment.filter((e) => e.status === 'broken').length
+		operational: equipments.filter((e) => e.status === 'operational').length,
+		maintenance: equipments.filter((e) => e.status === 'maintenance').length,
+		broken: equipments.filter((e) => e.status === 'broken').length
 	});
 
 	let bonusChartData = $derived(
@@ -325,7 +324,10 @@
 		</div>
 
 		<!-- ── Tabbed Detail View ── -->
-		<Tabs.Root value={page.url.searchParams.get('tab') ?? 'overview'} class="mt-6 w-full overflow-visible">
+		<Tabs.Root
+			value={page.url.searchParams.get('tab') ?? 'overview'}
+			class="mt-6 w-full overflow-visible"
+		>
 			<Tabs.List class="flex h-auto w-auto justify-start bg-transparent">
 				{#each [{ value: 'overview', icon: TrendingUp, label: 'Overview' }, { value: 'staff', icon: Users, label: 'Staff' }, { value: 'equipment', icon: Cog, label: 'Equipment' }, { value: 'bonus', icon: Award, label: 'Bonus' }, { value: 'evaluations', icon: ClipboardList, label: 'Evaluations' }, { value: 'tasks', icon: ListChecks, label: 'Tasks' }, { value: 'presence', icon: Wifi, label: 'Presence' }] as tab}
 					<Tabs.Trigger
@@ -710,93 +712,21 @@
 				</div>
 
 				<div class="rounded-xl border border-border/60 bg-card">
-					{#if equipment.length === 0}
+					{#if equipments.length === 0}
 						<div class="flex flex-col items-center justify-center py-12 text-muted-foreground">
 							<Cog class="mb-2 h-8 w-8 opacity-40" />
 							<p class="text-sm">No equipment registered</p>
 						</div>
 					{:else}
-						<Table.Root>
-							<Table.Header>
-								<Table.Row class="hover:bg-transparent">
-									<Table.Head class="w-[260px]">Equipment</Table.Head>
-									<Table.Head>Status</Table.Head>
-									<Table.Head>Last Service</Table.Head>
-									<Table.Head>Next Service</Table.Head>
-								</Table.Row>
-							</Table.Header>
-							<Table.Body>
-								{#each equipment as item (item.id)}
-									<Table.Row>
-										<Table.Cell>
-											<button
-												class="flex items-center gap-3"
-												onclick={() => {
-													openImageModal(item?.image_url);
-												}}
-											>
-												{#if item.image_url}
-													<img
-														src={item.image_url}
-														alt={item.name}
-														class="h-8 w-8 rounded-md object-cover"
-													/>
-												{:else}
-													<div class="flex h-8 w-8 items-center justify-center rounded-md bg-muted">
-														<Cog class="h-4 w-4 text-muted-foreground" />
-													</div>
-												{/if}
-												<div>
-													<p class="text-sm font-medium">{item.name}</p>
-													{#if item.model}
-														<p class="text-xs text-muted-foreground">{item.model}</p>
-													{/if}
-												</div>
-											</button>
-										</Table.Cell>
-										<Table.Cell>
-											{#if item.status === 'operational'}
-												<Badge
-													class="border-0 bg-emerald-500/10 text-xs text-emerald-700 dark:text-emerald-400"
-													>Operational</Badge
-												>
-											{:else if item.status === 'maintenance'}
-												<Badge
-													class="border-0 bg-amber-500/10 text-xs text-amber-700 dark:text-amber-400"
-													>Maintenance</Badge
-												>
-											{:else}
-												<Badge class="border-0 bg-red-500/10 text-xs text-red-700 dark:text-red-400"
-													>Broken</Badge
-												>
-											{/if}
-										</Table.Cell>
-										<Table.Cell class="text-sm text-muted-foreground">
-											{item.last_service_date ? formatDate(item.last_service_date) : '—'}
-										</Table.Cell>
-										<Table.Cell class="text-sm">
-											{#if item.next_service_date}
-												{@const daysUntil = differenceInDays(
-													parseISO(item.next_service_date),
-													new Date()
-												)}
-												<span
-													class={daysUntil < 0
-														? 'text-red-500'
-														: daysUntil < 14
-															? 'text-amber-500'
-															: 'text-muted-foreground'}
-												>
-													{formatDate(item.next_service_date)}
-												</span>
-											{:else}
-												<span class="text-muted-foreground">—</span>
-											{/if}
-										</Table.Cell>
-									</Table.Row>
-								{/each}
-							</Table.Body>
-						</Table.Root>
+						<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+							{#each equipments as equipment, index (equipment.id)}
+								<EquipmentCard
+									{equipment}
+									{index}
+									backQuery="?from=org&orgId={organization.id}"
+								/>
+							{/each}
+						</div>
 					{/if}
 				</div>
 			</Tabs.Content>
@@ -1161,7 +1091,9 @@
 				<Card.Root>
 					<Card.Header>
 						<Card.Title>Παρουσία σε πραγματικό χρόνο</Card.Title>
-						<Card.Description>Δείτε ποιοι χρήστες είναι συνδεδεμένοι αυτή τη στιγμή</Card.Description>
+						<Card.Description
+							>Δείτε ποιοι χρήστες είναι συνδεδεμένοι αυτή τη στιγμή</Card.Description
+						>
 					</Card.Header>
 					<Card.Content>
 						<OrgPresenceOverview orgId={organization.id} />

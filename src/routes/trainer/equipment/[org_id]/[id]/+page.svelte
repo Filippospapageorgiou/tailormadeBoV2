@@ -1,35 +1,15 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import {
-		getEquipmentById,
-		getAllMaintenanceLogs,
-		getEquipmentVisitActions,
-		editEquipment,
-		deleteEquipment,
-		deleteMaintanceLog
-	} from '../data.remote';
-	import { toast } from 'svelte-sonner';
-	import Input from '$lib/components/ui/input/input.svelte';
-	import Button from '$lib/components/ui/button/button.svelte';
-	import Label from '$lib/components/ui/label/label.svelte';
+	import { getTrainerEquipmentDetail } from '$lib/api/trainers/equipment/data.remote';
 	import Badge from '$lib/components/ui/badge/badge.svelte';
-	import * as Select from '$lib/components/ui/select';
 	import * as Tabs from '$lib/components/ui/tabs';
 	import * as Avatar from '$lib/components/ui/avatar';
-	import * as Tooltip from '$lib/components/ui/tooltip';
 	import { Separator } from '$lib/components/ui/separator';
 	import { Skeleton } from '$lib/components/ui/skeleton';
-	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
-	import InputCalendar from '$lib/components/custom/inputCalendar.svelte';
 	import EmptyComp from '$lib/components/custom/EmptyComp.svelte';
-	import * as Empty from '$lib/components/ui/empty/index.js';
-	import { Cloud } from 'lucide-svelte';
 	import {
 		ArrowLeft,
-		Save,
-		Trash2,
-		Pencil,
 		Wrench,
 		CheckCircle2,
 		XCircle,
@@ -38,7 +18,6 @@
 		ImageIcon,
 		ChevronDown,
 		X,
-		BadgeAlert,
 		ExternalLink,
 		Clock,
 		Hash,
@@ -53,30 +32,21 @@
 	} from '$lib/models/equipment.types';
 	import { fade, scale } from 'svelte/transition';
 
+	let orgId = $derived(Number(page.params.org_id));
 	let equipmentId = $derived(Number(page.params.id));
-	let fromParam = $derived(page.url.searchParams.get('from'));
-	let fromOrgId = $derived(page.url.searchParams.get('orgId'));
 
-	function handleBack() {
-		if (fromParam === 'org' && fromOrgId) {
-			goto(`/app/managment/organization_managment/${fromOrgId}?tab=equipment`);
-		} else {
-			goto('/app/settings/equipment_settings');
-		}
-	}
+	let detailQuery = $derived(getTrainerEquipmentDetail({ equipmentId }));
 
-	let equipmentQuery = $derived(getEquipmentById({ equipmentId }));
-	let logsQuery = $derived(getAllMaintenanceLogs({ equipmentId }));
-	let visitActionsQuery = $derived(getEquipmentVisitActions({ equipmentId }));
+	let equipment = $derived(detailQuery?.current?.equipment);
+	let logs = $derived(detailQuery?.current?.logs ?? []);
+	let visitActions = $derived(detailQuery?.current?.actions ?? []);
 
-	let equipment = $derived(equipmentQuery?.current?.equipment);
-	let logs = $derived(logsQuery?.current?.logs ?? []);
-	let visitActions = $derived(visitActionsQuery?.current?.actions ?? []);
+	let openLogs = $derived(
+		logs.filter((l: any) => l.status === 'open' || l.status === 'in_progress')
+	);
+	let resolvedLogs = $derived(logs.filter((l: any) => l.status === 'resolved'));
 
-	let openLogs = $derived(logs.filter((l) => l.status === 'open' || l.status === 'in_progress'));
-	let resolvedLogs = $derived(logs.filter((l) => l.status === 'resolved'));
-
-	let statusList = [
+	const statusList = [
 		{ value: 'operational', label: 'Σε λειτουργία' },
 		{ value: 'maintenance', label: 'Σε service' },
 		{ value: 'broken', label: 'Βλάβη' }
@@ -120,67 +90,23 @@
 		return 'good';
 	});
 
-	// --- Edit state ---
-	let isEditing = $state(false);
-	let isUpdating = $state(false);
-	let editName = $state('');
-	let editModel = $state('');
-	let editSerialNumber = $state('');
-	let editFiles: FileList | undefined = $state();
-	let editPreviewUrl: string | null = $state(null);
-	let editManualUrl = $state('');
-	let editStatus = $state('');
-	let editLastServiceDate = $state('');
-	let editNextServiceDate = $state('');
+	let serviceBars = $derived.by(() => {
+		if (serviceStatus === 'overdue') return { count: 1, color: 'bg-red-500' };
+		if (serviceStatus === 'warning') return { count: 4, color: 'bg-orange-400' };
+		if (serviceStatus === 'unknown') return { count: 0, color: 'bg-muted-foreground/30' };
+		return { count: 9, color: 'bg-emerald-500' };
+	});
 
-	function startEditing() {
-		if (!equipment) return;
-		editName = equipment.name;
-		editModel = equipment.model || '';
-		editSerialNumber = equipment.serial_number || '';
-		editManualUrl = equipment.manual_url || '';
-		editStatus = equipment.status;
-		editLastServiceDate = equipment.last_service_date || '';
-		editNextServiceDate = equipment.next_service_date || '';
-		editPreviewUrl = equipment.image_url || null;
-		isEditing = true;
-	}
-
-	function cancelEditing() {
-		isEditing = false;
-	}
-
-	function handleEditFileChange(e: Event) {
-		const target = e.target as HTMLInputElement;
-		const file = target.files?.[0];
-		if (file) {
-			const reader = new FileReader();
-			reader.onload = (e) => {
-				editPreviewUrl = e.target?.result as string;
-			};
-			reader.readAsDataURL(file);
-		} else {
-			editPreviewUrl = equipment?.image_url || null;
-		}
-	}
-
-	// --- Delete state ---
-	let isDeleting = $state(false);
-	let showDeleteConfirm = $state(false);
-
-	// --- Logs ---
 	let expandedLogId = $state<number | null>(null);
 	let expandedActionId = $state<number | null>(null);
-	function toggleAction(id: number) {
-		expandedActionId = expandedActionId === id ? null : id;
-	}
-	let deletingLogId = $state<number | undefined>();
-	let isDeletingLog = $state(false);
 	let previewImage: string | null = $state(null);
 	let activeTab = $state('open');
 
 	function toggleLog(id: number) {
 		expandedLogId = expandedLogId === id ? null : id;
+	}
+	function toggleAction(id: number) {
+		expandedActionId = expandedActionId === id ? null : id;
 	}
 
 	const getInitials = (name: string) =>
@@ -194,21 +120,16 @@
 	function openImagePreview(url: string) {
 		previewImage = url;
 	}
-
 	function closeImagePreview() {
 		previewImage = null;
 	}
 
-	let serviceBars = $derived.by(() => {
-		if (serviceStatus === 'overdue') return { count: 1, color: 'bg-red-500' };
-		if (serviceStatus === 'warning') return { count: 4, color: 'bg-orange-400' };
-		if (serviceStatus === 'unknown') return { count: 0, color: 'bg-muted-foreground/30' };
-		return { count: 9, color: 'bg-emerald-500' };
-	});
+	function handleBack() {
+		goto(`/trainer/equipment/${orgId}`);
+	}
 </script>
 
-{#if equipmentQuery?.loading}
-	<!-- Loading skeleton -->
+{#if detailQuery?.loading}
 	<div class="min-h-screen">
 		<main class="container mx-auto px-4 pt-6 pb-20 md:px-6 lg:max-w-5xl">
 			<Skeleton class="mb-6 h-5 w-48" />
@@ -218,7 +139,6 @@
 					<Skeleton class="h-48 w-full rounded-xl" />
 				</div>
 				<div class="space-y-6">
-					<Skeleton class="h-32 w-full rounded-xl" />
 					<Skeleton class="h-96 w-full rounded-xl" />
 				</div>
 			</div>
@@ -238,8 +158,7 @@
 	</div>
 {:else}
 	<div class="min-h-screen">
-		<main class="container mx-auto px-4 pt-6 pb-20 md:px-6 lg:w-full">
-			<!-- Back navigation -->
+		<main class="container mx-auto px-4 pt-6 pb-20 md:px-6 lg:max-w-5xl">
 			<button
 				onclick={handleBack}
 				class="group mb-6 flex cursor-pointer items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
@@ -249,9 +168,8 @@
 			</button>
 
 			<div class="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
-				<!-- ===== LEFT COLUMN: Equipment Details ===== -->
+				<!-- LEFT: Equipment -->
 				<div class="space-y-6">
-					<!-- Hero image + header card -->
 					<div class="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">
 						{#if equipment.image_url}
 							<div class="relative h-56 w-full overflow-hidden">
@@ -272,8 +190,7 @@
 											]}"
 										>
 											<StatusIcon class="h-3.5 w-3.5" />
-											{statusList.find((s) => s.value === equipment.status)?.label ||
-												equipment.status}
+											{statusList.find((s) => s.value === equipment.status)?.label || equipment.status}
 										</Badge>
 									</div>
 								{/if}
@@ -281,52 +198,16 @@
 						{/if}
 
 						<div class="p-5">
-							<div class="flex items-start justify-between">
-								<div>
-									<h1 class="text-2xl font-semibold tracking-tight">{equipment.name}</h1>
-									<div class="mt-1.5 flex flex-wrap items-center gap-2">
-										<span
-											class="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground/60"
-										>
-											#{equipment.id.toString().padStart(4, '0')}
-										</span>
-										{#if equipment.model}
-											<span class="text-xs text-muted-foreground">{equipment.model}</span>
-										{/if}
-									</div>
-								</div>
-								<div class="flex gap-1.5">
-									<Tooltip.Provider>
-										<Tooltip.Root>
-											<Tooltip.Trigger>
-												<Button
-													variant="outline"
-													size="icon"
-													class="h-8 w-8 cursor-pointer"
-													onclick={startEditing}
-												>
-													<Pencil class="h-3.5 w-3.5" />
-												</Button>
-											</Tooltip.Trigger>
-											<Tooltip.Content><p>Επεξεργασία</p></Tooltip.Content>
-										</Tooltip.Root>
-									</Tooltip.Provider>
-									<Tooltip.Provider>
-										<Tooltip.Root>
-											<Tooltip.Trigger>
-												<Button
-													variant="outline"
-													size="icon"
-													class="h-8 w-8 cursor-pointer hover:border-destructive/30 hover:bg-destructive/5 hover:text-destructive"
-													onclick={() => (showDeleteConfirm = true)}
-												>
-													<Trash2 class="h-3.5 w-3.5" />
-												</Button>
-											</Tooltip.Trigger>
-											<Tooltip.Content><p>Διαγραφή</p></Tooltip.Content>
-										</Tooltip.Root>
-									</Tooltip.Provider>
-								</div>
+							<h1 class="text-2xl font-semibold tracking-tight">{equipment.name}</h1>
+							<div class="mt-1.5 flex flex-wrap items-center gap-2">
+								<span
+									class="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground/60"
+								>
+									#{equipment.id.toString().padStart(4, '0')}
+								</span>
+								{#if equipment.model}
+									<span class="text-xs text-muted-foreground">{equipment.model}</span>
+								{/if}
 							</div>
 
 							{#if equipment.serial_number}
@@ -350,7 +231,7 @@
 						</div>
 					</div>
 
-					<!-- Service Health Card -->
+					<!-- Service Health -->
 					<div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
 						<h3 class="mb-4 flex items-center gap-2 text-sm font-semibold tracking-tight">
 							<Activity class="h-4 w-4 text-muted-foreground" />
@@ -359,7 +240,6 @@
 
 						{#if equipment.next_service_date}
 							<div class="space-y-4">
-								<!-- Service bars -->
 								<div class="flex items-center gap-3">
 									<div class="flex h-6 items-end gap-0.5">
 										{#each { length: 9 } as _, i}
@@ -388,7 +268,6 @@
 
 								<Separator />
 
-								<!-- Dates -->
 								<div class="grid grid-cols-2 gap-4">
 									<div class="space-y-1">
 										<span
@@ -424,229 +303,21 @@
 							<p class="text-sm text-muted-foreground/60">Δεν έχει προγραμματιστεί service</p>
 						{/if}
 					</div>
-
-					<!-- Delete Confirm (inline, not modal) -->
-					{#if showDeleteConfirm}
-						<div
-							class="rounded-xl border border-destructive/30 bg-destructive/5 p-5 shadow-sm"
-							transition:fade={{ duration: 150 }}
-						>
-							<div class="mb-4 flex items-start gap-3">
-								<BadgeAlert class="h-5 w-5 flex-shrink-0 text-destructive" />
-								<div>
-									<h4 class="text-sm font-semibold text-destructive">Διαγραφή εξοπλισμού</h4>
-									<p class="mt-1 text-xs text-muted-foreground">
-										Αυτή η ενέργεια δεν μπορεί να αναιρεθεί. Θα διαγραφούν όλα τα δεδομένα και το
-										ιστορικό συντήρησης για <span class="font-semibold">{equipment.name}</span>.
-									</p>
-								</div>
-							</div>
-							<form
-								class="flex items-center gap-2"
-								{...deleteEquipment.enhance(async ({ submit }) => {
-									isDeleting = true;
-									await submit();
-									if (deleteEquipment.result?.success) {
-										toast.success(deleteEquipment.result.message);
-										handleBack();
-									} else {
-										toast.error(deleteEquipment.result?.message || 'Σφάλμα κατά την διαγραφή');
-									}
-									isDeleting = false;
-								})}
-							>
-								<input name="equipmentId" type="hidden" value={equipment.id} />
-								<Button
-									type="submit"
-									variant="destructive"
-									size="sm"
-									disabled={isDeleting}
-									class="gap-2"
-								>
-									{#if isDeleting}
-										<Spinner class="h-3 w-3" /> Διαγραφή...
-									{:else}
-										<Trash2 class="h-3 w-3" /> Επιβεβαίωση διαγραφής
-									{/if}
-								</Button>
-								<Button
-									type="button"
-									variant="outline"
-									size="sm"
-									onclick={() => (showDeleteConfirm = false)}
-								>
-									Ακύρωση
-								</Button>
-							</form>
-						</div>
-					{/if}
 				</div>
 
-				<!-- ===== RIGHT COLUMN: Edit Form / Maintenance Logs ===== -->
+				<!-- RIGHT: Tabs -->
 				<div class="space-y-6">
-					<!-- Edit Form (shown when editing) -->
-					{#if isEditing}
-						<div
-							class="rounded-xl border border-primary/20 bg-card p-6 shadow-sm"
-							transition:fade={{ duration: 150 }}
-						>
-							<div class="mb-5 flex items-center justify-between">
-								<h2 class="text-lg font-semibold tracking-tight">Επεξεργασία εξοπλισμού</h2>
-								<Button variant="ghost" size="icon" class="h-8 w-8" onclick={cancelEditing}>
-									<X class="h-4 w-4" />
-								</Button>
-							</div>
-
-							<form
-								class="space-y-5"
-								enctype="multipart/form-data"
-								{...editEquipment.enhance(async ({ submit }) => {
-									isUpdating = true;
-									await submit();
-									if (editEquipment.result?.success) {
-										toast.success(editEquipment.result.message);
-										isEditing = false;
-									} else {
-										toast.error(editEquipment.result?.message || 'Αποτυχία ενημέρωσης');
-									}
-									isUpdating = false;
-								})}
-							>
-								<input type="hidden" name="id" value={equipment.id} />
-
-								<div class="grid gap-4 sm:grid-cols-2">
-									<div class="space-y-2">
-										<Label class="gap-1">Όνομα <span class="text-destructive">*</span></Label>
-										<Input type="text" name="name" bind:value={editName} required />
-									</div>
-									<div class="space-y-2">
-										<Label class="gap-1">Μοντέλο <span class="text-destructive">*</span></Label>
-										<Input type="text" name="model" bind:value={editModel} required />
-									</div>
-									<div class="space-y-2 sm:col-span-2">
-										<Label>Σειριακός αριθμός</Label>
-										<Input type="text" name="serial_number" bind:value={editSerialNumber} />
-									</div>
-								</div>
-
-								<!-- Image -->
-								<div class="space-y-2">
-									<Label>Εικόνα</Label>
-									<input
-										id="edit-image-upload-page"
-										name="image_url"
-										type="file"
-										accept="image/*"
-										class="hidden"
-										bind:files={editFiles}
-										onchange={handleEditFileChange}
-									/>
-									{#if editPreviewUrl}
-										<button
-											type="button"
-											onclick={() => document.getElementById('edit-image-upload-page')?.click()}
-											class="w-full"
-										>
-											<Empty.Root class="cursor-pointer transition-colors hover:bg-muted/50">
-												<Empty.Header>
-													<Empty.Description>
-														<img
-															src={editPreviewUrl}
-															alt="Preview"
-															class="mx-auto max-h-40 rounded-md object-cover"
-														/>
-													</Empty.Description>
-												</Empty.Header>
-												<Empty.Content>
-													<p class="text-xs text-muted-foreground">Κλικ για αλλαγή εικόνας</p>
-												</Empty.Content>
-											</Empty.Root>
-										</button>
-									{:else}
-										<button
-											type="button"
-											onclick={() => document.getElementById('edit-image-upload-page')?.click()}
-											class="w-full"
-										>
-											<Empty.Root
-												class="cursor-pointer border border-dashed transition-colors hover:bg-muted/50"
-											>
-												<Empty.Header>
-													<Empty.Media variant="icon">
-														<Cloud />
-													</Empty.Media>
-													<Empty.Title>Ανέβασε εικόνα</Empty.Title>
-												</Empty.Header>
-											</Empty.Root>
-										</button>
-									{/if}
-								</div>
-
-								<div class="space-y-2">
-									<Label>Manual URL</Label>
-									<Input name="manual_url" type="text" bind:value={editManualUrl} />
-								</div>
-
-								<div class="grid gap-4 sm:grid-cols-2">
-									<div class="space-y-2 sm:col-span-2">
-										<Label>Κατάσταση <span class="text-destructive">*</span></Label>
-										<Select.Root type="single" name="status" bind:value={editStatus} required>
-											<Select.Trigger class="w-full sm:w-64">
-												{statusList.find((c) => c.value === editStatus)?.label ??
-													'Διαλέξε κατάσταση'}
-											</Select.Trigger>
-											<Select.Content>
-												<Select.Group>
-													<Select.Label>Κατάσταση</Select.Label>
-													{#each statusList as status (status.value)}
-														<Select.Item value={status.value} label={status.label}>
-															{status.label}
-														</Select.Item>
-													{/each}
-												</Select.Group>
-											</Select.Content>
-										</Select.Root>
-									</div>
-									<div class="space-y-2">
-										<Label>Τελευταίο service <span class="text-destructive">*</span></Label>
-										<InputCalendar id="edit_last" bind:value={editLastServiceDate} required />
-										<input type="hidden" name="last_service_date" value={editLastServiceDate} />
-									</div>
-									<div class="space-y-2">
-										<Label>Επόμενο service <span class="text-destructive">*</span></Label>
-										<InputCalendar id="edit_next" bind:value={editNextServiceDate} required />
-										<input type="hidden" name="next_service_date" value={editNextServiceDate} />
-									</div>
-								</div>
-
-								<Separator />
-
-								<div class="flex items-center justify-end gap-2">
-									<Button type="button" variant="outline" onclick={cancelEditing}>Ακύρωση</Button>
-									<Button type="submit" disabled={isUpdating} class="gap-2">
-										{#if isUpdating}
-											<Spinner class="h-4 w-4" /> Αποθήκευση...
-										{:else}
-											<Save class="h-4 w-4" /> Αποθήκευση
-										{/if}
-									</Button>
-								</div>
-							</form>
-						</div>
-					{/if}
-
-					<!-- Maintenance Logs Section -->
 					<div class="rounded-xl border border-border/60 bg-card shadow-sm">
 						<div class="border-b border-border/40 px-5 py-4">
 							<div class="flex items-center justify-between">
 								<h2 class="flex items-center gap-2 text-lg font-semibold tracking-tight">
 									<Wrench class="h-5 w-5 text-muted-foreground" />
-									Ιστορικό Συντήρησης
+									Ιστορικό
 								</h2>
 								<span
 									class="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
 								>
-									{logs.length} συνολικά
+									{logs.length} logs · {visitActions.length} ενέργειες
 								</span>
 							</div>
 						</div>
@@ -656,7 +327,7 @@
 								<Tabs.List class="h-10 w-full justify-start gap-4 bg-transparent p-0">
 									<Tabs.Trigger
 										value="open"
-										class="relative h-10 rounded-none border-b-2 border-transparent px-0 pt-2 pb-3 font-medium data-[state=active]:border-red-500 data-[state=active]:text-red-600 data-[state=active]:shadow-none dark:data-[state=active]:text-red-400"
+										class="relative h-10 rounded-none border-b-2 border-transparent px-0 pb-3 pt-2 font-medium data-[state=active]:border-red-500 data-[state=active]:text-red-600 dark:data-[state=active]:text-red-400 data-[state=active]:shadow-none"
 									>
 										Ανοιχτά
 										{#if openLogs.length > 0}
@@ -669,7 +340,7 @@
 									</Tabs.Trigger>
 									<Tabs.Trigger
 										value="resolved"
-										class="relative h-10 rounded-none border-b-2 border-transparent px-0 pt-2 pb-3 font-medium data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-600 data-[state=active]:shadow-none dark:data-[state=active]:text-emerald-400"
+										class="relative h-10 rounded-none border-b-2 border-transparent px-0 pb-3 pt-2 font-medium data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-600 dark:data-[state=active]:text-emerald-400 data-[state=active]:shadow-none"
 									>
 										Επιλυμένα
 										{#if resolvedLogs.length > 0}
@@ -682,7 +353,7 @@
 									</Tabs.Trigger>
 									<Tabs.Trigger
 										value="trainer"
-										class="relative h-10 rounded-none border-b-2 border-transparent px-0 pt-2 pb-3 font-medium data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none"
+										class="relative h-10 rounded-none border-b-2 border-transparent px-0 pb-3 pt-2 font-medium data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none"
 									>
 										Εκπαιδευτής
 										{#if visitActions.length > 0}
@@ -696,32 +367,16 @@
 								</Tabs.List>
 							</div>
 
+							<!-- OPEN -->
 							<Tabs.Content value="open" class="mt-0">
-								{#if logsQuery?.loading}
-									<div class="space-y-4 p-5">
-										{#each { length: 3 } as _}
-											<div class="flex items-center gap-3">
-												<Skeleton class="h-9 w-9 rounded-full" />
-												<div class="flex-1 space-y-2">
-													<Skeleton class="h-4 w-1/3" />
-													<Skeleton class="h-3 w-2/3" />
-												</div>
-											</div>
-										{/each}
-									</div>
-								{:else if openLogs.length === 0}
-									<div
-										class="flex flex-col items-center justify-center py-12 text-muted-foreground"
-									>
+								{#if openLogs.length === 0}
+									<div class="flex flex-col items-center justify-center py-12 text-muted-foreground">
 										<CheckCircle2 class="mb-3 h-10 w-10 opacity-20" />
 										<p class="text-sm">Δεν υπάρχουν ανοιχτά ζητήματα</p>
-										<p class="text-xs text-muted-foreground/50">
-											Ο εξοπλισμός είναι σε καλή κατάσταση
-										</p>
 									</div>
 								{:else}
 									<div class="divide-y divide-border/40">
-										{#each openLogs as log, i (log.id)}
+										{#each openLogs as log (log.id)}
 											{@const isExpanded = expandedLogId === log.id}
 											<div
 												class="transition-colors duration-200 {isExpanded
@@ -856,42 +511,6 @@
 																</div>
 															</div>
 														{/if}
-
-														<!-- Delete log -->
-														<div class="flex justify-end pt-2">
-															<form
-																{...deleteMaintanceLog.enhance(async ({ submit }) => {
-																	deletingLogId = log.id;
-																	isDeletingLog = true;
-																	await submit();
-																	if (deleteMaintanceLog.result?.success) {
-																		toast.success(deleteMaintanceLog.result.message);
-																	} else {
-																		toast.error(
-																			deleteMaintanceLog.result?.message ||
-																				'Σφάλμα κατά την διαγραφή'
-																		);
-																	}
-																	isDeletingLog = false;
-																	deletingLogId = undefined;
-																})}
-															>
-																<input type="hidden" name="maintanceLogId" value={log.id} />
-																<Button
-																	type="submit"
-																	variant="ghost"
-																	size="sm"
-																	disabled={isDeletingLog && deletingLogId === log.id}
-																	class="h-7 gap-1.5 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
-																>
-																	{#if isDeletingLog && deletingLogId === log.id}
-																		<Spinner class="h-3 w-3" /> Διαγραφή...
-																	{:else}
-																		<Trash2 class="h-3 w-3" /> Διαγραφή
-																	{/if}
-																</Button>
-															</form>
-														</div>
 													</div>
 												{/if}
 											</div>
@@ -900,29 +519,16 @@
 								{/if}
 							</Tabs.Content>
 
+							<!-- RESOLVED -->
 							<Tabs.Content value="resolved" class="mt-0">
-								{#if logsQuery?.loading}
-									<div class="space-y-4 p-5">
-										{#each { length: 3 } as _}
-											<div class="flex items-center gap-3">
-												<Skeleton class="h-9 w-9 rounded-full" />
-												<div class="flex-1 space-y-2">
-													<Skeleton class="h-4 w-1/3" />
-													<Skeleton class="h-3 w-2/3" />
-												</div>
-											</div>
-										{/each}
-									</div>
-								{:else if resolvedLogs.length === 0}
-									<div
-										class="flex flex-col items-center justify-center py-12 text-muted-foreground"
-									>
+								{#if resolvedLogs.length === 0}
+									<div class="flex flex-col items-center justify-center py-12 text-muted-foreground">
 										<Clock class="mb-3 h-10 w-10 opacity-20" />
 										<p class="text-sm">Δεν υπάρχει ιστορικό συντήρησης</p>
 									</div>
 								{:else}
 									<div class="divide-y divide-border/40">
-										{#each resolvedLogs as log, i (log.id)}
+										{#each resolvedLogs as log (log.id)}
 											{@const isExpanded = expandedLogId === log.id}
 											<div
 												class="transition-colors duration-200 {isExpanded
@@ -991,30 +597,26 @@
 														>
 															<div class="flex items-center gap-1.5">
 																<Calendar class="h-3 w-3" />
-																Δημιουργήθηκε: {format(
-																	new Date(log.created_at),
-																	'dd MMM yyyy, HH:mm',
-																	{ locale: el }
-																)}
+																Δημιουργήθηκε: {format(new Date(log.created_at), 'dd MMM yyyy, HH:mm', {
+																	locale: el
+																})}
 															</div>
 															{#if log.resolved_at}
 																<div
 																	class="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400"
 																>
 																	<CheckCircle2 class="h-3 w-3" />
-																	Επιλύθηκε: {format(
-																		new Date(log.resolved_at),
-																		'dd MMM yyyy, HH:mm',
-																		{ locale: el }
-																	)}
+																	Επιλύθηκε: {format(new Date(log.resolved_at), 'dd MMM yyyy, HH:mm', {
+																		locale: el
+																	})}
 																</div>
 															{/if}
 														</div>
 
-														{#if (log as any).resolved_profile?.username}
+														{#if log.resolved_profile?.username}
 															<div class="flex items-center gap-2 text-xs text-muted-foreground">
 																<span class="font-semibold">Επιλύθηκε από:</span>
-																<span>{(log as any).resolved_profile.username}</span>
+																<span>{log.resolved_profile.username}</span>
 															</div>
 														{/if}
 
@@ -1082,42 +684,6 @@
 																</div>
 															</div>
 														{/if}
-
-														<!-- Delete log -->
-														<div class="flex justify-end pt-2">
-															<form
-																{...deleteMaintanceLog.enhance(async ({ submit }) => {
-																	deletingLogId = log.id;
-																	isDeletingLog = true;
-																	await submit();
-																	if (deleteMaintanceLog.result?.success) {
-																		toast.success(deleteMaintanceLog.result.message);
-																	} else {
-																		toast.error(
-																			deleteMaintanceLog.result?.message ||
-																				'Σφάλμα κατά την διαγραφή'
-																		);
-																	}
-																	isDeletingLog = false;
-																	deletingLogId = undefined;
-																})}
-															>
-																<input type="hidden" name="maintanceLogId" value={log.id} />
-																<Button
-																	type="submit"
-																	variant="ghost"
-																	size="sm"
-																	disabled={isDeletingLog && deletingLogId === log.id}
-																	class="h-7 gap-1.5 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
-																>
-																	{#if isDeletingLog && deletingLogId === log.id}
-																		<Spinner class="h-3 w-3" /> Διαγραφή...
-																	{:else}
-																		<Trash2 class="h-3 w-3" /> Διαγραφή
-																	{/if}
-																</Button>
-															</form>
-														</div>
 													</div>
 												{/if}
 											</div>
@@ -1126,28 +692,12 @@
 								{/if}
 							</Tabs.Content>
 
+							<!-- TRAINER ACTIONS -->
 							<Tabs.Content value="trainer" class="mt-0">
-								{#if visitActionsQuery?.loading}
-									<div class="space-y-4 p-5">
-										{#each { length: 3 } as _}
-											<div class="flex items-center gap-3">
-												<Skeleton class="h-9 w-9 rounded-full" />
-												<div class="flex-1 space-y-2">
-													<Skeleton class="h-4 w-1/3" />
-													<Skeleton class="h-3 w-2/3" />
-												</div>
-											</div>
-										{/each}
-									</div>
-								{:else if visitActions.length === 0}
-									<div
-										class="flex flex-col items-center justify-center py-12 text-muted-foreground"
-									>
+								{#if visitActions.length === 0}
+									<div class="flex flex-col items-center justify-center py-12 text-muted-foreground">
 										<Wrench class="mb-3 h-10 w-10 opacity-20" />
 										<p class="text-sm">Δεν υπάρχουν ενέργειες εκπαιδευτή</p>
-										<p class="text-xs text-muted-foreground/50">
-											Καμία καταγεγραμμένη επίσκεψη σε αυτό το μηχάνημα
-										</p>
 									</div>
 								{:else}
 									<div class="divide-y divide-border/40">
@@ -1198,11 +748,9 @@
 															</span>
 														{/if}
 														<span class="text-[11px] text-muted-foreground/60">
-															{format(
-																new Date(visit?.visit_date ?? action.created_at),
-																'dd MMM yyyy',
-																{ locale: el }
-															)}
+															{format(new Date(visit?.visit_date ?? action.created_at), 'dd MMM yyyy', {
+																locale: el
+															})}
 														</span>
 														<ChevronDown
 															class="h-4 w-4 text-muted-foreground/40 transition-transform duration-200 {isExpanded
@@ -1258,8 +806,8 @@
 																		action.status_change as EquipmentStatus
 																	]}"
 																>
-																	{statusList.find((s) => s.value === action.status_change)
-																		?.label || action.status_change}
+																	{statusList.find((s) => s.value === action.status_change)?.label ||
+																		action.status_change}
 																</Badge>
 															</div>
 														{/if}
@@ -1323,7 +871,6 @@
 		</main>
 	</div>
 
-	<!-- Image Preview Overlay -->
 	{#if previewImage}
 		<div
 			class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
