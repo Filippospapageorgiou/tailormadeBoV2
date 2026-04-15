@@ -646,7 +646,6 @@ If someone asks about anything not related to TailorMade data (weather, general 
 | weekly_schedules | **integer** |
 | shifts | **integer** |
 | shift_change_requests | **integer** |
-| daily_register_closings | **integer** |
 | suppliers | **integer** |
 | organization_invitations | **integer** |
 | important_phone_calls | **integer** |
@@ -792,20 +791,6 @@ GROUP BY o.id, o.store_name
 ORDER BY staff_count DESC;
 \`\`\`
 
-### Monthly Sales Summary
-\`\`\`sql
-SELECT 
-  o.store_name,
-  TO_CHAR(d.closing_date, 'YYYY-MM') as month,
-  ROUND(SUM(d.total_sales)::numeric, 2) as total_sales,
-  ROUND(AVG(d.total_sales)::numeric, 2) as avg_daily_sales,
-  COUNT(*) as days_recorded
-FROM daily_register_closings d
-JOIN core_organizations o ON o.id = d.org_id
-WHERE d.closing_date >= CURRENT_DATE - INTERVAL '30 days'
-GROUP BY o.id, o.store_name, TO_CHAR(d.closing_date, 'YYYY-MM')
-ORDER BY month DESC, total_sales DESC;
-\`\`\`
 
 ### Shift Hours by Employee
 \`\`\`sql
@@ -926,11 +911,11 @@ ORDER BY o.store_name, esi.section;
 
 // ...existing code...
 export const TOOL_DESCRIPTIONS = {
-  queryDatabase: `Execute a read-only SQL query against the TailorMade database.
+	queryDatabase: `Execute a read-only SQL query against the TailorMade database.
   
 ⚠️ CRITICAL TYPE CHECKS BEFORE EVERY QUERY:
 - profiles.id is UUID (not bigint!)
-- org_id is INTEGER in: weekly_schedules, shifts, shift_change_requests, daily_register_closings, suppliers, organization_invitations, important_phone_calls, feedback, notifications
+- org_id is INTEGER in: weekly_schedules, shifts, shift_change_requests, suppliers, organization_invitations, important_phone_calls, feedback, notifications
 - org_id is BIGINT in: profiles, task_templates, equipment, bonus tables
 - task_templates.id, task_items.id, user_daily_tasks.id are UUID
 - Date columns use DATE type, Time columns use TIME WITHOUT TIME ZONE
@@ -949,10 +934,6 @@ FROM profiles p
 JOIN shifts s ON s.user_id = p.id 
 WHERE s.shift_date = '2024-01-15'::date
 
-✅ Correct org_id handling (integer table):
-SELECT * FROM daily_register_closings 
-WHERE org_id = 1::integer
-
 ✅ Correct org_id handling (bigint table):
 SELECT * FROM profiles 
 WHERE org_id = 1::bigint
@@ -968,18 +949,49 @@ GROUP BY o.id, o.store_name`
 
 // Export helper for type checking
 export const TYPE_REFERENCE = {
-  uuid_primary_keys: ['profiles.id', 'task_templates.id', 'task_items.id', 'user_daily_tasks.id', 'verification_codes.id'],
-  integer_org_id: ['weekly_schedules', 'shifts', 'shift_change_requests', 'daily_register_closings', 'suppliers', 'organization_invitations', 'important_phone_calls', 'feedback', 'notifications'],
-  bigint_org_id: ['profiles', 'task_templates', 'equipment', 'bonus_organization_data', 'bonus_leaderboard_cache'],
-  generated_columns: ['daily_register_closings.cash_diffrence', 'bonus_organization_data.kilo_difference', 'bonus_organization_data.percentage_change'],
-  jsonb_columns: ['blogs.images', 'maintenance_logs.images', 'evaluation_photos.photos', 'evaluation_summary_actions.sections'],
-  array_columns: ['blogs.tags', 'store_evaluations.store_managers', 'store_evaluations.baristas_on_duty'],
-  trainer_module_pitfalls: {
-    table_typo: 'trainer_org_assigments (one s — not trainer_org_assignments)',
-    status_column: 'store_evaluations uses submit column (not status) for EvaluationStatus',
-    summary_typo: 'evaluation_summary_actions uses evalution_id (not evaluation_id)',
-    submit_values: ['draft', 'submitted', 'reviewed', 'reopened']
-  }
+	uuid_primary_keys: [
+		'profiles.id',
+		'task_templates.id',
+		'task_items.id',
+		'user_daily_tasks.id',
+		'verification_codes.id'
+	],
+	integer_org_id: [
+		'weekly_schedules',
+		'shifts',
+		'shift_change_requests',
+		'suppliers',
+		'organization_invitations',
+		'important_phone_calls',
+		'feedback',
+		'notifications'
+	],
+	bigint_org_id: [
+		'profiles',
+		'task_templates',
+		'equipment',
+		'bonus_organization_data',
+		'bonus_leaderboard_cache'
+	],
+	generated_columns: [
+		'bonus_organization_data.kilo_difference',
+		'bonus_organization_data.percentage_change'
+	],
+	jsonb_columns: [
+		'blogs.images',
+		'maintenance_logs.images',
+		'evaluation_photos.photos',
+		'evaluation_summary_actions.sections'
+	],
+	array_columns: [
+		'blogs.tags',
+		'store_evaluations.store_managers',
+		'store_evaluations.baristas_on_duty'
+	],
+	trainer_module_pitfalls: {
+		table_typo: 'trainer_org_assigments (one s — not trainer_org_assignments)',
+		status_column: 'store_evaluations uses submit column (not status) for EvaluationStatus',
+		summary_typo: 'evaluation_summary_actions uses evalution_id (not evaluation_id)',
+		submit_values: ['draft', 'submitted', 'reviewed', 'reopened']
+	}
 };
-
-

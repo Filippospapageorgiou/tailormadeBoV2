@@ -24,16 +24,7 @@
 		PromptInputTextarea,
 		PromptInputSubmit
 	} from '$lib/components/ai-elements/prompt-input';
-	import {
-		Tool,
-		ToolHeader,
-		ToolContent,
-		ToolInput,
-		ToolOutput
-	} from '$lib/components/ai-elements/tool';
-
 	import { Suggestion } from '$lib/components/ai-elements/suggestion/index.js';
-
 	import Copy from 'lucide-svelte/icons/copy';
 	import RefreshCcw from 'lucide-svelte/icons/refresh-ccw';
 	import ThumbsUp from 'lucide-svelte/icons/thumbs-up';
@@ -110,12 +101,14 @@
 		{
 			icon: ClipboardList,
 			text: 'Αξιολογήσεις Trainer',
-			query: 'Δείξε μου όλες τις αξιολογήσεις των trainers, την κατάσταση τους και τη μέση βαθμολογία ανά κατάστημα'
+			query:
+				'Δείξε μου όλες τις αξιολογήσεις των trainers, την κατάσταση τους και τη μέση βαθμολογία ανά κατάστημα'
 		},
 		{
 			icon: Star,
 			text: 'Αναθέσεις Trainer',
-			query: 'Ποιες είναι οι ενεργές αναθέσεις trainer σε καταστήματα και πότε είναι προγραμματισμένες οι επισκέψεις'
+			query:
+				'Ποιες είναι οι ενεργές αναθέσεις trainer σε καταστήματα και πότε είναι προγραμματισμένες οι επισκέψεις'
 		}
 	];
 
@@ -279,7 +272,7 @@
 								<!-- Content -->
 								{#if message.role === 'user'}
 									<div class="max-w-[75%] min-w-0">
-										<div class="flex items-start gap-3 justify-end">
+										<div class="flex items-start justify-end gap-3">
 											<div
 												class="rounded-2xl rounded-tr-md bg-primary px-4 py-2.5 text-sm leading-relaxed text-primary-foreground"
 											>
@@ -306,12 +299,13 @@
 									<div class="min-w-0 flex-1">
 										<Message from="assistant" class="max-w-full">
 											<MessageContent class="w-full max-w-full">
-												{#each message.parts as part, partIndex (partIndex)}
+												{#each message.parts as part, partIndex (`${message.id}-${partIndex}`)}
 													{#if isTextPart(part)}
 														<MessageResponse content={part.text} />
 													{:else if part.type === 'tool-queryDatabase' || part.type === 'tool-invocation'}
 														{@const tool = asSqlTool(part)}
 														{#if tool.input}
+															<!--
 															<div class="my-4 w-full overflow-hidden">
 																<Tool
 																	class="overflow-hidden rounded-xl border border-border/50 bg-muted/50 backdrop-blur-sm"
@@ -325,7 +319,7 @@
 																	</ToolContent>
 																</Tool>
 															</div>
-
+														-->
 															{#if !tool.output}
 																<div class="flex items-center gap-3 py-3">
 																	<Loader class="size-4 text-primary" />

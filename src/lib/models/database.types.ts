@@ -32,6 +32,20 @@ export interface Beverage {
 	updated_at: string;
 }
 
+export interface BeverageRead {
+	id: number;
+	beverage_id: number;
+	user_id: string;
+	org_id: number;
+	read_at: string;
+}
+
+export interface BeverageReadWithRelations extends BeverageRead {
+	beverage?: Pick<Beverage, 'id' | 'name' | 'image_url'>;
+	profile?: Pick<Profile, 'id' | 'org_id' | 'full_name' | 'image_url'>;
+	core_organization?: Pick<Organization, 'id' | 'store_name'>;
+}
+
 export interface Ingredient {
 	id: number;
 	name: string;

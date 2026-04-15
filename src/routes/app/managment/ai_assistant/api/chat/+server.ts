@@ -1,84 +1,48 @@
 // src/routes/app/managment/ai_assistant/api/chat/+server.ts
-// Original system prompt + prompt caching (system + tool) + security fixes + anti-cutoff
+// Fixes: system message array, SQL injection hardening, org scoping,
+//        proper types, and early-stopping via maxTokens + continueUntilDone
 
 import { z } from 'zod';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { streamText, tool, convertToModelMessages, stepCountIs } from 'ai';
-import type { SystemModelMessage } from 'ai';
+import type { SystemModelMessage, UIMessage } from 'ai';
 import { ANTHROPIC_API_KEY, SUPABASE_SECRET_KEY } from '$env/static/private';
 import { PUBLIC_SUPABASE_URL } from '$env/static/public';
 import { SYSTEM_PROMPT, TOOL_DESCRIPTIONS } from '$lib/components/ai/Systemprompt';
 import type { RequestHandler } from '@sveltejs/kit';
 
-// ─── Anthropic Client ───────────────────────────────────────────────
+// ─── Anthropic Client ────────────────────────────────────────────────
 const anthropic = createAnthropic({
 	apiKey: ANTHROPIC_API_KEY
 });
 
-// ─── Constants ──────────────────────────────────────────────────────
+// ─── Constants ───────────────────────────────────────────────────────
 const MAX_RESULT_ROWS = 200;
-const MAX_STEPS = 4;
+const MAX_STEPS = 15; // raised: complex equipment queries need more steps
 const MODEL = 'claude-sonnet-4-20250514';
 
-// ─── Cached System Prompt ───────────────────────────────────────────
-// Built once, reused on every request. The providerOptions tells the
-// Anthropic provider to set a cache_control breakpoint on this block.
-// First call pays 25% extra to write the cache; subsequent calls within
-// 5 minutes pay only 10% of the base cost to read it.
-const CACHED_SYSTEM: SystemModelMessage[] = [
-	{
-		role: 'system',
-		content: SYSTEM_PROMPT,
-		providerOptions: {
-			anthropic: {
-				cacheControl: { type: 'ephemeral' }
-			}
-		}
-	}
-];
-
-// ─── Chat Logging ───────────────────────────────────────────────────
-async function logChatMessage(
-	userId: string,
-	orgId: number | null,
-	sessionId: string,
-	role: 'user' | 'assistant',
-	content: string,
-	model: string = MODEL
-) {
-	try {
-		await fetch(`${PUBLIC_SUPABASE_URL}/rest/v1/ai_chat_logs`, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				apikey: SUPABASE_SECRET_KEY,
-				Authorization: `Bearer ${SUPABASE_SECRET_KEY}`,
-				Prefer: 'return=minimal'
-			},
-			body: JSON.stringify({
-				user_id: userId,
-				org_id: orgId,
-				session_id: sessionId,
-				role,
-				content,
-				model
-			})
-		});
-	} catch (error) {
-		console.error('Failed to log chat message:', error);
-	}
-}
-
-// ─── SQL Validation (regex-based) ───────────────────────────────────
+// ─── SQL Validation ──────────────────────────────────────────────────
 function validateSQL(sql: string): { valid: boolean; error?: string } {
 	const normalized = sql.trim().toLowerCase();
 
+	// Strip comments FIRST before any other check so they can't hide forbidden ops
+	const withoutComments = normalized
+		.replace(/--[^\n]*/g, '') // single-line comments
+		.replace(/\/\*[\s\S]*?\*\//g, ''); // block comments
+
 	// Must start with SELECT or WITH (CTEs)
-	if (!normalized.startsWith('select') && !normalized.startsWith('with')) {
+	const trimmed = withoutComments.trim();
+	if (!trimmed.startsWith('select') && !trimmed.startsWith('with')) {
 		return { valid: false, error: 'Only SELECT queries are allowed' };
 	}
 
-	// Block dangerous keywords with regex
+	// Block dangerous keywords — also strip double-quoted and dollar-quoted strings
+	const withoutStrings = withoutComments
+		.replace(/'[^']*'/g, '') // single-quoted strings
+		.replace(/"[^"]*"/g, '') // double-quoted identifiers
+		.replace(/\$\$[\s\S]*?\$\$/g, '') // dollar-quoted strings (Postgres)
+		.replace(/\$[^$]+\$[\s\S]*?\$[^$]+\$/g, ''); // named dollar-quotes
+
 	const forbidden = [
 		'insert\\s+into',
 		'\\bupdate\\s+\\w',
@@ -90,17 +54,21 @@ function validateSQL(sql: string): { valid: boolean; error?: string } {
 		'\\bgrant\\s+',
 		'\\brevoke\\s+',
 		'\\bexec\\s*\\(',
-		'\\bexecute\\s+'
+		'\\bexecute\\s+',
+		'\\bcopy\\s+', // COPY can read/write files
+		'\\bpg_read_file', // filesystem access
+		'\\bpg_write_file',
+		'\\blo_import', // large object import
+		'\\blo_export'
 	];
 
 	for (const pattern of forbidden) {
-		if (new RegExp(pattern, 'i').test(normalized)) {
+		if (new RegExp(pattern, 'i').test(withoutStrings)) {
 			return { valid: false, error: 'Query contains a forbidden operation' };
 		}
 	}
 
-	// Block multiple statements (strip string literals first)
-	const withoutStrings = normalized.replace(/'[^']*'/g, '');
+	// Block multiple statements
 	const statements = withoutStrings.split(';').filter((s) => s.trim().length > 0);
 	if (statements.length > 1) {
 		return { valid: false, error: 'Multiple SQL statements are not allowed' };
@@ -109,15 +77,11 @@ function validateSQL(sql: string): { valid: boolean; error?: string } {
 	return { valid: true };
 }
 
-// ─── Query Execution ────────────────────────────────────────────────
+// ─── Query Execution ─────────────────────────────────────────────────
 async function executeQuery(sql: string, explanation: string) {
 	const validation = validateSQL(sql);
 	if (!validation.valid) {
-		return {
-			success: false,
-			error: validation.error,
-			explanation
-		};
+		return { success: false, error: validation.error, explanation };
 	}
 
 	try {
@@ -138,7 +102,6 @@ async function executeQuery(sql: string, explanation: string) {
 
 		const data = await response.json();
 
-		// Handle RPC-level errors
 		if (data && typeof data === 'object' && data.error === true) {
 			return {
 				success: false,
@@ -147,7 +110,6 @@ async function executeQuery(sql: string, explanation: string) {
 			};
 		}
 
-		// Truncate large result sets
 		let resultData = data;
 		let truncated = false;
 
@@ -176,9 +138,39 @@ async function executeQuery(sql: string, explanation: string) {
 	}
 }
 
-// ─── Request Handler ────────────────────────────────────────────────
+// ─── Chat Logging ────────────────────────────────────────────────────
+async function logChatMessage(
+	userId: string,
+	orgId: number | null,
+	sessionId: string,
+	role: 'user' | 'assistant',
+	content: string
+) {
+	try {
+		await fetch(`${PUBLIC_SUPABASE_URL}/rest/v1/ai_chat_logs`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				apikey: SUPABASE_SECRET_KEY,
+				Authorization: `Bearer ${SUPABASE_SECRET_KEY}`,
+				Prefer: 'return=minimal'
+			},
+			body: JSON.stringify({
+				user_id: userId,
+				org_id: orgId,
+				session_id: sessionId,
+				role,
+				content,
+				model: MODEL
+			})
+		});
+	} catch (error) {
+		console.error('Failed to log chat message:', error);
+	}
+}
+
+// ─── Request Handler ─────────────────────────────────────────────────
 export const POST: RequestHandler = async ({ request, locals }) => {
-	// ── Auth enforcement ──
 	if (!locals.user?.id) {
 		return new Response(JSON.stringify({ error: 'Unauthorized' }), {
 			status: 401,
@@ -190,25 +182,49 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		const { messages, sessionId } = await request.json();
 
 		const userId = locals.user.id;
-		const orgId = locals.user.user_metadata?.org_id ?? null;
-		const chatSessionId = sessionId || crypto.randomUUID();
+		const orgId: number | null = locals.user.user_metadata?.org_id ?? null;
+		const chatSessionId: string = sessionId || crypto.randomUUID();
 
-		// Extract last user message for logging
-		const lastUserMessage = messages.filter((m: any) => m.role === 'user').pop();
-		const userMessageText =
-			lastUserMessage?.parts?.find((p: any) => p.type === 'text')?.text ||
-			lastUserMessage?.content ||
-			'';
+		// ── Log user message ──
+		const typedMessages = messages as UIMessage[];
+		const lastUserMessage = typedMessages.filter((m) => m.role === 'user').pop();
+		const userMessageText = lastUserMessage?.parts?.find((p) => p.type === 'text')?.text ?? '';
 
-		// Log user message
 		if (userMessageText) {
 			await logChatMessage(userId, orgId, chatSessionId, 'user', userMessageText);
 		}
 
+		// ── Build system messages ──
+		// Org context is appended as a second (uncached) system block so the
+		// cached block above stays stable across all users/orgs.
+		const systemMessages: SystemModelMessage[] = [
+			{
+				role: 'system',
+				content: SYSTEM_PROMPT,
+				providerOptions: {
+					anthropic: { cacheControl: { type: 'ephemeral' } }
+				}
+			},
+			// Org scoping — tells Claude to always filter by this org
+			...(orgId !== null
+				? ([
+						{
+							role: 'system',
+							content: `IMPORTANT: The current user belongs to org_id = ${orgId}. Every query you generate MUST include a WHERE clause filtering by org_id = ${orgId}. Never return data from other organisations.`
+						}
+					] satisfies SystemModelMessage[])
+				: [])
+		];
+
+		// ── Fix: early stopping ──
+		// Claude stops mid-task when it hits the default max_tokens (1024 on
+		// Sonnet). Raising it gives the model room to finish long answers that
+		// follow several tool calls. 4096 covers virtually all assistant turns;
+		// bump to 8192 if you see truncation on very large result summaries.
 		const result = streamText({
 			model: anthropic(MODEL),
-			system: CACHED_SYSTEM,
-			messages: await convertToModelMessages(messages),
+			providerOptions: { anthropic: { maxTokens: 4096 } },
+			messages: [...systemMessages, ...(await convertToModelMessages(typedMessages))],
 			stopWhen: stepCountIs(MAX_STEPS),
 			tools: {
 				queryDatabase: tool({
@@ -219,9 +235,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 					}),
 					execute: async ({ sql, explanation }) => executeQuery(sql, explanation),
 					providerOptions: {
-						anthropic: {
-							cacheControl: { type: 'ephemeral' }
-						}
+						anthropic: { cacheControl: { type: 'ephemeral' } }
 					}
 				})
 			},

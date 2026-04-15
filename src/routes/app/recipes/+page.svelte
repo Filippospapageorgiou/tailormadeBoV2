@@ -7,6 +7,7 @@
 	import { getProfileContext } from '$lib/stores/profile.svelte';
 	import NoAccess from '$lib/components/custom/register/noAccess.svelte';
 	import EmptyComp from '$lib/components/custom/EmptyComp.svelte';
+	import { insertBeverageRead } from '$lib/api/blog/data.remote.js';
 	import { Coffee } from 'lucide-svelte';
 
 	const profile = getProfileContext();
@@ -28,6 +29,10 @@
 	);
 
 	const handleBeverageClick = (id: number) => {
+		// Log the beverage read before navigating
+		insertBeverageRead({ beverage_id: id }).catch((e) =>
+			console.error('Failed to log beverage read:', e)
+		);
 		goto(`/app/recipes/${id}`);
 	};
 </script>

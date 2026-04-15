@@ -1,6 +1,6 @@
 // src/lib/api/manuals/data.remote.ts
 import { query, command, form } from '$app/server';
-import { createServerClient } from '$lib/supabase/server';
+import { createServerClient, createAdminClient } from '$lib/supabase/server';
 import { requireAuthenticatedUser } from '$lib/supabase/shared';
 import { getUserProfile, getUserProfileWithRoleCheck } from '$lib/supabase/queries';
 import { z } from 'zod/v4';
@@ -54,11 +54,18 @@ const createManualFormSchema = z.object({
 	category: manualCategorySchema,
 	media: z.array(imageFileSchema).max(4, 'Μέγιστο 4 εικόνες.').optional(),
 	published: z.string().transform((val) => val === 'true'),
-	display_order: z.string().transform((val) => parseInt(val, 10)).pipe(z.number().int()).optional()
+	display_order: z
+		.string()
+		.transform((val) => parseInt(val, 10))
+		.pipe(z.number().int())
+		.optional()
 });
 
 const editManualFormSchema = z.object({
-	id: z.string().transform((val) => parseInt(val, 10)).pipe(z.number().int().positive()),
+	id: z
+		.string()
+		.transform((val) => parseInt(val, 10))
+		.pipe(z.number().int().positive()),
 	title: z.string().min(3, 'Ο τίτλος πρέπει να έχει τουλάχιστον 3 χαρακτήρες').max(200),
 	description: z.string().max(500).optional(),
 	content: z.string().min(10, 'Το περιεχόμενο πρέπει να έχει τουλάχιστον 10 χαρακτήρες'),
@@ -66,13 +73,16 @@ const editManualFormSchema = z.object({
 	existingMedia: z.string().optional(), // JSON array of URLs to keep
 	newMedia: z.array(imageFileSchema).max(4, 'Μέγιστο 4 εικόνες.').optional(),
 	published: z.string().transform((val) => val === 'true'),
-	display_order: z.string().transform((val) => parseInt(val, 10)).pipe(z.number().int()).optional()
+	display_order: z
+		.string()
+		.transform((val) => parseInt(val, 10))
+		.pipe(z.number().int())
+		.optional()
 });
 
 const deleteManualSchema = z.object({
 	id: z.number().int().positive()
 });
-
 
 // =============================================
 // QUERIES - Read Operations
@@ -82,12 +92,12 @@ const deleteManualSchema = z.object({
  * Get all published manuals (for all authenticated users)
  * Includes read status for the current user
  */
-export const getPublishedManuals = query(categoryFilterSchema, async({category}) => {
-    try{
-        const supabase = createServerClient();
-        const user = await requireAuthenticatedUser()
+export const getPublishedManuals = query(categoryFilterSchema, async ({ category }) => {
+	try {
+		const supabase = createServerClient();
+		const user = await requireAuthenticatedUser();
 
-        let queryBuilder = supabase
+		let queryBuilder = supabase
 			.from('manuals')
 			.select(
 				`
@@ -103,11 +113,11 @@ export const getPublishedManuals = query(categoryFilterSchema, async({category})
 			.order('display_order', { ascending: true })
 			.order('created_at', { ascending: false });
 
-        if(category){
-            queryBuilder = queryBuilder.eq('category',category);
-        }
+		if (category) {
+			queryBuilder = queryBuilder.eq('category', category);
+		}
 
-        const { data: manuals, error } = await queryBuilder;
+		const { data: manuals, error } = await queryBuilder;
 
 		if (error) {
 			console.error('[getPublishedManuals] Error:', error);
@@ -118,7 +128,7 @@ export const getPublishedManuals = query(categoryFilterSchema, async({category})
 			};
 		}
 
-        const manualIds = manuals?.map((m) => m.id) || [];
+		const manualIds = manuals?.map((m) => m.id) || [];
 
 		const { data: readRecords, error: readError } = await supabase
 			.from('manual_reads')
@@ -130,14 +140,14 @@ export const getPublishedManuals = query(categoryFilterSchema, async({category})
 			console.error('[getPublishedManuals] Read status error:', readError);
 		}
 
-        //create a map of manual_id -> read_at
+		//create a map of manual_id -> read_at
 
-        const readMap = new Map<number,string>();
-        readRecords?.forEach((r) => {
-            readMap.set(r.manual_id, r.read_at)
-        });
+		const readMap = new Map<number, string>();
+		readRecords?.forEach((r) => {
+			readMap.set(r.manual_id, r.read_at);
+		});
 
-        // Merge read status with manuals
+		// Merge read status with manuals
 		const manualsWithReadStatus: ManualWithDetails[] =
 			manuals?.map((manual) => ({
 				...manual,
@@ -150,18 +160,15 @@ export const getPublishedManuals = query(categoryFilterSchema, async({category})
 			message: 'Επιτυχής ανάκτηση εγχειριδίων',
 			manuals: manualsWithReadStatus
 		};
-
-
-    }catch(err){
-        console.error('[getPublishedManuals] Error fetching published manuals: ',err);
-        return{
-            success:false,
-            message:'Σφάλμα κάτα την ανάκτηση δεδομένων',
-            manuals:[]
-        };
-    }
-})
-
+	} catch (err) {
+		console.error('[getPublishedManuals] Error fetching published manuals: ', err);
+		return {
+			success: false,
+			message: 'Σφάλμα κάτα την ανάκτηση δεδομένων',
+			manuals: []
+		};
+	}
+});
 
 /**
  * Get all manuals (for super admin - includes drafts)
@@ -299,12 +306,6 @@ export const getManualById = query(manualIdSchema, async ({ id }) => {
 		};
 	}
 });
-
-
-
-
-
-
 
 // =============================================
 // COMMANDS - Write Operations
@@ -452,6 +453,34 @@ const updateDisplayOrderSchema = z.object({
 	)
 });
 
+export const getManualReadsLast7Days = query(async () => {
+	await getUserProfileWithRoleCheck([1]);
+	const supabase = createAdminClient();
+
+	const sevenDaysAgo = new Date();
+	sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+	sevenDaysAgo.setHours(0, 0, 0, 0);
+
+	const { data } = await supabase
+		.from('manual_reads')
+		.select('read_at')
+		.gte('read_at', sevenDaysAgo.toISOString())
+		.order('read_at', { ascending: false });
+
+	if (!data) {
+		return {
+			success: false,
+			message: 'Failed to fetch manual reads.',
+			reads: [] as { read_at: string }[]
+		};
+	}
+
+	return {
+		success: true,
+		reads: data as { read_at: string }[]
+	};
+});
+
 export const updateManualsOrder = command(updateDisplayOrderSchema, async ({ orders }) => {
 	const supabase = createServerClient();
 
@@ -460,10 +489,7 @@ export const updateManualsOrder = command(updateDisplayOrderSchema, async ({ ord
 
 		// Update each manual's display order
 		const updates = orders.map((order) =>
-			supabase
-				.from('manuals')
-				.update({ display_order: order.display_order })
-				.eq('id', order.id)
+			supabase.from('manuals').update({ display_order: order.display_order }).eq('id', order.id)
 		);
 
 		await Promise.all(updates);
@@ -689,11 +715,7 @@ export const deleteManual = command(deleteManualSchema, async ({ id }) => {
 		await getUserProfileWithRoleCheck([1]); // super_admin only
 
 		// Get manual to check for media
-		const { data: manual } = await supabase
-			.from('manuals')
-			.select('media')
-			.eq('id', id)
-			.single();
+		const { data: manual } = await supabase.from('manuals').select('media').eq('id', id).single();
 
 		// Delete associated media from storage
 		if (manual?.media && Array.isArray(manual.media) && manual.media.length > 0) {

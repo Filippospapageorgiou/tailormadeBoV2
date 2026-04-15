@@ -1,5 +1,6 @@
 import { query, command, form } from '$app/server';
-import { createServerClient } from '$lib/supabase/server';
+import { createServerClient, createAdminClient } from '$lib/supabase/server';
+import { getUserProfileWithRoleCheck } from '$lib/supabase/queries';
 import { requireAuthenticatedUser } from '$lib/supabase/shared';
 import { type Blog } from '$lib/models/database.types';
 import { z } from 'zod/v4';
@@ -352,4 +353,89 @@ export const deleteBlog = command(deleteBlogSchema, async ({ blogId }) => {
 			message: 'An unexpected error occurred while deleting blog post.'
 		};
 	}
+});
+
+const beverageReadInsertSchema = z.object({
+	beverage_id: z.number().int().positive()
+});
+
+export const insertBeverageRead = command(beverageReadInsertSchema, async (data) => {
+	const supabase = createServerClient();
+	const user = await requireAuthenticatedUser();
+
+	const { error } = await supabase.from('beverages_reads').insert({
+		beverage_id: data.beverage_id,
+		user_id: user.id,
+		org_id: user.user_metadata?.org_id || null,
+		read_at: new Date().toLocaleString('gr')
+	});
+
+	if (error) {
+		console.error('Error inserting beverage read:', error);
+		return {
+			success: false,
+			message: 'Failed to record beverage read.'
+		};
+	}
+
+	return {
+		success: true,
+		message: 'Beverage read recorded successfully.'
+	};
+});
+
+export const getBeverageReads = query(async () => {
+	await getUserProfileWithRoleCheck([1]);
+	const supabase = createAdminClient();
+
+	const sevenDaysAgo = new Date();
+	sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+	sevenDaysAgo.setHours(0, 0, 0, 0);
+
+	const { data } = await supabase
+		.from('beverages_reads')
+		.select('read_at')
+		.gte('read_at', sevenDaysAgo.toISOString())
+		.order('read_at', { ascending: false });
+
+	if (!data) {
+		return {
+			success: false,
+			message: 'Failed to fetch beverage reads.',
+			reads: [] as { read_at: string }[]
+		};
+	}
+
+	return {
+		success: true,
+		reads: data as { read_at: string }[]
+	};
+});
+
+export const getBlogReadsLast7Days = query(async () => {
+	await getUserProfileWithRoleCheck([1]);
+	const supabase = createAdminClient();
+
+	const sevenDaysAgo = new Date();
+	sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+	sevenDaysAgo.setHours(0, 0, 0, 0);
+
+	const { data } = await supabase
+		.from('blog_reads')
+		.select('read_at')
+		.gte('read_at', sevenDaysAgo.toISOString())
+		.order('read_at', { ascending: false });
+
+	if (!data) {
+		return {
+			success: false,
+			message: 'Failed to fetch blog reads.',
+			reads: [] as { read_at: string }[]
+		};
+	}
+
+	return {
+		success: true,
+		reads: data as { read_at: string }[]
+	};
 });

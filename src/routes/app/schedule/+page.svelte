@@ -13,6 +13,8 @@
 	import { formatWeekRange } from '$lib/utils';
 	import { fly, fade } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
+	import EmptyComp from '$lib/components/custom/EmptyComp.svelte';
+	import { X } from '@lucide/svelte';
 
 	// State management
 	let weekStartDate: string | undefined = $state(undefined);
@@ -273,26 +275,14 @@
 				</div>
 			{:else}
 				<!-- Empty State -->
-				<div
-					class="flex min-h-[500px] items-center justify-center rounded-2xl border border-dashed bg-muted/30 p-12"
-					in:fade
-				>
-					<div class="max-w-md text-center">
-						<div
-							class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted"
-						>
-							<Calendar class="h-8 w-8 text-muted-foreground" />
-						</div>
-						<h3 class="text-xl font-semibold text-foreground">Δεν υπάρχει διαθέσιμο πρόγραμμα</h3>
-						<p class="mt-2 text-muted-foreground">
-							Δεν έχει δημοσιευτεί πρόγραμμα για αυτή την εβδομάδα. Επικοινωνήστε με τον
-							διαχειριστή.
-						</p>
-						<Button variant="outline" class="mt-6" onclick={handlePrevWeek}>
-							Προηγούμενη εβδομάδα
-						</Button>
-					</div>
-				</div>
+				<EmptyComp
+					title={'Δεν υπάρχει διαθέσιμο πρόγραμμα'}
+					description={'Δεν έχει δημοσιευτεί πρόγραμμα για αυτή την εβδομάδα. Επικοινωνήστε με τον διαχειριστή.'}
+					icon={Calendar as any}
+					primaryLabel="Προηγούμενη εβδομάδα"
+					onPrimaryClick={handlePrevWeek}
+					primaryIcon={X as any}
+				/>
 			{/if}
 		{:catch error}
 			<!-- Error State -->

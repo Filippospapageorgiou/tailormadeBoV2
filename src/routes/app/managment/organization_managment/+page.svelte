@@ -27,8 +27,6 @@
 	import PhoneInput from '$lib/components/ui/phone-input/phone-input.svelte';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import Stats from '$lib/components/stats_organization/Stats.svelte';
-	import { Root } from '$lib/components/ui/button';
-	import Map from '$lib/components/ui/map/Map.svelte';
 	import InputMap from '$lib/components/stats_organization/inputMap.svelte';
 
 	let auth = authenticatedAccess();

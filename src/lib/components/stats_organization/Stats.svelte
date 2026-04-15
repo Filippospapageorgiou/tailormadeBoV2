@@ -14,6 +14,9 @@
 	import CustomMap from './CustomMap.svelte';
 	import AllOrgsPresenceCard from '../custom/presence/AllOrgsPresenceCard.svelte';
 	import { page } from '$app/state';
+	import BeveragesReads from './BeveragesReads.svelte';
+	import BlogReads from './BlogReads.svelte';
+	import ManualReads from './ManualReads.svelte';
 
 	interface OrgInfo {
 		id: number;
@@ -54,15 +57,20 @@
 </script>
 
 <div class="mx-4 flex h-full flex-col gap-4 overflow-visible">
+	<!-- Bonus Chart - top row -->
+	<BarChartBonus bonusPeriods={query.current?.periods} />
+
+	<!-- Reads area charts - 3-column grid between bonus and equipment -->
+	<div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+		<BeveragesReads />
+		<BlogReads />
+		<ManualReads />
+	</div>
+
 	<!-- Responsive Grid -->
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
-		<!-- Bonus Chart - Full width mobile, 3 cols desktop -->
-		<div class="md:col-span-2 lg:col-span-3 lg:row-span-2">
-			<BarChartBonus bonusPeriods={query.current?.periods} />
-		</div>
-
 		<!-- Tasks Chart - Full width mobile, 2 cols desktop -->
-		<div class="md:col-span-2 lg:col-span-2 lg:row-span-2">
+		<div class="md:col-span-2 lg:col-span-3 lg:row-span-2">
 			<TasksChart stats={queryTasks.current?.stats!} onRefresh={handleRefresh} {isLoading} />
 		</div>
 
@@ -76,7 +84,7 @@
 		</div>
 
 		<!-- Leaderboards - Full width mobile, 3 cols desktop -->
-		<div class="md:col-span-1 lg:col-span-3 lg:row-span-2">
+		<div class="md:col-span-1 lg:col-span-5 lg:row-span-2">
 			<LeaderboardsStats
 				topOrganizations={queryLeaderboards.current?.topOrganizations ?? []}
 				topEmployees={queryLeaderboards.current?.topEmployees ?? []}
