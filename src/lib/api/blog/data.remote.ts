@@ -399,18 +399,6 @@ export const insertBeverageRead = command(beverageReadInsertSchema, async (data)
 	const region = headers.get('x-vercel-ip-country-region'); // π.χ. "54"
 	const rawCity = headers.get('x-vercel-ip-city');
 	const city = rawCity ? safeDecode(rawCity) : null;
-
-	//log
-	console.log('Inserting beverage read with metadata:', {
-		beverage_id: data.beverage_id,
-		user_id: user.id,
-		ip,
-		userAgent,
-		country,
-		region,
-		city
-	});
-
 	// ── Insert ──────────────────────────────────────────────────────────────────
 	const { error } = await supabase.from('beverages_reads').insert({
 		beverage_id: data.beverage_id,
